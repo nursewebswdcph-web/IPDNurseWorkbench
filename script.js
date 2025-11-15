@@ -8,7 +8,6 @@
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_Wf0QMK-I80d6A2riIDQRRMpMy3IAoGMpYw0_gFuOXMuqWjThVHFHP2g/exec";
 // ----------------------------------------------------------------
 
-
 // ตัวแปรเก็บสถานะปัจจุบัน
 let currentWard = null;
 let allWards = [];
@@ -33,7 +32,16 @@ const admitAgeInput = document.getElementById("admit-age");
 
 
 // --- ฟังก์ชัน Utility ---
-
+function convertCEtoBE(ceDate) { // input: "1974-08-16"
+  if (!ceDate) return null;
+  try {
+    const [year, month, day] = ceDate.split('-');
+    const beYear = parseInt(year) + 543;
+    return `${beYear}-${month}-${day}`; // output: "2517-08-16"
+  } catch (e) {
+    return null;
+  }
+}
 // แสดง SweetAlert Loading
 function showLoading(title = 'กำลังประมวลผล...') {
   Swal.fire({
@@ -65,14 +73,14 @@ function updateClock() {
 }
 
 // คำนวณอายุ (ปี เดือน วัน) จากวันเกิด (พ.ศ.)
-function calculateAge(dobString) {
-  if (!dobString) return "N/A";
-  
+function calculateAge(dobString_BE) { // "2517-08-16"
+  if (!dobString_BE) return "N/A";
+
   // แปลง พ.ศ. เป็น ค.ศ. (YYYY-MM-DD)
-  const [yearBE, month, day] = dobString.split('-');
+  const [yearBE, month, day] = dobString_BE.split('-');
   const yearCE = parseInt(yearBE) - 543;
   const dob = new Date(yearCE, month - 1, day);
-  
+
   if (isNaN(dob.getTime())) return "N/A";
 
   const today = new Date();
@@ -82,6 +90,7 @@ function calculateAge(dobString) {
 
   if (days < 0) {
     months--;
+    // หาว่าเดือนที่แล้วมีกี่วัน
     days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
   }
   if (months < 0) {
@@ -90,7 +99,6 @@ function calculateAge(dobString) {
   }
   return `${years} ปี ${months} ด. ${days} ว.`;
 }
-
 // คำนวณวันนอน (LOS)
 function calculateLOS(admitDateStr) {
   if (!admitDateStr) return "N/A";
@@ -264,7 +272,12 @@ async function handleAdmitSubmit(event) {
   
   const formData = new FormData(admitForm);
   let patientData = Object.fromEntries(formData.entries());
-  
+  // --- ส่วนที่เพิ่มเข้ามา ---
+// แปลง DOB (ที่เป็น ค.ศ.) ให้เป็น พ.ศ. ก่อนบันทึก
+if (patientData.DOB_BE) {
+  patientData.DOB_BE = convertCEtoBE(patientData.DOB_BE);
+}
+// --- สิ้นสุดส่วนที่เพิ่ม ---
   // เพิ่มข้อมูลที่จำเป็น
   patientData.Ward = currentWard;
   
@@ -318,7 +331,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 6. คำนวณอายุอัตโนมัติ เมื่อกรอกวันเกิด
   admitDobInput.addEventListener("change", () => {
-    admitAgeInput.value = calculateAge(admitDobInput.value);
-  });
+  const ceDate = admitDobInput.value; // ได้ "1974-08-16" (ค.ศ.)
+  const beDate = convertCEtoBE(ceDate); // แปลงเป็น "2517-08-16" (พ.ศ.)
+  admitAgeInput.value = calculateAge(beDate); // ส่ง (พ.ศ.) ไปคำนวณ
+});
 
 });
