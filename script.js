@@ -204,7 +204,7 @@ async function loadPatients(wardName) {
         <td class="p-3">${pt.HN}</td>
         <td class="p-3">${pt.AN}</td>
         <td class="p-3">${nameCell}</td>
-        <td class="p-3">${calculateAge(pt.DOB_BE)}</td>
+        <td class="p-3">${pt.Age || 'N/A'}</td>
         <td class="p-3">${pt.Dept}</td>
         <td class="p-3">${pt.Doctor}</td>
         <td class="p-3">${new Date(pt.AdmitDate).toLocaleDateString('th-TH')}</td>
@@ -277,8 +277,7 @@ async function handleAdmitSubmit(event) {
 if (patientData.DOB_BE) {
   patientData.DOB_BE = convertCEtoBE(patientData.DOB_BE);
 }
-// --- สิ้นสุดส่วนที่เพิ่ม ---
-  // เพิ่มข้อมูลที่จำเป็น
+  patientData.Age = document.getElementById("admit-age").value;
   patientData.Ward = currentWard;
   
   try {
