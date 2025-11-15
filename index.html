@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPD Nurse Workbench</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ตั้งค่า Font หลัก */
+    body {
+      font-family: 'Sarabun', sans-serif;
+    }
+    /* ซ่อน Scrollbar (ถ้าไม่ต้องการ) */
+    /* ::-webkit-scrollbar { display: none; } */
+
+    /* คลาสสำหรับซ่อน/แสดง */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100">
+
+  <nav class="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
+    <div class="container mx-auto px-4 py-3">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <img src="https://swdcph.moph.go.th/intranet/login/images/logo_swd.png" alt="Logo" class="h-12 w-12">
+          <div>
+            <h1 class="text-xl font-bold text-gray-800">IPD Nurse Workbench</h1>
+            <div id="realtime-clock" class="text-xs text-gray-500"></div>
+          </div>
+        </div>
+        
+        <div class="md:hidden">
+          </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="mt-24 pt-4 container mx-auto px-4">
+
+    <section id="ward-selection" class="animate-fade-in">
+      <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">กรุณาเลือกตึกที่ต้องการใช้งาน</h2>
+      <div id="ward-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        </div>
+    </section>
+
+    <section id="registry-page" class="hidden animate-fade-in">
+      
+      <div class="bg-white p-4 rounded-lg shadow mb-6">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-blue-700" id="ward-header-title"></h2>
+            <select id="ward-switcher" class="mt-1 p-2 border rounded-md">
+              </select>
+          </div>
+          
+          <div>
+            <button id="open-admit-modal-btn" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+              + Admit ผู้ป่วยใหม่
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4 border-t pt-4">
+          <input type="text" id="search-hn" placeholder="ค้นหา HN" class="p-2 border rounded-md">
+          <input type="text" id="search-an" placeholder="ค้นหา AN" class="p-2 border rounded-md">
+          <input type="text" id="search-name" placeholder="ค้นหา ชื่อ-สกุล" class="p-2 border rounded-md">
+          <input type="text" id="search-doctor" placeholder="ค้นหา แพทย์" class="p-2 border rounded-md">
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow overflow-x-auto">
+        <table class="w-full min-w-max">
+          <thead class="bg-gray-200 text-gray-700">
+            <tr>
+              <th class="p-3 text-left">เตียง</th>
+              <th class="p-3 text-left">HN</th>
+              <th class="p-3 text-left">AN</th>
+              <th class="p-3 text-left">ชื่อ-สกุล ผู้ป่วย</th>
+              <th class="p-3 text-left">อายุ (ปี/ด/ว)</th>
+              <th class="p-3 text-left">แผนก</th>
+              <th class="p-3 text-left">แพทย์</th>
+              <th class="p-3 text-left">วันที่ Admit</th>
+              <th class="p-3 text-left">วันนอน (LOS)</th>
+            </tr>
+          </thead>
+          <tbody id="patient-table-body" class="divide-y divide-gray-200">
+            </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="admit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-16 z-50 hidden overflow-y-auto">
+    
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] m-4">
+      <div class="flex justify-between items-center p-4 border-b">
+        <h3 class="text-xl font-semibold text-gray-800">บันทึกรับใหม่ (Admit Patient)</h3>
+        <button id="close-admit-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+      </div>
+      
+      <form id="admit-form" class="p-6 overflow-y-auto max-h-[calc(85vh-130px)]">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="col-span-1">
+            <label for="admit-date" class="block text-sm font-medium text-gray-700">วันที่รับ</label>
+            <input type="date" id="admit-date" name="AdmitDate" class="mt-1 p-2 block w-full border rounded-md" required>
+          </div>
+          <div class="col-span-1">
+            <label for="admit-time" class="block text-sm font-medium text-gray-700">เวลารับ</label>
+            <input type="time" id="admit-time" name="AdmitTime" class="mt-1 p-2 block w-full border rounded-md" required>
+          </div>
+          <div class="col-span-1">
+            <label for="admit-from" class="block text-sm font-medium text-gray-700">รับจาก</label>
+            <select id="admit-from" name="AdmittedFrom" class="mt-1 p-2 block w-full border rounded-md" required>
+              </select>
+          </div>
+          
+          <div class="col-span-2">
+            <label for="admit-refer" class="block text-sm font-medium text-gray-700">Refer (ถ้ามี)</label>
+            <input type="text" id="admit-refer" name="Refer" class="mt-1 p-2 block w-full border rounded-md">
+          </div>
+          <div class="col-span-1">
+            <label for="admit-bed" class="block text-sm font-medium text-gray-700">รับเข้าเตียง</label>
+            <select id="admit-bed" name="Bed" class="mt-1 p-2 block w-full border rounded-md" required>
+              <option value="">-- เลือกเตียงว่าง --</option>
+              </select>
+          </div>
+
+          <hr class="md:col-span-3 my-2">
+
+          <div class="col-span-1">
+            <label for="admit-hn" class="block text-sm font-medium text-gray-700">HN</label>
+            <input type="text" id="admit-hn" name="HN" class="mt-1 p-2 block w-full border rounded-md" required>
+          </div>
+          <div class="col-span-1">
+            <label for="admit-an" class="block text-sm font-medium text-gray-700">AN (คีย์หลัก)</label>
+            <input type="text" id="admit-an" name="AN" class="mt-1 p-2 block w-full border rounded-md" required>
+          </div>
+          <div class="col-span-1">
+            <label for="admit-name" class="block text-sm font-medium text-gray-700">ชื่อ-สกุล</label>
+            <input type="text" id="admit-name" name="Name" class="mt-1 p-2 block w-full border rounded-md" required>
+          </div>
+
+          <div class="md:col-span-3">
+             <label for="admit-address" class="block text-sm font-medium text-gray-700">ที่อยู่</label>
+            <textarea id="admit-address" name="Address" rows="2" class="mt-1 p-2 block w-full border rounded-md"></textarea>
+          </div>
+
+          <div class="col-span-1">
+            <label for="admit-dob" class="block text-sm font-medium text-gray-700">วันเกิด (ปี พ.ศ.)</label>
+            <input type="date" id="admit-dob" name="DOB_BE" class="mt-1 p-2 block w-full border rounded-md" required>
+          </div>
+          <div class="col-span-1">
+            <label for="admit-age" class="block text-sm font-medium text-gray-700">อายุ</label>
+            <input type="text" id="admit-age" class="mt-1 p-2 block w-full border rounded-md bg-gray-200" readonly>
+          </div>
+           <div class="col-span-1">
+            <label for="admit-dept" class="block text-sm font-medium text-gray-700">แผนก</label>
+            <select id="admit-dept" name="Dept" class="mt-1 p-2 block w-full border rounded-md" required>
+               </select>
+          </div>
+          
+          <hr class="md:col-span-3 my-2">
+
+          <div class="md:col-span-3">
+             <label for="admit-cc" class="block text-sm font-medium text-gray-700">อาการสำคัญ (CC)</label>
+            <textarea id="admit-cc" name="ChiefComplaint" rows="2" class="mt-1 p-2 block w-full border rounded-md"></textarea>
+          </div>
+           <div class="md:col-span-3">
+             <label for="admit-pi" class="block text-sm font-medium text-gray-700">ประวัติการเจ็บป่วย (PI)</label>
+            <textarea id="admit-pi" name="PresentIllness" rows="3" class="mt-1 p-2 block w-full border rounded-md"></textarea>
+          </div>
+
+          <div class="col-span-2">
+            <label for="admit-dx" class="block text-sm font-medium text-gray-700">การวินิจฉัยแรกรับ (Admitting Dx)</label>
+            <input type="text" id="admit-dx" name="AdmittingDx" class="mt-1 p-2 block w-full border rounded-md">
+          </div>
+          <div class="col-span-1">
+            <label for="admit-doctor" class="block text-sm font-medium text-gray-700">แพทย์เจ้าของไข้</label>
+            <select id="admit-doctor" name="Doctor" class="mt-1 p-2 block w-full border rounded-md" required>
+               </select>
+          </div>
+
+        </div>
+      </form>
+      
+      <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
+        <button id="cancel-admit-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mr-3">
+          ยกเลิก
+        </button>
+        <button type="submit" form="admit-form" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">
+          บันทึกข้อมูล
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
