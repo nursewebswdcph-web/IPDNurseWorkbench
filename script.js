@@ -5,7 +5,7 @@
 // ----------------------------------------------------------------
 // !!!!!! ใส่ Web App URL ที่คุณคัดลอกมาจาก Google Apps Script ตรงนี้
 // ----------------------------------------------------------------
-const GAS_WEB_APP_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL";
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_Wf0QMK-I80d6A2riIDQRRMpMy3IAoGMpYw0_gFuOXMuqWjThVHFHP2g/exec";
 // ----------------------------------------------------------------
 
 
