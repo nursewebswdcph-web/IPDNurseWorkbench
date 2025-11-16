@@ -36,7 +36,6 @@ const editPatientBtn = document.getElementById("edit-patient-btn");
 const saveDetailsBtn = document.getElementById("save-details-btn");
 const cancelEditBtn = document.getElementById("cancel-edit-btn");
 const dischargeBtn = document.getElementById("discharge-btn");
-const transferBedBtn = document.getElementById("transfer-bed-btn");
 const detailsBedDisplay = document.getElementById("details-bed-display");
 const detailsBedSelect = document.getElementById("details-bed-select");
 const detailsDobInput = document.getElementById("details-dob");
@@ -346,7 +345,6 @@ function resetDetailsModalState() {
   editPatientBtn.classList.remove("hidden");
   dischargeBtn.classList.remove("hidden");
   transferWardBtn.classList.remove("hidden");
-  transferBedBtn.classList.remove("hidden");
   saveDetailsBtn.classList.add("hidden");
   cancelEditBtn.classList.add("hidden");
 
@@ -372,7 +370,6 @@ async function enableEditMode() {
   editPatientBtn.classList.add("hidden");
   dischargeBtn.classList.add("hidden");
   transferWardBtn.classList.add("hidden");
-  transferBedBtn.classList.add("hidden");
   saveDetailsBtn.classList.remove("hidden");
   cancelEditBtn.classList.remove("hidden");
 
