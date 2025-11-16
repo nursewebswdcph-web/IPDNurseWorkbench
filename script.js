@@ -508,57 +508,6 @@ async function handleDischarge() {
     }
   }
 }
-
-function populateSelect(elementId, options, defaultValue = null) {
-  const select = document.getElementById(elementId);
-  select.innerHTML = `<option value="">-- กรุณาเลือก --</option>`;
-  options.forEach(optValue => {
-    const option = document.createElement("option");
-    option.value = optValue;
-    option.textContent = optValue;
-    if (optValue === defaultValue) {
-      option.selected = true;
-    }
-    select.appendChild(option);
-  });
-}
-
-// --- (ใหม่) Event Listeners ---
-document.addEventListener("DOMContentLoaded", () => {
-  updateClock(); setInterval(updateClock, 1000);
-  loadWards();
-  wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
-  
-  // 4. จัดการ Admit Modal
-  openAdmitModalBtn.addEventListener("click", openAdmitModal);
-  closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
-  cancelAdmitBtn.addEventListener("click", closeAdmitModal);
-  admitForm.addEventListener("submit", handleAdmitSubmit);
-  admitDobInput.addEventListener("change", () => {
-    const ceDate = admitDobInput.value;
-    const beDate = convertCEtoBE(ceDate);
-    admitAgeInput.value = calculateAge(beDate);
-  });
-
-  // --- (ใหม่) 5. จัดการ Details Modal ---
-  
-  // 5.1 (สำคัญ) ตัวดักฟังการคลิกที่ตาราง
-  patientTableBody.addEventListener('click', (e) => {
-    if (e.target.tagName === 'A' && e.target.dataset.an) {
-      e.preventDefault();
-      const an = e.target.dataset.an;
-      openDetailsModal(an);
-    }
-  });
-
-  // 5.2 ปุ่มใน Details Modal
-  closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
-  editPatientBtn.addEventListener("click", enableEditMode);
-  cancelEditBtn.addEventListener("click", resetDetailsModalState);
-  detailsForm.addEventListener("submit", handleUpdateSubmit);
-  dischargeBtn.addEventListener("click", handleDischarge);
-  transferWardBtn.addEventListener("click", handleTransferWard);
-
 // --- (เพิ่มฟังก์ชันใหม่ทั้งหมดนี้) ---
 async function handleTransferWard() {
   const an = document.getElementById("details-an").value;
@@ -657,6 +606,56 @@ async function handleTransferWard() {
     detailsAgeInput.value = calculateAge(beDate); // คำนวณใหม่ แต่ยังไม่บันทึกจนกว่าจะกด Save
   });
 });
+function populateSelect(elementId, options, defaultValue = null) {
+  const select = document.getElementById(elementId);
+  select.innerHTML = `<option value="">-- กรุณาเลือก --</option>`;
+  options.forEach(optValue => {
+    const option = document.createElement("option");
+    option.value = optValue;
+    option.textContent = optValue;
+    if (optValue === defaultValue) {
+      option.selected = true;
+    }
+    select.appendChild(option);
+  });
+}
+
+// --- (ใหม่) Event Listeners ---
+document.addEventListener("DOMContentLoaded", () => {
+  updateClock(); setInterval(updateClock, 1000);
+  loadWards();
+  wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
+  
+  // 4. จัดการ Admit Modal
+  openAdmitModalBtn.addEventListener("click", openAdmitModal);
+  closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
+  cancelAdmitBtn.addEventListener("click", closeAdmitModal);
+  admitForm.addEventListener("submit", handleAdmitSubmit);
+  admitDobInput.addEventListener("change", () => {
+    const ceDate = admitDobInput.value;
+    const beDate = convertCEtoBE(ceDate);
+    admitAgeInput.value = calculateAge(beDate);
+  });
+
+  // --- (ใหม่) 5. จัดการ Details Modal ---
+  
+  // 5.1 (สำคัญ) ตัวดักฟังการคลิกที่ตาราง
+  patientTableBody.addEventListener('click', (e) => {
+    if (e.target.tagName === 'A' && e.target.dataset.an) {
+      e.preventDefault();
+      const an = e.target.dataset.an;
+      openDetailsModal(an);
+    }
+  });
+
+  // 5.2 ปุ่มใน Details Modal
+  closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
+  editPatientBtn.addEventListener("click", enableEditMode);
+  cancelEditBtn.addEventListener("click", resetDetailsModalState);
+  detailsForm.addEventListener("submit", handleUpdateSubmit);
+  dischargeBtn.addEventListener("click", handleDischarge);
+  transferWardBtn.addEventListener("click", handleTransferWard);
+
 // --- (ใหม่!) ฟังก์ชันสำหรับ Chart Page และ Assessment ---
 
 // (ใหม่) เปิดหน้า Chart
