@@ -206,7 +206,128 @@
       </div>
     </div>
   </div>
+<div id="details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-16 z-50 hidden overflow-y-auto">
+  
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[85vh] m-4">
+    <div class="flex justify-between items-center p-4 border-b">
+      <h3 class="text-xl font-semibold text-gray-800">รายละเอียดผู้ป่วย</h3>
+      <button id="close-details-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+    </div>
+    
+    <fieldset id="details-fieldset" disabled>
+      <form id="details-form" class="p-6 overflow-y-auto max-h-[calc(85vh-200px)]">
+        
+        <input type="hidden" id="details-an" name="AN">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">วันที่รับ</label>
+            <input type="date" id="details-date" name="AdmitDate" class="mt-1 p-2 block w-full border rounded-md bg-gray-100">
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">เวลารับ</label>
+            <input type="time" id="details-time" name="AdmitTime" class="mt-1 p-2 block w-full border rounded-md bg-gray-100">
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">รับจาก</label>
+            <select id="details-from" name="AdmittedFrom" class="mt-1 p-2 block w-full border rounded-md">
+              </select>
+          </div>
+          
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-700">Refer</label>
+            <input type="text" id="details-refer" name="Refer" class="mt-1 p-2 block w-full border rounded-md">
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">เตียง</label>
+            <input type="text" id="details-bed-display" class="mt-1 p-2 block w-full border rounded-md bg-gray-100">
+            <select id="details-bed-select" name="Bed" class="mt-1 p-2 block w-full border rounded-md hidden">
+              </select>
+          </div>
 
+          <hr class="md:col-span-3 my-2">
+
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">HN</label>
+            <input type="text" id="details-hn" name="HN" class="mt-1 p-2 block w-full border rounded-md bg-gray-100">
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">AN</label>
+            <input type="text" id="details-an-display" class="mt-1 p-2 block w-full border rounded-md bg-gray-200" readonly>
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">ชื่อ-สกุล</label>
+            <input type="text" id="details-name" name="Name" class="mt-1 p-2 block w-full border rounded-md">
+          </div>
+
+          <div class="md:col-span-3">
+             <label class="block text-sm font-medium text-gray-700">ที่อยู่</label>
+            <textarea id="details-address" name="Address" rows="2" class="mt-1 p-2 block w-full border rounded-md"></textarea>
+          </div>
+
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">วันเกิด (ค.ศ.)</label>
+            <input type="date" id="details-dob" name="DOB_CE" class="mt-1 p-2 block w-full border rounded-md">
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">อายุ</label>
+            <input type="text" id="details-age" class="mt-1 p-2 block w-full border rounded-md bg-gray-200" readonly>
+          </div>
+           <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">แผนก</label>
+            <select id="details-dept" name="Dept" class="mt-1 p-2 block w-full border rounded-md">
+               </select>
+          </div>
+          
+          <hr class="md:col-span-3 my-2">
+
+          <div class="md:col-span-3">
+             <label class="block text-sm font-medium text-gray-700">อาการสำคัญ (CC)</label>
+            <textarea id="details-cc" name="ChiefComplaint" rows="2" class="mt-1 p-2 block w-full border rounded-md"></textarea>
+          </div>
+           <div class="md:col-span-3">
+             <label class="block text-sm font-medium text-gray-700">ประวัติการเจ็บป่วย (PI)</label>
+            <textarea id="details-pi" name="PresentIllness" rows="3" class="mt-1 p-2 block w-full border rounded-md"></textarea>
+          </div>
+
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-700">การวินิจฉัยแรกรับ (Admitting Dx)</label>
+            <input type="text" id="details-dx" name="AdmittingDx" class="mt-1 p-2 block w-full border rounded-md">
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700">แพทย์เจ้าของไข้</label>
+            <select id="details-doctor" name="Doctor" class="mt-1 p-2 block w-full border rounded-md">
+               </select>
+          </div>
+
+        </div>
+      </form>
+    </fieldset>
+    
+    <div class="flex justify-between items-center p-4 border-t bg-gray-50 rounded-b-lg">
+      <div>
+        <button id="transfer-bed-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg mr-2 hidden">
+          ย้ายเตียง
+        </button>
+        <button id="discharge-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg hidden">
+          จำหน่าย (Discharge)
+        </button>
+      </div>
+
+      <div>
+        <button id="edit-patient-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+          ✏️ แก้ไขข้อมูล
+        </button>
+        <button id="save-details-btn" type="submit" form="details-form" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg hidden">
+          บันทึกการแก้ไข
+        </button>
+        <button id="cancel-edit-btn" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg ml-2 hidden">
+          ยกเลิก
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
   <script src="script.js"></script>
 </body>
 </html>
