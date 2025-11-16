@@ -41,6 +41,7 @@ const detailsBedDisplay = document.getElementById("details-bed-display");
 const detailsBedSelect = document.getElementById("details-bed-select");
 const detailsDobInput = document.getElementById("details-dob");
 const detailsAgeInput = document.getElementById("details-age");
+const transferWardBtn = document.getElementById("transfer-ward-btn");
 
 
 // --- ฟังก์ชัน Utility ---
@@ -344,6 +345,7 @@ function resetDetailsModalState() {
   detailsFieldset.disabled = true;
   editPatientBtn.classList.remove("hidden");
   dischargeBtn.classList.remove("hidden");
+  transferWardBtn.classList.remove("hidden");
   transferBedBtn.classList.remove("hidden");
   saveDetailsBtn.classList.add("hidden");
   cancelEditBtn.classList.add("hidden");
@@ -369,6 +371,7 @@ async function enableEditMode() {
   detailsFieldset.disabled = false;
   editPatientBtn.classList.add("hidden");
   dischargeBtn.classList.add("hidden");
+  transferWardBtn.classList.add("hidden");
   transferBedBtn.classList.add("hidden");
   saveDetailsBtn.classList.remove("hidden");
   cancelEditBtn.classList.remove("hidden");
@@ -518,7 +521,99 @@ document.addEventListener("DOMContentLoaded", () => {
   cancelEditBtn.addEventListener("click", resetDetailsModalState);
   detailsForm.addEventListener("submit", handleUpdateSubmit);
   dischargeBtn.addEventListener("click", handleDischarge);
+  transferWardBtn.addEventListener("click", handleTransferWard);
 
+// --- (เพิ่มฟังก์ชันใหม่ทั้งหมดนี้) ---
+async function handleTransferWard() {
+  const an = document.getElementById("details-an").value;
+  const name = document.getElementById("details-name").value;
+
+  // 1. สร้างตัวเลือกตึก (ไม่รวมตึกปัจจุบัน)
+  const wardOptions = {};
+  allWards.forEach(w => {
+    if (w.value !== currentWard) {
+      wardOptions[w.value] = w.value;
+    }
+  });
+
+  if (Object.keys(wardOptions).length === 0) {
+    showError("มีเพียงตึกเดียวในระบบ", "ไม่สามารถย้ายตึกได้");
+    return;
+  }
+
+  // 2. ถามตึกใหม่
+  const { value: newWard } = await Swal.fire({
+    title: 'ย้ายตึก (ขั้นตอนที่ 1/2)',
+    text: `เลือกตึกใหม่ที่จะย้าย ${name} ไป:`,
+    input: 'select',
+    inputOptions: wardOptions,
+    inputPlaceholder: '-- เลือกตึก --',
+    showCancelButton: true,
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonText: 'ถัดไป'
+  });
+
+  if (!newWard) return; // ผู้ใช้กดยกเลิก
+
+  // 3. โหลดเตียงว่างของตึกใหม่
+  showLoading(`กำลังโหลดเตียงว่างตึก ${newWard}...`);
+  let availableBeds = [];
+  try {
+    availableBeds = await fetchAvailableBeds(newWard, null);
+    Swal.close();
+  } catch (error) {
+    showError('โหลดเตียงว่างไม่สำเร็จ!', error.message);
+    return;
+  }
+
+  if (availableBeds.length === 0) {
+    showError(`ตึก ${newWard} ไม่มีเตียงว่าง!`, "กรุณาตรวจสอบในระบบจัดการเตียง");
+    return;
+  }
+
+  const bedOptions = {};
+  availableBeds.forEach(bed => { bedOptions[bed] = bed; });
+
+  // 4. ถามเตียงใหม่
+  const { value: newBed } = await Swal.fire({
+    title: 'ย้ายตึก (ขั้นตอนที่ 2/2)',
+    text: `เลือกเตียงในตึก ${newWard}:`,
+    input: 'select',
+    inputOptions: bedOptions,
+    inputPlaceholder: '-- เลือกเตียง --',
+    showCancelButton: true,
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonText: 'ยืนยันการย้าย'
+  });
+
+  if (!newBed) return; // ผู้ใช้กดยกเลิก
+
+  // 5. ยืนยันและส่งข้อมูล
+  showLoading('กำลังย้ายผู้ป่วย...');
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "updatePatient", // เราใช้ action "update" เดิมได้เลย
+        an: an,
+        patientData: {
+          Ward: newWard,
+          Bed: newBed
+        }
+      })
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+
+    showSuccess('ย้ายผู้ป่วยสำเร็จ!');
+    closeDetailsModal();
+    loadPatients(currentWard); // โหลดตารางตึกปัจจุบันใหม่ (ผู้ป่วยจะหายไป)
+
+  } catch (error) {
+    showError('ย้ายผู้ป่วยไม่สำเร็จ', error.message);
+  }
+}
+// --- (สิ้นสุดฟังก์ชันที่เพิ่ม) ---
   // 5.3 คำนวณอายุใน Details Modal (เมื่อแก้ไข)
   detailsDobInput.addEventListener("change", () => {
     const ceDate = detailsDobInput.value;
