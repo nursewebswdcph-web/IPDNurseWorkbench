@@ -4,10 +4,13 @@ const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_W
 // ----------------------------------------------------------------
 
 
-// ตัวแปรเก็บสถานะปัจจุบัน
+// --- ตัวแปร Global ---
 let currentWard = null;
+let currentPatientAN = null; // (ใหม่)
+let currentPatientData = {}; // (ใหม่)
 let allWards = [];
-let globalConfigData = {}; // เก็บข้อมูล Config ไว้ใช้ซ้ำ
+let globalConfigData = {};
+let globalStaffList = []; // (ใหม่)
 
 // --- องค์ประกอบ UI (DOM Elements) ---
 const wardSelectionPage = document.getElementById("ward-selection");
@@ -18,7 +21,7 @@ const wardSwitcher = document.getElementById("ward-switcher");
 const patientTableBody = document.getElementById("patient-table-body");
 const clockElement = document.getElementById("realtime-clock");
 
-// --- Admit Modal Elements ---
+// (Admit Modal)
 const admitModal = document.getElementById("admit-modal");
 const openAdmitModalBtn = document.getElementById("open-admit-modal-btn");
 const closeAdmitModalBtn = document.getElementById("close-admit-modal-btn");
@@ -27,7 +30,7 @@ const admitForm = document.getElementById("admit-form");
 const admitDobInput = document.getElementById("admit-dob");
 const admitAgeInput = document.getElementById("admit-age");
 
-// --- (ใหม่) Details Modal Elements ---
+// (Details Modal)
 const detailsModal = document.getElementById("details-modal");
 const closeDetailsModalBtn = document.getElementById("close-details-modal-btn");
 const detailsForm = document.getElementById("details-form");
@@ -42,6 +45,29 @@ const detailsDobInput = document.getElementById("details-dob");
 const detailsAgeInput = document.getElementById("details-age");
 const transferWardBtn = document.getElementById("transfer-ward-btn");
 
+// --- (ใหม่!) Chart Page & Assessment Modal Elements ---
+const chartPage = document.getElementById("chart-page");
+const closeChartBtn = document.getElementById("close-chart-btn");
+const chartAnDisplay = document.getElementById("chart-an-display");
+const chartHnDisplay = document.getElementById("chart-hn-display");
+const chartNameDisplay = document.getElementById("chart-name-display");
+
+const assessmentModal = document.getElementById("assessment-modal");
+const assessmentForm = document.getElementById("assessment-form");
+const openAssessmentFormBtn = document.getElementById("open-assessment-form-btn");
+const closeAssessmentModalBtn = document.getElementById("close-assessment-modal-btn");
+const assessAnDisplay = document.getElementById("assess-an-display");
+const assessNameDisplay = document.getElementById("assess-name-display");
+const assessmentLastUpdated = document.getElementById("assessment-last-updated");
+
+// --- (ใหม่!) Braden Scale Elements ---
+const bradenScoreInputs = document.querySelectorAll(".braden-score");
+const bradenTotalScore = document.getElementById("braden-total-score");
+const bradenResult = document.getElementById("braden-result");
+
+// --- (ใหม่!) Assessor Elements ---
+const assessorNameSelect = document.getElementById("assessor-name");
+const assessorPositionInput = document.getElementById("assessor-position");
 
 // --- ฟังก์ชัน Utility ---
 
@@ -132,7 +158,19 @@ function setFormDefaults() {
   document.getElementById("admit-date").value = dateString;
   document.getElementById("admit-time").value = timeString;
 }
+function calculateBradenScore() {
+  let total = 0;
+  bradenScoreInputs.forEach(input => {
+    total += parseInt(input.value, 10) || 0;
+  });
+  bradenTotalScore.value = total;
 
+  if (total <= 9) bradenResult.textContent = "Very high risk (≤ 9)";
+  else if (total <= 12) bradenResult.textContent = "High risk (10-12)";
+  else if (total <= 14) bradenResult.textContent = "Moderate risk (13-14)";
+  else if (total <= 18) bradenResult.textContent = "Low risk (15-18)";
+  else bradenResult.textContent = "No risk (> 18)";
+}
 
 // --- ฟังก์ชันหลัก (ดึงข้อมูล) ---
 
@@ -168,9 +206,8 @@ function selectWard(wardName) {
   loadPatients(wardName);
 }
 
-// (อัปเดต) นี่คือเวอร์ชันที่แก้บั๊ก N/A แล้ว
 async function loadPatients(wardName) {
-  patientTableBody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-gray-500">กำลังโหลดข้อมูลผู้ป่วย...</td></tr>`;
+  patientTableBody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-gray-500">กำลังโหลดข้อมูลผู้ป่วย...</td></tr>`; // (เพิ่มเป็น colspan 10)
   try {
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getPatients&ward=${wardName}`);
     const result = await response.json();
@@ -178,7 +215,7 @@ async function loadPatients(wardName) {
 
     patientTableBody.innerHTML = "";
     if (result.data.length === 0) {
-      patientTableBody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-gray-400">-- ไม่มีผู้ป่วยในตึกนี้ --</td></tr>`;
+      patientTableBody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-gray-400">-- ไม่มีผู้ป่วยในตึกนี้ --</td></tr>`;
       return;
     }
 
@@ -186,17 +223,19 @@ async function loadPatients(wardName) {
       const row = document.createElement("tr");
       row.className = "hover:bg-gray-50";
       const nameCell = `<a href="#" class="text-blue-600 hover:underline font-semibold" data-an="${pt.AN}">${pt.Name}</a>`;
+      const chartButton = `<button class="chart-btn bg-indigo-100 text-indigo-700 hover:bg-indigo-200 text-xs font-bold py-1 px-3 rounded-full" data-an="${pt.AN}" data-hn="${pt.HN}" data-name="${pt.Name}">Chart</button>`;
       
       row.innerHTML = `
         <td class="p-3">${pt.Bed}</td>
         <td class="p-3">${pt.HN}</td>
         <td class="p-3">${pt.AN}</td>
         <td class="p-3">${nameCell}</td>
-        <td class="p-3">${pt.Age || 'N/A'}</td> <td class="p-3">${pt.Dept}</td>
+        <td class="p-3">${pt.Age || 'N/A'}</td>
+        <td class="p-3">${pt.Dept}</td>
         <td class="p-3">${pt.Doctor}</td>
         <td class="p-3">${new Date(pt.AdmitDate).toLocaleDateString('th-TH')}</td>
         <td class="p-3">${calculateLOS(pt.AdmitDate)}</td>
-      `;
+        <td class="p-3 text-center">${chartButton}</td> `;
       patientTableBody.appendChild(row);
     });
   } catch (error) {
@@ -616,5 +655,234 @@ async function handleTransferWard() {
     const ceDate = detailsDobInput.value;
     const beDate = convertCEtoBE(ceDate);
     detailsAgeInput.value = calculateAge(beDate); // คำนวณใหม่ แต่ยังไม่บันทึกจนกว่าจะกด Save
+  });
+});
+// --- (ใหม่!) ฟังก์ชันสำหรับ Chart Page และ Assessment ---
+
+// (ใหม่) เปิดหน้า Chart
+async function openChart(an, hn, name) {
+  currentPatientAN = an; // เก็บ AN ปัจจุบัน
+  
+  // แสดงข้อมูลหัวกระดาษ
+  chartAnDisplay.textContent = an;
+  chartHnDisplay.textContent = hn;
+  chartNameDisplay.textContent = name;
+  
+  // (โหลดข้อมูลสรุป เช่น วันที่อัปเดตล่าสุด)
+  showLoading('กำลังโหลดข้อมูลเวชระเบียน...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    
+    currentPatientData = result.data; // เก็บข้อมูลผู้ป่วยไว้ใช้
+    
+    if(currentPatientData.LastUpdatedTime) {
+      assessmentLastUpdated.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
+    } else {
+      assessmentLastUpdated.textContent = "ยังไม่เคยบันทึก";
+    }
+
+    registryPage.classList.add("hidden");
+    chartPage.classList.remove("hidden");
+    Swal.close();
+  } catch (error) {
+    showError('โหลดข้อมูลไม่สำเร็จ', error.message);
+  }
+}
+
+// (ใหม่) ปิดหน้า Chart
+function closeChart() {
+  chartPage.classList.add("hidden");
+  registryPage.classList.remove("hidden");
+  currentPatientAN = null;
+  currentPatientData = {};
+}
+
+// (ใหม่) เปิดฟอร์มประเมิน 2.6.1
+async function openAssessmentForm() {
+  showLoading('กำลังเตรียมฟอร์มประเมิน...');
+  
+  // 1. ดึงรายชื่อ Staff (ถ้ายังไม่มี)
+  if(globalStaffList.length === 0) {
+    try {
+      const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
+      const result = await response.json();
+      if (result.success) {
+        globalStaffList = result.data;
+        populateSelect(assessorNameSelect.id, globalStaffList.map(s => s.fullName));
+      }
+    } catch (e) { /* (ข้ามไปก่อนถ้าโหลดไม่ได้) */ }
+  }
+  
+  // 2. เติมข้อมูลลงฟอร์ม (ใช้ข้อมูลที่ดึงมาตอนเปิด Chart)
+  populateAssessmentForm(currentPatientData);
+  
+  // 3. แสดง Modal
+  assessmentModal.classList.remove("hidden");
+  Swal.close();
+}
+
+// (ใหม่) ปิดฟอร์มประเมิน
+function closeAssessmentModal() {
+  assessmentModal.classList.add("hidden");
+  assessmentForm.reset();
+  calculateBradenScore(); // รีเซ็ตคะแนน
+}
+
+// (ใหม่) เติมข้อมูลลงฟอร์มประเมิน (ฟังก์ชันย่อ)
+function populateAssessmentForm(data) {
+  assessmentForm.reset();
+  
+  // (ส่วนที่ 1: ดึงจากข้อมูลรับใหม่)
+  assessAnDisplay.textContent = data.AN;
+  assessNameDisplay.textContent = data.Name;
+  document.getElementById('assess-admit-date').value = data.AdmitDate;
+  document.getElementById('assess-admit-time').value = data.AdmitTime;
+  document.getElementById('assess-admit-from').value = data.AdmittedFrom;
+  document.getElementById('assess-refer-from').value = data.Refer;
+  document.getElementById('assess-cc').value = data.ChiefComplaint;
+  document.getElementById('assess-pi').value = data.PresentIllness;
+
+  // (ส่วนที่ 2-15: ดึงจากข้อมูลที่เคยบันทึก)
+  // นี่คือการ "วนลูป" เติมข้อมูลทุกช่องในฟอร์มที่มี name ตรงกับ key ใน object
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const field = assessmentForm.querySelector(`[name="${key}"]`);
+      if (field) {
+        if (field.type === 'radio' || field.type === 'checkbox') {
+          // (ตรรกะสำหรับ radio/checkbox)
+          document.querySelectorAll(`[name="${key}"][value="${data[key]}"]`).forEach(el => el.checked = true);
+        } else {
+          field.value = data[key];
+        }
+      }
+    }
+  }
+  
+  // คำนวณคะแนน Braden
+  calculateBradenScore();
+  
+  // ตั้งค่าผู้ประเมิน
+  const assessor = globalStaffList.find(s => s.fullName === data.Assessor_Name);
+  if(assessor) {
+    assessorNameSelect.value = assessor.fullName;
+    assessorPositionInput.value = assessor.position;
+  } else {
+    assessorPositionInput.value = data.Assessor_Position || "";
+  }
+}
+
+// (ใหม่) บันทึกฟอร์มประเมิน
+async function handleSaveAssessment(event) {
+  event.preventDefault();
+  showLoading('กำลังบันทึกแบบประเมิน...');
+  
+  const formData = new FormData(assessmentForm);
+  const data = Object.fromEntries(formData.entries());
+  
+  // (ดึงชื่อผู้ใช้จริง - ในอนาคต)
+  const currentUser = data.Assessor_Name || "System"; 
+
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveAssessmentData",
+        an: currentPatientAN,
+        formData: data,
+        user: currentUser
+      })
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+
+    showSuccess('บันทึกข้อมูลสำเร็จ!');
+    closeAssessmentModal();
+    // (โหลดข้อมูล Chart ใหม่)
+    openChart(currentPatientAN, chartHnDisplay.textContent, chartNameDisplay.textContent); 
+    
+  } catch (error) {
+    showError('บันทึกไม่สำเร็จ', error.message);
+  }
+}
+
+// --- Event Listeners (อัปเดตใหม่ทั้งหมด) ---
+document.addEventListener("DOMContentLoaded", () => {
+  
+  // (ส่วนเดิม)
+  updateClock(); setInterval(updateClock, 1000);
+  loadWards();
+  wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
+  
+  // (Admit Modal)
+  openAdmitModalBtn.addEventListener("click", openAdmitModal);
+  closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
+  cancelAdmitBtn.addEventListener("click", closeAdmitModal);
+  admitForm.addEventListener("submit", handleAdmitSubmit);
+  admitDobInput.addEventListener("change", () => {
+    const ceDate = admitDobInput.value;
+    const beDate = convertCEtoBE(ceDate);
+    admitAgeInput.value = calculateAge(beDate);
+  });
+
+  // (Details Modal)
+  closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
+  editPatientBtn.addEventListener("click", enableEditMode);
+  cancelEditBtn.addEventListener("click", resetDetailsModalState);
+  detailsForm.addEventListener("submit", handleUpdateSubmit);
+  dischargeBtn.addEventListener("click", handleDischarge);
+  transferWardBtn.addEventListener("click", handleTransferWard);
+  detailsDobInput.addEventListener("change", () => {
+    const ceDate = detailsDobInput.value;
+    const beDate = convertCEtoBE(ceDate);
+    detailsAgeInput.value = calculateAge(beDate);
+  });
+  
+  // (อัปเดต!) ตัวดักฟังการคลิกที่ตาราง (แยก Details กับ Chart)
+  patientTableBody.addEventListener('click', (e) => {
+    const target = e.target;
+    
+    // 1. คลิกที่ "ชื่อ" (เปิด Details Modal)
+    if (target.tagName === 'A' && target.dataset.an) {
+      e.preventDefault();
+      openDetailsModal(target.dataset.an);
+    }
+    
+    // 2. คลิกที่ "Chart" (เปิด Chart Page)
+    if (target.classList.contains('chart-btn') && target.dataset.an) {
+      e.preventDefault();
+      openChart(target.dataset.an, target.dataset.hn, target.dataset.name);
+    }
+  });
+
+  // --- (ใหม่!) Event Listeners สำหรับ Chart ---
+  
+  // ปิดหน้า Chart
+  closeChartBtn.addEventListener("click", closeChart);
+  
+  // เปิด/ปิด ฟอร์มประเมิน
+  openAssessmentFormBtn.addEventListener("click", openAssessmentForm);
+  closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
+  
+  // บันทึกฟอร์มประเมิน
+  assessmentForm.addEventListener("submit", handleSaveAssessment);
+  
+  // คำนวณคะแนน Braden
+  assessmentForm.addEventListener('change', (e) => {
+    if (e.target.classList.contains('braden-score')) {
+      calculateBradenScore();
+    }
+  });
+  
+  // อัปเดตตำแหน่ง เมื่อเลือกผู้ประเมิน
+  assessorNameSelect.addEventListener('change', (e) => {
+    const selectedName = e.target.value;
+    const staff = globalStaffList.find(s => s.fullName === selectedName);
+    if(staff) {
+      assessorPositionInput.value = staff.position;
+    } else {
+      assessorPositionInput.value = "";
+    }
   });
 });
