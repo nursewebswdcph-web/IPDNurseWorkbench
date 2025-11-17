@@ -1,5 +1,6 @@
 // =================================================================
 // == IPD Nurse Workbench script.js (Complete Version 2.6.2)
+// == (แก้ไขลำดับฟังก์ชันและลบโค้ดซ้ำซ้อนแล้ว)
 // =================================================================
 
 // ----------------------------------------------------------------
@@ -840,7 +841,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Admit Modal)
   openAdmitModalBtn.addEventListener("click", openAdmitModal);
   closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
-  cancelAdmitBtn.addEventListener("click", cancelAdmitModal);
+  cancelAdmitBtn.addEventListener("click", closeAdmitModal); // <-- (แก้ไข) จาก 'cancelAdmitModal'
   admitForm.addEventListener("submit", handleAdmitSubmit);
   admitDobInput.addEventListener("change", () => {
     const ceDate = admitDobInput.value;
