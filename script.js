@@ -1286,26 +1286,16 @@ headerRow1.appendChild(dateHeader);
   
   // (ใหม่!) อัปเดตชื่อหมวดตามเกณฑ์ใหม่
   const categories = [
-    { name: 'I.
-สภาวะสุขภาพ', isHeader: true },
-    { name: '1.
-สัญญาณชีพ', isHeader: false, scoreIndex: 1 },
-    { name: '2.
-อาการแสดงทางระบบประสาท', isHeader: false, scoreIndex: 2 },
-    { name: '3.
-การได้รับการตรวจรักษา/ผ่าตัดหรือหัตถการ', isHeader: false, scoreIndex: 3 },
-    { name: '4.
-พฤติกรรมที่ผิดปกติ อารมณ์ จิตสังคม', isHeader: false, scoreIndex: 4 },
-    { name: 'II.
-ความต้องการการดูแลขั้นต่ำ', isHeader: true },
-    { name: '5.
-ความสามารถในการปฏิบัติกิจวัตรประจำวัน', isHeader: false, scoreIndex: 5 },
-    { name: '6.
-ความต้องการการสนับสนุนด้านจิตใจและอารมณ์', isHeader: false, scoreIndex: 6 },
-    { name: '7.
-ความต้องการยา การรักษา/หัตถการและการฟื้นฟู', isHeader: false, scoreIndex: 7 },
-    { name: '8.
-ความต้องการการบรรเทาอาการรบกวน', isHeader: false, scoreIndex: 8 }
+    { name: 'I.สภาวะสุขภาพ', isHeader: true },
+    { name: '1.สัญญาณชีพ', isHeader: false, scoreIndex: 1 },
+    { name: '2.อาการแสดงทางระบบประสาท', isHeader: false, scoreIndex: 2 },
+    { name: '3.การได้รับการตรวจรักษา/ผ่าตัดหรือหัตถการ', isHeader: false, scoreIndex: 3 },
+    { name: '4.พฤติกรรมที่ผิดปกติ อารมณ์ จิตสังคม', isHeader: false, scoreIndex: 4 },
+    { name: 'II.ความต้องการการดูแลขั้นต่ำ', isHeader: true },
+    { name: '5.ความสามารถในการปฏิบัติกิจวัตรประจำวัน', isHeader: false, scoreIndex: 5 },
+    { name: '6.ความต้องการการสนับสนุนด้านจิตใจและอารมณ์', isHeader: false, scoreIndex: 6 },
+    { name: '7.ความต้องการยา การรักษา/หัตถการและการฟื้นฟู', isHeader: false, scoreIndex: 7 },
+    { name: '8.ความต้องการการบรรเทาอาการรบกวน', isHeader: false, scoreIndex: 8 }
   ];
   
   // สร้าง 10 แถว (8 หมวด + 2 หัวข้อ)
