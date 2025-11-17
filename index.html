@@ -244,8 +244,10 @@
     
   </div>
 </section>
-    <template id="preview-template-004">
+    <!-- (ใหม่!) Template สำหรับ Preview FR-IPD-004 (ฉบับสมบูรณ์) -->
+<template id="preview-template-004">
   <div class="space-y-6">
+    <!-- (CSS เฉพาะสำหรับ Preview นี้) -->
     <style>
       .preview-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; }
       @media (min-width: 768px) { .preview-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -256,6 +258,7 @@
       .preview-grid-4 { grid-template-columns: repeat(4, 1fr); }
     </style>
 
+    <!-- ข้อมูลทั่วไป -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">ข้อมูลทั่วไป</legend>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2 preview-grid">
@@ -277,6 +280,7 @@
       </div>
     </fieldset>
     
+    <!-- ประวัติ (Hx) -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">ประวัติการเจ็บป่วย (History)</legend>
       <div class="preview-grid mt-2">
@@ -299,6 +303,7 @@
       </div>
     </fieldset>
 
+    <!-- 1. การรับรู้สุขภาพ -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">1. การรับรู้สุขภาพ</legend>
       <div class="preview-grid mt-2">
@@ -311,6 +316,7 @@
       </div>
     </fieldset>
 
+    <!-- 2. โภชนาการ -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">2. โภชนาการ</legend>
       <div class="preview-grid mt-2">
@@ -323,6 +329,7 @@
       </div>
     </fieldset>
 
+    <!-- 3. การขับถ่าย -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">3. การขับถ่าย</legend>
       <div class="preview-grid mt-2">
@@ -336,6 +343,7 @@
       </div>
     </fieldset>
 
+    <!-- 4. ADL -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">4. กิจวัตรประจำวัน (ADL)</legend>
       <div class="overflow-x-auto mt-2">
@@ -359,6 +367,7 @@
       </div>
     </fieldset>
     
+    <!-- 5. การพักผ่อน -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">5. การพักผ่อน</legend>
       <div class="preview-grid mt-2">
@@ -369,6 +378,7 @@
       </div>
     </fieldset>
 
+    <!-- 6. การรับรู้ -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">6. การรับรู้และประสาทสัมผัส</legend>
       <div class="preview-grid mt-2">
@@ -384,6 +394,7 @@
       </div>
     </fieldset>
     
+    <!-- 7. การรับรู้ตนเอง -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">7. การรับรู้ตนเอง</legend>
       <div class="preview-grid mt-2">
@@ -396,6 +407,7 @@
       </div>
     </fieldset>
 
+    <!-- 8. การเผชิญภาวะเครียด -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">8. การเผชิญภาวะเครียด</legend>
       <div class="preview-grid mt-2">
@@ -409,6 +421,7 @@
       </div>
     </fieldset>
 
+    <!-- 9. บทบาท -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">9. บทบาทและสัมพันธภาพ</legend>
       <div class="preview-grid preview-grid-4 mt-2">
@@ -419,6 +432,7 @@
       </div>
     </fieldset>
 
+    <!-- 10. เพศ -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">10. เพศและการเจริญพันธุ์</legend>
       <div class="preview-grid mt-2">
@@ -429,6 +443,7 @@
       </div>
     </fieldset>
     
+    <!-- 11. ความเชื่อ -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">11. คุณค่าและความเชื่อ</legend>
       <div class="preview-grid mt-2">
@@ -441,6 +456,7 @@
       </div>
     </fieldset>
     
+    <!-- 12. การมีส่วนร่วม -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">12. การมีส่วนร่วม</legend>
       <div class="preview-grid mt-2">
@@ -451,6 +467,7 @@
       </div>
     </fieldset>
 
+    <!-- 13. Pain -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">13. PAIN MANAGEMENT</legend>
       <div class="preview-grid mt-2">
@@ -466,6 +483,7 @@
       </div>
     </fieldset>
     
+    <!-- 14. Braden -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">14. Braden Scale</legend>
       <div class="preview-grid mt-2">
@@ -480,6 +498,7 @@
       </div>
     </fieldset>
 
+    <!-- 15. Fall Risk -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">15. Fall risk assessment</legend>
       <div class="preview-grid preview-grid-4 mt-2">
@@ -494,6 +513,7 @@
       </div>
     </fieldset>
     
+    <!-- ผู้ประเมิน -->
     <fieldset class="border p-4 rounded-lg">
       <legend class="text-lg font-semibold px-2">ผู้ประเมิน</legend>
       <div class="preview-grid mt-2">
@@ -504,6 +524,22 @@
       </div>
     </fieldset>
 
+  </div>
+</template>
+
+<!-- (ใหม่!) Template สำหรับรายการที่บันทึก (1:N Forms) -->
+<template id="template-entry-list">
+  <div class="divide-y divide-gray-200">
+    <!-- (Header - จะถูกเติมโดย JS) -->
+    <!-- <div class="p-4 flex justify-between items-center">
+      <p class="text-sm text-gray-500">พบ 2 รายการ</p>
+    </div> -->
+    
+    <!-- (Entry list - จะถูกเติมโดย JS) -->
+    <!-- <div class="p-4 hover:bg-gray-100 cursor-pointer">
+      <p class="font-semibold text-blue-600">17/11/2568 10:30 น.</p>
+      <p class="text-sm text-gray-600">ผู้บันทึก: นายแพทย์ สมชาย</p>
+    </div> -->
   </div>
 </template>
   </main>
