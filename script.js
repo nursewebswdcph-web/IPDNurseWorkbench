@@ -1,6 +1,6 @@
 // =================================================================
-// == IPD Nurse Workbench script.js (Complete Version 2.6.4)
-// == (แก้ไข ID ของ Chart Page, บั๊ก, และตรรกะ Toggle)
+// == IPD Nurse Workbench script.js (Complete Version 2.7.1)
+// == (รวมทุกอย่าง, แก้บั๊กซ้ำซ้อน, เพิ่ม Preview Template)
 // =================================================================
 
 // ----------------------------------------------------------------
@@ -56,31 +56,30 @@ const detailsDobInput = document.getElementById("details-dob");
 const detailsAgeInput = document.getElementById("details-age");
 const transferWardBtn = document.getElementById("transfer-ward-btn");
 
-// (Chart Page & Assessment Modal)
+// (Chart Page)
 const chartPage = document.getElementById("chart-page");
 const closeChartBtn = document.getElementById("close-chart-btn");
 const chartAnDisplay = document.getElementById("chart-an-display");
 const chartHnDisplay = document.getElementById("chart-hn-display");
 const chartNameDisplay = document.getElementById("chart-name-display");
 
-const assessmentModal = document.getElementById("assessment-modal");
-const assessmentForm = document.getElementById("assessment-form");
-const closeAssessmentModalBtn = document.getElementById("close-assessment-modal-btn");
-const assessAnDisplay = document.getElementById("assess-an-display");
-const assessNameDisplay = document.getElementById("assess-name-display");
-
-// (Preview Area)
+// (Chart Preview Area)
 const chartPreviewTitle = document.getElementById("chart-preview-title");
 const chartPreviewContent = document.getElementById("chart-preview-content");
 const chartPreviewPlaceholder = document.getElementById("chart-preview-placeholder");
 const chartEditBtn = document.getElementById("chart-edit-btn");
 const chartAddNewBtn = document.getElementById("chart-add-new-btn");
 
-// (Assessor)
+// (Assessment Modal)
+const assessmentModal = document.getElementById("assessment-modal");
+const assessmentForm = document.getElementById("assessment-form");
+const closeAssessmentModalBtn = document.getElementById("close-assessment-modal-btn");
+const assessAnDisplay = document.getElementById("assess-an-display");
+const assessNameDisplay = document.getElementById("assess-name-display");
 const assessorNameSelect = document.getElementById("assessor-name");
 const assessorPositionInput = document.getElementById("assessor-position");
 
-// Classification Modal Elements
+// (Classification Modal)
 const classifyModal = document.getElementById("classify-modal");
 const classifyForm = document.getElementById("classify-form");
 const classifyAnDisplay = document.getElementById("classify-an-display");
@@ -92,6 +91,7 @@ const classifyAddPageBtn = document.getElementById("classify-add-page-btn");
 const closeClassifyModalBtn = document.getElementById("close-classify-modal-btn");
 const classifyTable = document.getElementById("classify-table");
 const classifyTableBody = document.getElementById("classify-table-body");
+
 
 // ----------------------------------------------------------------
 // (4) Utility Functions
@@ -185,7 +185,7 @@ function setFormDefaults() {
   document.getElementById("admit-time").value = timeString;
 }
 
-function calculateBradenScore(targetForm = assessmentForm) { // Default to main form
+function calculateBradenScore(targetForm = assessmentForm) {
   let total = 0;
   const inputs = targetForm.querySelectorAll(".braden-score");
   inputs.forEach(input => {
@@ -220,9 +220,11 @@ function populateSelect(elementId, options, defaultValue = null) {
     select.appendChild(option);
   });
 }
+
 function getISODate(date) {
   return date.toISOString().split('T')[0];
 }
+
 // ----------------------------------------------------------------
 // (5) Core App Functions (Load Wards, Select Ward, Load Patients)
 // ----------------------------------------------------------------
@@ -908,6 +910,7 @@ async function showEntryList(formType, formTitle) {
   chartPreviewContent.appendChild(preview);
 }
 
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 async function openAssessmentForm() {
   showLoading('กำลังเตรียมฟอร์มประเมิน...');
   
@@ -1041,6 +1044,7 @@ function populateAssessmentForm(data, targetForm) {
   }
 }
 
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 async function handleSaveAssessment(event) {
   event.preventDefault();
   showLoading('กำลังบันทึกแบบประเมิน...');
@@ -1102,9 +1106,7 @@ async function openClassifyModal() {
   
   // 2. รีเซ็ต Paging
   currentClassifyPage = 1;
-  classifyPageDisplay.textContent = currentClassifyPage;
-  classifyPrevPageBtn.disabled = true;
-
+  
   // 3. โหลดข้อมูลหน้า 1
   await fetchAndRenderClassifyPage(currentPatientAN, currentClassifyPage);
   
@@ -1115,7 +1117,8 @@ async function openClassifyModal() {
 // (ใหม่!) ปิด Modal จำแนกประเภท
 function closeClassifyModal() {
   classifyModal.classList.add("hidden");
-  // (อาจจะเพิ่มการเคลียร์ตารางถ้าจำเป็น)
+  // (โหลด Chart Page ใหม่ เพื่ออัปเดต "อัปเดตล่าสุด")
+  openChart(currentPatientAN, chartHnDisplay.textContent, chartNameDisplay.textContent);
 }
 
 // (ใหม่!) ดึงข้อมูลและวาดตาราง
@@ -1143,6 +1146,10 @@ function renderClassifyTable(data, page) {
   let tbody = table.querySelector("tbody");
   
   // --- 1. สร้าง Header (วันที่ และ เวร) ---
+  if (!thead) {
+      thead = document.createElement('thead');
+      table.prepend(thead);
+  }
   thead.innerHTML = ""; // เคลียร์ของเก่า
   
   const headerRow1 = document.createElement('tr');
@@ -1152,9 +1159,11 @@ function renderClassifyTable(data, page) {
   const headerRow2 = document.createElement('tr');
   headerRow2.className = 'bg-gray-50';
 
-  const today = new Date();
-  const startDate = new Date(today);
-  // (คำนวณวันเริ่มต้นของ Page นี้, สมมติ Page 1 เริ่มวันนี้)
+  // (สำคัญ!) ใช้วันที่ Admit เป็นวันเริ่มต้นของ Page 1
+  const admitDate = new Date(currentPatientData.AdmitDate || new Date());
+  
+  const startDate = new Date(admitDate);
+  // คำนวณวันเริ่มต้นของ Page นี้
   startDate.setDate(startDate.getDate() + ((page - 1) * 5));
 
   for (let i = 0; i < 5; i++) { // 5 วัน
@@ -1166,8 +1175,9 @@ function renderClassifyTable(data, page) {
     const dateHeader = document.createElement('th');
     dateHeader.colSpan = 3;
     dateHeader.className = 'p-2 border text-center text-sm font-semibold text-gray-700';
-    // (เราจะใช้ input type="date" เพื่อให้ผู้ใช้เปลี่ยนวันที่ได้ ถ้าจำเป็น)
-    dateHeader.innerHTML = `<input type="date" value="${dateString}" class="classify-date-input" data-day-index="${i}">`;
+    // (แสดงวันที่แบบ Read-only)
+    dateHeader.innerHTML = `<span class="classify-date-display" data-day-index="${i}">${currentDate.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                          <input type="hidden" value="${dateString}" class="classify-date-input" data-day-index="${i}">`;
     headerRow1.appendChild(dateHeader);
     
     // Header แถว 2 (เวร)
@@ -1200,8 +1210,14 @@ function renderClassifyTable(data, page) {
     const row = document.createElement('tr');
     row.innerHTML = `<td class="p-2 border font-semibold">${catName}</td>`;
     
+    const currentStartDate = new Date(admitDate);
+    currentStartDate.setDate(currentStartDate.getDate() + ((page - 1) * 5));
+    
     for (let i = 0; i < 5; i++) { // 5 วัน
-      const dateString = getISODate(new Date(startDate.setDate(startDate.getDate() + (i === 0 ? 0 : 1))));
+      const currentDate = new Date(currentStartDate);
+      currentDate.setDate(currentStartDate.getDate() + i);
+      const dateString = getISODate(currentDate);
+
       ['D', 'E', 'N'].forEach(shift => {
         const entry = data.find(d => d.Date === dateString && d.Shift === shift);
         const score = (entry && entry[`Score_${catIndex + 1}`]) ? entry[`Score_${catIndex + 1}`] : '';
@@ -1224,6 +1240,9 @@ function renderClassifyTable(data, page) {
     { id: 'assessor', label: 'ผู้ประเมิน (RN)', class: 'bg-gray-50' }
   ];
   
+  const summaryStartDate = new Date(admitDate);
+  summaryStartDate.setDate(summaryStartDate.getDate() + ((page - 1) * 5));
+  
   summaryRows.forEach(sr => {
     const row = document.createElement('tr');
     row.className = sr.class;
@@ -1231,7 +1250,10 @@ function renderClassifyTable(data, page) {
     row.innerHTML = `<td class="p-2 border font-bold text-right">${sr.label}</td>`;
     
     for (let i = 0; i < 5; i++) {
-      const dateString = getISODate(new Date(startDate.setDate(startDate.getDate() + (i === 0 ? 0 : 1))));
+      const currentDate = new Date(summaryStartDate);
+      currentDate.setDate(summaryStartDate.getDate() + i);
+      const dateString = getISODate(currentDate);
+
       ['D', 'E', 'N'].forEach(shift => {
         const entry = data.find(d => d.Date === dateString && d.Shift === shift);
         let value = '';
@@ -1253,9 +1275,6 @@ function renderClassifyTable(data, page) {
     }
     tbody.appendChild(row);
   });
-
-  // (รีเซ็ตวันเริ่มต้นสำหรับ loop ถัดไป)
-  startDate.setDate(startDate.getDate() - 5); 
 }
 
 // (ใหม่!) อัปเดตคะแนนรวมของ 1 คอลัมน์ (1 เวร)
@@ -1269,11 +1288,14 @@ function updateClassifyColumnTotals(inputElement) {
   // 1. วนลูป 8 หมวด
   for (let i = 1; i <= 8; i++) {
     const scoreInput = classifyTableBody.querySelector(`input[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
-    const score = parseInt(scoreInput.value, 10) || 0;
+    if (!scoreInput) continue; // (ป้องกัน Error)
+    
+    let score = parseInt(scoreInput.value, 10) || 0;
     
     // (จำกัดคะแนน 1-4)
-    if (score > 4) scoreInput.value = 4;
-    if (score < 1 && scoreInput.value !== '') scoreInput.value = 1;
+    if (score > 4) { score = 4; scoreInput.value = 4; }
+    if (score < 0) { score = 0; scoreInput.value = ''; } // (ให้เป็น 0 แต่แสดงช่องว่าง)
+    if (score < 1 && scoreInput.value !== '') { score = 1; scoreInput.value = 1; } // (ถ้าพิมพ์ 0 ให้เด้งเป็น 1)
 
     total += score;
     if (score > maxScore) maxScore = score;
@@ -1281,7 +1303,7 @@ function updateClassifyColumnTotals(inputElement) {
   
   // 2. อัปเดตช่อง Total
   const totalInput = classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
-  if (totalInput) totalInput.value = total;
+  if (totalInput) totalInput.value = total > 0 ? total : '';
   
   // 3. อัปเดตช่อง Category (ตามเกณฑ์ "หนักกว่า")
   const categoryInput = classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
@@ -1295,6 +1317,7 @@ async function autoSaveClassificationShift(inputElement) {
   
   // 1. หาวันที่
   const dateInput = classifyTable.querySelector(`input.classify-date-input[data-day-index="${dayIndex}"]`);
+  if (!dateInput) return; // (ป้องกัน Error)
   const date = dateInput.value;
   
   // 2. รวบรวมข้อมูล
@@ -1306,10 +1329,17 @@ async function autoSaveClassificationShift(inputElement) {
   };
   
   // 3. วนลูป 8 หมวด + ผู้ประเมิน
+  let hasData = false; // (เช็คว่ามีข้อมูลก่อนบันทึก)
   for (let i = 1; i <= 8; i++) {
-    entryData[`Score_${i}`] = classifyTableBody.querySelector(`input[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
+    const val = classifyTableBody.querySelector(`input[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
+    if (val) hasData = true;
+    entryData[`Score_${i}`] = val;
   }
   entryData.Assessor_Name = classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
+  if (entryData.Assessor_Name) hasData = true;
+
+  // (ถ้าไม่มีข้อมูลเลย ไม่ต้องบันทึก)
+  if (!hasData) return;
   
   // (แสดง Loading เล็กๆ)
   showLoading('กำลังบันทึก...');
@@ -1335,13 +1365,18 @@ async function autoSaveClassificationShift(inputElement) {
 
 // (ใหม่!) ฟังก์ชัน Paging
 function changeClassifyPage(direction) {
-  currentClassifyPage += direction;
+  const newPage = currentClassifyPage + direction;
+  if (newPage < 1) return; // (ห้ามต่ำกว่า 1)
+  
+  currentClassifyPage = newPage;
   fetchAndRenderClassifyPage(currentPatientAN, currentClassifyPage);
 }
+
 
 // ----------------------------------------------------------------
 // (9) MAIN EVENT LISTENERS (The *only* DOMContentLoaded)
 // ----------------------------------------------------------------
+
 document.addEventListener("DOMContentLoaded", () => {
   
   // (Init)
@@ -1352,7 +1387,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Admit Modal)
   openAdmitModalBtn.addEventListener("click", openAdmitModal);
   closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
-  cancelAdmitBtn.addEventListener("click", closeAdmitModal);
+  cancelAdmitBtn.addEventListener("click", closeAdmitModal); // (แก้ไขบั๊ก)
   admitForm.addEventListener("submit", handleAdmitSubmit);
   admitDobInput.addEventListener("change", () => {
     const ceDate = admitDobInput.value;
@@ -1376,10 +1411,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Patient Table Clicks)
   patientTableBody.addEventListener('click', (e) => {
     const target = e.target;
+    
+    // 1. Click "Name" -> Open Details Modal
     if (target.tagName === 'A' && target.dataset.an) {
       e.preventDefault();
       openDetailsModal(target.dataset.an);
     }
+    
+    // 2. Click "Chart" -> Open Chart Page
     if (target.classList.contains('chart-btn') && target.dataset.an) {
       e.preventDefault();
       openChart(target.dataset.an, target.dataset.hn, target.dataset.name);
@@ -1394,9 +1433,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const targetItem = e.target.closest('.chart-list-item');
     if (targetItem) {
       const formType = targetItem.dataset.form;
+      
+      // (ยกเลิกการเลือกอันเก่า)
       chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+      // (เลือกอันใหม่)
       targetItem.classList.add('bg-indigo-100');
-      showFormPreview(formType);
+      
+      showFormPreview(formType); // (เรียกฟังก์ชัน Preview ใหม่)
     }
   });
 
@@ -1404,7 +1447,7 @@ document.addEventListener("DOMContentLoaded", () => {
   chartEditBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
     if (formType === '004') {
-      openAssessmentForm();
+      openAssessmentForm(); // (เปิด Modal แก้ไขตัวเต็ม)
     } else {
       showComingSoon();
     }
@@ -1413,47 +1456,92 @@ document.addEventListener("DOMContentLoaded", () => {
   // (อัปเดต) คลิกปุ่ม "เพิ่มใหม่" (ในฝั่ง Preview)
   chartAddNewBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
+    // (อัปเดต!)
     if (formType === 'classify') {
-      openClassifyModal(); // (เปิด Modal จำแนกประเภท)
+      openClassifyModal(); 
     } else {
       showComingSoon();
     }
   });
   
-  // (Assessment Modal - FR-004)
+  
+  // ปิดฟอร์มประเมิน (ปุ่มบน)
   closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
-  document.getElementById("close-assessment-modal-btn-bottom").addEventListener("click", closeAssessmentModal);
+  
+  // ปิดฟอร์มประเมิน (ปุ่มล่าง)
+  const closeAssessmentModalBtnBottom = document.getElementById("close-assessment-modal-btn-bottom");
+  if(closeAssessmentModalBtnBottom) {
+    closeAssessmentModalBtnBottom.addEventListener("click", closeAssessmentModal);
+  }
+
+  // บันทึกฟอร์มประเมิน
   assessmentForm.addEventListener("submit", handleSaveAssessment);
+  
+  // (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
+  // Event listener "ตัวเดียว" ที่จัดการทุกการเปลี่ยนแปลงใน Assessment Form
   assessmentForm.addEventListener('change', (e) => {
-    // (จัดการ Braden Score)
-    if (e.target.classList.contains('braden-score')) {
-      calculateBradenScore(assessmentForm);
+    const target = e.target;
+  
+    // 1. จัดการ Braden Score
+    if (target.classList.contains('braden-score')) {
+      calculateBradenScore(assessmentForm); // (ใช้ฟอร์มหลัก)
     }
-    // (จัดการ Assessor Position)
-    if (e.target.id === 'assessor-name') {
-      const selectedName = e.target.value;
+    
+    // 2. จัดการ Assessor Position
+    if (target.id === 'assessor-name') {
+      const selectedName = target.value;
       const staff = globalStaffList.find(s => s.fullName === selectedName);
-      assessorPositionInput.value = staff ? staff.position : "";
+      if (staff) {
+        assessorPositionInput.value = staff.position;
+      } else {
+        assessorPositionInput.value = "";
+      }
     }
-    // (จัดการ Show/Hide Toggles)
-    if (e.target.classList.contains('assessment-radio-toggle')) {
-      // (ตรรกะซ่อน/แสดง ทั้งหมดยังคงทำงานเหมือนเดิม)
-      const groupName = e.target.name;
-      const form = e.target.closest('form'); 
-      if (!form) return;
-      let selectedValue = (e.target.tagName === 'SELECT') ? e.target.value : (e.target.checked ? e.target.value : null);
+  
+    // 3. จัดการ Show/Hide Toggles ทั้งหมด
+    if (target.classList.contains('assessment-radio-toggle')) {
+      const groupName = target.name;
+      // (แก้ไข) ใช้ target.closest('form') เพื่อให้ใช้ได้ทั้งฟอร์มจริงและ Preview
+      const form = target.closest('form'); 
+      if (!form) return; // (ป้องกัน Error)
+      
+      let selectedValue = null;
+      if (target.tagName === 'SELECT') {
+          selectedValue = target.value;
+      } else if (target.type === 'radio') {
+          selectedValue = target.checked ? target.value : null;
+      }
+
+      // 3.1 ซ่อนเป้าหมายทั้งหมดที่อยู่ในกลุ่มเดียวกันก่อน
       form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
-        let targetId = (sibling.tagName === 'SELECT') ? 
-          sibling.options[sibling.selectedIndex]?.dataset.controls : 
-          sibling.dataset.controls;
-        if (targetId) {
-          form.querySelector(`#${targetId}`)?.classList.add('hidden');
-          form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
+        let targetId = null;
+        if (sibling.tagName === 'SELECT') {
+          // ซ่อน <option> ทั้งหมด
+          sibling.querySelectorAll('option').forEach(opt => {
+            if (opt.dataset.controls) {
+              const el = form.querySelector(`#${opt.dataset.controls}`); // (แก้ไข)
+              if (el) el.classList.add('hidden');
+              form.querySelectorAll(`[data-follows="${opt.dataset.controls}"]`).forEach(f => f.classList.add('hidden'));
+            }
+          });
+        } else { // สำหรับ <radio>
+          targetId = sibling.dataset.controls;
+          if (targetId) {
+            const el = form.querySelector(`#${targetId}`); // (แก้ไข)
+            if (el) el.classList.add('hidden');
+            form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
+          }
         }
       });
-      let selectedTargetId = (e.target.tagName === 'SELECT') ? 
-        e.target.options[e.target.selectedIndex]?.dataset.controls : 
-        (e.target.checked ? e.target.dataset.controls : null);
+  
+      // 3.2 โชว์เฉพาะเป้าหมายที่ถูกเลือก
+      let selectedTargetId = null;
+      
+      if (target.tagName === 'SELECT') {
+        selectedTargetId = target.options[target.selectedIndex]?.dataset.controls;
+      } else if (target.type === 'radio' && target.checked) {
+        selectedTargetId = target.dataset.controls;
+      }
       
       // (ตรรกะพิเศษสำหรับ select ที่ต้องเช็คค่า)
       if (groupName === 'Substance_Alcohol' && (selectedValue === 'ดื่มเป็นประจำ' || selectedValue === 'ดื่มนาน ๆ ครั้ง')) selectedTargetId = 'alcohol-vol';
@@ -1468,8 +1556,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (groupName === 'Cogn_Speech' && selectedValue === 'ใช้ภาษาต่างประเทศ') selectedTargetId = 'cogn-speech-other';
 
       if (selectedTargetId) {
-        const targetEl = form.querySelector(`#${selectedTargetId}`);
+        const targetEl = form.querySelector(`#${selectedTargetId}`); // (แก้ไข)
         if (targetEl) targetEl.classList.remove('hidden');
+        
+        // โชว์ตัวที่ตามมา (data-follows) ด้วย
         form.querySelectorAll(`[data-follows="${selectedTargetId}"]`).forEach(f => f.classList.remove('hidden'));
       }
     }
@@ -1499,5 +1589,5 @@ document.addEventListener("DOMContentLoaded", () => {
     showError("ยังไม่รองรับ", "ฟังก์ชันเพิ่มหน้าใหม่ (หน้า 6+) ยังไม่เปิดใช้งานครับ");
     // (ในอนาคต: จะคำนวณ page ล่าสุด + 1 แล้วเปิด)
   });
-
+  
 });
