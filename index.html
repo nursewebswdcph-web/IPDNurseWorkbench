@@ -105,121 +105,211 @@
      (แก้ไข ID ใหม่) ส่วนที่ 2.6: หน้า Chart เวชระเบียน
      ==================== -->
   <section id="chart-page" class="hidden animate-fade-in">
+  
+  <div class="bg-white p-4 rounded-lg shadow mb-6 flex justify-between items-center">
+    <div>
+      <h2 class="text-2xl font-bold text-indigo-700">เวชระเบียนผู้ป่วยงานการพยาบาลผู้ป่วยใน (Patient Chart)</h2>
+      <p class="text-gray-600">AN: <strong id="chart-an-display"></strong> | HN: <strong id="chart-hn-display"></strong> | ชื่อ: <strong id="chart-name-display"></strong></p>
+    </div>
+    <button id="close-chart-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
+      &larr; กลับหน้าทะเบียน
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     
-    <!-- ส่วนหัว (Header) ของ Chart -->
-    <div class="bg-white p-4 rounded-lg shadow mb-6 flex justify-between items-center">
-      <div>
-        <h2 class="text-2xl font-bold text-indigo-700">เวชระเบียนผู้ป่วยงานการพยาบาลผู้ป่วยใน (Patient Chart)</h2>
-        <p class="text-gray-600">AN: <strong id="chart-an-display"></strong> | HN: <strong id="chart-hn-display"></strong> | ชื่อ: <strong id="chart-name-display"></strong></p>
+    <div class="lg:col-span-1">
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        
+        <ul class="divide-y divide-gray-200">
+          
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="morse">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / MAAS</h3>
+              <p class="text-sm text-gray-500">เร็วๆนี้</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-morse">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="pressure">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">แบบบันทึกการพยาบาลเพื่อป้องกันฯ แผลกดทับ</h3>
+              <p class="text-sm text-gray-500">เร็วๆนี้</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-pressure">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="classify">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">แบบบันทึกการการจำแนกประเภทผู้ป่วย</h3>
+              <p class="text-sm text-gray-500">เร็วๆนี้</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-classify">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+          
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="004">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">แบบประเมินประวัติและสมรรถนะผู้ป่วยฯ</h3>
+              <p class="text-sm text-gray-500">FR-IPD-004</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-004">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+          
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="discharge-plan">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">บันทึกการให้คำแนะนำการปฏิบัติตัวฯ</h3>
+              <p class="text-sm text-gray-400">เร็วๆ นี้</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-discharge-plan">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+          
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="005">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">รายการปัญหาสุขภาพ (FOCUS LIST)</h3>
+              <p class="text-sm text-gray-400">FR-IPD-005 (เร็วๆ นี้)</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-005">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+          
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="006">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">ใบบันทึกความก้าวหน้า (Progress Note)</h3>
+              <p class="text-sm text-gray-400">FR-IPD-006 (เร็วๆ นี้)</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-006">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+          
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="007">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย</h3>
+              <p class="text-sm text-gray-400">FR-IPD-007 (เร็วๆ นี้)</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-007">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+
+        </ul>
       </div>
-      <button id="close-chart-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">
-        &larr; กลับหน้าทะเบียน
-      </button>
     </div>
-
-    <!-- รายการฟอร์มในเวชระเบียน (ID แก้ไขใหม่ทั้งหมด) -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-      <ul class="divide-y divide-gray-200">
+    
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-lg shadow sticky top-24"> <div class="p-4 border-b flex justify-between items-center">
+          <h3 id="chart-preview-title" class="text-xl font-semibold text-indigo-700">เลือกเอกสาร</h3>
+          <div>
+            <button id="chart-add-new-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg mr-2 hidden">
+              + เพิ่มใหม่
+            </button>
+            <button id="chart-edit-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hidden">
+              ✏️ แก้ไข
+            </button>
+          </div>
+        </div>
         
-        <!-- 1. Morse (เร็วๆ นี้) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer" id="open-form-morse">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / MAAS</h3>
-            <p class="text-sm text-gray-500">เร็วๆนี้</p>
+        <div id="chart-preview-wrapper" class="overflow-y-auto" style="max-height: 75vh;">
+          <div id="chart-preview-placeholder" class="text-center text-gray-500 py-20 px-6">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 class="mt-2 text-lg font-semibold text-gray-700">กรุณาเลือกรายการเอกสาร</h3>
+            <p class="mt-1 text-sm text-gray-500">คลิกรายการด้านซ้ายเพื่อดูตัวอย่าง (Read-only) หรือกด "แก้ไข"</p>
           </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-morse">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-
-        <!-- 2. แผลกดทับ (เร็วๆ นี้) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer" id="open-form-pressure">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900">แบบบันทึกการพยาบาลเพื่อป้องกันและการดูแลผู้ป่วยที่มีแผลกดทับ</h3>
-            <p class="text-sm text-gray-500">เร็วๆนี้</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-pressure">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-
-        <!-- 3. จำแนกประเภท (เร็วๆ นี้) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer" id="open-form-classify">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900">แบบบันทึกการการจำแนกประเภทผู้ป่วย</h3>
-            <p class="text-sm text-gray-500">เร็วๆนี้</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-classify">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-        
-        <!-- 4. FR-IPD-004 (อันนี้เราจะทำ) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer" id="open-form-004">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900">แบบประเมินประวัติและสมรรถนะผู้ป่วยงานผู้ป่วยใน</h3>
-            <p class="text-sm text-gray-500">FR-IPD-004</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-004">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-        
-        <!-- 5. ให้คำแนะนำ (เร็วๆ นี้) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-not-allowed opacity-50" id="open-form-discharge-plan">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-500">บันทึกการให้คำแนะนำการปฏิบัติตัวระหว่างรับการรักษาในโรงพยาบาลและเมื่อผู้ป่วยกลับบ้าน</h3>
-            <p class="text-sm text-gray-400">เร็วๆ นี้</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-discharge-plan">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-        
-        <!-- 6. FR-IPD-005 (เร็วๆ นี้) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-not-allowed opacity-50" id="open-form-005">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-500">รายการปัญหาสุขภาพทางการพยาบาลตั้งแต่แรกรับจนจำหน่าย (FOCUS LIST)</h3>
-            <p class="text-sm text-gray-400">FR-IPD-005 (เร็วๆ นี้)</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-005">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-        
-        <!-- 7. FR-IPD-006 (เร็วๆ นี้) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-not-allowed opacity-50" id="open-form-006">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-500">ใบบันทึกความก้าวหน้าทางการพยาบาล (Progress Note)</h3>
-            <p class="text-sm text-gray-400">FR-IPD-006 (เร็วๆ นี้)</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-006">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-        
-        <!-- 8. FR-IPD-007 (เร็วๆ นี้) -->
-        <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-not-allowed opacity-50" id="open-form-007">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-500">แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย</h3>
-            <p class="text-sm text-gray-400">FR-IPD-007 (เร็วๆ นี้)</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm text-gray-600">อัปเดตล่าสุด: <span id="last-updated-007">ยังไม่เคยบันทึก</span></span>
-            <span class="text-blue-600 font-semibold ml-4">&gt;</span>
-          </div>
-        </li>
-
-      </ul>
+          
+          <div id="chart-preview-content" class="p-6"></div>
+        </div>
+      </div>
     </div>
-  </section>
+    
+  </div>
+</section>
+    <template id="preview-template-004">
+  <div class="space-y-6">
+    <style>
+      .preview-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 0.75rem; }
+      @media (min-width: 768px) { .preview-grid { grid-template-columns: repeat(3, 1fr); } }
+      .preview-grid dt { font-size: 0.875rem; font-weight: 600; color: #4B5563; }
+      .preview-grid dd { font-size: 1rem; color: #1F2937; min-height: 1.5rem; border-bottom: 1px dashed #D1D5DB; padding-bottom: 2px; }
+      .preview-grid .col-span-full { grid-column: 1 / -1; }
+    </style>
+
+    <fieldset class="border p-4 rounded-lg">
+      <legend class="text-lg font-semibold px-2">ข้อมูลทั่วไป</legend>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2 preview-grid">
+        <div><dt>วันที่รับ:</dt><dd data-field="AdmitDate"></dd></div>
+        <div><dt>เวลารับ:</dt><dd data-field="AdmitTime"></dd></div>
+        <div><dt>รับจาก:</dt><dd data-field="AdmittedFrom"></dd></div>
+        <div><dt>Refer จาก:</dt><dd data-field="Refer"></dd></div>
+        <div><dt>มาโดย:</dt><dd data-field="ArriveBy"></dd></div>
+        <div><dt>ผู้ให้ข้อมูล:</dt><dd data-field="InfoSource"></dd></div>
+        <div class="md:col-span-2"><dt>ผู้ดูแลหลัก:</dt><dd data-field="MainCaregiver_Name"></dd></div>
+        <div class="md:col-span-2"><dt>ความสัมพันธ์:</dt><dd data-field="MainCaregiver_Rel"></dd></div>
+        <div class="col-span-full"><dt>อาการสำคัญ (CC):</dt><dd data-field="ChiefComplaint"></dd></div>
+        <div class="col-span-full"><dt>ประวัติปัจจุบัน (PI):</dt><dd data-field="PresentIllness"></dd></div>
+        <div class="col-span-full"><dt>อาการแรกรับ:</dt><dd data-field="AdmitSymptoms"></dd></div>
+        <div><dt>BT:</dt><dd data-field="Admit_BT"></dd></div>
+        <div><dt>PR:</dt><dd data-field="Admit_PR"></dd></div>
+        <div><dt>RR:</dt><dd data-field="Admit_RR"></dd></div>
+        <div><dt>BP:</dt><dd data-field="Admit_BP"></dd></div>
+      </div>
+    </fieldset>
+    
+    <fieldset class="border p-4 rounded-lg">
+      <legend class="text-lg font-semibold px-2">ประวัติการเจ็บป่วย</legend>
+      <div class="preview-grid mt-2">
+        <div><dt>โรคประจำตัว:</dt><dd data-field="Hx_Status"></dd></div>
+        <div class="col-span-full"><dt>รายละเอียดโรค:</dt><dd id="preview-hx-details"></dd></div>
+        <div><dt>การแพ้ยา:</dt><dd data-field="Allergy_Status"></dd></div>
+        <div class="col-span-full"><dt>รายละเอียดการแพ้:</dt><dd data-field="Allergy_Details"></dd></div>
+        <div><dt>การผ่าตัด:</dt><dd data-field="Sx_Status"></dd></div>
+        <div class="md:col-span-2"><dt>รายละเอียดผ่าตัด:</dt><dd id="preview-sx-details"></dd></div>
+      </div>
+    </fieldset>
+
+    <fieldset class="border p-4 rounded-lg">
+      <legend class="text-lg font-semibold px-2">Braden Scale</legend>
+      <div class="preview-grid mt-2">
+        <div><dt>การรับรู้:</dt><dd data-field="Braden_Sensory"></dd></div>
+        <div><dt>ความเปียกชื้น:</dt><dd data-field="Braden_Moisture"></dd></div>
+        <div><dt>กิจกรรม:</dt><dd data-field="Braden_Activity"></dd></div>
+        <div><dt>การเคลื่อนไหว:</dt><dd data-field="Braden_Mobility"></dd></div>
+        <div><dt>โภชนาการ:</dt><dd data-field="Braden_Nutrition"></dd></div>
+        <div><dt>การเสียดสี:</dt><dd data-field="Braden_Friction"></dd></div>
+        <div class="md:col-span-2"><dt>คะแนนรวม (Total):</dt><dd data-field="Braden_Total" class="font-bold text-blue-700"></dd></div>
+      </div>
+    </fieldset>
+    
+    <fieldset class="border p-4 rounded-lg">
+      <legend class="text-lg font-semibold px-2">ผู้ประเมิน</legend>
+      <div class="preview-grid mt-2">
+        <div class="md:col-span-2"><dt>ชื่อผู้ประเมิน:</dt><dd data-field="Assessor_Name"></dd></div>
+        <div><dt>ตำแหน่ง:</dt><dd data-field="Assessor_Position"></dd></div>
+      </div>
+    </fieldset>
+
+  </div>
+</template>
 
   </main>
 
