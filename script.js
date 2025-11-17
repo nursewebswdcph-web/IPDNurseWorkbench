@@ -650,10 +650,9 @@ async function openChart(an, hn, name) {
     currentPatientData = result.data; // เก็บข้อมูลไว้ใช้
     
     // (อัปเดต) อัปเดต span ของ 004
-    const span004 = document.getElementById('last-updated-004');
-    if(span004) { // (เพิ่มการตรวจสอบ)
+    const span004 = document.getElementById('last-updated-004'); // (ใช้ ID ใหม่จาก index.html)
+    if(span004) { 
       if(currentPatientData.LastUpdatedTime) {
-        // (แก้ไข) แปลง Date จาก ISO string
         span004.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
       } else {
         span004.textContent = "ยังไม่เคยบันทึก";
@@ -664,10 +663,8 @@ async function openChart(an, hn, name) {
     registryPage.classList.add("hidden");
     chartPage.classList.remove("hidden");
     
-    // (ใหม่!) แสดง placeholder และรีเซ็ตปุ่ม
     showPreviewPlaceholder();
     
-    // (ใหม่!) ล้างการเลือกสีพื้นหลังของรายการ
     chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
     
     Swal.close();
@@ -692,7 +689,7 @@ function showPreviewPlaceholder() {
   chartAddNewBtn.classList.add("hidden");
 }
 
-// (ใหม่!) แสดง Preview โดยการ Clone
+// (แทนที่ฟังก์ชันนี้ทั้งหมด)
 function showFormPreview(formType) {
   // ซ่อน placeholder
   chartPreviewPlaceholder.classList.add("hidden");
@@ -701,33 +698,146 @@ function showFormPreview(formType) {
   if (formType === '004') {
     chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
     
-    // 1. Clone ฟอร์มหลัก
-    const formToClone = document.getElementById("assessment-form");
-    const preview = formToClone.cloneNode(true);
-    preview.id = "assessment-preview-clone"; // ตั้ง ID ใหม่ (สำคัญ)
+    // 1. Clone template
+    const template = document.getElementById("preview-template-004");
+    if (!template) {
+        showError("ไม่พบ Template", "ไม่สามารถโหลด preview-template-004");
+        return;
+    }
+    const preview = template.content.cloneNode(true);
     
-    // 2. ฉีด Clone ลงในพื้นที่ Preview
+    // 2. Populate data (วนลูป)
+    for (const key in currentPatientData) {
+      if (currentPatientData.hasOwnProperty(key)) {
+        let value = currentPatientData[key];
+        const el = preview.querySelector(`[data-field="${key}"]`);
+        
+        if (el) {
+          if (value === true || value === 'true' || value === 'on') {
+            el.textContent = "✔️"; // ใช้ checkmark สำหรับ true
+          } else if (value === false || value === 'false' || !value) {
+            el.textContent = "-"; // ใช้ - สำหรับ false หรือ ค่าว่าง
+          } else if (key === 'LastUpdatedTime') {
+            el.textContent = new Date(value).toLocaleString('th-TH'); // แปลงวันที่
+          } else {
+            el.textContent = value;
+          }
+        }
+      }
+    }
+    
+    // 3. (ตรรกะพิเศษสำหรับ Checkbox ที่รวมกัน)
+    
+    // Hx Details
+    const hxDetailEl = preview.getElementById('preview-hx-details');
+    if (hxDetailEl) {
+      const hxValues = [
+        {key: 'Hx_HT', label: 'ความดันฯ'}, {key: 'Hx_Heart', label: 'โรคหัวใจ'},
+        {key: 'Hx_Liver', label: 'โรคตับ'}, {key: 'Hx_Kidney', label: 'โรคไต'},
+        {key: 'Hx_DM', label: 'เบาหวาน'}, {key: 'Hx_Asthma', label: 'หอบหืด'},
+        {key: 'Hx_Epilepsy', label: 'ลมชัก'}, {key: 'Hx_TB', label: 'วัณโรค'},
+        {key: 'Hx_Cancer', label: `มะเร็ง (${currentPatientData['Hx_Cancer_Detail'] || ''})`},
+        {key: 'Hx_Other', label: `อื่นๆ (${currentPatientData['Hx_Other'] || ''})`}
+      ];
+      const hxText = hxValues
+        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
+        .map(k => k.label)
+        .join(', ');
+      hxDetailEl.textContent = hxText || '-';
+    }
+    
+    // Sx Details
+    const sxDetailEl = preview.getElementById('preview-sx-details');
+    if (sxDetailEl && (currentPatientData['Sx_Status'] === 'เคย')) {
+       sxDetailEl.textContent = `${currentPatientData['Sx_Details'] || ''} (เมื่อ: ${currentPatientData['Sx_Date'] || 'N/A'})`;
+    } else if (sxDetailEl) {
+       sxDetailEl.textContent = '-';
+    }
+    
+    // Admit Hx Details
+    const admitHxEl = preview.getElementById('preview-admit-hx-details');
+    if (admitHxEl && (currentPatientData['AdmitHx_Status'] === 'เคย')) {
+       admitHxEl.textContent = `${currentPatientData['AdmitHx_Disease'] || ''} (เมื่อ: ${currentPatientData['AdmitHx_Date'] || 'N/A'})`;
+    } else if (admitHxEl) {
+       admitHxEl.textContent = '-';
+    }
+    
+    // Cope Stress Details
+    const copeEl = preview.getElementById('preview-cope-stress-details');
+    if (copeEl) {
+      const copeValues = [
+        {key: 'Cope_Stress_Fear', label: 'กลัวไม่หาย'}, {key: 'Cope_Stress_Cost', label: 'ค่ารักษา'},
+        {key: 'Cope_Stress_Work', label: 'ขาดงาน'}, {key: 'Cope_Stress_Family', label: 'ครอบครัว'}
+      ];
+      const copeText = copeValues
+        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
+        .map(k => k.label)
+        .join(', ');
+      copeEl.textContent = copeText || '-';
+    }
+    
+    // Participation Details
+    const particEl = preview.getElementById('preview-partic-details');
+    if (particEl) {
+      const particValues = [
+        {key: 'Partic_Want_Info', label: 'ทราบข้อมูล'}, {key: 'Partic_Want_Skill', label: 'เรียนรู้ทักษะ'},
+        {key: 'Partic_Want_Join', label: 'ร่วมกับทีม'}
+      ];
+      const particText = particValues
+        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
+        .map(k => k.label)
+        .join(', ');
+      particEl.textContent = particText || '-';
+    }
+    
+    // Pain Effect
+    const painEffectEl = preview.getElementById('preview-pain-effect');
+    if (painEffectEl) {
+      const painValues = [
+        {key: 'Pain_Effect_Eat', label: 'การกิน'}, {key: 'Pain_Effect_Sleep', label: 'การนอน'},
+        {key: 'Pain_Effect_Activity', label: 'การทำกิจกรรม'}, {key: 'Pain_Effect_Mood', label: 'อารมณ์/สังคม'},
+        {key: 'Pain_Effect_Elim', label: 'การขับถ่าย'}, {key: 'Pain_Effect_Sex', label: 'เพศสัมพันธ์'}
+      ];
+      const painText = painValues
+        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
+        .map(k => k.label)
+        .join(', ');
+      painEffectEl.textContent = painText || '-';
+    }
+    
+    // Pain Relief
+    const painReliefEl = preview.getElementById('preview-pain-relief');
+    if (painReliefEl) {
+      const reliefValues = [
+        {key: 'Pain_Relief_Cold', label: 'Cold compress'}, {key: 'Pain_Relief_Hot', label: 'Hot compress'},
+        {key: 'Pain_Relief_Massage', label: 'Massage'}, {key: 'Pain_Relief_Relax', label: 'Relaxation'},
+        {key: 'Pain_Relief_Repo', label: 'Reposition'}, {key: 'Pain_Relief_Rest', label: 'Rest/Sleep'},
+        {key: 'Pain_Relief_Meds', label: 'Medication'}
+      ];
+      const reliefText = reliefValues
+        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
+        .map(k => k.label)
+        .join(', ');
+      painReliefEl.textContent = reliefText || '-';
+    }
+
+    // 4. ฉีด Preview ที่เสร็จแล้วลงใน Content
     chartPreviewContent.appendChild(preview);
     
-    // 3. เติมข้อมูลลงใน "Clone"
-    populateAssessmentForm(currentPatientData, preview);
-    
-    // 4. ปิดการใช้งาน (Disable) Clone และลบปุ่ม
-    preview.setAttribute('disabled', 'true');
-    preview.querySelector('.sticky.top-0')?.remove(); // ลบ Header
-    preview.querySelector('.mt-12.pt-6.border-t')?.remove(); // ลบ Footer
-    
-    // 5. แสดงปุ่ม "แก้ไข"
+    // 5. แสดงปุ่ม (FR-IPD-004 เป็น 1:1)
     chartEditBtn.classList.remove("hidden");
-    chartEditBtn.dataset.form = "004";
-    chartAddNewBtn.classList.add("hidden"); // (ยังไม่เปิดใช้งานปุ่มเพิ่มใหม่)
+    chartEditBtn.dataset.form = "004"; // บอกปุ่มว่าให้แก้ไขฟอร์มไหน
+    chartAddNewBtn.classList.add("hidden"); // ห้ามเพิ่มใหม่
     
   } else {
     // สำหรับฟอร์มอื่นๆ (เร็วๆ นี้)
-    chartPreviewTitle.textContent = `เอกสาร (เร็วๆ นี้)`;
-    chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16 px-6">ตัวอย่างฟอร์มนี้กำลังอยู่ระหว่างการพัฒนา</div>`;
+    chartPreviewTitle.textContent = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
+    chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16 px-6"><p>รายการบันทึกสำหรับฟอร์มนี้จะแสดงที่นี่</p><p>(ฟังก์ชันนี้กำลังพัฒนา)</p></div>`;
+    
+    // (สำคัญ) แสดงปุ่ม "เพิ่มใหม่"
     chartEditBtn.classList.add("hidden");
-    chartAddNewBtn.classList.add("hidden");
+    chartAddNewBtn.classList.remove("hidden"); 
+    chartAddNewBtn.dataset.form = formType;
   }
 }
 
@@ -772,7 +882,7 @@ function closeAssessmentModal() {
   calculateBradenScore(assessmentForm); // (แก้ไข)
 }
 
-// (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 function populateAssessmentForm(data, targetForm) {
   targetForm.reset();
   
@@ -794,7 +904,8 @@ function populateAssessmentForm(data, targetForm) {
   };
   
   for (const key in fieldsToSync) {
-      const el = targetForm.querySelector(`#${fieldsToSync[key]}`);
+      // (สำคัญ!) ต้องหา el ภายใน targetForm
+      const el = targetForm.querySelector(`#${fieldsToSync[key]}`); 
       if (el) el.value = data[key] || '';
   }
   
@@ -863,7 +974,7 @@ function populateAssessmentForm(data, targetForm) {
   }
 }
 
-// (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 async function handleSaveAssessment(event) {
   event.preventDefault();
   showLoading('กำลังบันทึกแบบประเมิน...');
@@ -879,7 +990,7 @@ async function handleSaveAssessment(event) {
   }
   delete data.MainCaregiver_Rel_Other_Text;
   
-  // 2. การเผชิญภาวะเครียด
+  // 2. การเผชิญภาวะเครียด (ลบคีย์ "อื่นๆ" ถ้า "มี" ไม่ได้ถูกเลือก)
   if (data.Cope_Stress_Status !== 'มี') {
       delete data.Cope_Stress_Fear;
       delete data.Cope_Stress_Cost;
@@ -914,11 +1025,10 @@ async function handleSaveAssessment(event) {
   }
 }
 
-
 // ----------------------------------------------------------------
 // (9) MAIN EVENT LISTENERS (The *only* DOMContentLoaded)
 // ----------------------------------------------------------------
-
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 document.addEventListener("DOMContentLoaded", () => {
   
   // (Init)
@@ -981,16 +1091,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // (เลือกอันใหม่)
       targetItem.classList.add('bg-indigo-100');
       
-      if (formType === '004') {
-        showFormPreview('004');
-      } else if (formType) {
-        // (รองรับปุ่ม "เร็วๆ นี้")
-        showPreviewPlaceholder(); // (รีเซ็ต)
-        chartPreviewTitle.textContent = targetItem.querySelector('h3').textContent;
-        chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16 px-6">ตัวอย่างฟอร์มนี้กำลังอยู่ระหว่างการพัฒนา</div>`;
-        chartEditBtn.classList.add("hidden");
-        chartAddNewBtn.classList.add("hidden");
-      }
+      showFormPreview(formType); // (เรียกฟังก์ชัน Preview ใหม่)
     }
   });
 
@@ -1030,7 +1131,7 @@ document.addEventListener("DOMContentLoaded", () => {
   
     // 1. จัดการ Braden Score
     if (target.classList.contains('braden-score')) {
-      calculateBradenScore(assessmentForm); // (แก้ไข)
+      calculateBradenScore(assessmentForm); // (ใช้ฟอร์มหลัก)
     }
     
     // 2. จัดการ Assessor Position
@@ -1062,6 +1163,7 @@ document.addEventListener("DOMContentLoaded", () => {
       form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
         let targetId = null;
         if (sibling.tagName === 'SELECT') {
+          // ซ่อน <option> ทั้งหมด
           sibling.querySelectorAll('option').forEach(opt => {
             if (opt.dataset.controls) {
               const el = form.querySelector(`#${opt.dataset.controls}`); // (แก้ไข)
