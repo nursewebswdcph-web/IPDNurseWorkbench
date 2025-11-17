@@ -68,8 +68,11 @@ const assessmentForm = document.getElementById("assessment-form");
 const closeAssessmentModalBtn = document.getElementById("close-assessment-modal-btn");
 const assessAnDisplay = document.getElementById("assess-an-display");
 const assessNameDisplay = document.getElementById("assess-name-display");
-// (อัปเดต ID ให้ตรงกับ index.html ใหม่)
-const assessmentLastUpdated = document.getElementById("last-updated-004"); 
+const chartPreviewTitle = document.getElementById("chart-preview-title");
+const chartPreviewContent = document.getElementById("chart-preview-content");
+const chartPreviewPlaceholder = document.getElementById("chart-preview-placeholder");
+const chartEditBtn = document.getElementById("chart-edit-btn");
+const chartAddNewBtn = document.getElementById("chart-add-new-btn");
 
 // (Assessor)
 const assessorNameSelect = document.getElementById("assessor-name");
@@ -171,7 +174,7 @@ function setFormDefaults() {
 
 function calculateBradenScore() {
   let total = 0;
-  // (อัปเดต) ค้นหา Braden Score จากภายในฟอร์ม
+  // (แก้ไข) ค้นหา Braden Score จากภายในฟอร์ม
   const inputs = assessmentForm.querySelectorAll(".braden-score");
   inputs.forEach(input => {
     total += parseInt(input.value, 10) || 0;
@@ -641,24 +644,33 @@ async function openChart(an, hn, name) {
   
   showLoading('กำลังโหลดข้อมูลเวชระเบียน...');
   try {
+    // (เรายังคงโหลดข้อมูลผู้ป่วยหลัก)
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
     
-    currentPatientData = result.data;
+    currentPatientData = result.data; // เก็บข้อมูลไว้ใช้
     
-    // (อัปเดต) อัปเดตเฉพาะ Span ของ 004
+    // (อัปเดต) อัปเดต span ของ 004
     const span004 = document.getElementById('last-updated-004');
-    if(currentPatientData.LastUpdatedTime) {
-      // (แก้ไข) แปลง Date จาก ISO string
-      span004.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
-    } else {
-      span004.textContent = "ยังไม่เคยบันทึก";
+    if(span004) {
+      if(currentPatientData.LastUpdatedTime) {
+        span004.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
+      } else {
+        span004.textContent = "ยังไม่เคยบันทึก";
+      }
     }
     // (ในอนาคต: เพิ่มการอัปเดตสำหรับ span อื่นๆ ที่มี id last-updated-...)
 
     registryPage.classList.add("hidden");
     chartPage.classList.remove("hidden");
+    
+    // (ใหม่!) แสดง placeholder และรีเซ็ตปุ่ม
+    showPreviewPlaceholder();
+    
+    // (ใหม่!) ล้างการเลือกสีพื้นหลังของรายการ
+    chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+    
     Swal.close();
   } catch (error) {
     showError('โหลดข้อมูลไม่สำเร็จ', error.message);
@@ -671,6 +683,80 @@ function closeChart() {
   currentPatientAN = null;
   currentPatientData = {};
 }
+function closeChart() {
+  chartPage.classList.add("hidden");
+  registryPage.classList.remove("hidden");
+  currentPatientAN = null;
+  currentPatientData = {};
+}
+
+// (เพิ่มฟังก์ชันใหม่)
+function showPreviewPlaceholder() {
+  chartPreviewTitle.textContent = "เลือกเอกสาร";
+  chartPreviewPlaceholder.classList.remove("hidden");
+  chartPreviewContent.innerHTML = ""; // ล้างเนื้อหาเก่า
+  chartEditBtn.classList.add("hidden");
+  chartAddNewBtn.classList.add("hidden");
+}
+
+// (เพิ่มฟังก์ชันใหม่)
+function showFormPreview(formType) {
+  // ซ่อน placeholder
+  chartPreviewPlaceholder.classList.add("hidden");
+  chartPreviewContent.innerHTML = ""; // ล้างเนื้อหาเก่า
+  
+  if (formType === '004') {
+    chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
+    
+    // 1. Clone template
+    const template = document.getElementById("preview-template-004");
+    const preview = template.content.cloneNode(true);
+    
+    // 2. Populate data
+    const fields = preview.querySelectorAll("[data-field]");
+    fields.forEach(field => {
+      const key = field.dataset.field;
+      let value = currentPatientData[key] || '-';
+      field.textContent = value;
+    });
+    
+    // (ตรรกะพิเศษสำหรับ Hx Details)
+    const hxDetailEl = preview.getElementById('preview-hx-details');
+    if (hxDetailEl && (currentPatientData['Hx_Status'] === 'มี')) {
+       hxDetailEl.textContent = ['Hx_HT', 'Hx_Heart', 'Hx_Liver', 'Hx_Kidney', 'Hx_DM', 'Hx_Asthma', 'Hx_Epilepsy', 'Hx_TB', 'Hx_Cancer', 'Hx_Other']
+                         .filter(k => currentPatientData[k] === true || currentPatientData[k] === 'true')
+                         .map(k => k.replace('Hx_', ''))
+                         .join(', ') || 'ไม่ได้ระบุ';
+    } else if (hxDetailEl) {
+       hxDetailEl.textContent = '-';
+    }
+    
+    // (ตรรกะพิเศษสำหรับ Sx Details)
+    const sxDetailEl = preview.getElementById('preview-sx-details');
+    if (sxDetailEl && (currentPatientData['Sx_Status'] === 'เคย')) {
+       sxDetailEl.textContent = `${currentPatientData['Sx_Details'] || ''} (เมื่อ: ${currentPatientData['Sx_Date'] || 'N/A'})`;
+    } else if (sxDetailEl) {
+       sxDetailEl.textContent = '-';
+    }
+
+    // 3. Inject into preview area
+    chartPreviewContent.appendChild(preview);
+    
+    // 4. Show buttons
+    chartEditBtn.classList.remove("hidden");
+    chartEditBtn.dataset.form = "004"; // บอกปุ่มว่าให้แก้ไขฟอร์มไหน
+    // (ยังไม่เปิดใช้งานปุ่มเพิ่มใหม่)
+    // chartAddNewBtn.classList.remove("hidden"); 
+    
+  } else {
+    // สำหรับฟอร์มอื่นๆ (เร็วๆ นี้)
+    chartPreviewTitle.textContent = `เอกสาร (เร็วๆ นี้)`;
+    chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16">ตัวอย่างฟอร์ม ${formType} ยังไม่พร้อมใช้งาน</div>`;
+    chartEditBtn.classList.add("hidden");
+    chartAddNewBtn.classList.add("hidden");
+  }
+}
+
 
 async function openAssessmentForm() {
   showLoading('กำลังเตรียมฟอร์มประเมิน...');
@@ -864,7 +950,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cancelEditBtn.addEventListener("click", resetDetailsModalState);
   detailsForm.addEventListener("submit", handleUpdateSubmit);
   dischargeBtn.addEventListener("click", handleDischarge);
-  transferWardBtn.addEventListener("click", handleTransferWard); // (ย้ายมาอยู่นอกสุดแล้ว)
+  transferWardBtn.addEventListener("click", handleTransferWard);
   detailsDobInput.addEventListener("change", () => {
     const ceDate = detailsDobInput.value;
     const beDate = convertCEtoBE(ceDate);
@@ -888,29 +974,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // (Chart Page & Assessment Modal)
+  // --- (นี่คือ Event Listener ที่แก้ไขใหม่ทั้งหมด) ---
+  
+  // 1. ปิดหน้า Chart
   closeChartBtn.addEventListener("click", closeChart);
   
-  // (อัปเดต) เชื่อมต่อปุ่ม "FR-IPD-004"
-  const openForm004Btn = document.getElementById("open-form-004");
-  if(openForm004Btn) {
-    openForm004Btn.addEventListener("click", openAssessmentForm);
-  }
-  
-  // (อัปเดต) เชื่อมต่อปุ่ม "เร็วๆ นี้"
-  const comingSoonBtns = [
-    document.getElementById("open-form-morse"),
-    document.getElementById("open-form-pressure"),
-    document.getElementById("open-form-classify"),
-    document.getElementById("open-form-discharge-plan"),
-    document.getElementById("open-form-005"),
-    document.getElementById("open-form-006"),
-    document.getElementById("open-form-007")
-  ];
-  comingSoonBtns.forEach(btn => {
-    if(btn) btn.addEventListener("click", showComingSoon);
+  // 2. คลิกรายการฟอร์มด้านซ้าย (ใช้ Event Delegation)
+  chartPage.addEventListener('click', (e) => {
+    const targetItem = e.target.closest('.chart-list-item');
+    if (targetItem) {
+      const formType = targetItem.dataset.form;
+      
+      // (ยกเลิกการเลือกอันเก่า)
+      chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+      // (เลือกอันใหม่)
+      targetItem.classList.add('bg-indigo-100');
+      
+      if (formType === '004') {
+        showFormPreview('004');
+      } else if (formType) {
+        // (รองรับปุ่ม "เร็วๆ นี้")
+        showPreviewPlaceholder(); // (รีเซ็ต)
+        chartPreviewTitle.textContent = targetItem.querySelector('h3').textContent;
+        chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16">ตัวอย่างฟอร์มนี้กำลังอยู่ระหว่างการพัฒนา</div>`;
+        chartEditBtn.classList.add("hidden");
+        chartAddNewBtn.classList.add("hidden");
+      }
+    }
+  });
+
+  // 3. คลิกปุ่ม "แก้ไข" (ในฝั่ง Preview)
+  chartEditBtn.addEventListener('click', (e) => {
+    const formType = e.target.dataset.form;
+    if (formType === '004') {
+      openAssessmentForm(); // (เปิด Modal แก้ไขตัวเต็ม)
+    } else {
+      showComingSoon();
+    }
   });
   
+  // 4. คลิกปุ่ม "เพิ่มใหม่" (ในฝั่ง Preview)
+  chartAddNewBtn.addEventListener('click', (e) => {
+    // (ตรรกะสำหรับเพิ่มฟอร์มใบใหม่)
+    showComingSoon();
+  });
+
+  // --- (Event Listeners สำหรับ Assessment Modal เหมือนเดิม) ---
   
   // ปิดฟอร์มประเมิน (ปุ่มบน)
   closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
@@ -924,7 +1033,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // บันทึกฟอร์มประเมิน
   assessmentForm.addEventListener("submit", handleSaveAssessment);
   
-  // (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
   // Event listener "ตัวเดียว" ที่จัดการทุกการเปลี่ยนแปลงใน Assessment Form
   assessmentForm.addEventListener('change', (e) => {
     const target = e.target;
