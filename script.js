@@ -695,6 +695,28 @@ function populateAssessmentForm(data) {
   document.getElementById('assess-cc').value = data.ChiefComplaint;
   document.getElementById('assess-pi').value = data.PresentIllness;
 
+  // --- (เพิ่มโค้ดส่วนนี้) ---
+// (ตรรกะพิเศษสำหรับ MainCaregiver_Rel ที่เป็น Radio Button)
+let rel = data.MainCaregiver_Rel || "";
+let relOtherText = "";
+
+// ตรวจสอบว่าค่าที่บันทึกไว้เป็น "อื่นๆ: ..." หรือไม่
+if (rel.startsWith("อื่นๆ:")) {
+  relOtherText = rel.substring(5).trim(); // ดึงข้อความหลัง "อื่นๆ: "
+  rel = "อื่นๆ"; // ตั้งค่าให้ Radio "อื่นๆ" ถูกเลือก
+}
+
+// 1. ติ๊ก Radio ที่ถูกต้อง
+const relRadio = assessmentForm.querySelector(`[name="MainCaregiver_Rel"][value="${rel}"]`);
+if (relRadio) {
+  relRadio.checked = true;
+}
+// 2. เติมช่อง Text "อื่นๆ"
+const relOtherInput = assessmentForm.querySelector(`[name="MainCaregiver_Rel_Other_Text"]`);
+if (relOtherInput) {
+  relOtherInput.value = relOtherText;
+}
+// --- (สิ้นสุดโค้ดที่เพิ่ม) ---
   // (Part 2-15: Populate from saved assessment data)
   for (const key in data) {
     if (data.hasOwnProperty(key)) {
@@ -733,7 +755,16 @@ async function handleSaveAssessment(event) {
   
   const formData = new FormData(assessmentForm);
   const data = Object.fromEntries(formData.entries());
-  
+  // --- (เพิ่มโค้ดส่วนนี้) ---
+// (ตรรกะพิเศษสำหรับ MainCaregiver_Rel)
+// ถ้ารายการที่เลือกคือ "อื่นๆ"
+if (data.MainCaregiver_Rel === 'อื่นๆ') {
+  // ให้รวมข้อความจากช่อง "อื่นๆ" เข้าไปด้วย
+  data.MainCaregiver_Rel = 'อื่นๆ: ' + (data.MainCaregiver_Rel_Other_Text || "").trim();
+}
+// ลบคีย์ชั่วคราวทิ้ง ก่อนส่งไปบันทึก
+delete data.MainCaregiver_Rel_Other_Text;
+// --- (สิ้นสุดโค้ดที่เพิ่ม) ---
   const currentUser = data.Assessor_Name || "System"; 
 
   try {
