@@ -1026,14 +1026,61 @@ function populateAssessmentForm(data, targetForm) {
   }
 }
 
-async function handleSaveAssessment
+async function handleSaveAssessment(event) {
+  event.preventDefault();
+  showLoading('กำลังบันทึกแบบประเมิน...');
+  
+  const formData = new FormData(assessmentForm);
+  const data = Object.fromEntries(formData.entries());
+  
+  // --- (ตรรกะพิเศษสำหรับฟิลด์ที่ต้อง "รวม" ข้อมูล) ---
+  
+  // 1. ความสัมพันธ์ผู้ดูแล
+  if (data.MainCaregiver_Rel === 'อื่นๆ') {
+    data.MainCaregiver_Rel = 'อื่นๆ: ' + (data.MainCaregiver_Rel_Other_Text || "").trim();
+  }
+  delete data.MainCaregiver_Rel_Other_Text;
+  
+  // 2. การเผชิญภาวะเครียด (ตามคอลัมน์ใหม่)
+  if (data.Cope_Stress_Status !== 'มี') {
+      delete data.Cope_Stress_Fear;
+      delete data.Cope_Stress_Cost;
+      delete data.Cope_Stress_Work;
+      delete data.Cope_Stress_Family;
+      delete data.Cope_Stress_Other_Text;
+  }
+  // --- (สิ้นสุดตรรกะพิเศษ) ---
+
+  const currentUser = data.Assessor_Name || "System"; 
+
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveAssessmentData",
+        an: currentPatientAN,
+        formData: data,
+        user: currentUser
+      })
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+
+    showSuccess('บันทึกข้อมูลสำเร็จ!');
+    closeAssessmentModal();
+    // (โหลดข้อมูล Chart ใหม่)
+    openChart(currentPatientAN, chartHnDisplay.textContent, chartNameDisplay.textContent); 
+    
+  } catch (error) {
+    showError('บันทึกไม่สำเร็จ', error.message);
+  }
+}
 
 // ----------------------------------------------------------------
 // (9) MAIN EVENT LISTENERS (The *only* DOMContentLoaded)
 // ----------------------------------------------------------------
 // (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 document.addEventListener("DOMContentLoaded", () => {
-  
   // (Init)
   updateClock(); setInterval(updateClock, 1000);
   loadWards();
