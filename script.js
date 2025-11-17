@@ -653,6 +653,7 @@ async function openChart(an, hn, name) {
     const span004 = document.getElementById('last-updated-004'); // (ใช้ ID ใหม่จาก index.html)
     if(span004) { 
       if(currentPatientData.LastUpdatedTime) {
+        // (แก้ไข) แปลง Date จาก ISO string
         span004.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
       } else {
         span004.textContent = "ยังไม่เคยบันทึก";
@@ -695,6 +696,7 @@ function showFormPreview(formType) {
   chartPreviewPlaceholder.classList.add("hidden");
   chartPreviewContent.innerHTML = ""; // ล้างเนื้อหาเก่า
   
+  // (ใหม่!) ตรรกะ 1:1 (ฟอร์มประเมินแรกรับ)
   if (formType === '004') {
     chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
     
@@ -829,16 +831,66 @@ function showFormPreview(formType) {
     chartEditBtn.dataset.form = "004"; // บอกปุ่มว่าให้แก้ไขฟอร์มไหน
     chartAddNewBtn.classList.add("hidden"); // ห้ามเพิ่มใหม่
     
-  } else {
+  } 
+  
+  // (ใหม่!) ตรรกะ 1:N (ฟอร์มที่เพิ่มได้หลายครั้ง)
+  else {
     // สำหรับฟอร์มอื่นๆ (เร็วๆ นี้)
-    chartPreviewTitle.textContent = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
-    chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16 px-6"><p>รายการบันทึกสำหรับฟอร์มนี้จะแสดงที่นี่</p><p>(ฟังก์ชันนี้กำลังพัฒนา)</p></div>`;
+    const formTitle = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
+    chartPreviewTitle.textContent = formTitle;
+    
+    // (เรียกฟังก์ชันใหม่เพื่อแสดง "รายการที่บันทึก")
+    showEntryList(formType, formTitle);
     
     // (สำคัญ) แสดงปุ่ม "เพิ่มใหม่"
     chartEditBtn.classList.add("hidden");
     chartAddNewBtn.classList.remove("hidden"); 
     chartAddNewBtn.dataset.form = formType;
   }
+}
+
+// (เพิ่มฟังก์ชันใหม่นี้)
+async function showEntryList(formType, formTitle) {
+  const template = document.getElementById("template-entry-list");
+  if (!template) {
+    showError("ไม่พบ Template", "ไม่สามารถโหลด template-entry-list");
+    return;
+  }
+  
+  const preview = template.content.cloneNode(true);
+  
+  // (ขั้นตอนนี้จะดึงข้อมูลจริงในอนาคต)
+  // (ตอนนี้เราจะแสดงข้อมูลจำลอง)
+  
+  // (Mock Data)
+  const mockEntries = [
+    { id: 1, date: '17/11/2568 10:30 น.', user: 'นายแพทย์สมชาย' },
+    { id: 2, date: '18/11/2568 09:15 น.', user: 'พยาบาลสุดา' }
+  ];
+  
+  // สร้าง Header
+  const header = document.createElement('div');
+  header.className = 'p-4 flex justify-between items-center';
+  header.innerHTML = `<p class="text-sm text-gray-500">พบ ${mockEntries.length} รายการ (ข้อมูลจำลอง)</p>`;
+  preview.prepend(header);
+  
+  // สร้างรายการ
+  mockEntries.forEach(entry => {
+    const entryDiv = document.createElement('div');
+    entryDiv.className = 'p-4 hover:bg-gray-100 cursor-pointer entry-list-item';
+    entryDiv.dataset.entryId = entry.id;
+    entryDiv.innerHTML = `
+      <p class="font-semibold text-blue-600">${entry.date}</p>
+      <p class="text-sm text-gray-600">ผู้บันทึก: ${entry.user}</p>
+    `;
+    // (เพิ่ม Event Listener ให้ปุ่มนี้ในอนาคต)
+    entryDiv.onclick = () => {
+        showError('ฟังก์ชัน Preview (Read-only)', 'ฟังก์ชันดูรายละเอียดของรายการนี้ ยังอยู่ระหว่างการพัฒนาครับ');
+    };
+    preview.appendChild(entryDiv);
+  });
+  
+  chartPreviewContent.appendChild(preview);
 }
 
 async function openAssessmentForm() {
@@ -974,56 +1026,7 @@ function populateAssessmentForm(data, targetForm) {
   }
 }
 
-// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
-async function handleSaveAssessment(event) {
-  event.preventDefault();
-  showLoading('กำลังบันทึกแบบประเมิน...');
-  
-  const formData = new FormData(assessmentForm);
-  const data = Object.fromEntries(formData.entries());
-  
-  // --- (ตรรกะพิเศษสำหรับฟิลด์ที่ต้อง "รวม" ข้อมูล) ---
-  
-  // 1. ความสัมพันธ์ผู้ดูแล
-  if (data.MainCaregiver_Rel === 'อื่นๆ') {
-    data.MainCaregiver_Rel = 'อื่นๆ: ' + (data.MainCaregiver_Rel_Other_Text || "").trim();
-  }
-  delete data.MainCaregiver_Rel_Other_Text;
-  
-  // 2. การเผชิญภาวะเครียด (ลบคีย์ "อื่นๆ" ถ้า "มี" ไม่ได้ถูกเลือก)
-  if (data.Cope_Stress_Status !== 'มี') {
-      delete data.Cope_Stress_Fear;
-      delete data.Cope_Stress_Cost;
-      delete data.Cope_Stress_Work;
-      delete data.Cope_Stress_Family;
-      delete data.Cope_Stress_Other_Text;
-  }
-  // --- (สิ้นสุดตรรกะพิเศษ) ---
-
-  const currentUser = data.Assessor_Name || "System"; 
-
-  try {
-    const response = await fetch(GAS_WEB_APP_URL, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "saveAssessmentData",
-        an: currentPatientAN,
-        formData: data,
-        user: currentUser
-      })
-    });
-    const result = await response.json();
-    if (!result.success) throw new Error(result.message);
-
-    showSuccess('บันทึกข้อมูลสำเร็จ!');
-    closeAssessmentModal();
-    // (โหลดข้อมูล Chart ใหม่)
-    openChart(currentPatientAN, chartHnDisplay.textContent, chartNameDisplay.textContent); 
-    
-  } catch (error) {
-    showError('บันทึกไม่สำเร็จ', error.message);
-  }
-}
+async function handleSaveAssessment
 
 // ----------------------------------------------------------------
 // (9) MAIN EVENT LISTENERS (The *only* DOMContentLoaded)
@@ -1107,8 +1110,11 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // (อัปเดต) คลิกปุ่ม "เพิ่มใหม่" (ในฝั่ง Preview)
   chartAddNewBtn.addEventListener('click', (e) => {
-    // (ตรรกะสำหรับเพิ่มฟอร์มใบใหม่)
-    showComingSoon();
+    const formType = e.target.dataset.form;
+    // (ในอนาคต: เราจะเช็ค formType เพื่อเปิด Modal ที่ถูกต้อง)
+    // if (formType === '006') { openProgressNoteModal(); }
+    
+    showComingSoon(); // (ตอนนี้ให้แสดง Coming Soon ไปก่อน)
   });
   
   
