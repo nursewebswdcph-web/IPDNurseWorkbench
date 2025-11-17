@@ -967,6 +967,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (groupName === 'HP_Care' && selectedValue === 'อื่นๆ') selectedTargetId = 'hp-care-other';
       if (groupName === 'Nutri_Type' && selectedValue === 'อาหารเฉพาะโรค') selectedTargetId = 'nutri-type-detail';
       if (groupName === 'Belief_Cause' && selectedValue === 'อื่นๆ') selectedTargetId = 'belief-cause-other';
+      if (groupName === 'Elim_Urine_Status' && selectedValue === 'ไม่ปกติ') selectedTargetId = 'elim-urine-detail';
+      if (groupName === 'Elim_Bowel_Status' && selectedValue === 'ไม่ปกติ') selectedTargetId = 'elim-bowel-detail';
+      if (groupName === 'Cogn_Speech' && selectedValue === 'ใช้ภาษาต่างประเทศ') selectedTargetId = 'cogn-speech-other';
 
       if (selectedTargetId) {
         const targetEl = document.getElementById(selectedTargetId);
