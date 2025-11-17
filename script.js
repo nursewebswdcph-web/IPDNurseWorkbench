@@ -1,5 +1,5 @@
 // =================================================================
-// == IPD Nurse Workbench script.js (Complete Version 2.6)
+// == IPD Nurse Workbench script.js (Complete Version 2.6.2)
 // =================================================================
 
 // ----------------------------------------------------------------
@@ -165,19 +165,29 @@ function setFormDefaults() {
 
 function calculateBradenScore() {
   let total = 0;
-  bradenScoreInputs.forEach(input => {
+  // (แก้ไข) ต้องมั่นใจว่า bradenScoreInputs ถูกต้อง
+  const inputs = assessmentForm.querySelectorAll(".braden-score");
+  inputs.forEach(input => {
     total += parseInt(input.value, 10) || 0;
   });
-  bradenTotalScore.value = total;
-  if (total <= 9) bradenResult.textContent = "Very high risk (≤ 9)";
-  else if (total <= 12) bradenResult.textContent = "High risk (10-12)";
-  else if (total <= 14) bradenResult.textContent = "Moderate risk (13-14)";
-  else if (total <= 18) bradenResult.textContent = "Low risk (15-18)";
-  else bradenResult.textContent = "No risk (> 18)";
+  
+  const totalEl = document.getElementById("braden-total-score");
+  const resultEl = document.getElementById("braden-result");
+  
+  if(totalEl) totalEl.value = total;
+
+  if(resultEl) {
+    if (total <= 9) resultEl.textContent = "Very high risk (≤ 9)";
+    else if (total <= 12) resultEl.textContent = "High risk (10-12)";
+    else if (total <= 14) resultEl.textContent = "Moderate risk (13-14)";
+    else if (total <= 18) resultEl.textContent = "Low risk (15-18)";
+    else resultEl.textContent = "No risk (> 18)";
+  }
 }
 
 function populateSelect(elementId, options, defaultValue = null) {
   const select = document.getElementById(elementId);
+  if (!select) return; // (เพิ่ม Guard Clause)
   select.innerHTML = `<option value="">-- กรุณาเลือก --</option>`;
   options.forEach(optValue => {
     const option = document.createElement("option");
@@ -527,6 +537,7 @@ async function handleDischarge() {
   }
 }
 
+// (จัดลำดับใหม่!) ย้ายฟังก์ชันนี้มาไว้ "ก่อน" ที่จะถูกเรียกใช้
 async function handleTransferWard() {
   const an = document.getElementById("details-an").value;
   const name = document.getElementById("details-name").value;
@@ -682,10 +693,11 @@ function closeAssessmentModal() {
   calculateBradenScore();
 }
 
+// (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
 function populateAssessmentForm(data) {
   assessmentForm.reset();
   
-  // (Part 1: Populate from admission data)
+  // (ส่วนที่ 1: ดึงจากข้อมูลรับใหม่)
   assessAnDisplay.textContent = data.AN;
   assessNameDisplay.textContent = data.Name;
   document.getElementById('assess-admit-date').value = data.AdmitDate;
@@ -695,76 +707,99 @@ function populateAssessmentForm(data) {
   document.getElementById('assess-cc').value = data.ChiefComplaint;
   document.getElementById('assess-pi').value = data.PresentIllness;
 
-  // --- (เพิ่มโค้ดส่วนนี้) ---
-// (ตรรกะพิเศษสำหรับ MainCaregiver_Rel ที่เป็น Radio Button)
-let rel = data.MainCaregiver_Rel || "";
-let relOtherText = "";
+  // (ตรรกะพิเศษสำหรับ MainCaregiver_Rel ที่เป็น Radio Button)
+  let rel = data.MainCaregiver_Rel || "";
+  let relOtherText = "";
+  
+  // ตรวจสอบว่าค่าที่บันทึกไว้เป็น "อื่นๆ: ..." หรือไม่
+  if (rel.startsWith("อื่นๆ:")) {
+    relOtherText = rel.substring(5).trim(); // ดึงข้อความหลัง "อื่นๆ: "
+    rel = "อื่นๆ"; // ตั้งค่าให้ Radio "อื่นๆ" ถูกเลือก
+  }
+  
+  // 1. ติ๊ก Radio ที่ถูกต้อง
+  const relRadio = assessmentForm.querySelector(`[name="MainCaregiver_Rel"][value="${rel}"]`);
+  if (relRadio) {
+    relRadio.checked = true;
+  }
+  // 2. เติมช่อง Text "อื่นๆ"
+  const relOtherInput = assessmentForm.querySelector(`[name="MainCaregiver_Rel_Other_Text"]`);
+  if (relOtherInput) {
+    relOtherInput.value = relOtherText;
+  }
 
-// ตรวจสอบว่าค่าที่บันทึกไว้เป็น "อื่นๆ: ..." หรือไม่
-if (rel.startsWith("อื่นๆ:")) {
-  relOtherText = rel.substring(5).trim(); // ดึงข้อความหลัง "อื่นๆ: "
-  rel = "อื่นๆ"; // ตั้งค่าให้ Radio "อื่นๆ" ถูกเลือก
-}
-
-// 1. ติ๊ก Radio ที่ถูกต้อง
-const relRadio = assessmentForm.querySelector(`[name="MainCaregiver_Rel"][value="${rel}"]`);
-if (relRadio) {
-  relRadio.checked = true;
-}
-// 2. เติมช่อง Text "อื่นๆ"
-const relOtherInput = assessmentForm.querySelector(`[name="MainCaregiver_Rel_Other_Text"]`);
-if (relOtherInput) {
-  relOtherInput.value = relOtherText;
-}
-// --- (สิ้นสุดโค้ดที่เพิ่ม) ---
-  // (Part 2-15: Populate from saved assessment data)
+  // (ส่วนที่ 2-15: ดึงจากข้อมูลที่เคยบันทึก)
+  // นี่คือการ "วนลูป" เติมข้อมูลทุกช่องในฟอร์มที่มี name ตรงกับ key ใน object
   for (const key in data) {
     if (data.hasOwnProperty(key)) {
       const field = assessmentForm.querySelector(`[name="${key}"]`);
       if (field) {
-        if (field.type === 'radio' || field.type === 'checkbox') {
-          // Find all elements for this radio/checkbox group and check the one with the correct value
-          document.querySelectorAll(`[name="${key}"]`).forEach(el => {
-            if(el.value == data[key]) {
-              el.checked = true;
-            }
-          });
+        if (field.type === 'radio') {
+          // ตรวจสอบ Radio Button
+          document.querySelectorAll(`[name="${key}"][value="${data[key]}"]`).forEach(el => el.checked = true);
+        } else if (field.type === 'checkbox') {
+          // ตรวจสอบ Checkbox (ต้องเช็คหลายค่า เพราะชีตอาจเก็บเป็น true, "true", "on")
+          if (data[key] === true || data[key] === 'true' || data[key] === 'on') {
+            field.checked = true;
+          }
         } else {
+          // เติมค่าอื่นๆ (text, select, date, time)
           field.value = data[key];
         }
       }
     }
   }
   
+  // (ใหม่!) หลังจากเติมข้อมูลแล้ว ให้สั่งอัปเดต UI ของ Toggle ทั้งหมด
+  // เพื่อแสดง/ซ่อนช่องที่ถูกต้องตามข้อมูลที่โหลดมา
+  assessmentForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
+    // สร้าง 'change' event และส่งมัน
+    const event = new Event('change', { 'bubbles': true });
+    el.dispatchEvent(event);
+  });
+  
+  // คำนวณคะแนน Braden
   calculateBradenScore();
   
+  // ตั้งค่าผู้ประเมิน
   const assessor = globalStaffList.find(s => s.fullName === data.Assessor_Name);
   if(assessor) {
     assessorNameSelect.value = assessor.fullName;
     assessorPositionInput.value = assessor.position;
   } else {
-    // If assessor not in list, just show the name/position saved
+    // ถ้าผู้ประเมินไม่อยู่ใน List (เช่น ลาออกไปแล้ว) ให้แสดงชื่อที่เคยบันทึกไว้
     assessorNameSelect.value = data.Assessor_Name || "";
     assessorPositionInput.value = data.Assessor_Position || "";
   }
 }
 
+// (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
 async function handleSaveAssessment(event) {
   event.preventDefault();
   showLoading('กำลังบันทึกแบบประเมิน...');
   
   const formData = new FormData(assessmentForm);
   const data = Object.fromEntries(formData.entries());
-  // --- (เพิ่มโค้ดส่วนนี้) ---
-// (ตรรกะพิเศษสำหรับ MainCaregiver_Rel)
-// ถ้ารายการที่เลือกคือ "อื่นๆ"
-if (data.MainCaregiver_Rel === 'อื่นๆ') {
-  // ให้รวมข้อความจากช่อง "อื่นๆ" เข้าไปด้วย
-  data.MainCaregiver_Rel = 'อื่นๆ: ' + (data.MainCaregiver_Rel_Other_Text || "").trim();
-}
-// ลบคีย์ชั่วคราวทิ้ง ก่อนส่งไปบันทึก
-delete data.MainCaregiver_Rel_Other_Text;
-// --- (สิ้นสุดโค้ดที่เพิ่ม) ---
+  
+  // --- (ตรรกะพิเศษสำหรับฟิลด์ที่ต้อง "รวม" ข้อมูล) ---
+  
+  // 1. ความสัมพันธ์ผู้ดูแล
+  if (data.MainCaregiver_Rel === 'อื่นๆ') {
+    data.MainCaregiver_Rel = 'อื่นๆ: ' + (data.MainCaregiver_Rel_Other_Text || "").trim();
+  }
+  delete data.MainCaregiver_Rel_Other_Text; // ลบคีย์ชั่วคราว
+  
+  // 2. การเผชิญภาวะเครียด (ลบคีย์ "อื่นๆ" ถ้า "มี" ไม่ได้ถูกเลือก)
+  if (data.Cope_Stress_Status !== 'มี') {
+      delete data.Cope_Stress_Fear;
+      delete data.Cope_Stress_Cost;
+      delete data.Cope_Stress_Work;
+      delete data.Cope_Stress_Family;
+      delete data.Cope_Stress_Other_Text;
+  }
+  // --- (สิ้นสุดตรรกะพิเศษ) ---
+
+  // (ดึงชื่อผู้ใช้จริง - ในอนาคต)
   const currentUser = data.Assessor_Name || "System"; 
 
   try {
@@ -782,13 +817,14 @@ delete data.MainCaregiver_Rel_Other_Text;
 
     showSuccess('บันทึกข้อมูลสำเร็จ!');
     closeAssessmentModal();
-    // Refresh chart page to show new "Last Updated" time
+    // (โหลดข้อมูล Chart ใหม่)
     openChart(currentPatientAN, chartHnDisplay.textContent, chartNameDisplay.textContent); 
     
   } catch (error) {
     showError('บันทึกไม่สำเร็จ', error.message);
   }
 }
+
 
 // ----------------------------------------------------------------
 // (9) MAIN EVENT LISTENERS (The *only* DOMContentLoaded)
@@ -804,7 +840,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Admit Modal)
   openAdmitModalBtn.addEventListener("click", openAdmitModal);
   closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
-  cancelAdmitBtn.addEventListener("click", closeAdmitModal);
+  cancelAdmitBtn.addEventListener("click", cancelAdmitModal);
   admitForm.addEventListener("submit", handleAdmitSubmit);
   admitDobInput.addEventListener("change", () => {
     const ceDate = admitDobInput.value;
@@ -844,31 +880,99 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // (Chart Page & Assessment Modal)
   closeChartBtn.addEventListener("click", closeChart);
+  
+  // เปิด/ปิด ฟอร์มประเมิน (ปุ่มบน)
   openAssessmentFormBtn.addEventListener("click", openAssessmentForm);
   closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
   
-  // (Handle bottom-of-form close button)
+  // (ใหม่) ปิดฟอร์มประเมิน (ปุ่มล่าง)
   const closeAssessmentModalBtnBottom = document.getElementById("close-assessment-modal-btn-bottom");
   if(closeAssessmentModalBtnBottom) {
     closeAssessmentModalBtnBottom.addEventListener("click", closeAssessmentModal);
   }
 
+  // บันทึกฟอร์มประเมิน
   assessmentForm.addEventListener("submit", handleSaveAssessment);
   
+  // (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
+  // Event listener "ตัวเดียว" ที่จัดการทุกการเปลี่ยนแปลงใน Assessment Form
   assessmentForm.addEventListener('change', (e) => {
-    // Recalculate Braden score on change
-    if (e.target.classList.contains('braden-score')) {
+    const target = e.target;
+  
+    // 1. จัดการ Braden Score
+    if (target.classList.contains('braden-score')) {
       calculateBradenScore();
     }
     
-    // Update Assessor position on change
-    if(e.target.id === 'assessor-name') {
-      const selectedName = e.target.value;
+    // 2. จัดการ Assessor Position
+    if (target.id === 'assessor-name') {
+      const selectedName = target.value;
       const staff = globalStaffList.find(s => s.fullName === selectedName);
-      if(staff) {
+      if (staff) {
         assessorPositionInput.value = staff.position;
       } else {
         assessorPositionInput.value = "";
+      }
+    }
+  
+    // 3. จัดการ Show/Hide Toggles ทั้งหมด
+    if (target.classList.contains('assessment-radio-toggle')) {
+      const groupName = target.name;
+      const form = target.closest('form');
+      
+      let selectedValue = null;
+      if (target.tagName === 'SELECT') {
+          selectedValue = target.value;
+      } else if (target.type === 'radio') {
+          selectedValue = target.checked ? target.value : null;
+      }
+
+      // 3.1 ซ่อนเป้าหมายทั้งหมดที่อยู่ในกลุ่มเดียวกันก่อน
+      form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
+        let targetId = null;
+        if (sibling.tagName === 'SELECT') {
+          // ซ่อน <option> ทั้งหมด
+          sibling.querySelectorAll('option').forEach(opt => {
+            if (opt.dataset.controls) {
+              const el = document.getElementById(opt.dataset.controls);
+              if (el) el.classList.add('hidden');
+              form.querySelectorAll(`[data-follows="${opt.dataset.controls}"]`).forEach(f => f.classList.add('hidden'));
+            }
+          });
+        } else { // สำหรับ <radio>
+          targetId = sibling.dataset.controls;
+          if (targetId) {
+            const el = document.getElementById(targetId);
+            if (el) el.classList.add('hidden');
+            form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
+          }
+        }
+      });
+  
+      // 3.2 โชว์เฉพาะเป้าหมายที่ถูกเลือก
+      let selectedTargetId = null;
+      
+      if (target.tagName === 'SELECT') {
+        selectedTargetId = target.options[target.selectedIndex]?.dataset.controls;
+      } else if (target.type === 'radio' && target.checked) {
+        selectedTargetId = target.dataset.controls;
+      }
+      
+      // (ตรรกะพิเศษสำหรับ select ที่ต้องเช็คค่า)
+      if (groupName === 'Substance_Alcohol' && (selectedValue === 'ดื่มเป็นประจำ' || selectedValue === 'ดื่มนาน ๆ ครั้ง')) selectedTargetId = 'alcohol-vol';
+      if (groupName === 'Substance_Smoke' && (selectedValue === 'สูบเป็นประจำ' || selectedValue === 'สูบนาน ๆ ครั้ง')) selectedTargetId = 'smoke-vol';
+      if (groupName === 'Pain_Pattern' && selectedValue === 'อื่นๆ') selectedTargetId = 'pain-pattern-other';
+      if (groupName === 'HP_Before' && selectedValue === 'ไม่ดี') selectedTargetId = 'hp-before-detail';
+      if (groupName === 'HP_Care' && selectedValue === 'อื่นๆ') selectedTargetId = 'hp-care-other';
+      if (groupName === 'Nutri_Type' && selectedValue === 'อาหารเฉพาะโรค') selectedTargetId = 'nutri-type-detail';
+      if (groupName === 'Belief_Cause' && selectedValue === 'อื่นๆ') selectedTargetId = 'belief-cause-other';
+
+      if (selectedTargetId) {
+        const targetEl = document.getElementById(selectedTargetId);
+        if (targetEl) targetEl.classList.remove('hidden');
+        
+        // โชว์ตัวที่ตามมา (data-follows) ด้วย
+        form.querySelectorAll(`[data-follows="${selectedTargetId}"]`).forEach(f => f.classList.remove('hidden'));
       }
     }
   });
