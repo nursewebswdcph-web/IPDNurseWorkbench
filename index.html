@@ -244,73 +244,7 @@
     
   </div>
 </section>
-    <template id="preview-template-004">
-  <div class="space-y-6">
-    <style>
-      .preview-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 0.75rem; }
-      @media (min-width: 768px) { .preview-grid { grid-template-columns: repeat(3, 1fr); } }
-      .preview-grid dt { font-size: 0.875rem; font-weight: 600; color: #4B5563; }
-      .preview-grid dd { font-size: 1rem; color: #1F2937; min-height: 1.5rem; border-bottom: 1px dashed #D1D5DB; padding-bottom: 2px; }
-      .preview-grid .col-span-full { grid-column: 1 / -1; }
-    </style>
-
-    <fieldset class="border p-4 rounded-lg">
-      <legend class="text-lg font-semibold px-2">ข้อมูลทั่วไป</legend>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2 preview-grid">
-        <div><dt>วันที่รับ:</dt><dd data-field="AdmitDate"></dd></div>
-        <div><dt>เวลารับ:</dt><dd data-field="AdmitTime"></dd></div>
-        <div><dt>รับจาก:</dt><dd data-field="AdmittedFrom"></dd></div>
-        <div><dt>Refer จาก:</dt><dd data-field="Refer"></dd></div>
-        <div><dt>มาโดย:</dt><dd data-field="ArriveBy"></dd></div>
-        <div><dt>ผู้ให้ข้อมูล:</dt><dd data-field="InfoSource"></dd></div>
-        <div class="md:col-span-2"><dt>ผู้ดูแลหลัก:</dt><dd data-field="MainCaregiver_Name"></dd></div>
-        <div class="md:col-span-2"><dt>ความสัมพันธ์:</dt><dd data-field="MainCaregiver_Rel"></dd></div>
-        <div class="col-span-full"><dt>อาการสำคัญ (CC):</dt><dd data-field="ChiefComplaint"></dd></div>
-        <div class="col-span-full"><dt>ประวัติปัจจุบัน (PI):</dt><dd data-field="PresentIllness"></dd></div>
-        <div class="col-span-full"><dt>อาการแรกรับ:</dt><dd data-field="AdmitSymptoms"></dd></div>
-        <div><dt>BT:</dt><dd data-field="Admit_BT"></dd></div>
-        <div><dt>PR:</dt><dd data-field="Admit_PR"></dd></div>
-        <div><dt>RR:</dt><dd data-field="Admit_RR"></dd></div>
-        <div><dt>BP:</dt><dd data-field="Admit_BP"></dd></div>
-      </div>
-    </fieldset>
     
-    <fieldset class="border p-4 rounded-lg">
-      <legend class="text-lg font-semibold px-2">ประวัติการเจ็บป่วย</legend>
-      <div class="preview-grid mt-2">
-        <div><dt>โรคประจำตัว:</dt><dd data-field="Hx_Status"></dd></div>
-        <div class="col-span-full"><dt>รายละเอียดโรค:</dt><dd id="preview-hx-details"></dd></div>
-        <div><dt>การแพ้ยา:</dt><dd data-field="Allergy_Status"></dd></div>
-        <div class="col-span-full"><dt>รายละเอียดการแพ้:</dt><dd data-field="Allergy_Details"></dd></div>
-        <div><dt>การผ่าตัด:</dt><dd data-field="Sx_Status"></dd></div>
-        <div class="md:col-span-2"><dt>รายละเอียดผ่าตัด:</dt><dd id="preview-sx-details"></dd></div>
-      </div>
-    </fieldset>
-
-    <fieldset class="border p-4 rounded-lg">
-      <legend class="text-lg font-semibold px-2">Braden Scale</legend>
-      <div class="preview-grid mt-2">
-        <div><dt>การรับรู้:</dt><dd data-field="Braden_Sensory"></dd></div>
-        <div><dt>ความเปียกชื้น:</dt><dd data-field="Braden_Moisture"></dd></div>
-        <div><dt>กิจกรรม:</dt><dd data-field="Braden_Activity"></dd></div>
-        <div><dt>การเคลื่อนไหว:</dt><dd data-field="Braden_Mobility"></dd></div>
-        <div><dt>โภชนาการ:</dt><dd data-field="Braden_Nutrition"></dd></div>
-        <div><dt>การเสียดสี:</dt><dd data-field="Braden_Friction"></dd></div>
-        <div class="md:col-span-2"><dt>คะแนนรวม (Total):</dt><dd data-field="Braden_Total" class="font-bold text-blue-700"></dd></div>
-      </div>
-    </fieldset>
-    
-    <fieldset class="border p-4 rounded-lg">
-      <legend class="text-lg font-semibold px-2">ผู้ประเมิน</legend>
-      <div class="preview-grid mt-2">
-        <div class="md:col-span-2"><dt>ชื่อผู้ประเมิน:</dt><dd data-field="Assessor_Name"></dd></div>
-        <div><dt>ตำแหน่ง:</dt><dd data-field="Assessor_Position"></dd></div>
-      </div>
-    </fieldset>
-
-  </div>
-</template>
-
   </main>
 
   <div id="admit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-16 z-50 hidden overflow-y-auto">
