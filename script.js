@@ -1,6 +1,6 @@
 // =================================================================
-// == IPD Nurse Workbench script.js (Complete Version 2.6.2)
-// == (แก้ไขลำดับฟังก์ชันและลบโค้ดซ้ำซ้อนแล้ว)
+// == IPD Nurse Workbench script.js (Complete Version 2.6.3)
+// == (แก้ไข ID ของ Chart Page และบั๊ก cancelAdmitModal)
 // =================================================================
 
 // ----------------------------------------------------------------
@@ -64,16 +64,12 @@ const chartNameDisplay = document.getElementById("chart-name-display");
 
 const assessmentModal = document.getElementById("assessment-modal");
 const assessmentForm = document.getElementById("assessment-form");
-const openAssessmentFormBtn = document.getElementById("open-assessment-form-btn");
+// (ลบตัวแปรเก่าที่ใช้ id ซ้ำ)
 const closeAssessmentModalBtn = document.getElementById("close-assessment-modal-btn");
 const assessAnDisplay = document.getElementById("assess-an-display");
 const assessNameDisplay = document.getElementById("assess-name-display");
-const assessmentLastUpdated = document.getElementById("assessment-last-updated");
-
-// (Braden Scale)
-const bradenScoreInputs = document.querySelectorAll(".braden-score");
-const bradenTotalScore = document.getElementById("braden-total-score");
-const bradenResult = document.getElementById("braden-result");
+// (อัปเดต ID ให้ตรงกับ index.html ใหม่)
+const assessmentLastUpdated = document.getElementById("last-updated-004"); 
 
 // (Assessor)
 const assessorNameSelect = document.getElementById("assessor-name");
@@ -92,6 +88,15 @@ function showSuccess(title = 'สำเร็จ!', message = '') {
 }
 function showError(title = 'เกิดข้อผิดพลาด!', message = '') {
   Swal.fire(title, message, 'error');
+}
+// (ใหม่!) เพิ่มฟังก์ชันสำหรับปุ่ม "เร็วๆ นี้"
+function showComingSoon() {
+  Swal.fire({
+    title: 'เร็วๆ นี้ (Coming Soon)',
+    text: 'ฟังก์ชันนี้กำลังอยู่ระหว่างการพัฒนาครับ',
+    icon: 'info',
+    confirmButtonText: 'ตกลง'
+  });
 }
 function updateClock() {
   const now = new Date();
@@ -166,7 +171,7 @@ function setFormDefaults() {
 
 function calculateBradenScore() {
   let total = 0;
-  // (แก้ไข) ต้องมั่นใจว่า bradenScoreInputs ถูกต้อง
+  // (อัปเดต) ค้นหา Braden Score จากภายในฟอร์ม
   const inputs = assessmentForm.querySelectorAll(".braden-score");
   inputs.forEach(input => {
     total += parseInt(input.value, 10) || 0;
@@ -538,12 +543,10 @@ async function handleDischarge() {
   }
 }
 
-// (จัดลำดับใหม่!) ย้ายฟังก์ชันนี้มาไว้ "ก่อน" ที่จะถูกเรียกใช้
 async function handleTransferWard() {
   const an = document.getElementById("details-an").value;
   const name = document.getElementById("details-name").value;
 
-  // 1. Create ward options (excluding current)
   const wardOptions = {};
   allWards.forEach(w => {
     if (w.value !== currentWard) {
@@ -556,7 +559,6 @@ async function handleTransferWard() {
     return;
   }
 
-  // 2. Ask for new ward
   const { value: newWard } = await Swal.fire({
     title: 'ย้ายตึก (ขั้นตอนที่ 1/2)',
     text: `เลือกตึกใหม่ที่จะย้าย ${name} ไป:`,
@@ -568,9 +570,8 @@ async function handleTransferWard() {
     confirmButtonText: 'ถัดไป'
   });
 
-  if (!newWard) return; // User cancelled
+  if (!newWard) return;
 
-  // 3. Load available beds for the new ward
   showLoading(`กำลังโหลดเตียงว่างตึก ${newWard}...`);
   let availableBeds = [];
   try {
@@ -589,7 +590,6 @@ async function handleTransferWard() {
   const bedOptions = {};
   availableBeds.forEach(bed => { bedOptions[bed] = bed; });
 
-  // 4. Ask for new bed
   const { value: newBed } = await Swal.fire({
     title: 'ย้ายตึก (ขั้นตอนที่ 2/2)',
     text: `เลือกเตียงในตึก ${newWard}:`,
@@ -601,9 +601,8 @@ async function handleTransferWard() {
     confirmButtonText: 'ยืนยันการย้าย'
   });
   
-  if (!newBed) return; // User cancelled
+  if (!newBed) return;
 
-  // 5. Confirm and send
   showLoading('กำลังย้ายผู้ป่วย...');
   try {
     const response = await fetch(GAS_WEB_APP_URL, {
@@ -622,7 +621,7 @@ async function handleTransferWard() {
     
     showSuccess('ย้ายผู้ป่วยสำเร็จ!');
     closeDetailsModal();
-    loadPatients(currentWard); // Refresh current ward list (patient will disappear)
+    loadPatients(currentWard);
 
   } catch (error) {
     showError('ย้ายผู้ป่วยไม่สำเร็จ', error.message);
@@ -648,11 +647,15 @@ async function openChart(an, hn, name) {
     
     currentPatientData = result.data;
     
+    // (อัปเดต) อัปเดตเฉพาะ Span ของ 004
+    const span004 = document.getElementById('last-updated-004');
     if(currentPatientData.LastUpdatedTime) {
-      assessmentLastUpdated.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
+      // (แก้ไข) แปลง Date จาก ISO string
+      span004.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
     } else {
-      assessmentLastUpdated.textContent = "ยังไม่เคยบันทึก";
+      span004.textContent = "ยังไม่เคยบันทึก";
     }
+    // (ในอนาคต: เพิ่มการอัปเดตสำหรับ span อื่นๆ ที่มี id last-updated-...)
 
     registryPage.classList.add("hidden");
     chartPage.classList.remove("hidden");
@@ -681,6 +684,17 @@ async function openAssessmentForm() {
         populateSelect(assessorNameSelect.id, globalStaffList.map(s => s.fullName));
       }
     } catch (e) { /* (Continue even if staff list fails) */ }
+  }
+  
+  // (อัปเดต) โหลดข้อมูลล่าสุดอีกครั้งเผื่อมีการเปลี่ยนแปลง
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    currentPatientData = result.data; // อัปเดตข้อมูล Global
+  } catch(e) {
+    showError('ไม่สามารถโหลดข้อมูลล่าสุดได้', e.message);
+    return;
   }
   
   populateAssessmentForm(currentPatientData);
@@ -712,63 +726,59 @@ function populateAssessmentForm(data) {
   let rel = data.MainCaregiver_Rel || "";
   let relOtherText = "";
   
-  // ตรวจสอบว่าค่าที่บันทึกไว้เป็น "อื่นๆ: ..." หรือไม่
   if (rel.startsWith("อื่นๆ:")) {
-    relOtherText = rel.substring(5).trim(); // ดึงข้อความหลัง "อื่นๆ: "
-    rel = "อื่นๆ"; // ตั้งค่าให้ Radio "อื่นๆ" ถูกเลือก
+    relOtherText = rel.substring(5).trim();
+    rel = "อื่นๆ";
   }
   
-  // 1. ติ๊ก Radio ที่ถูกต้อง
   const relRadio = assessmentForm.querySelector(`[name="MainCaregiver_Rel"][value="${rel}"]`);
-  if (relRadio) {
-    relRadio.checked = true;
-  }
-  // 2. เติมช่อง Text "อื่นๆ"
+  if (relRadio) relRadio.checked = true;
+  
   const relOtherInput = assessmentForm.querySelector(`[name="MainCaregiver_Rel_Other_Text"]`);
-  if (relOtherInput) {
-    relOtherInput.value = relOtherText;
-  }
+  if (relOtherInput) relOtherInput.value = relOtherText;
 
   // (ส่วนที่ 2-15: ดึงจากข้อมูลที่เคยบันทึก)
-  // นี่คือการ "วนลูป" เติมข้อมูลทุกช่องในฟอร์มที่มี name ตรงกับ key ใน object
   for (const key in data) {
     if (data.hasOwnProperty(key)) {
+      // (ป้องกันไม่ให้เขียนทับฟิลด์ที่เราเพิ่งตั้งค่าไป)
+      if (key === 'MainCaregiver_Rel') continue; 
+      
       const field = assessmentForm.querySelector(`[name="${key}"]`);
       if (field) {
         if (field.type === 'radio') {
-          // ตรวจสอบ Radio Button
           document.querySelectorAll(`[name="${key}"][value="${data[key]}"]`).forEach(el => el.checked = true);
         } else if (field.type === 'checkbox') {
-          // ตรวจสอบ Checkbox (ต้องเช็คหลายค่า เพราะชีตอาจเก็บเป็น true, "true", "on")
           if (data[key] === true || data[key] === 'true' || data[key] === 'on') {
             field.checked = true;
           }
         } else {
-          // เติมค่าอื่นๆ (text, select, date, time)
           field.value = data[key];
         }
       }
     }
   }
   
-  // (ใหม่!) หลังจากเติมข้อมูลแล้ว ให้สั่งอัปเดต UI ของ Toggle ทั้งหมด
-  // เพื่อแสดง/ซ่อนช่องที่ถูกต้องตามข้อมูลที่โหลดมา
+  // (ใหม่!) สั่งอัปเดต UI ของ Toggle ทั้งหมด
   assessmentForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
-    // สร้าง 'change' event และส่งมัน
-    const event = new Event('change', { 'bubbles': true });
-    el.dispatchEvent(event);
+    // ใช้ 'change' event สำหรับ <select>
+    if (el.tagName === 'SELECT') {
+      const event = new Event('change', { 'bubbles': true });
+      el.dispatchEvent(event);
+    } 
+    // ใช้ 'click' event สำหรับ <radio> ที่ถูกติ๊กไว้
+    else if (el.type === 'radio' && el.checked) {
+      const event = new Event('change', { 'bubbles': true });
+      el.dispatchEvent(event);
+    }
   });
   
-  // คำนวณคะแนน Braden
   calculateBradenScore();
   
-  // ตั้งค่าผู้ประเมิน
   const assessor = globalStaffList.find(s => s.fullName === data.Assessor_Name);
   if(assessor) {
     assessorNameSelect.value = assessor.fullName;
     assessorPositionInput.value = assessor.position;
   } else {
-    // ถ้าผู้ประเมินไม่อยู่ใน List (เช่น ลาออกไปแล้ว) ให้แสดงชื่อที่เคยบันทึกไว้
     assessorNameSelect.value = data.Assessor_Name || "";
     assessorPositionInput.value = data.Assessor_Position || "";
   }
@@ -788,9 +798,9 @@ async function handleSaveAssessment(event) {
   if (data.MainCaregiver_Rel === 'อื่นๆ') {
     data.MainCaregiver_Rel = 'อื่นๆ: ' + (data.MainCaregiver_Rel_Other_Text || "").trim();
   }
-  delete data.MainCaregiver_Rel_Other_Text; // ลบคีย์ชั่วคราว
+  delete data.MainCaregiver_Rel_Other_Text;
   
-  // 2. การเผชิญภาวะเครียด (ลบคีย์ "อื่นๆ" ถ้า "มี" ไม่ได้ถูกเลือก)
+  // 2. การเผชิญภาวะเครียด
   if (data.Cope_Stress_Status !== 'มี') {
       delete data.Cope_Stress_Fear;
       delete data.Cope_Stress_Cost;
@@ -800,7 +810,6 @@ async function handleSaveAssessment(event) {
   }
   // --- (สิ้นสุดตรรกะพิเศษ) ---
 
-  // (ดึงชื่อผู้ใช้จริง - ในอนาคต)
   const currentUser = data.Assessor_Name || "System"; 
 
   try {
@@ -841,7 +850,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Admit Modal)
   openAdmitModalBtn.addEventListener("click", openAdmitModal);
   closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
-  cancelAdmitBtn.addEventListener("click", closeAdmitModal); // <-- (แก้ไข) จาก 'cancelAdmitModal'
+  cancelAdmitBtn.addEventListener("click", closeAdmitModal); // (แก้ไขบั๊ก)
   admitForm.addEventListener("submit", handleAdmitSubmit);
   admitDobInput.addEventListener("change", () => {
     const ceDate = admitDobInput.value;
@@ -855,7 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cancelEditBtn.addEventListener("click", resetDetailsModalState);
   detailsForm.addEventListener("submit", handleUpdateSubmit);
   dischargeBtn.addEventListener("click", handleDischarge);
-  transferWardBtn.addEventListener("click", handleTransferWard); // This will now be found
+  transferWardBtn.addEventListener("click", handleTransferWard); // (ย้ายมาอยู่นอกสุดแล้ว)
   detailsDobInput.addEventListener("change", () => {
     const ceDate = detailsDobInput.value;
     const beDate = convertCEtoBE(ceDate);
@@ -882,11 +891,31 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Chart Page & Assessment Modal)
   closeChartBtn.addEventListener("click", closeChart);
   
-  // เปิด/ปิด ฟอร์มประเมิน (ปุ่มบน)
-  openAssessmentFormBtn.addEventListener("click", openAssessmentForm);
+  // (อัปเดต) เชื่อมต่อปุ่ม "FR-IPD-004"
+  const openForm004Btn = document.getElementById("open-form-004");
+  if(openForm004Btn) {
+    openForm004Btn.addEventListener("click", openAssessmentForm);
+  }
+  
+  // (อัปเดต) เชื่อมต่อปุ่ม "เร็วๆ นี้"
+  const comingSoonBtns = [
+    document.getElementById("open-form-morse"),
+    document.getElementById("open-form-pressure"),
+    document.getElementById("open-form-classify"),
+    document.getElementById("open-form-discharge-plan"),
+    document.getElementById("open-form-005"),
+    document.getElementById("open-form-006"),
+    document.getElementById("open-form-007")
+  ];
+  comingSoonBtns.forEach(btn => {
+    if(btn) btn.addEventListener("click", showComingSoon);
+  });
+  
+  
+  // ปิดฟอร์มประเมิน (ปุ่มบน)
   closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
   
-  // (ใหม่) ปิดฟอร์มประเมิน (ปุ่มล่าง)
+  // ปิดฟอร์มประเมิน (ปุ่มล่าง)
   const closeAssessmentModalBtnBottom = document.getElementById("close-assessment-modal-btn-bottom");
   if(closeAssessmentModalBtnBottom) {
     closeAssessmentModalBtnBottom.addEventListener("click", closeAssessmentModal);
