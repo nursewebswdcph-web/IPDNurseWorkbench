@@ -1,6 +1,6 @@
 // =================================================================
-// == IPD Nurse Workbench script.js (Complete Version 2.6.3)
-// == (แก้ไข ID ของ Chart Page และบั๊ก cancelAdmitModal)
+// == IPD Nurse Workbench script.js (Complete Version 2.6.4)
+// == (แก้ไข ID ของ Chart Page, บั๊ก, และตรรกะ Toggle)
 // =================================================================
 
 // ----------------------------------------------------------------
@@ -64,10 +64,11 @@ const chartNameDisplay = document.getElementById("chart-name-display");
 
 const assessmentModal = document.getElementById("assessment-modal");
 const assessmentForm = document.getElementById("assessment-form");
-// (ลบตัวแปรเก่าที่ใช้ id ซ้ำ)
 const closeAssessmentModalBtn = document.getElementById("close-assessment-modal-btn");
 const assessAnDisplay = document.getElementById("assess-an-display");
 const assessNameDisplay = document.getElementById("assess-name-display");
+
+// (Preview Area)
 const chartPreviewTitle = document.getElementById("chart-preview-title");
 const chartPreviewContent = document.getElementById("chart-preview-content");
 const chartPreviewPlaceholder = document.getElementById("chart-preview-placeholder");
@@ -92,7 +93,6 @@ function showSuccess(title = 'สำเร็จ!', message = '') {
 function showError(title = 'เกิดข้อผิดพลาด!', message = '') {
   Swal.fire(title, message, 'error');
 }
-// (ใหม่!) เพิ่มฟังก์ชันสำหรับปุ่ม "เร็วๆ นี้"
 function showComingSoon() {
   Swal.fire({
     title: 'เร็วๆ นี้ (Coming Soon)',
@@ -172,10 +172,8 @@ function setFormDefaults() {
   document.getElementById("admit-time").value = timeString;
 }
 
-// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 function calculateBradenScore(targetForm = assessmentForm) { // Default to main form
   let total = 0;
-  // (แก้ไข) ค้นหา Braden Score จากภายในฟอร์ม
   const inputs = targetForm.querySelectorAll(".braden-score");
   inputs.forEach(input => {
     total += parseInt(input.value, 10) || 0;
@@ -197,7 +195,7 @@ function calculateBradenScore(targetForm = assessmentForm) { // Default to main 
 
 function populateSelect(elementId, options, defaultValue = null) {
   const select = document.getElementById(elementId);
-  if (!select) return; // (เพิ่ม Guard Clause)
+  if (!select) return;
   select.innerHTML = `<option value="">-- กรุณาเลือก --</option>`;
   options.forEach(optValue => {
     const option = document.createElement("option");
@@ -645,7 +643,6 @@ async function openChart(an, hn, name) {
   
   showLoading('กำลังโหลดข้อมูลเวชระเบียน...');
   try {
-    // (เรายังคงโหลดข้อมูลผู้ป่วยหลัก)
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
@@ -654,8 +651,9 @@ async function openChart(an, hn, name) {
     
     // (อัปเดต) อัปเดต span ของ 004
     const span004 = document.getElementById('last-updated-004');
-    if(span004) {
+    if(span004) { // (เพิ่มการตรวจสอบ)
       if(currentPatientData.LastUpdatedTime) {
+        // (แก้ไข) แปลง Date จาก ISO string
         span004.textContent = `${new Date(currentPatientData.LastUpdatedTime).toLocaleString('th-TH')} โดย ${currentPatientData.LastUpdatedBy || ''}`;
       } else {
         span004.textContent = "ยังไม่เคยบันทึก";
@@ -685,7 +683,7 @@ function closeChart() {
   currentPatientData = {};
 }
 
-// (เพิ่มฟังก์ชันใหม่)
+// (ใหม่!) แสดง Placeholder
 function showPreviewPlaceholder() {
   chartPreviewTitle.textContent = "เลือกเอกสาร";
   chartPreviewPlaceholder.classList.remove("hidden");
@@ -694,8 +692,7 @@ function showPreviewPlaceholder() {
   chartAddNewBtn.classList.add("hidden");
 }
 
-// (เพิ่มฟังก์ชันใหม่)
-// (เพิ่มฟังก์ชันใหม่นี้)
+// (ใหม่!) แสดง Preview โดยการ Clone
 function showFormPreview(formType) {
   // ซ่อน placeholder
   chartPreviewPlaceholder.classList.add("hidden");
@@ -734,7 +731,6 @@ function showFormPreview(formType) {
   }
 }
 
-// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 async function openAssessmentForm() {
   showLoading('กำลังเตรียมฟอร์มประเมิน...');
   
@@ -762,7 +758,7 @@ async function openAssessmentForm() {
     return;
   }
   
-  // 3. (แก้ไข) เติมข้อมูลลงใน "ฟอร์มหลัก"
+  // 3. (แก้ไข) เติมข้อมูลลงใน "ฟอร์มหลัก" (assessmentForm)
   populateAssessmentForm(currentPatientData, assessmentForm); 
   
   // 4. แสดง Modal
@@ -773,27 +769,34 @@ async function openAssessmentForm() {
 function closeAssessmentModal() {
   assessmentModal.classList.add("hidden");
   assessmentForm.reset();
-  calculateBradenScore();
+  calculateBradenScore(assessmentForm); // (แก้ไข)
 }
 
-// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
+// (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
 function populateAssessmentForm(data, targetForm) {
   targetForm.reset();
   
   // (ส่วนที่ 1: ดึงจากข้อมูลรับใหม่)
   // (เราจะตั้งค่า Header ของ Modal ต่อเมื่อมันคือ "Modal จริง" เท่านั้น)
   if (targetForm.id === 'assessment-form') { 
-    document.getElementById('assess-an-display').textContent = data.AN;
-    document.getElementById('assess-name-display').textContent = data.Name;
+    targetForm.querySelector('#assess-an-display').textContent = data.AN;
+    targetForm.querySelector('#assess-name-display').textContent = data.Name;
   }
   
   // (ดึงข้อมูลจาก Patients sheet)
-  const fieldsToSync = ['AdmitDate', 'AdmitTime', 'AdmittedFrom', 'Refer', 'ChiefComplaint', 'PresentIllness'];
-  fieldsToSync.forEach(key => {
-    // (ค้นหา ID ที่เชื่อมโยงกัน)
-    const el = document.getElementById(key.toLowerCase().replace('admittedfrom', 'admit-from').replace('admitdate', 'admit-date').replace('admittime', 'admit-time').replace('chiefcomplaint', 'cc').replace('presentillness', 'pi').replace('refer', 'refer-from'));
-    if (el) el.value = data[key];
-  });
+  const fieldsToSync = {
+    'AdmitDate': 'assess-admit-date',
+    'AdmitTime': 'assess-admit-time',
+    'AdmittedFrom': 'assess-admit-from',
+    'Refer': 'assess-refer-from',
+    'ChiefComplaint': 'assess-cc',
+    'PresentIllness': 'assess-pi'
+  };
+  
+  for (const key in fieldsToSync) {
+      const el = targetForm.querySelector(`#${fieldsToSync[key]}`);
+      if (el) el.value = data[key] || '';
+  }
   
   // (ตรรกะพิเศษสำหรับ MainCaregiver_Rel)
   let rel = data.MainCaregiver_Rel || "";
@@ -810,8 +813,7 @@ function populateAssessmentForm(data, targetForm) {
   // (ส่วนที่ 2-15: ดึงจากข้อมูลที่เคยบันทึก)
   for (const key in data) {
     if (data.hasOwnProperty(key)) {
-      if (key === 'MainCaregiver_Rel') continue; // ข้าม (ทำไปแล้ว)
-      if (fieldsToSync.includes(key)) continue; // ข้าม (ทำไปแล้ว)
+      if (key === 'MainCaregiver_Rel' || fieldsToSync.hasOwnProperty(key)) continue; 
       
       const field = targetForm.querySelector(`[name="${key}"]`);
       if (field) {
@@ -845,6 +847,11 @@ function populateAssessmentForm(data, targetForm) {
   const assessorNameEl = targetForm.querySelector("#assessor-name");
   const assessorPosEl = targetForm.querySelector("#assessor-position");
   if (assessorNameEl && assessorPosEl) {
+    // (เติม Dropdown ก่อน ถ้ายังไม่มี)
+    if(assessorNameEl.options.length <= 1 && globalStaffList.length > 0) {
+        populateSelect(assessorNameEl.id, globalStaffList.map(s => s.fullName));
+    }
+    
     const assessor = globalStaffList.find(s => s.fullName === data.Assessor_Name);
     if(assessor) {
       assessorNameEl.value = assessor.fullName;
@@ -853,32 +860,6 @@ function populateAssessmentForm(data, targetForm) {
       assessorNameEl.value = data.Assessor_Name || "";
       assessorPosEl.value = data.Assessor_Position || "";
     }
-  }
-}
-  
-  // (ใหม่!) สั่งอัปเดต UI ของ Toggle ทั้งหมด
-  assessmentForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
-    // ใช้ 'change' event สำหรับ <select>
-    if (el.tagName === 'SELECT') {
-      const event = new Event('change', { 'bubbles': true });
-      el.dispatchEvent(event);
-    } 
-    // ใช้ 'click' event สำหรับ <radio> ที่ถูกติ๊กไว้
-    else if (el.type === 'radio' && el.checked) {
-      const event = new Event('change', { 'bubbles': true });
-      el.dispatchEvent(event);
-    }
-  });
-  
-  calculateBradenScore();
-  
-  const assessor = globalStaffList.find(s => s.fullName === data.Assessor_Name);
-  if(assessor) {
-    assessorNameSelect.value = assessor.fullName;
-    assessorPositionInput.value = assessor.position;
-  } else {
-    assessorNameSelect.value = data.Assessor_Name || "";
-    assessorPositionInput.value = data.Assessor_Position || "";
   }
 }
 
@@ -986,12 +967,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- (นี่คือ Event Listener ที่แก้ไขใหม่ทั้งหมด) ---
-  
-  // 1. ปิดหน้า Chart
+  // (Chart Page & Assessment Modal)
   closeChartBtn.addEventListener("click", closeChart);
   
-  // 2. คลิกรายการฟอร์มด้านซ้าย (ใช้ Event Delegation)
+  // (อัปเดต) คลิกรายการฟอร์มด้านซ้าย (ใช้ Event Delegation)
   chartPage.addEventListener('click', (e) => {
     const targetItem = e.target.closest('.chart-list-item');
     if (targetItem) {
@@ -1008,14 +987,14 @@ document.addEventListener("DOMContentLoaded", () => {
         // (รองรับปุ่ม "เร็วๆ นี้")
         showPreviewPlaceholder(); // (รีเซ็ต)
         chartPreviewTitle.textContent = targetItem.querySelector('h3').textContent;
-        chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16">ตัวอย่างฟอร์มนี้กำลังอยู่ระหว่างการพัฒนา</div>`;
+        chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16 px-6">ตัวอย่างฟอร์มนี้กำลังอยู่ระหว่างการพัฒนา</div>`;
         chartEditBtn.classList.add("hidden");
         chartAddNewBtn.classList.add("hidden");
       }
     }
   });
 
-  // 3. คลิกปุ่ม "แก้ไข" (ในฝั่ง Preview)
+  // (อัปเดต) คลิกปุ่ม "แก้ไข" (ในฝั่ง Preview)
   chartEditBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
     if (formType === '004') {
@@ -1025,13 +1004,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   
-  // 4. คลิกปุ่ม "เพิ่มใหม่" (ในฝั่ง Preview)
+  // (อัปเดต) คลิกปุ่ม "เพิ่มใหม่" (ในฝั่ง Preview)
   chartAddNewBtn.addEventListener('click', (e) => {
     // (ตรรกะสำหรับเพิ่มฟอร์มใบใหม่)
     showComingSoon();
   });
-
-  // --- (Event Listeners สำหรับ Assessment Modal เหมือนเดิม) ---
+  
   
   // ปิดฟอร์มประเมิน (ปุ่มบน)
   closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
@@ -1045,13 +1023,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // บันทึกฟอร์มประเมิน
   assessmentForm.addEventListener("submit", handleSaveAssessment);
   
+  // (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
   // Event listener "ตัวเดียว" ที่จัดการทุกการเปลี่ยนแปลงใน Assessment Form
   assessmentForm.addEventListener('change', (e) => {
     const target = e.target;
   
     // 1. จัดการ Braden Score
     if (target.classList.contains('braden-score')) {
-      calculateBradenScore();
+      calculateBradenScore(assessmentForm); // (แก้ไข)
     }
     
     // 2. จัดการ Assessor Position
@@ -1068,7 +1047,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. จัดการ Show/Hide Toggles ทั้งหมด
     if (target.classList.contains('assessment-radio-toggle')) {
       const groupName = target.name;
-      const form = target.closest('form');
+      // (แก้ไข) ใช้ target.closest('form') เพื่อให้ใช้ได้ทั้งฟอร์มจริงและ Preview
+      const form = target.closest('form'); 
+      if (!form) return; // (ป้องกัน Error)
       
       let selectedValue = null;
       if (target.tagName === 'SELECT') {
@@ -1081,10 +1062,9 @@ document.addEventListener("DOMContentLoaded", () => {
       form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
         let targetId = null;
         if (sibling.tagName === 'SELECT') {
-          // ซ่อน <option> ทั้งหมด
           sibling.querySelectorAll('option').forEach(opt => {
             if (opt.dataset.controls) {
-              const el = document.getElementById(opt.dataset.controls);
+              const el = form.querySelector(`#${opt.dataset.controls}`); // (แก้ไข)
               if (el) el.classList.add('hidden');
               form.querySelectorAll(`[data-follows="${opt.dataset.controls}"]`).forEach(f => f.classList.add('hidden'));
             }
@@ -1092,7 +1072,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else { // สำหรับ <radio>
           targetId = sibling.dataset.controls;
           if (targetId) {
-            const el = document.getElementById(targetId);
+            const el = form.querySelector(`#${targetId}`); // (แก้ไข)
             if (el) el.classList.add('hidden');
             form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
           }
@@ -1121,7 +1101,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (groupName === 'Cogn_Speech' && selectedValue === 'ใช้ภาษาต่างประเทศ') selectedTargetId = 'cogn-speech-other';
 
       if (selectedTargetId) {
-        const targetEl = document.getElementById(selectedTargetId);
+        const targetEl = form.querySelector(`#${selectedTargetId}`); // (แก้ไข)
         if (targetEl) targetEl.classList.remove('hidden');
         
         // โชว์ตัวที่ตามมา (data-follows) ด้วย
