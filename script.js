@@ -172,16 +172,17 @@ function setFormDefaults() {
   document.getElementById("admit-time").value = timeString;
 }
 
-function calculateBradenScore() {
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
+function calculateBradenScore(targetForm = assessmentForm) { // Default to main form
   let total = 0;
   // (แก้ไข) ค้นหา Braden Score จากภายในฟอร์ม
-  const inputs = assessmentForm.querySelectorAll(".braden-score");
+  const inputs = targetForm.querySelectorAll(".braden-score");
   inputs.forEach(input => {
     total += parseInt(input.value, 10) || 0;
   });
   
-  const totalEl = document.getElementById("braden-total-score");
-  const resultEl = document.getElementById("braden-result");
+  const totalEl = targetForm.querySelector("#braden-total-score");
+  const resultEl = targetForm.querySelector("#braden-result");
   
   if(totalEl) totalEl.value = total;
 
@@ -683,12 +684,6 @@ function closeChart() {
   currentPatientAN = null;
   currentPatientData = {};
 }
-function closeChart() {
-  chartPage.classList.add("hidden");
-  registryPage.classList.remove("hidden");
-  currentPatientAN = null;
-  currentPatientData = {};
-}
 
 // (เพิ่มฟังก์ชันใหม่)
 function showPreviewPlaceholder() {
@@ -700,6 +695,7 @@ function showPreviewPlaceholder() {
 }
 
 // (เพิ่มฟังก์ชันใหม่)
+// (เพิ่มฟังก์ชันใหม่นี้)
 function showFormPreview(formType) {
   // ซ่อน placeholder
   chartPreviewPlaceholder.classList.add("hidden");
@@ -708,71 +704,54 @@ function showFormPreview(formType) {
   if (formType === '004') {
     chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
     
-    // 1. Clone template
-    const template = document.getElementById("preview-template-004");
-    const preview = template.content.cloneNode(true);
+    // 1. Clone ฟอร์มหลัก
+    const formToClone = document.getElementById("assessment-form");
+    const preview = formToClone.cloneNode(true);
+    preview.id = "assessment-preview-clone"; // ตั้ง ID ใหม่ (สำคัญ)
     
-    // 2. Populate data
-    const fields = preview.querySelectorAll("[data-field]");
-    fields.forEach(field => {
-      const key = field.dataset.field;
-      let value = currentPatientData[key] || '-';
-      field.textContent = value;
-    });
-    
-    // (ตรรกะพิเศษสำหรับ Hx Details)
-    const hxDetailEl = preview.getElementById('preview-hx-details');
-    if (hxDetailEl && (currentPatientData['Hx_Status'] === 'มี')) {
-       hxDetailEl.textContent = ['Hx_HT', 'Hx_Heart', 'Hx_Liver', 'Hx_Kidney', 'Hx_DM', 'Hx_Asthma', 'Hx_Epilepsy', 'Hx_TB', 'Hx_Cancer', 'Hx_Other']
-                         .filter(k => currentPatientData[k] === true || currentPatientData[k] === 'true')
-                         .map(k => k.replace('Hx_', ''))
-                         .join(', ') || 'ไม่ได้ระบุ';
-    } else if (hxDetailEl) {
-       hxDetailEl.textContent = '-';
-    }
-    
-    // (ตรรกะพิเศษสำหรับ Sx Details)
-    const sxDetailEl = preview.getElementById('preview-sx-details');
-    if (sxDetailEl && (currentPatientData['Sx_Status'] === 'เคย')) {
-       sxDetailEl.textContent = `${currentPatientData['Sx_Details'] || ''} (เมื่อ: ${currentPatientData['Sx_Date'] || 'N/A'})`;
-    } else if (sxDetailEl) {
-       sxDetailEl.textContent = '-';
-    }
-
-    // 3. Inject into preview area
+    // 2. ฉีด Clone ลงในพื้นที่ Preview
     chartPreviewContent.appendChild(preview);
     
-    // 4. Show buttons
+    // 3. เติมข้อมูลลงใน "Clone"
+    populateAssessmentForm(currentPatientData, preview);
+    
+    // 4. ปิดการใช้งาน (Disable) Clone และลบปุ่ม
+    preview.setAttribute('disabled', 'true');
+    preview.querySelector('.sticky.top-0')?.remove(); // ลบ Header
+    preview.querySelector('.mt-12.pt-6.border-t')?.remove(); // ลบ Footer
+    
+    // 5. แสดงปุ่ม "แก้ไข"
     chartEditBtn.classList.remove("hidden");
-    chartEditBtn.dataset.form = "004"; // บอกปุ่มว่าให้แก้ไขฟอร์มไหน
-    // (ยังไม่เปิดใช้งานปุ่มเพิ่มใหม่)
-    // chartAddNewBtn.classList.remove("hidden"); 
+    chartEditBtn.dataset.form = "004";
+    chartAddNewBtn.classList.add("hidden"); // (ยังไม่เปิดใช้งานปุ่มเพิ่มใหม่)
     
   } else {
     // สำหรับฟอร์มอื่นๆ (เร็วๆ นี้)
     chartPreviewTitle.textContent = `เอกสาร (เร็วๆ นี้)`;
-    chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16">ตัวอย่างฟอร์ม ${formType} ยังไม่พร้อมใช้งาน</div>`;
+    chartPreviewContent.innerHTML = `<div class="text-center text-gray-500 py-16 px-6">ตัวอย่างฟอร์มนี้กำลังอยู่ระหว่างการพัฒนา</div>`;
     chartEditBtn.classList.add("hidden");
     chartAddNewBtn.classList.add("hidden");
   }
 }
 
-
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 async function openAssessmentForm() {
   showLoading('กำลังเตรียมฟอร์มประเมิน...');
   
+  // 1. ดึงรายชื่อ Staff (ถ้ายังไม่มี)
   if(globalStaffList.length === 0) {
     try {
       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
       const result = await response.json();
       if (result.success) {
         globalStaffList = result.data;
-        populateSelect(assessorNameSelect.id, globalStaffList.map(s => s.fullName));
+        // (เติม Select ในฟอร์มหลัก)
+        populateSelect(document.getElementById("assessor-name").id, globalStaffList.map(s => s.fullName));
       }
-    } catch (e) { /* (Continue even if staff list fails) */ }
+    } catch (e) { /* (ข้ามไปก่อนถ้าโหลดไม่ได้) */ }
   }
   
-  // (อัปเดต) โหลดข้อมูลล่าสุดอีกครั้งเผื่อมีการเปลี่ยนแปลง
+  // 2. (อัปเดต) โหลดข้อมูลล่าสุดอีกครั้งเผื่อมีการเปลี่ยนแปลง
   try {
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`);
     const result = await response.json();
@@ -783,7 +762,10 @@ async function openAssessmentForm() {
     return;
   }
   
-  populateAssessmentForm(currentPatientData);
+  // 3. (แก้ไข) เติมข้อมูลลงใน "ฟอร์มหลัก"
+  populateAssessmentForm(currentPatientData, assessmentForm); 
+  
+  // 4. แสดง Modal
   assessmentModal.classList.remove("hidden");
   Swal.close();
 }
@@ -794,45 +776,47 @@ function closeAssessmentModal() {
   calculateBradenScore();
 }
 
-// (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
-function populateAssessmentForm(data) {
-  assessmentForm.reset();
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
+function populateAssessmentForm(data, targetForm) {
+  targetForm.reset();
   
   // (ส่วนที่ 1: ดึงจากข้อมูลรับใหม่)
-  assessAnDisplay.textContent = data.AN;
-  assessNameDisplay.textContent = data.Name;
-  document.getElementById('assess-admit-date').value = data.AdmitDate;
-  document.getElementById('assess-admit-time').value = data.AdmitTime;
-  document.getElementById('assess-admit-from').value = data.AdmittedFrom;
-  document.getElementById('assess-refer-from').value = data.Refer;
-  document.getElementById('assess-cc').value = data.ChiefComplaint;
-  document.getElementById('assess-pi').value = data.PresentIllness;
-
-  // (ตรรกะพิเศษสำหรับ MainCaregiver_Rel ที่เป็น Radio Button)
+  // (เราจะตั้งค่า Header ของ Modal ต่อเมื่อมันคือ "Modal จริง" เท่านั้น)
+  if (targetForm.id === 'assessment-form') { 
+    document.getElementById('assess-an-display').textContent = data.AN;
+    document.getElementById('assess-name-display').textContent = data.Name;
+  }
+  
+  // (ดึงข้อมูลจาก Patients sheet)
+  const fieldsToSync = ['AdmitDate', 'AdmitTime', 'AdmittedFrom', 'Refer', 'ChiefComplaint', 'PresentIllness'];
+  fieldsToSync.forEach(key => {
+    // (ค้นหา ID ที่เชื่อมโยงกัน)
+    const el = document.getElementById(key.toLowerCase().replace('admittedfrom', 'admit-from').replace('admitdate', 'admit-date').replace('admittime', 'admit-time').replace('chiefcomplaint', 'cc').replace('presentillness', 'pi').replace('refer', 'refer-from'));
+    if (el) el.value = data[key];
+  });
+  
+  // (ตรรกะพิเศษสำหรับ MainCaregiver_Rel)
   let rel = data.MainCaregiver_Rel || "";
   let relOtherText = "";
-  
   if (rel.startsWith("อื่นๆ:")) {
     relOtherText = rel.substring(5).trim();
     rel = "อื่นๆ";
   }
-  
-  const relRadio = assessmentForm.querySelector(`[name="MainCaregiver_Rel"][value="${rel}"]`);
+  const relRadio = targetForm.querySelector(`[name="MainCaregiver_Rel"][value="${rel}"]`);
   if (relRadio) relRadio.checked = true;
-  
-  const relOtherInput = assessmentForm.querySelector(`[name="MainCaregiver_Rel_Other_Text"]`);
+  const relOtherInput = targetForm.querySelector(`[name="MainCaregiver_Rel_Other_Text"]`);
   if (relOtherInput) relOtherInput.value = relOtherText;
 
   // (ส่วนที่ 2-15: ดึงจากข้อมูลที่เคยบันทึก)
   for (const key in data) {
     if (data.hasOwnProperty(key)) {
-      // (ป้องกันไม่ให้เขียนทับฟิลด์ที่เราเพิ่งตั้งค่าไป)
-      if (key === 'MainCaregiver_Rel') continue; 
+      if (key === 'MainCaregiver_Rel') continue; // ข้าม (ทำไปแล้ว)
+      if (fieldsToSync.includes(key)) continue; // ข้าม (ทำไปแล้ว)
       
-      const field = assessmentForm.querySelector(`[name="${key}"]`);
+      const field = targetForm.querySelector(`[name="${key}"]`);
       if (field) {
         if (field.type === 'radio') {
-          document.querySelectorAll(`[name="${key}"][value="${data[key]}"]`).forEach(el => el.checked = true);
+          targetForm.querySelectorAll(`[name="${key}"][value="${data[key]}"]`).forEach(el => el.checked = true);
         } else if (field.type === 'checkbox') {
           if (data[key] === true || data[key] === 'true' || data[key] === 'on') {
             field.checked = true;
@@ -843,6 +827,34 @@ function populateAssessmentForm(data) {
       }
     }
   }
+  
+  // (ใหม่!) สั่งอัปเดต UI ของ Toggle ทั้งหมด
+  targetForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
+    if (el.tagName === 'SELECT') {
+      el.dispatchEvent(new Event('change', { 'bubbles': true }));
+    } 
+    else if (el.type === 'radio' && el.checked) {
+      el.dispatchEvent(new Event('change', { 'bubbles': true }));
+    }
+  });
+  
+  // คำนวณคะแนน Braden
+  calculateBradenScore(targetForm); 
+  
+  // ตั้งค่าผู้ประเมิน
+  const assessorNameEl = targetForm.querySelector("#assessor-name");
+  const assessorPosEl = targetForm.querySelector("#assessor-position");
+  if (assessorNameEl && assessorPosEl) {
+    const assessor = globalStaffList.find(s => s.fullName === data.Assessor_Name);
+    if(assessor) {
+      assessorNameEl.value = assessor.fullName;
+      assessorPosEl.value = assessor.position;
+    } else {
+      assessorNameEl.value = data.Assessor_Name || "";
+      assessorPosEl.value = data.Assessor_Position || "";
+    }
+  }
+}
   
   // (ใหม่!) สั่งอัปเดต UI ของ Toggle ทั้งหมด
   assessmentForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
