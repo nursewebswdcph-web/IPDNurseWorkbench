@@ -1211,7 +1211,6 @@ async function fetchAndRenderClassifyPage(an, page) {
 }
 
 // (ใหม่!) วาดตาราง 15 คอลัมน์ (5 วัน x 3 เวร)
-f// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 function renderClassifyTable(data, page) {
   const table = classifyTable;
   let thead = table.querySelector("thead");
