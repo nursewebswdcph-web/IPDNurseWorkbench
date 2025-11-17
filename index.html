@@ -446,17 +446,23 @@
             </div>
             <div class="col-span-12 md:col-span-6">
               <label class="block text-sm font-medium text-gray-700">ความสัมพันธ์กับผู้ป่วย</label>
-              <input type="text" name="MainCaregiver_Rel" class="mt-1 p-2 block w-full border rounded-md" placeholder="บิดา-มารดา, สามี,ภรรยา,บุตร, ญาติ, อื่นๆ...">
+              <div class="mt-2 space-y-2 md:space-y-0 md:flex md:flex-wrap md:gap-x-6">
+                <label class="flex items-center"><input type="radio" name="MainCaregiver_Rel" value="บิดา-มารดา" class="mr-2">บิดา-มารดา</label>
+                <label class="flex items-center"><input type="radio" name="MainCaregiver_Rel" value="สามี,ภรรยา,บุตร" class="mr-2">สามี,ภรรยา,บุตร</label>
+                <label class="flex items-center"><input type="radio" name="MainCaregiver_Rel" value="ญาติ" class="mr-2">ญาติ</label>
+                <label class="flex items-center"><input type="radio" name="MainCaregiver_Rel" value="อื่นๆ" class="mr-2">อื่นๆ:</label>
+              </div>
+              <input type="text" name="MainCaregiver_Rel_Other_Text" class="mt-1 p-2 block w-full border rounded-md" placeholder="ระบุ...">
             </div>
 
             <!-- (ดึงข้อมูลมา) -->
             <div class="col-span-12">
               <label class="block text-sm font-medium text-gray-700">อาการสำคัญ (CC)</label>
-              <textarea id="assess-cc" rows="2" class="mt-1 p-2 block w-full border rounded-md bg-gray-200" readonly></textarea>
+              <textarea id="assess-cc" name="ChiefComplaint" rows="2" class="mt-1 p-2 block w-full border rounded-md"></textarea>
             </div>
             <div class="col-span-12">
               <label class="block text-sm font-medium text-gray-700">ประวัติการเจ็บป่วยปัจจุบัน (PI)</label>
-              <textarea id="assess-pi" rows="3" class="mt-1 p-2 block w-full border rounded-md bg-gray-200" readonly></textarea>
+              <textarea id="assess-pi" name="PresentIllness" rows="3" class="mt-1 p-2 block w-full border rounded-md"></textarea>
             </div>
             <div class="col-span-12">
               <label class="block text-sm font-medium text-gray-700">อาการและอาการแสดงแรกรับ</label>
