@@ -8,6 +8,65 @@
 // ----------------------------------------------------------------
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_Wf0QMK-I80d6A2riIDQRRMpMy3IAoGMpYw0_gFuOXMuqWjThVHFHP2g/exec";
 
+// (ใหม่!) ฐานข้อมูลเกณฑ์การประเมิน v2.8
+const CLASSIFY_CRITERIA = {
+  "1": {
+    title: "1. สัญญาณชีพ",
+    4: "ผิดปกติ โดยมีการเปลี่ยนแปลงตลอดเวลาหรือรวดเร็ว ของ T/P/R/BP ต้องเฝ้าระวังทุก 15 นาที - 1 ชั่วโมง",
+    3: "ผิดปกติ แต่ควบคุมได้/ปกติ แต่มีโอกาสเปลี่ยนแปลงได้ง่าย ต้องเฝ้าระวัง ทุก 2-4 ชั่วโมง",
+    2: "ผิดปกติ แต่มีโอกาสเปลี่ยนแปลงได้ง่าย ต้องเฝ้าระวัง ทุก 4 - 6 ชั่วโมง",
+    1: "คงที่ มีโอกาสเปลี่ยนแปลงได้น้อย ต้องเฝ้าระวัง 1 - 2 ครั้ง/วัน"
+  },
+  "2": {
+    title: "2. อาการแสดงทางระบบประสาท",
+    4: "มีการเปลี่ยนแปลงตลอดเวลา ต้องเฝ้าระวังทุก 1 ชั่วโมง / 1 - 2 ชั่วโมง",
+    3: "ผิดปกติ แต่ควบคุมได้และมีโอกาสเปลี่ยนแปลง ต้องเฝ้าระวังทุก 2-4 ชั่วโมง",
+    2: "ปกติ หรือคงที่ ที่มีโอกาสเปลี่ยนแปลง ต้องเฝ้าระวังเวรละ 1 ครั้ง",
+    1: "ปกติ หรือคงที่"
+  },
+  "3": {
+    title: "3. การได้รับการตรวจรักษาด้วยการผ่าตัด/หัตถการฯ",
+    4: "- มีหัตถการฉุกเฉินต่ออวัยวะที่สำคัญต่อการมีชีวิต เช่น CPR, Hemodialysis, Cut down emergency, ICU, SB tube, Blood exchange\n- ผ่าตัดสมอง ปอด ตับ ไต หรืออวัยวะที่สำคัญต่อการมีชีวิต ภายใน 24 ชั่วโมงแรก ที่ยังไม่สามารถควบคุมอาการได้\n- ผ่าตัดใหญ่อวัยวะอื่น ที่ไม่สามารถควบคุมการเปลี่ยนแปลงได้\n- ใช้อุปกรณ์ช่วยชีวิตในระยะแรกที่ต้องเฝ้าระวังใกล้ชิด และมีการปรับการทำงานของอุปกรณ์ตามการเปลี่ยนแปลงของผู้ป่วย เช่น ใช้เครื่องช่วยหายใจ CPAP Wean O2 ระยะแรก  HFNC",
+    3: "- มีหัตถการเร่งด่วน เช่น ICD, Hemodialysis ในรายที่มีอาการคงที่, เจาะปอด PD เจาะท้อง, Sepsis ที่ควบคุมอาการได้\n- หลังผ่าตัดสมอง ปอด ตับ ไต หรืออวัยวะที่สำคัญต่อการมีชีวิต 24 - 48 ชั่วโมง\n- ใช้อุปกรณ์ช่วยชีวิตในระยะควบคุมอาการได้ หรือปรับการทำงานของอุปกรณ์น้อยลง หรือเตรียมวางแผนปรับลดการใช้ เช่น O2 mask c bag,",
+    2: "- มีหัตถการฉุกเฉินต่ออวัยวะที่สำคัญแบบไม่ฉุกเฉิน เช่น เจาะปอด, LP ส่องตรวจ\n- หลังผ่าตัดสมอง ปอด ตับ ไต หรืออวัยวะที่สำคัญต่อการมีชีวิต 48-72 ชั่วโมง ที่อาการคงที่ หรือหลังผ่าตัดใหญ่ที่ควบคุมอาการได้ 24-48 ชั่วโมงแรก\n- ใช้อุปกรณ์เพื่อช่วยชีวิต แต่ไม่ต้องปรับการทำงานของอุปกรณ์ แต่เฝ้าระวัง, เพื่อวางแผนปรับลดการใช้อุปกรณ์ เช่น O2 canular",
+    1: "- มีหัตถการทั่วไป เช่น เจาะเลือด ใส่สายสวนปัสสาวะ ผ่าฝี\n- ได้รับการตรวจรักษาทั่วไปที่ไม่ใช้วิธีการตรวจพิเศษ\n- หลังผ่าตัดในระยะพักฟื้นและไม่มีภาวะแทรกซ้อน\n- ไม่มีการใช้อุปกรณ์พิเศษเพื่อช่วยชีวิต"
+  },
+  "4": {
+    title: "4. พฤติกรรมที่ผิดปกติ อารมณ์ จิตสังคม",
+    4: "- พฤติกรรมผิดปกติรุนแรง ควบคุมไม่ได้/มีโอกาสจะฆ่าตัวตาย/ไม่สามารถแสดงพฤติกรรมการรับรู้ได้\n- พฤติกรรมผิดปกติด้านการปรับตัวทางอารมณ์และจิตสังคมที่รุนแรง เช่น ต่อต้านการรักษา ดึง ETT, ดึง NG tube",
+    3: "- พฤติกรรมผิดปกติรุนแรง ควบคุมไม่ได้\n- ซึมเศร้า ปรับตัวไม่ได้ ปฏิเสธการรักษา",
+    2: "- พฤติกรรมผิดปกติ แต่ควบคุมตนเองได้ เครียด วิตกกังวล",
+    1: "- ไม่มีปัญหาการปรับตัว"
+  },
+  "5": {
+    title: "5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน",
+    4: "ไม่สามารถปฏิบัติกิจวัตรประจำวันด้วยตนเอง 3 ใน 4 ข้อ (อาหาร, เคลื่อนไหว, ความสะอาด และขับถ่าย)",
+    3: "ไม่สามารถปฏิบัติด้วยตนเอง ต้องทดแทนส่วนมากอย่างน้อย 2 ใน 4 ข้อ",
+    2: "สามารถช่วยเหลือตนเองได้บ้าง ต้องทดแทนบางส่วน",
+    1: "สามารถช่วยเหลือตนเองได้ทั้งหมด"
+  },
+  "6": {
+    title: "6. ความต้องการการสนับสนุนด้านจิตใจและอารมณ์ฯ",
+    4: "กลัวและวิตกกังวลสูงมาก/ได้รับความกระทบกระเทือนจิตใจรุนแรง/ต้องการข้อมูลที่ชัดเจน/เจาะจง/ ไม่ยอมรับสภาพความเจ็บป่วย/ไม่เข้าใจการรักษา/ไม่สนใจตนเอง สิ้นหวัง",
+    3: "วิตกกังวลสูง ต้องการข้อมูลที่ชัดเจนเพื่อการตัดสินใจ/การดูแลตนเอง",
+    2: "วิตกกังวลเล็กน้อย ต้องการข้อมูลเพื่อควบคุมอาการ/การดูแลตนเอง",
+    1: "ต้องการคำแนะนำทั่วไป เช่น กฎระเบียบ, การดูแลตนเอง เมื่อเจ็บป่วย"
+  },
+  "7": {
+    title: "7. ความต้องการยา การรักษา/หัตถการและการฟื้นฟู",
+    4: "ได้รับยาทางหลอดเลือดดำที่มีผลต่ออวัยวะที่สำคัญต่อการมีชีวิตและ/หรือต้องเฝ้าระวังอย่างใกล้ชิด/มีการให้ต้องได้รับการบำบัดทดแทน ที่มีบันทึกทุก 15 นาที - 1 ชั่วโมง เช่น ยา HAD ให้เลือดผู้ป่วยที่เสียเลือด พ่นยาทุก 30 นาที - 1 ชั่วโมง",
+    3: "- ต้องการการปฏิบัติที่ใช้ทักษะเฉพาะ หัตถการที่ปฏิบัติบ่อยมาก เช่น ทำแผลขนาดใหญ่/ซับซ้อน/ดูดเสมหะทุก 15 นาที - 1 ชั่วโมง / เจาะ Hct, DTX ทุก 1 ชั่วโมง การ Dilate ม่านตา/ Nasal packing\n- ภายหลังได้รับหัตถการต้องต่ออวัยวะที่สำคัญต่อชีวิต ต้องการเฝ้าระวังอย่างใกล้ชิด เช่น เจาะตับ, เจาะ ABG\n- ได้รับยาที่ต้องประเมิน/ช่วยเหลือ/เฝ้าระวังก่อนและหลังการให้ยา เช่น ยาปรับระดับน้ำตาล BP, ชีพจร/ให้เลือดผู้ป่วยซีด/พ่นยาทุก 2-4 ชั่วโมง /Stat order\n- ต้องการช่วยเหลือที่ใช้ทักษะเฉพาะทางไม่ยุ่งยาก ต้องปฏิบัติบ่อย เช่น ทำแผลพื้นที่จำนวนมาก/เช็ดตา/ดูดเสมหะ/เจาะ Hct, DTX ทุก 2-4 ชั่วโมง\n- หัตถการทั่วไป เช่น สวนปัสสาวะ อุจจาระ สวนล้างช่องคลอด ล้างกระเพาะอาหาร ใส่เผือก Skin traction ครั้งแรก",
+    2: "- ได้รับยาเพื่อการรักษา/ควบคุมอาการทั่วไป ต้องเฝ้าระวังตามปกติหรือมีอุปกรณ์ที่ต้องการดูแลไม่ยุ่งยากซับซ้อน การทำ Passive, active exercise / เจาะ Hct, DTX ทุก 6-12 ชั่วโมง การให้ยาชนิดฉีด/การให้สารน้ำทางหลอดเลือดดำ",
+    1: "ได้รับยาที่ใช้รักษา/ควบคุมอาการในลักษณะประจำ/ต้องการกระตุ้นการดูแลตนเอง"
+  },
+  "8": {
+    title: "8. ความต้องการการบรรเทาอาการรบกวน",
+    4: "ทุกข์ทรมานจากอาการรบกวนรุนแรงควบคุมไม่ได้/พักผ่อน/เกิดความเครียดมาก ต้องเฝ้าระวัง อย่างน้อยทุก 1 ชั่วโมง",
+    3: "มีอาการรบกวนรุนแรง ควบคุมได้ ต้องการเฝ้าระวังทุก 2-4 ชั่วโมง",
+    2: "มีอาการรบกวนที่ควบคุมได้ ต้องเฝ้าระวังเวรละ 1 ครั้ง",
+    1: "มีอาการรบกวนเล็กน้อย ควบคุมได้ ไม่ต้องการการเฝ้าระวัง หรือไม่มีอาการรบกวนเลย"
+  }
+};
 
 // ----------------------------------------------------------------
 // (2) Global Variables
@@ -1099,18 +1158,30 @@ async function handleSaveAssessment(event) {
 // ----------------------------------------------------------------
 
 // (ใหม่!) เปิด Modal จำแนกประเภท
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 async function openClassifyModal() {
-  // 1. ตั้งค่า Header (ใช้ข้อมูลที่เก็บไว้ตอนเปิด Chart)
+  // 1. ตั้งค่า Header
   classifyAnDisplay.textContent = currentPatientAN;
   classifyNameDisplay.textContent = currentPatientData.Name || '';
   
   // 2. รีเซ็ต Paging
   currentClassifyPage = 1;
   
-  // 3. โหลดข้อมูลหน้า 1
+  // (ใหม่!) 3. สร้าง Datalist สำหรับค้นหาชื่อผู้ประเมิน (ถ้ายังไม่มี)
+  if (!document.getElementById('staff-list-datalist')) {
+    const dataList = document.createElement('datalist');
+    dataList.id = 'staff-list-datalist';
+    // (ใช้ globalStaffList ที่โหลดมาจากตอนเปิด FR-004)
+    globalStaffList.forEach(staff => {
+      dataList.innerHTML += `<option value="${staff.fullName}"></option>`;
+    });
+    classifyForm.appendChild(dataList); // เพิ่ม Datalist เข้าไปในฟอร์ม
+  }
+  
+  // 4. โหลดข้อมูลหน้า 1
   await fetchAndRenderClassifyPage(currentPatientAN, currentClassifyPage);
   
-  // 4. แสดง Modal
+  // 5. แสดง Modal
   classifyModal.classList.remove("hidden");
 }
 
@@ -1140,6 +1211,7 @@ async function fetchAndRenderClassifyPage(an, page) {
 }
 
 // (ใหม่!) วาดตาราง 15 คอลัมน์ (5 วัน x 3 เวร)
+f// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 function renderClassifyTable(data, page) {
   const table = classifyTable;
   let thead = table.querySelector("thead");
@@ -1159,23 +1231,19 @@ function renderClassifyTable(data, page) {
   const headerRow2 = document.createElement('tr');
   headerRow2.className = 'bg-gray-50';
 
-  // (สำคัญ!) ใช้วันที่ Admit เป็นวันเริ่มต้นของ Page 1
   const admitDate = new Date(currentPatientData.AdmitDate || new Date());
-  
   const startDate = new Date(admitDate);
-  // คำนวณวันเริ่มต้นของ Page นี้
   startDate.setDate(startDate.getDate() + ((page - 1) * 5));
 
   for (let i = 0; i < 5; i++) { // 5 วัน
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + i);
-    const dateString = getISODate(currentDate); // "2025-11-17"
+    const dateString = getISODate(currentDate);
     
     // Header แถว 1 (วันที่)
     const dateHeader = document.createElement('th');
     dateHeader.colSpan = 3;
     dateHeader.className = 'p-2 border text-center text-sm font-semibold text-gray-700';
-    // (แสดงวันที่แบบ Read-only)
     dateHeader.innerHTML = `<span class="classify-date-display" data-day-index="${i}">${currentDate.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                           <input type="hidden" value="${dateString}" class="classify-date-input" data-day-index="${i}">`;
     headerRow1.appendChild(dateHeader);
@@ -1194,50 +1262,72 @@ function renderClassifyTable(data, page) {
   // --- 2. สร้าง Body (หมวด 1-8 และ สรุป) ---
   tbody.innerHTML = ""; // เคลียร์ของเก่า
   
+  // (ใหม่!) อัปเดตชื่อหมวดตามเกณฑ์ใหม่
   const categories = [
-    '1. ปัญหาสัญญาณชีพ / อาการเปลี่ยนแปลง',
-    '2. ปัญหา GCS / อาการทางระบบประสาท',
-    '3. การได้รับยา / การรักษา / หัตถการ',
-    '4. ปัญหาพฤติกรรม / การควบคุมตนเอง',
-    '5. ด้านการดูแลพื้นฐาน / กิจวัตรประจำวัน',
-    '6. การสังเกตและประเมินอาการ',
-    '7. การเคลื่อนไหว / กิจกรรม',
-    '8. ด้านจิตใจ / อารมณ์ / สังคม'
+    { name: 'I. สภาวะสุขภาพ', isHeader: true },
+    { name: '1. สัญญาณชีพ', isHeader: false, scoreIndex: 1 },
+    { name: '2. อาการแสดงทางระบบประสาท', isHeader: false, scoreIndex: 2 },
+    { name: '3. การได้รับการตรวจรักษา/ผ่าตัดหรือหัตถการ', isHeader: false, scoreIndex: 3 },
+    { name: '4. พฤติกรรมที่ผิดปกติ อารมณ์ จิตสังคม', isHeader: false, scoreIndex: 4 },
+    { name: 'II. ความต้องการการดูแลขั้นต่ำ', isHeader: true },
+    { name: '5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน', isHeader: false, scoreIndex: 5 },
+    { name: '6. ความต้องการการสนับสนุนด้านจิตใจและอารมณ์', isHeader: false, scoreIndex: 6 },
+    { name: '7. ความต้องการยา การรักษา/หัตถการและการฟื้นฟู', isHeader: false, scoreIndex: 7 },
+    { name: '8. ความต้องการการบรรเทาอาการรบกวน', isHeader: false, scoreIndex: 8 }
   ];
   
-  // สร้าง 8 แถว หมวด
-  categories.forEach((catName, catIndex) => {
+  // สร้าง 10 แถว (8 หมวด + 2 หัวข้อ)
+  categories.forEach((cat) => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td class="p-2 border font-semibold">${catName}</td>`;
     
-    const currentStartDate = new Date(admitDate);
-    currentStartDate.setDate(currentStartDate.getDate() + ((page - 1) * 5));
-    
-    for (let i = 0; i < 5; i++) { // 5 วัน
-      const currentDate = new Date(currentStartDate);
-      currentDate.setDate(currentStartDate.getDate() + i);
-      const dateString = getISODate(currentDate);
+    if (cat.isHeader) {
+      // (แถวหัวข้อ I, II)
+      row.className = 'bg-indigo-50';
+      row.innerHTML = `<td colspan="16" class="p-2 border font-bold text-indigo-800">${cat.name}</td>`;
+    } else {
+      // (แถวประเมิน 1-8)
+      // (ใหม่!) เพิ่มปุ่ม (?)
+      row.innerHTML = `
+        <td class="p-2 border font-semibold">
+          ${cat.name}
+          <button type="button" class="classify-criteria-btn ml-2 text-blue-500 hover:text-blue-700" data-category-index="${cat.scoreIndex}">(?)</button>
+        </td>`;
+      
+      const currentStartDate = new Date(admitDate);
+      currentStartDate.setDate(currentStartDate.getDate() + ((page - 1) * 5));
+      
+      for (let i = 0; i < 5; i++) { // 5 วัน
+        const currentDate = new Date(currentStartDate);
+        currentDate.setDate(currentStartDate.getDate() + i);
+        const dateString = getISODate(currentDate);
 
-      ['D', 'E', 'N'].forEach(shift => {
-        const entry = data.find(d => d.Date === dateString && d.Shift === shift);
-        const score = (entry && entry[`Score_${catIndex + 1}`]) ? entry[`Score_${catIndex + 1}`] : '';
-        
-        row.innerHTML += `
-          <td class="p-1 border">
-            <input type="number" min="1" max="4" name="Score_${catIndex + 1}" 
-                   class="w-full text-center p-1 border rounded classify-input" 
-                   data-day-index="${i}" data-shift="${shift}" value="${score}">
-          </td>`;
-      });
+        ['D', 'E', 'N'].forEach(shift => {
+          const entry = data.find(d => d.Date === dateString && d.Shift === shift);
+          const score = (entry && entry[`Score_${cat.scoreIndex}`]) ? entry[`Score_${cat.scoreIndex}`] : 0;
+          
+          // (ใหม่!) เปลี่ยนจาก <input> เป็น <select>
+          row.innerHTML += `
+            <td class="p-1 border">
+              <select name="Score_${cat.scoreIndex}" class="w-full text-center p-1 border rounded classify-input" data-day-index="${i}" data-shift="${shift}">
+                <option value="0" ${score == 0 ? 'selected' : ''}></option>
+                <option value="1" ${score == 1 ? 'selected' : ''}>1</option>
+                <option value="2" ${score == 2 ? 'selected' : ''}>2</option>
+                <option value="3" ${score == 3 ? 'selected' : ''}>3</option>
+                <option value="4" ${score == 4 ? 'selected' : ''}>4</option>
+              </select>
+            </td>`;
+        });
+      }
     }
     tbody.appendChild(row);
   });
   
-  // สร้าง 3 แถว สรุป
+  // สร้าง 4 แถว สรุป (เพิ่มแถวปุ่ม Save)
   const summaryRows = [
     { id: 'total-score', label: 'รวมคะแนน (Total Score)', class: 'bg-gray-50' },
     { id: 'category', label: 'ประเภทผู้ป่วย (Category)', class: 'bg-gray-100' },
-    { id: 'assessor', label: 'ผู้ประเมิน (RN)', class: 'bg-gray-50' }
+    { id: 'assessor', label: 'ผู้ประเมิน (RN)', class: 'bg-gray-50' },
+    { id: 'save', label: 'บันทึกเวร', class: 'bg-white' } // (ใหม่!)
   ];
   
   const summaryStartDate = new Date(admitDate);
@@ -1249,75 +1339,93 @@ function renderClassifyTable(data, page) {
     row.id = `classify-row-${sr.id}`;
     row.innerHTML = `<td class="p-2 border font-bold text-right">${sr.label}</td>`;
     
+    const currentStartDate = new Date(admitDate); // (รีเซ็ตวันที่อีกครั้ง)
+    currentStartDate.setDate(currentStartDate.getDate() + ((page - 1) * 5));
+    
     for (let i = 0; i < 5; i++) {
-      const currentDate = new Date(summaryStartDate);
-      currentDate.setDate(summaryStartDate.getDate() + i);
+      const currentDate = new Date(currentStartDate);
+      currentDate.setDate(currentStartDate.getDate() + i);
       const dateString = getISODate(currentDate);
 
       ['D', 'E', 'N'].forEach(shift => {
         const entry = data.find(d => d.Date === dateString && d.Shift === shift);
-        let value = '';
-        if (sr.id === 'total-score') value = entry?.Total_Score || '';
-        if (sr.id === 'category') value = entry?.Category || '';
-        if (sr.id === 'assessor') value = entry?.Assessor_Name || '';
         
-        const inputType = sr.id === 'assessor' ? 'text' : 'text'; // (RN อาจจะใช้ text)
-        const isReadonly = (sr.id !== 'assessor') ? 'readonly' : '';
-        const inputClass = (sr.id !== 'assessor') ? 'bg-gray-200' : 'classify-input';
-        
-        row.innerHTML += `
-          <td class="p-1 border">
-            <input type="${inputType}" name="${sr.id}" 
-                   class="w-full text-center p-1 border rounded ${inputClass}" 
-                   data-day-index="${i}" data-shift="${shift}" value="${value}" ${isReadonly}>
-          </td>`;
+        // (ใหม่!) ตรรกะสำหรับปุ่ม Save
+        if (sr.id === 'save') {
+          row.innerHTML += `
+            <td class="p-1 border text-center">
+              <button type="button" class="classify-save-btn bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-3 rounded" 
+                      data-day-index="${i}" data-shift="${shift}">
+                บันทึก
+              </button>
+            </td>`;
+        } 
+        // (ตรรกะเดิมสำหรับช่องอื่นๆ)
+        else {
+          let value = '';
+          if (sr.id === 'total-score') value = entry?.Total_Score || '';
+          if (sr.id === 'category') value = entry?.Category || '';
+          if (sr.id === 'assessor') value = entry?.Assessor_Name || '';
+          
+          const inputType = (sr.id === 'assessor') ? `list="staff-list-datalist"` : 'text';
+          const isReadonly = (sr.id !== 'assessor') ? 'readonly' : '';
+          const inputClass = (sr.id !== 'assessor') ? 'bg-gray-200' : 'classify-input';
+          
+          row.innerHTML += `
+            <td class="p-1 border">
+              <input ${inputType} name="${sr.id}" 
+                     class="w-full text-center p-1 border rounded ${inputClass}" 
+                     data-day-index="${i}" data-shift="${shift}" value="${value}" ${isReadonly}>
+            </td>`;
+        }
       });
     }
     tbody.appendChild(row);
   });
 }
-
 // (ใหม่!) อัปเดตคะแนนรวมของ 1 คอลัมน์ (1 เวร)
-function updateClassifyColumnTotals(inputElement) {
-  const dayIndex = inputElement.dataset.dayIndex;
-  const shift = inputElement.dataset.shift;
-  
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
+function updateClassifyColumnTotals(dayIndex, shift) {
   let total = 0;
-  let maxScore = 0;
   
-  // 1. วนลูป 8 หมวด
+  // 1. วนลูป 8 หมวด (ใช้ <select>)
   for (let i = 1; i <= 8; i++) {
-    const scoreInput = classifyTableBody.querySelector(`input[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
-    if (!scoreInput) continue; // (ป้องกัน Error)
+    const scoreInput = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+    if (!scoreInput) continue; 
     
     let score = parseInt(scoreInput.value, 10) || 0;
-    
-    // (จำกัดคะแนน 1-4)
-    if (score > 4) { score = 4; scoreInput.value = 4; }
-    if (score < 0) { score = 0; scoreInput.value = ''; } // (ให้เป็น 0 แต่แสดงช่องว่าง)
-    if (score < 1 && scoreInput.value !== '') { score = 1; scoreInput.value = 1; } // (ถ้าพิมพ์ 0 ให้เด้งเป็น 1)
-
     total += score;
-    if (score > maxScore) maxScore = score;
   }
   
   // 2. อัปเดตช่อง Total
   const totalInput = classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
   if (totalInput) totalInput.value = total > 0 ? total : '';
   
-  // 3. อัปเดตช่อง Category (ตามเกณฑ์ "หนักกว่า")
+  // 3. (ใหม่!) อัปเดตช่อง Category (ตามเกณฑ์ "Total Score")
   const categoryInput = classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
-  if (categoryInput) categoryInput.value = maxScore > 0 ? maxScore : ''; // ประเภท = คะแนนสูงสุดที่พบ
+  if (categoryInput) {
+    let category = 0;
+    if (total > 0 && total <= 8) category = 1;
+    else if (total >= 9 && total <= 14) category = 2;
+    else if (total >= 15 && total <= 20) category = 3;
+    else if (total >= 21 && total <= 26) category = 4;
+    else if (total >= 27) category = 5;
+    categoryInput.value = category > 0 ? category : '';
+  }
+  
+  // (ส่งคืน Total และ Category เผื่อใช้)
+  return {
+    Total_Score: total > 0 ? total : '',
+    Category: categoryInput.value
+  };
 }
 
-// (ใหม่!) บันทึกข้อมูล 1 เวร (Auto-save)
-async function autoSaveClassificationShift(inputElement) {
-  const dayIndex = inputElement.dataset.dayIndex;
-  const shift = inputElement.dataset.shift;
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
+async function saveClassificationShiftData(dayIndex, shift) {
   
   // 1. หาวันที่
   const dateInput = classifyTable.querySelector(`input.classify-date-input[data-day-index="${dayIndex}"]`);
-  if (!dateInput) return; // (ป้องกัน Error)
+  if (!dateInput) return;
   const date = dateInput.value;
   
   // 2. รวบรวมข้อมูล
@@ -1329,19 +1437,20 @@ async function autoSaveClassificationShift(inputElement) {
   };
   
   // 3. วนลูป 8 หมวด + ผู้ประเมิน
-  let hasData = false; // (เช็คว่ามีข้อมูลก่อนบันทึก)
+  let hasData = false;
   for (let i = 1; i <= 8; i++) {
-    const val = classifyTableBody.querySelector(`input[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
-    if (val) hasData = true;
+    const val = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
+    if (val && val != "0") hasData = true; // (เช็คว่ามีคะแนน)
     entryData[`Score_${i}`] = val;
   }
   entryData.Assessor_Name = classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
   if (entryData.Assessor_Name) hasData = true;
 
-  // (ถ้าไม่มีข้อมูลเลย ไม่ต้องบันทึก)
-  if (!hasData) return;
+  if (!hasData) {
+    showError("ยังไม่มีข้อมูล", "กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือ ลงชื่อผู้ประเมิน");
+    return;
+  }
   
-  // (แสดง Loading เล็กๆ)
   showLoading('กำลังบันทึก...');
 
   try {
@@ -1357,7 +1466,9 @@ async function autoSaveClassificationShift(inputElement) {
     classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Total_Score;
     classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Category;
     
-    Swal.close();
+    // (ใช้ showSuccess แทน Swal.close())
+    showSuccess('บันทึกสำเร็จ!', `บันทึกเวร ${shift} วันที่ ${date} เรียบร้อย`);
+    
   } catch (error) {
     showError('บันทึกไม่สำเร็จ', error.message);
   }
@@ -1371,12 +1482,48 @@ function changeClassifyPage(direction) {
   currentClassifyPage = newPage;
   fetchAndRenderClassifyPage(currentPatientAN, currentClassifyPage);
 }
+// (เพิ่มฟังก์ชันใหม่นี้)
+function showCriteriaPopover(categoryIndex) {
+  const criteria = CLASSIFY_CRITERIA[categoryIndex.toString()];
+  if (!criteria) {
+    showError('ไม่พบเกณฑ์', `ไม่พบเกณฑ์สำหรับหมวด ${categoryIndex}`);
+    return;
+  }
 
+  // สร้าง HTML สำหรับ SweetAlert
+  const criteriaHtml = `
+    <div class="text-left space-y-4 p-4">
+      <div class="p-3 bg-gray-100 rounded-md">
+        <p class="font-semibold text-lg text-red-600">คะแนน 4:</p>
+        <p class="whitespace-pre-wrap">${criteria[4]}</p>
+      </div>
+      <div class="p-3 bg-gray-100 rounded-md">
+        <p class="font-semibold text-lg text-orange-600">คะแนน 3:</p>
+        <p class="whitespace-pre-wrap">${criteria[3]}</p>
+      </div>
+      <div class="p-3 bg-gray-100 rounded-md">
+        <p class="font-semibold text-lg text-yellow-600">คะแนน 2:</p>
+        <p class="whitespace-pre-wrap">${criteria[2]}</p>
+      </div>
+      <div class="p-3 bg-gray-100 rounded-md">
+        <p class="font-semibold text-lg text-green-600">คะแนน 1:</p>
+        <p class="whitespace-pre-wrap">${criteria[1]}</p>
+      </div>
+    </div>
+  `;
+
+  Swal.fire({
+    title: criteria.title,
+    html: criteriaHtml,
+    width: '800px',
+    confirmButtonText: 'ปิด'
+  });
+}
 
 // ----------------------------------------------------------------
 // (9) MAIN EVENT LISTENERS (The *only* DOMContentLoaded)
 // ----------------------------------------------------------------
-
+// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ "ทั้งบล็อก" ด้วยโค้ดนี้)
 document.addEventListener("DOMContentLoaded", () => {
   
   // (Init)
@@ -1387,7 +1534,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Admit Modal)
   openAdmitModalBtn.addEventListener("click", openAdmitModal);
   closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
-  cancelAdmitBtn.addEventListener("click", closeAdmitModal); // (แก้ไขบั๊ก)
+  cancelAdmitBtn.addEventListener("click", closeAdmitModal);
   admitForm.addEventListener("submit", handleAdmitSubmit);
   admitDobInput.addEventListener("change", () => {
     const ceDate = admitDobInput.value;
@@ -1411,137 +1558,68 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Patient Table Clicks)
   patientTableBody.addEventListener('click', (e) => {
     const target = e.target;
-    
-    // 1. Click "Name" -> Open Details Modal
     if (target.tagName === 'A' && target.dataset.an) {
-      e.preventDefault();
-      openDetailsModal(target.dataset.an);
+      e.preventDefault(); openDetailsModal(target.dataset.an);
     }
-    
-    // 2. Click "Chart" -> Open Chart Page
     if (target.classList.contains('chart-btn') && target.dataset.an) {
-      e.preventDefault();
-      openChart(target.dataset.an, target.dataset.hn, target.dataset.name);
+      e.preventDefault(); openChart(target.dataset.an, target.dataset.hn, target.dataset.name);
     }
   });
 
-  // (Chart Page & Assessment Modal)
+  // (Chart Page)
   closeChartBtn.addEventListener("click", closeChart);
-  
-  // (อัปเดต) คลิกรายการฟอร์มด้านซ้าย (Event Delegation)
   chartPage.addEventListener('click', (e) => {
     const targetItem = e.target.closest('.chart-list-item');
     if (targetItem) {
       const formType = targetItem.dataset.form;
-      
-      // (ยกเลิกการเลือกอันเก่า)
       chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
-      // (เลือกอันใหม่)
       targetItem.classList.add('bg-indigo-100');
-      
-      showFormPreview(formType); // (เรียกฟังก์ชัน Preview ใหม่)
+      showFormPreview(formType);
     }
   });
-
-  // (อัปเดต) คลิกปุ่ม "แก้ไข" (ในฝั่ง Preview)
   chartEditBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
-    if (formType === '004') {
-      openAssessmentForm(); // (เปิด Modal แก้ไขตัวเต็ม)
-    } else {
-      showComingSoon();
-    }
+    if (formType === '004') { openAssessmentForm(); } 
+    else { showComingSoon(); }
   });
-  
-  // (อัปเดต) คลิกปุ่ม "เพิ่มใหม่" (ในฝั่ง Preview)
   chartAddNewBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
-    // (อัปเดต!)
-    if (formType === 'classify') {
-      openClassifyModal(); 
-    } else {
-      showComingSoon();
-    }
+    if (formType === 'classify') { openClassifyModal(); } 
+    else { showComingSoon(); }
   });
   
   
-  // ปิดฟอร์มประเมิน (ปุ่มบน)
+  // (Assessment Modal - FR-004)
   closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
-  
-  // ปิดฟอร์มประเมิน (ปุ่มล่าง)
-  const closeAssessmentModalBtnBottom = document.getElementById("close-assessment-modal-btn-bottom");
-  if(closeAssessmentModalBtnBottom) {
-    closeAssessmentModalBtnBottom.addEventListener("click", closeAssessmentModal);
-  }
-
-  // บันทึกฟอร์มประเมิน
+  document.getElementById("close-assessment-modal-btn-bottom")?.addEventListener("click", closeAssessmentModal);
   assessmentForm.addEventListener("submit", handleSaveAssessment);
-  
-  // (นี่คือเวอร์ชันที่แก้ไขตามคำขอล่าสุด)
-  // Event listener "ตัวเดียว" ที่จัดการทุกการเปลี่ยนแปลงใน Assessment Form
   assessmentForm.addEventListener('change', (e) => {
     const target = e.target;
-  
-    // 1. จัดการ Braden Score
     if (target.classList.contains('braden-score')) {
-      calculateBradenScore(assessmentForm); // (ใช้ฟอร์มหลัก)
+      calculateBradenScore(assessmentForm);
     }
-    
-    // 2. จัดการ Assessor Position
     if (target.id === 'assessor-name') {
       const selectedName = target.value;
       const staff = globalStaffList.find(s => s.fullName === selectedName);
-      if (staff) {
-        assessorPositionInput.value = staff.position;
-      } else {
-        assessorPositionInput.value = "";
-      }
+      assessorPositionInput.value = staff ? staff.position : "";
     }
-  
-    // 3. จัดการ Show/Hide Toggles ทั้งหมด
     if (target.classList.contains('assessment-radio-toggle')) {
-      const groupName = target.name;
-      // (แก้ไข) ใช้ target.closest('form') เพื่อให้ใช้ได้ทั้งฟอร์มจริงและ Preview
-      const form = target.closest('form'); 
-      if (!form) return; // (ป้องกัน Error)
-      
-      let selectedValue = null;
-      if (target.tagName === 'SELECT') {
-          selectedValue = target.value;
-      } else if (target.type === 'radio') {
-          selectedValue = target.checked ? target.value : null;
-      }
-
-      // 3.1 ซ่อนเป้าหมายทั้งหมดที่อยู่ในกลุ่มเดียวกันก่อน
+      const groupName = e.target.name;
+      const form = e.target.closest('form'); 
+      if (!form) return;
+      let selectedValue = (e.target.tagName === 'SELECT') ? e.target.value : (e.target.checked ? e.target.value : null);
       form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
-        let targetId = null;
-        if (sibling.tagName === 'SELECT') {
-          // ซ่อน <option> ทั้งหมด
-          sibling.querySelectorAll('option').forEach(opt => {
-            if (opt.dataset.controls) {
-              const el = form.querySelector(`#${opt.dataset.controls}`); // (แก้ไข)
-              if (el) el.classList.add('hidden');
-              form.querySelectorAll(`[data-follows="${opt.dataset.controls}"]`).forEach(f => f.classList.add('hidden'));
-            }
-          });
-        } else { // สำหรับ <radio>
-          targetId = sibling.dataset.controls;
-          if (targetId) {
-            const el = form.querySelector(`#${targetId}`); // (แก้ไข)
-            if (el) el.classList.add('hidden');
-            form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
-          }
+        let targetId = (sibling.tagName === 'SELECT') ? 
+          sibling.options[sibling.selectedIndex]?.dataset.controls : 
+          sibling.dataset.controls;
+        if (targetId) {
+          form.querySelector(`#${targetId}`)?.classList.add('hidden');
+          form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
         }
       });
-  
-      // 3.2 โชว์เฉพาะเป้าหมายที่ถูกเลือก
-      let selectedTargetId = null;
-      
-      if (target.tagName === 'SELECT') {
-        selectedTargetId = target.options[target.selectedIndex]?.dataset.controls;
-      } else if (target.type === 'radio' && target.checked) {
-        selectedTargetId = target.dataset.controls;
-      }
+      let selectedTargetId = (e.target.tagName === 'SELECT') ? 
+        e.target.options[e.target.selectedIndex]?.dataset.controls : 
+        (e.target.checked ? e.target.dataset.controls : null);
       
       // (ตรรกะพิเศษสำหรับ select ที่ต้องเช็คค่า)
       if (groupName === 'Substance_Alcohol' && (selectedValue === 'ดื่มเป็นประจำ' || selectedValue === 'ดื่มนาน ๆ ครั้ง')) selectedTargetId = 'alcohol-vol';
@@ -1556,38 +1634,54 @@ document.addEventListener("DOMContentLoaded", () => {
       if (groupName === 'Cogn_Speech' && selectedValue === 'ใช้ภาษาต่างประเทศ') selectedTargetId = 'cogn-speech-other';
 
       if (selectedTargetId) {
-        const targetEl = form.querySelector(`#${selectedTargetId}`); // (แก้ไข)
+        const targetEl = form.querySelector(`#${selectedTargetId}`);
         if (targetEl) targetEl.classList.remove('hidden');
-        
-        // โชว์ตัวที่ตามมา (data-follows) ด้วย
         form.querySelectorAll(`[data-follows="${selectedTargetId}"]`).forEach(f => f.classList.remove('hidden'));
       }
     }
   });
   
-  // --- (ใหม่!) Event Listeners สำหรับ Classification Modal ---
+  // --- (ใหม่!) Event Listeners สำหรับ Classification Modal (v2.8) ---
   
   closeClassifyModalBtn.addEventListener("click", closeClassifyModal);
   
-  // (Auto-save) เมื่อคลิกออกจากช่อง Input
-  classifyTableBody.addEventListener('blur', (e) => {
+  // (ใหม่!) ลบ 'blur' listener เก่า
+  // (ใหม่!) เพิ่ม 'click' listener ตัวเดียว
+  classifyTableBody.addEventListener('click', (e) => {
     const target = e.target;
-    if (target.classList.contains('classify-input')) {
-      // 1. อัปเดต Total/Category ใน UI
-      updateClassifyColumnTotals(target);
-      // 2. บันทึกข้อมูลทั้งคอลัมน์ (เวร)
-      autoSaveClassificationShift(target);
+    
+    // 1. ถ้าคลิกปุ่ม "บันทึก"
+    if (target.classList.contains('classify-save-btn')) {
+      const dayIndex = target.dataset.dayIndex;
+      const shift = target.dataset.shift;
+      
+      // (คำนวณ)
+      const { Total_Score, Category } = updateClassifyColumnTotals(dayIndex, shift);
+      
+      // (ตรวจสอบว่ามีข้อมูลหรือไม่)
+      if (Total_Score === '' && !classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value) {
+        showError('ยังไม่มีข้อมูล', 'กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือ ลงชื่อผู้ประเมิน');
+        return;
+      }
+      
+      // (บันทึก)
+      saveClassificationShiftData(dayIndex, shift);
     }
-  }, true); // (ใช้ 'true' (Capture) เพื่อให้ blur ทำงาน)
+    
+    // 2. ถ้าคลิกปุ่ม "เกณฑ์ (?)"
+    if (target.classList.contains('classify-criteria-btn')) {
+      const categoryIndex = target.dataset.categoryIndex;
+      showCriteriaPopover(categoryIndex);
+    }
+  });
   
   // (Paging)
   classifyPrevPageBtn.addEventListener("click", () => changeClassifyPage(-1));
   classifyNextPageBtn.addEventListener("click", () => changeClassifyPage(1));
   
-  // (เพิ่มหน้าใหม่ - ในอนาคต)
+  // (เพิ่มหน้าใหม่)
   classifyAddPageBtn.addEventListener("click", () => {
     showError("ยังไม่รองรับ", "ฟังก์ชันเพิ่มหน้าใหม่ (หน้า 6+) ยังไม่เปิดใช้งานครับ");
-    // (ในอนาคต: จะคำนวณ page ล่าสุด + 1 แล้วเปิด)
   });
-  
+
 });
