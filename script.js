@@ -6,7 +6,6 @@
 // (1) URL ของ Google Apps Script
 // ----------------------------------------------------------------
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_Wf0QMK-I80d6A2riIDQRRMpMy3IAoGMpYw0_gFuOXMuqWjThVHFHP2g/exec";
-
 // ----------------------------------------------------------------
 // (2) Constants & Configs
 // ----------------------------------------------------------------
