@@ -1880,7 +1880,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cancelTemplateModalBtn) cancelTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
   if (addTemplateForm) addTemplateForm.addEventListener("submit", handleSaveFocusTemplate);
 
-  // Progress FR-006
+  // Progress note FR-006
   const btn006 = document.querySelector('.chart-list-item[data-form="006"]');
   if(btn006) btn006.addEventListener('click', openProgressNoteModal); // หรือใช้ logic เดิมใน chartPage event delegation ก็ได้
 
