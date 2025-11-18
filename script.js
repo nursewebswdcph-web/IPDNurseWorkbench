@@ -164,7 +164,9 @@ const focusProblemText = document.getElementById("focus-problem-text");
 const focusGoalText = document.getElementById("focus-goal-text");
 
 let globalFocusTemplates = { problems: [], goals: [] };
-
+// [script.js] เพิ่มตัวแปรใหม่
+const focusTemplateSearch = document.getElementById("focus-template-search");
+const focusTemplateDatalist = document.getElementById("focus-template-datalist");
 // (ใหม่! Add Template Modal)
 const addTemplateModal = document.getElementById("add-template-modal");
 const addTemplateForm = document.getElementById("add-template-form");
@@ -1753,34 +1755,35 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // (Focus Problem Modal - FR-IPD-005)
-  closeFocusModalBtn.addEventListener("click", closeFocusProblemModal);
-  cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
-  focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
-  focusTemplateProblem.addEventListener("change", (e) => {
-    const selectedIndex = e.target.selectedIndex;
-    if (selectedIndex > 0) {
-      const selectedTemplate = globalFocusTemplates.problems[selectedIndex - 1];
-      focusProblemText.value = selectedTemplate.problem;
-      if (selectedTemplate.goal) {
-        focusGoalText.value = selectedTemplate.goal;
+  // --- ส่วนนี้ต้องเก็บไว้ (ห้ามลบ) ---
+  if (closeFocusModalBtn) closeFocusModalBtn.addEventListener("click", closeFocusProblemModal);
+  if (cancelFocusBtn) cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
+  if (focusProblemForm) focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
+
+  // --- ส่วนที่เพิ่มใหม่ (Logic ค้นหา Template) ---
+  if (focusTemplateSearch) {
+    focusTemplateSearch.addEventListener("input", (e) => {
+      const val = e.target.value;
+      // ค้นหาว่าสิ่งที่พิมพ์ ตรงกับเทมเพลตไหนหรือไม่
+      const found = globalFocusTemplates.problems.find(t => t.problem === val);
+      
+      if (found) {
+        // ถ้าเจอ: เติมช่องปัญหา และ ช่องเป้าหมาย ให้อัตโนมัติ
+        if(focusProblemText) focusProblemText.value = found.problem;
+        if (found.goal && focusGoalText) {
+          focusGoalText.value = found.goal;
+        }
       }
-    }
-  });
-  focusTemplateGoal.addEventListener("change", (e) => {
-    const selectedText = e.target.value;
-    if (selectedText) {
-      focusGoalText.value = selectedText;
-    }
-  });
+    });
+  }
 
-  // (*** EVENT LISTENERS ใหม่ที่เพิ่มเข้ามา ***)
-  // (Add Template Modal - สำหรับ FR-IPD-005)
-  openFocusTemplateModalBtn.addEventListener("click", openAddTemplateModal);
-  closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
-  cancelTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
-  addTemplateForm.addEventListener("submit", handleSaveFocusTemplate);
+  // --- ส่วนของ Add Template Modal (เก็บไว้ ห้ามลบ) ---
+  if (openFocusTemplateModalBtn) openFocusTemplateModalBtn.addEventListener("click", openAddTemplateModal);
+  if (closeTemplateModalBtn) closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
+  if (cancelTemplateModalBtn) cancelTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
+  if (addTemplateForm) addTemplateForm.addEventListener("submit", handleSaveFocusTemplate);
 
-});document.addEventListener("DOMContentLoaded", () => {
+}); document.addEventListener("DOMContentLoaded", () => {
   
   // (Init)
   updateClock(); setInterval(updateClock, 1000);
@@ -2087,43 +2090,37 @@ async function handleSaveFocusProblem(event) {
 }
 // (ใหม่!) แยกฟังก์ชันนี้ออกมาเพื่อใช้ซ้ำ
 function populateFocusTemplateDropdowns() {
-  // 1. เติมเทมเพลตปัญหา
-  focusTemplateProblem.innerHTML = `<option value="">-- เลือกเทมเพลตปัญหา --</option>`;
+  // ใช้ Datalist แทน Select เดิม
+  if (!focusTemplateDatalist) return;
+  
+  focusTemplateDatalist.innerHTML = ""; 
   globalFocusTemplates.problems.forEach(t => {
     const option = document.createElement("option");
-    option.value = t.problem;
-    option.textContent = t.problem;
-    focusTemplateProblem.appendChild(option);
-  });
-  
-  // 2. เติมเทมเพลตเป้าหมาย
-  focusTemplateGoal.innerHTML = `<option value="">-- เลือกเทมเพลตเป้าหมาย --</option>`;
-  globalFocusTemplates.goals.forEach(goalText => {
-    const option = document.createElement("option");
-    option.value = goalText;
-    option.textContent = goalText;
-    focusTemplateGoal.appendChild(option);
+    option.value = t.problem; // ค่านี้จะแสดงตอนค้นหา
+    focusTemplateDatalist.appendChild(option);
   });
 }
 
-// (แก้ไข!) อัปเดตฟังก์ชันนี้ให้เรียกใช้ populateFocusTemplateDropdowns
+// [script.js] แก้ไขฟังก์ชัน openFocusProblemModal
 function openFocusProblemModal(entryData = null) {
   focusProblemForm.reset();
   
-  // 1. เติมเทมเพลต (เรียกฟังก์ชันที่สร้างใหม่)
+  // เพิ่มบรรทัดนี้: เคลียร์ช่องค้นหาทุกครั้งที่เปิด
+  if(focusTemplateSearch) focusTemplateSearch.value = "";
+  
   populateFocusTemplateDropdowns();
 
-  // 2. ตรวจสอบว่าเป็นการ "แก้ไข" หรือ "เพิ่มใหม่"
   if (entryData) {
-    // (แก้ไข)
+    // ... (โค้ดเดิมส่วนแก้ไข) ...
     focusModalTitle.textContent = "แก้ไขรายการปัญหาสุขภาพ";
     document.getElementById("focus-entry-id").value = entryData.Entry_ID;
     focusProblemText.value = entryData.Problem || '';
     focusGoalText.value = entryData.Goal || '';
+    // ...
     document.getElementById("focus-active-date").value = entryData.ActiveDate || '';
     document.getElementById("focus-resolved-date").value = entryData.ResolvedDate || '';
   } else {
-    // (เพิ่มใหม่)
+    // ... (โค้ดเดิมส่วนเพิ่มใหม่) ...
     focusModalTitle.textContent = "เพิ่มรายการปัญหาสุขภาพ";
     const now = new Date();
     const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
