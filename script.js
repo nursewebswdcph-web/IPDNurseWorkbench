@@ -165,6 +165,13 @@ const focusGoalText = document.getElementById("focus-goal-text");
 
 let globalFocusTemplates = { problems: [], goals: [] };
 
+// (ใหม่! Add Template Modal)
+const addTemplateModal = document.getElementById("add-template-modal");
+const addTemplateForm = document.getElementById("add-template-form");
+const openFocusTemplateModalBtn = document.getElementById("open-template-modal-btn");
+const closeTemplateModalBtn = document.getElementById("close-template-modal-btn");
+const cancelTemplateModalBtn = document.getElementById("cancel-template-modal-btn");
+
 // ----------------------------------------------------------------
 // (4) Utility Functions
 // ----------------------------------------------------------------
@@ -1650,7 +1657,6 @@ document.addEventListener("DOMContentLoaded", () => {
       chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
       targetItem.classList.add('bg-indigo-100');
       
-      // (Updated logic to handle 005)
       if (formType === '005') {
         showFocusListPreview(currentPatientAN);
       } else {
@@ -1665,7 +1671,6 @@ document.addEventListener("DOMContentLoaded", () => {
     else { showComingSoon(); }
   });
   
-  // (Updated logic to handle 005)
   chartAddNewBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
     if (formType === 'classify') { openClassifyModal(); }
@@ -1679,37 +1684,31 @@ document.addEventListener("DOMContentLoaded", () => {
   assessmentForm.addEventListener("submit", handleSaveAssessment);
   
   assessmentForm.addEventListener('change', (e) => {
-    const target = e.target;
-    if (target.classList.contains('braden-score')) {
+    // (Braden Score logic)
+    if (e.target.classList.contains('braden-score')) {
       calculateBradenScore(assessmentForm);
     }
-    if (target.id === 'assessor-name') {
-      const selectedName = target.value;
+    // (Assessor Name logic)
+    if (e.target.id === 'assessor-name') {
+      const selectedName = e.target.value;
       const staff = globalStaffList.find(s => s.fullName === selectedName);
       assessorPositionInput.value = staff ? staff.position : "";
     }
-    if (target.classList.contains('assessment-radio-toggle')) {
+    // (Radio/Select Toggle logic)
+    if (e.target.classList.contains('assessment-radio-toggle')) {
+      // (โค้ดสำหรับ Toggle ซ่อน/แสดง ของ FR-004)
       const groupName = e.target.name;
       const form = e.target.closest('form'); 
       if (!form) return;
-      
       let selectedValue = (e.target.tagName === 'SELECT') ? e.target.value : (e.target.checked ? e.target.value : null);
-      
       form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
-        let targetId = (sibling.tagName === 'SELECT') ? 
-          sibling.options[sibling.selectedIndex]?.dataset.controls : 
-          sibling.dataset.controls;
+        let targetId = (sibling.tagName === 'SELECT') ? sibling.options[sibling.selectedIndex]?.dataset.controls : sibling.dataset.controls;
         if (targetId) {
           form.querySelector(`#${targetId}`)?.classList.add('hidden');
           form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
         }
       });
-      
-      let selectedTargetId = (e.target.tagName === 'SELECT') ?
-        e.target.options[e.target.selectedIndex]?.dataset.controls : 
-        (e.target.checked ? e.target.dataset.controls : null);
-      
-      // (Special logic for selects)
+      let selectedTargetId = (e.target.tagName === 'SELECT') ? e.target.options[e.target.selectedIndex]?.dataset.controls : (e.target.checked ? e.target.dataset.controls : null);
       if (groupName === 'Substance_Alcohol' && (selectedValue === 'ดื่มเป็นประจำ' || selectedValue === 'ดื่มนาน ๆ ครั้ง')) selectedTargetId = 'alcohol-vol';
       if (groupName === 'Substance_Smoke' && (selectedValue === 'สูบเป็นประจำ' || selectedValue === 'สูบนาน ๆ ครั้ง')) selectedTargetId = 'smoke-vol';
       if (groupName === 'Pain_Pattern' && selectedValue === 'อื่นๆ') selectedTargetId = 'pain-pattern-other';
@@ -1720,7 +1719,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (groupName === 'Elim_Urine_Status' && selectedValue === 'ไม่ปกติ') selectedTargetId = 'elim-urine-detail';
       if (groupName === 'Elim_Bowel_Status' && selectedValue === 'ไม่ปกติ') selectedTargetId = 'elim-bowel-detail';
       if (groupName === 'Cogn_Speech' && selectedValue === 'ใช้ภาษาต่างประเทศ') selectedTargetId = 'cogn-speech-other';
-      
       if (selectedTargetId) {
         const targetEl = form.querySelector(`#${selectedTargetId}`);
         if (targetEl) targetEl.classList.remove('hidden');
@@ -1729,66 +1727,231 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   
-  // --- (Classification Modal - N/D/E Updated) ---
+  // (Classification Modal - FR-Classify)
   closeClassifyModalBtn.addEventListener("click", closeClassifyModal);
-  
   classifyTableBody.addEventListener('click', (e) => {
     const target = e.target;
-    
-    // 1. Save button
     if (target.classList.contains('classify-save-btn')) {
       const dayIndex = target.dataset.dayIndex;
       const shift = target.dataset.shift;
-      
       const { Total_Score, Category } = updateClassifyColumnTotals(dayIndex, shift);
-      
       if (Total_Score === '' && !classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value) {
         showError('ยังไม่มีข้อมูล', 'กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือ ลงชื่อผู้ประเมิน');
         return;
       }
-      
       saveClassificationShiftData(dayIndex, shift);
     }
-    
-    // 2. Criteria button
     if (target.classList.contains('classify-criteria-btn')) {
       const categoryIndex = target.dataset.categoryIndex;
       showCriteriaPopover(categoryIndex);
     }
   });
-  
-  // (Paging)
   classifyPrevPageBtn.addEventListener("click", () => changeClassifyPage(-1));
   classifyNextPageBtn.addEventListener("click", () => changeClassifyPage(1));
-  
-  // (Add new page)
   classifyAddPageBtn.addEventListener("click", () => {
     showError("ยังไม่รองรับ", "ฟังก์ชันเพิ่มหน้าใหม่ (หน้า 6+) ยังไม่เปิดใช้งานครับ");
   });
 
-  // --- (NEW! Event Listeners for Focus Problem Modal FR-IPD-005) ---
+  // (Focus Problem Modal - FR-IPD-005)
   closeFocusModalBtn.addEventListener("click", closeFocusProblemModal);
   cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
   focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
-  
-  // (Listeners for Template selection)
   focusTemplateProblem.addEventListener("change", (e) => {
     const selectedIndex = e.target.selectedIndex;
     if (selectedIndex > 0) {
-      const selectedTemplate = globalFocusTemplates.problems[selectedIndex - 1]; // -1 for placeholder
+      const selectedTemplate = globalFocusTemplates.problems[selectedIndex - 1];
       focusProblemText.value = selectedTemplate.problem;
       if (selectedTemplate.goal) {
         focusGoalText.value = selectedTemplate.goal;
       }
     }
   });
-  
   focusTemplateGoal.addEventListener("change", (e) => {
     const selectedText = e.target.value;
     if (selectedText) {
       focusGoalText.value = selectedText;
     }
   });
+
+  // (*** EVENT LISTENERS ใหม่ที่เพิ่มเข้ามา ***)
+  // (Add Template Modal - สำหรับ FR-IPD-005)
+  openFocusTemplateModalBtn.addEventListener("click", openAddTemplateModal);
+  closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
+  cancelTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
+  addTemplateForm.addEventListener("submit", handleSaveFocusTemplate);
+
+});document.addEventListener("DOMContentLoaded", () => {
+  
+  // (Init)
+  updateClock(); setInterval(updateClock, 1000);
+  loadWards();
+  wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
+  
+  // (Admit Modal)
+  openAdmitModalBtn.addEventListener("click", openAdmitModal);
+  closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
+  cancelAdmitBtn.addEventListener("click", closeAdmitModal);
+  admitForm.addEventListener("submit", handleAdmitSubmit);
+  admitDobInput.addEventListener("change", () => {
+    const ceDate = admitDobInput.value;
+    const beDate = convertCEtoBE(ceDate);
+    admitAgeInput.value = calculateAge(beDate);
+  });
+
+  // (Details Modal)
+  closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
+  editPatientBtn.addEventListener("click", enableEditMode);
+  cancelEditBtn.addEventListener("click", resetDetailsModalState);
+  detailsForm.addEventListener("submit", handleUpdateSubmit);
+  dischargeBtn.addEventListener("click", handleDischarge);
+  transferWardBtn.addEventListener("click", handleTransferWard);
+  detailsDobInput.addEventListener("change", () => {
+    const ceDate = detailsDobInput.value;
+    const beDate = convertCEtoBE(ceDate);
+    detailsAgeInput.value = calculateAge(beDate);
+  });
+  
+  // (Patient Table Clicks)
+  patientTableBody.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target.tagName === 'A' && target.dataset.an) {
+      e.preventDefault(); openDetailsModal(target.dataset.an);
+    }
+    if (target.classList.contains('chart-btn') && target.dataset.an) {
+      e.preventDefault(); openChart(target.dataset.an, target.dataset.hn, target.dataset.name);
+    }
+  });
+  
+  // (Chart Page)
+  chartPage.addEventListener('click', (e) => {
+    const targetItem = e.target.closest('.chart-list-item');
+    if (targetItem) {
+      const formType = targetItem.dataset.form;
+      chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+      targetItem.classList.add('bg-indigo-100');
+      
+      if (formType === '005') {
+        showFocusListPreview(currentPatientAN);
+      } else {
+        showFormPreview(formType);
+      }
+    }
+  });
+  
+  chartEditBtn.addEventListener('click', (e) => {
+    const formType = e.target.dataset.form;
+    if (formType === '004') { openAssessmentForm(); } 
+    else { showComingSoon(); }
+  });
+  
+  chartAddNewBtn.addEventListener('click', (e) => {
+    const formType = e.target.dataset.form;
+    if (formType === 'classify') { openClassifyModal(); }
+    else if (formType === '005') { openFocusProblemModal(); } 
+    else { showComingSoon(); }
+  });
+  
+  // (Assessment Modal - FR-004)
+  closeAssessmentModalBtn.addEventListener("click", closeAssessmentModal);
+  document.getElementById("close-assessment-modal-btn-bottom")?.addEventListener("click", closeAssessmentModal);
+  assessmentForm.addEventListener("submit", handleSaveAssessment);
+  
+  assessmentForm.addEventListener('change', (e) => {
+    // (Braden Score logic)
+    if (e.target.classList.contains('braden-score')) {
+      calculateBradenScore(assessmentForm);
+    }
+    // (Assessor Name logic)
+    if (e.target.id === 'assessor-name') {
+      const selectedName = e.target.value;
+      const staff = globalStaffList.find(s => s.fullName === selectedName);
+      assessorPositionInput.value = staff ? staff.position : "";
+    }
+    // (Radio/Select Toggle logic)
+    if (e.target.classList.contains('assessment-radio-toggle')) {
+      // (โค้ดสำหรับ Toggle ซ่อน/แสดง ของ FR-004)
+      const groupName = e.target.name;
+      const form = e.target.closest('form'); 
+      if (!form) return;
+      let selectedValue = (e.target.tagName === 'SELECT') ? e.target.value : (e.target.checked ? e.target.value : null);
+      form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
+        let targetId = (sibling.tagName === 'SELECT') ? sibling.options[sibling.selectedIndex]?.dataset.controls : sibling.dataset.controls;
+        if (targetId) {
+          form.querySelector(`#${targetId}`)?.classList.add('hidden');
+          form.querySelectorAll(`[data-follows="${targetId}"]`).forEach(f => f.classList.add('hidden'));
+        }
+      });
+      let selectedTargetId = (e.target.tagName === 'SELECT') ? e.target.options[e.target.selectedIndex]?.dataset.controls : (e.target.checked ? e.target.dataset.controls : null);
+      if (groupName === 'Substance_Alcohol' && (selectedValue === 'ดื่มเป็นประจำ' || selectedValue === 'ดื่มนาน ๆ ครั้ง')) selectedTargetId = 'alcohol-vol';
+      if (groupName === 'Substance_Smoke' && (selectedValue === 'สูบเป็นประจำ' || selectedValue === 'สูบนาน ๆ ครั้ง')) selectedTargetId = 'smoke-vol';
+      if (groupName === 'Pain_Pattern' && selectedValue === 'อื่นๆ') selectedTargetId = 'pain-pattern-other';
+      if (groupName === 'HP_Before' && selectedValue === 'ไม่ดี') selectedTargetId = 'hp-before-detail';
+      if (groupName === 'HP_Care' && selectedValue === 'อื่นๆ') selectedTargetId = 'hp-care-other';
+      if (groupName === 'Nutri_Type' && selectedValue === 'อาหารเฉพาะโรค') selectedTargetId = 'nutri-type-detail';
+      if (groupName === 'Belief_Cause' && selectedValue === 'อื่นๆ') selectedTargetId = 'belief-cause-other';
+      if (groupName === 'Elim_Urine_Status' && selectedValue === 'ไม่ปกติ') selectedTargetId = 'elim-urine-detail';
+      if (groupName === 'Elim_Bowel_Status' && selectedValue === 'ไม่ปกติ') selectedTargetId = 'elim-bowel-detail';
+      if (groupName === 'Cogn_Speech' && selectedValue === 'ใช้ภาษาต่างประเทศ') selectedTargetId = 'cogn-speech-other';
+      if (selectedTargetId) {
+        const targetEl = form.querySelector(`#${selectedTargetId}`);
+        if (targetEl) targetEl.classList.remove('hidden');
+        form.querySelectorAll(`[data-follows="${selectedTargetId}"]`).forEach(f => f.classList.remove('hidden'));
+      }
+    }
+  });
+  
+  // (Classification Modal - FR-Classify)
+  closeClassifyModalBtn.addEventListener("click", closeClassifyModal);
+  classifyTableBody.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target.classList.contains('classify-save-btn')) {
+      const dayIndex = target.dataset.dayIndex;
+      const shift = target.dataset.shift;
+      const { Total_Score, Category } = updateClassifyColumnTotals(dayIndex, shift);
+      if (Total_Score === '' && !classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value) {
+        showError('ยังไม่มีข้อมูล', 'กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือ ลงชื่อผู้ประเมิน');
+        return;
+      }
+      saveClassificationShiftData(dayIndex, shift);
+    }
+    if (target.classList.contains('classify-criteria-btn')) {
+      const categoryIndex = target.dataset.categoryIndex;
+      showCriteriaPopover(categoryIndex);
+    }
+  });
+  classifyPrevPageBtn.addEventListener("click", () => changeClassifyPage(-1));
+  classifyNextPageBtn.addEventListener("click", () => changeClassifyPage(1));
+  classifyAddPageBtn.addEventListener("click", () => {
+    showError("ยังไม่รองรับ", "ฟังก์ชันเพิ่มหน้าใหม่ (หน้า 6+) ยังไม่เปิดใช้งานครับ");
+  });
+
+  // (Focus Problem Modal - FR-IPD-005)
+  closeFocusModalBtn.addEventListener("click", closeFocusProblemModal);
+  cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
+  focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
+  focusTemplateProblem.addEventListener("change", (e) => {
+    const selectedIndex = e.target.selectedIndex;
+    if (selectedIndex > 0) {
+      const selectedTemplate = globalFocusTemplates.problems[selectedIndex - 1];
+      focusProblemText.value = selectedTemplate.problem;
+      if (selectedTemplate.goal) {
+        focusGoalText.value = selectedTemplate.goal;
+      }
+    }
+  });
+  focusTemplateGoal.addEventListener("change", (e) => {
+    const selectedText = e.target.value;
+    if (selectedText) {
+      focusGoalText.value = selectedText;
+    }
+  });
+
+  // (*** EVENT LISTENERS ใหม่ที่เพิ่มเข้ามา ***)
+  // (Add Template Modal - สำหรับ FR-IPD-005)
+  openFocusTemplateModalBtn.addEventListener("click", openAddTemplateModal);
+  closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
+  cancelTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
+  addTemplateForm.addEventListener("submit", handleSaveFocusTemplate);
 
 });
 // ----------------------------------------------------------------
@@ -1895,47 +2058,6 @@ async function loadFocusTemplates() {
   }
 }
 
-// (ใหม่!) เปิด Modal (สำหรับเพิ่มใหม่ หรือ แก้ไข)
-function openFocusProblemModal(entryData = null) {
-  focusProblemForm.reset();
-  
-  // 1. เติมเทมเพลตลง Dropdown
-  focusTemplateProblem.innerHTML = `<option value="">-- เลือกเทมเพลตปัญหา --</option>`;
-  globalFocusTemplates.problems.forEach(t => {
-    const option = document.createElement("option");
-    option.value = t.problem;
-    option.textContent = t.problem;
-    focusTemplateProblem.appendChild(option);
-  });
-  
-  focusTemplateGoal.innerHTML = `<option value="">-- เลือกเทมเพลตเป้าหมาย --</option>`;
-  globalFocusTemplates.goals.forEach(goalText => {
-    const option = document.createElement("option");
-    option.value = goalText;
-    option.textContent = goalText;
-    focusTemplateGoal.appendChild(option);
-  });
-
-  // 2. ตรวจสอบว่าเป็นการ "แก้ไข" หรือ "เพิ่มใหม่"
-  if (entryData) {
-    // (แก้ไข)
-    focusModalTitle.textContent = "แก้ไขรายการปัญหาสุขภาพ";
-    document.getElementById("focus-entry-id").value = entryData.Entry_ID;
-    focusProblemText.value = entryData.Problem || '';
-    focusGoalText.value = entryData.Goal || '';
-    document.getElementById("focus-active-date").value = entryData.ActiveDate || '';
-    document.getElementById("focus-resolved-date").value = entryData.ResolvedDate || '';
-  } else {
-    // (เพิ่มใหม่)
-    focusModalTitle.textContent = "เพิ่มรายการปัญหาสุขภาพ";
-    // (ตั้งค่าวันที่พบปัญหาเป็นวันนี้)
-    const now = new Date();
-    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
-    document.getElementById("focus-active-date").value = localDate.toISOString().split('T')[0];
-  }
-  
-  focusProblemModal.classList.remove("hidden");
-}
 
 // (ใหม่!) ปิด Modal
 function closeFocusProblemModal() {
@@ -1971,5 +2093,97 @@ async function handleSaveFocusProblem(event) {
     
   } catch (error) {
     showError('บันทึกไม่สำเร็จ', error.message);
+  }
+}
+// (ใหม่!) แยกฟังก์ชันนี้ออกมาเพื่อใช้ซ้ำ
+function populateFocusTemplateDropdowns() {
+  // 1. เติมเทมเพลตปัญหา
+  focusTemplateProblem.innerHTML = `<option value="">-- เลือกเทมเพลตปัญหา --</option>`;
+  globalFocusTemplates.problems.forEach(t => {
+    const option = document.createElement("option");
+    option.value = t.problem;
+    option.textContent = t.problem;
+    focusTemplateProblem.appendChild(option);
+  });
+  
+  // 2. เติมเทมเพลตเป้าหมาย
+  focusTemplateGoal.innerHTML = `<option value="">-- เลือกเทมเพลตเป้าหมาย --</option>`;
+  globalFocusTemplates.goals.forEach(goalText => {
+    const option = document.createElement("option");
+    option.value = goalText;
+    option.textContent = goalText;
+    focusTemplateGoal.appendChild(option);
+  });
+}
+
+// (แก้ไข!) อัปเดตฟังก์ชันนี้ให้เรียกใช้ populateFocusTemplateDropdowns
+function openFocusProblemModal(entryData = null) {
+  focusProblemForm.reset();
+  
+  // 1. เติมเทมเพลต (เรียกฟังก์ชันที่สร้างใหม่)
+  populateFocusTemplateDropdowns();
+
+  // 2. ตรวจสอบว่าเป็นการ "แก้ไข" หรือ "เพิ่มใหม่"
+  if (entryData) {
+    // (แก้ไข)
+    focusModalTitle.textContent = "แก้ไขรายการปัญหาสุขภาพ";
+    document.getElementById("focus-entry-id").value = entryData.Entry_ID;
+    focusProblemText.value = entryData.Problem || '';
+    focusGoalText.value = entryData.Goal || '';
+    document.getElementById("focus-active-date").value = entryData.ActiveDate || '';
+    document.getElementById("focus-resolved-date").value = entryData.ResolvedDate || '';
+  } else {
+    // (เพิ่มใหม่)
+    focusModalTitle.textContent = "เพิ่มรายการปัญหาสุขภาพ";
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    document.getElementById("focus-active-date").value = localDate.toISOString().split('T')[0];
+  }
+  
+  focusProblemModal.classList.remove("hidden");
+}
+
+// (ฟังก์ชันใหม่!) เปิด Modal เพิ่มเทมเพลต
+function openAddTemplateModal() {
+  addTemplateForm.reset();
+  addTemplateModal.classList.remove("hidden");
+}
+
+// (ฟังก์ชันใหม่!) ปิด Modal เพิ่มเทมเพลต
+function closeAddTemplateModal() {
+  addTemplateModal.classList.add("hidden");
+  addTemplateForm.reset();
+}
+
+// (ฟังก์ชันใหม่!) บันทึกเทมเพลตใหม่
+async function handleSaveFocusTemplate(event) {
+  event.preventDefault();
+  showLoading('กำลังบันทึกเทมเพลต...');
+  
+  const formData = new FormData(addTemplateForm);
+  const templateData = Object.fromEntries(formData.entries());
+
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "addFocusTemplate",
+        templateData: templateData
+      })
+    });
+    
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+
+    showSuccess('บันทึกเทมเพลตสำเร็จ!');
+    closeAddTemplateModal();
+    
+    // (สำคัญ!) รีเฟรชรายการเทมเพลตในระบบทันที
+    globalFocusTemplates = { problems: [], goals: [] }; // 1. ล้าง Cache
+    await loadFocusTemplates(); // 2. โหลดใหม่
+    populateFocusTemplateDropdowns(); // 3. เติม Dropdown ใน Modal ที่เปิดอยู่
+    
+  } catch (error) {
+    showError('บันทึกเทมเพลตไม่สำเร็จ', error.message);
   }
 }
