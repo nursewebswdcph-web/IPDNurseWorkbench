@@ -1001,7 +1001,7 @@ async function showEntryList(formType, formTitle) { // (เพิ่ม async)
       
       // (ปรับปรุงการแสดงผล)
       const entryDate = new Date(entry.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const shift = entry.shift === 'D' ? 'ดึก' : (entry.shift === 'E' ? 'เช้า' : 'บ่าย');
+      const shift = entry.shift === 'N' ? 'ดึก' : (entry.shift === 'D' ? 'เช้า' : 'บ่าย');
       
       
       entryDiv.innerHTML = `
@@ -1302,10 +1302,10 @@ function renderClassifyTable(data, page) {
     headerRow1.appendChild(dateHeader);
     
     // Header แถว 2 (เวร)
-    ['D', 'E', 'N'].forEach(shift => {
+    ['N', 'D', 'E'].forEach(shift => {
       const shiftHeader = document.createElement('th');
       shiftHeader.className = 'p-1 border text-xs font-medium text-gray-600';
-      shiftHeader.textContent = shift === 'D' ? 'ดึก (D)' : (shift === 'E' ? 'เช้า (E)' : 'บ่าย (N)');
+      shiftHeader.textContent = shift === 'N' ? 'ดึก (N)' : (shift === 'D' ? 'เช้า (D)' : 'บ่าย (E)');
       headerRow2.appendChild(shiftHeader);
     });
   }
@@ -1355,7 +1355,7 @@ function renderClassifyTable(data, page) {
         currentDate.setDate(currentStartDate.getDate() + i);
         const dateString = getISODate(currentDate);
         
-        ['D', 'E', 'N'].forEach(shift => {
+        ['N', 'D', 'E'].forEach(shift => {
           const entry = data.find(d => d.Date === dateString && d.Shift === shift);
           const score = (entry && entry[`Score_${cat.scoreIndex}`]) ? entry[`Score_${cat.scoreIndex}`] : 0;
           
@@ -1401,7 +1401,7 @@ function renderClassifyTable(data, page) {
       currentDate.setDate(currentStartDate.getDate() + i);
       const dateString = getISODate(currentDate);
 
-      ['D', 'E', 'N'].forEach(shift => {
+      ['N', 'D', 'E'].forEach(shift => {
         const entry = data.find(d => d.Date === dateString && d.Shift === shift);
         
         // (ใหม่!) ตรรกะสำหรับปุ่ม Save
@@ -1522,7 +1522,8 @@ async function saveClassificationShiftData(dayIndex, shift) {
     classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Category;
     
     // (ใช้ showSuccess แทน Swal.close())
-    showSuccess('บันทึกสำเร็จ!', `บันทึกเวร ${shift} วันที่ ${date} เรียบร้อย`);
+    const shiftText = shift === 'N' ? 'ดึก' : (shift === 'D' ? 'เช้า' : 'บ่าย');
+    showSuccess('บันทึกสำเร็จ!', `บันทึกเวร ${shiftText} วันที่ ${date} เรียบร้อย`);
   } catch (error) {
     showError('บันทึกไม่สำเร็จ', error.message);
   }
