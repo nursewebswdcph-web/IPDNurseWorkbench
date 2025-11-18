@@ -1203,28 +1203,29 @@
       <div class="bg-white rounded-lg shadow-xl w-full max-w-lg m-4">
         <form id="add-template-form">
           <div class="flex justify-between items-center p-4 border-b">
-            <h3 class="text-xl font-semibold text-gray-800">สร้างเทมเพลตปัญหาใหม่ (FR-IPD-005)</h3>
+            <h3 class="text-xl font-semibold text-gray-800">สร้างเทมเพลตปัญหาใหม่</h3>
             <button id="close-template-modal-btn" type="button" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
           </div>
           
           <div class="p-6 space-y-4">
             <div>
-              <label for="template-problem-text" class="block text-sm font-medium text-gray-700">ปัญหา (Problem)</label>
-              <textarea id="template-problem-text" name="Problem" rows="3" class="mt-1 p-2 block w-full border rounded-md" required placeholder="เช่น: เสี่ยงต่อการพลัดตกหกล้ม"></textarea>
+              <label for="template-name" class="block text-sm font-medium text-gray-700 font-bold text-blue-600">ชื่อเรียก/คำค้นหา (Template Name)</label>
+              <input type="text" id="template-name" name="Name" class="mt-1 p-2 block w-full border rounded-md" required placeholder="เช่น: ติดเชื้อ, เสี่ยงตกเตียง, Pain">
+            </div>
+            
+            <div>
+              <label for="template-problem-text" class="block text-sm font-medium text-gray-700">รายละเอียดปัญหา (Full Problem Text)</label>
+              <textarea id="template-problem-text" name="Problem" rows="3" class="mt-1 p-2 block w-full border rounded-md" required placeholder="ข้อความยาวๆ..."></textarea>
             </div>
             <div>
-              <label for="template-goal-text" class="block text-sm font-medium text-gray-700">เป้าหมายที่คู่กัน (Goal)</label>
-              <textarea id="template-goal-text" name="Goal" rows="3" class="mt-1 p-2 block w-full border rounded-md" placeholder="เช่น: ไม่เกิดการพลัดตกหกล้มตลอดระยะเวลาที่อยู่ รพ."></textarea>
+              <label for="template-goal-text" class="block text-sm font-medium text-gray-700">เป้าหมาย (Goal)</label>
+              <textarea id="template-goal-text" name="Goal" rows="3" class="mt-1 p-2 block w-full border rounded-md" placeholder="เป้าหมาย..."></textarea>
             </div>
           </div>
           
           <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
-            <button id="cancel-template-modal-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mr-3">
-              ยกเลิก
-            </button>
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">
-              บันทึกเทมเพลต
-            </button>
+            <button id="cancel-template-modal-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mr-3">ยกเลิก</button>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">บันทึกเทมเพลต</button>
           </div>
         </form>
       </div>
