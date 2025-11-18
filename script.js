@@ -1260,11 +1260,18 @@ async function openClassifyModal() {
 }
 
 // (ใหม่!) ปิด Modal จำแนกประเภท
+// [script.js] แก้ไขฟังก์ชันนี้
 function closeClassifyModal() {
+  // 1. ปิด Modal
   classifyModal.classList.add("hidden");
-  
-  // (โหลด Chart Page ใหม่ เพื่ออัปเดต "อัปเดตล่าสุด")
-  openChart(currentPatientAN, chartHnDisplay.textContent, chartNameDisplay.textContent);
+
+  // 2. เน้นสีที่เมนู "แบบบันทึกการจำแนกฯ" ด้านซ้าย (เพื่อให้รู้ว่าอยู่หน้านี้)
+  chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+  const classifyItem = document.querySelector('.chart-list-item[data-form="classify"]');
+  if (classifyItem) classifyItem.classList.add('bg-indigo-100');
+
+  // 3. โหลดตารางรายการขึ้นมาแสดงทันที (แทนที่จะโหลดหน้า start page ใหม่)
+  showFormPreview('classify');
 }
 
 // (ใหม่!) ดึงข้อมูลและวาดตาราง
