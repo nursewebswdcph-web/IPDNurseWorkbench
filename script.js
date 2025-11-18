@@ -713,7 +713,7 @@ async function handleTransferWard() {
 }
 
 // --- CHART PAGE ---
-async function openChart(an, hn, name) {
+async function openChart(an, hn, name, bed, doctor) {
   currentPatientAN = an;
   chartAnDisplay.textContent = an;
   chartHnDisplay.textContent = hn;
