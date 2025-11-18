@@ -133,8 +133,7 @@ HN: <strong id="chart-hn-display"></strong> | ชื่อ: <strong id="chart-na
           
           <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="classify">
             <div>
-              <h3 class="text-lg font-semibold 
-text-gray-900">แบบบันทึกการการจำแนกประเภทผู้ป่วย</h3>
+              <h3 class="text-lg font-semibold text-gray-900">แบบบันทึกการการจำแนกประเภทผู้ป่วย</h3>
               <p class="text-sm text-gray-500">บันทึกรายเวร</p>
             </div>
             <div class="text-right">
@@ -152,6 +151,17 @@ text-gray-900">แบบบันทึกการการจำแนกป�
             <div class="text-right">
     
           <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-004">ยังไม่เคยบันทึก</span></span>
+              <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+            </div>
+          </li>
+
+          <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="005">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">รายการปัญหาสุขภาพ (FOCUS LIST)</h3>
+              <p class="text-sm text-gray-500">FR-IPD-005</p>
+            </div>
+            <div class="text-right">
+              <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-005">ยังไม่เคยบันทึก</span></span>
               <span class="text-blue-600 font-semibold ml-4">&gt;</span>
             </div>
           </li>
@@ -492,7 +502,25 @@ Fall risk assessment</legend>
     </div>
 </template>
   </main>
-
+<template id="preview-template-005">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-max">
+      <thead class="bg-gray-100 text-sm text-gray-700">
+        <tr>
+          <th class="p-2 border text-center w-12">ลำดับ</th>
+          <th class="p-2 border text-left">ปัญหา (FOCUS / PROBLEM)</th>
+          <th class="p-2 border text-left">เป้าหมาย (Goal/Outcome)</th>
+          <th class="p-2 border text-center w-28">วันที่พบ</th>
+          <th class="p-2 border text-center w-28">วันที่สิ้นสุด</th>
+          <th class="p-2 border text-center w-20">แก้ไข</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        </tbody>
+    </table>
+  </div>
+</template>
+  
   <div id="admit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-16 z-50 hidden overflow-y-auto">
     
     <div class="bg-white rounded-lg 
@@ -1812,6 +1840,70 @@ type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 
       </div>
      </div>
   </form>
+</div>
+  <div id="focus-problem-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-16 z-50 hidden overflow-y-auto">
+  
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] m-4">
+    <form id="focus-problem-form">
+      <div class="flex justify-between items-center p-4 border-b">
+        <h3 id="focus-modal-title" class="text-xl font-semibold text-gray-800">เพิ่มรายการปัญหาสุขภาพ</h3>
+        <button id="close-focus-modal-btn" type="button" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+      </div>
+      
+      <input type="hidden" id="focus-entry-id" name="Entry_ID">
+      
+      <div class="p-6 overflow-y-auto max-h-[calc(85vh-200px)] space-y-6">
+        
+        <fieldset class="border p-4 rounded-lg">
+          <legend class="text-lg font-semibold px-2">ปัญหา (FOCUS / PROBLEM)</legend>
+          <div class="mt-2">
+            <label for="focus-template-problem" class="block text-sm font-medium text-gray-700">เลือกจากเทมเพลต (ถ้ามี)</label>
+            <select id="focus-template-problem" class="mt-1 p-2 block w-full border rounded-md bg-gray-50">
+              <option value="">-- เลือกเทมเพลตปัญหา --</option>
+              </select>
+            <label for="focus-problem-text" class="block text-sm font-medium text-gray-700 mt-4">พิมพ์/แก้ไข ปัญหา</label>
+            <textarea id="focus-problem-text" name="Problem" rows="4" class="mt-1 p-2 block w-full border rounded-md" required></textarea>
+          </div>
+        </fieldset>
+
+        <fieldset class="border p-4 rounded-lg">
+          <legend class="text-lg font-semibold px-2">เป้าหมาย (Goal/Outcome)</legend>
+          <div class="mt-2">
+            <label for="focus-template-goal" class="block text-sm font-medium text-gray-700">เลือกจากเทมเพลต (ถ้ามี)</label>
+            <select id="focus-template-goal" class="mt-1 p-2 block w-full border rounded-md bg-gray-50">
+              <option value="">-- เลือกเทมเพลตเป้าหมาย --</option>
+              </select>
+            <label for="focus-goal-text" class="block text-sm font-medium text-gray-700 mt-4">พิมพ์/แก้ไข เป้าหมาย</label>
+            <textarea id="focus-goal-text" name="Goal" rows="4" class="mt-1 p-2 block w-full border rounded-md"></textarea>
+          </div>
+        </fieldset>
+        
+        <fieldset class="border p-4 rounded-lg">
+          <legend class="text-lg font-semibold px-2">วันที่</legend>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div>
+              <label for="focus-active-date" class="block text-sm font-medium text-gray-700">วันที่พบปัญหา (Active)</label>
+              <input type="date" id="focus-active-date" name="ActiveDate" class="mt-1 p-2 block w-full border rounded-md" required>
+            </div>
+            <div>
+              <label for="focus-resolved-date" class="block text-sm font-medium text-gray-700">วันที่สิ้นสุดปัญหา (Resolved)</label>
+              <input type="date" id="focus-resolved-date" name="ResolvedDate" class="mt-1 p-2 block w-full border rounded-md">
+            </div>
+          </div>
+        </fieldset>
+
+      </div>
+      
+      <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
+        <button id="cancel-focus-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mr-3">
+          ยกเลิก
+        </button>
+        <button type="submit" form="focus-problem-form" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">
+          บันทึกปัญหา
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
   <script src="script.js"></script>
 </body>
