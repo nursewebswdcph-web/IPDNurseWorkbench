@@ -1503,11 +1503,17 @@ async function handleSaveFocusProblem(event) {
 function populateFocusTemplateDropdowns() {
   if (!focusTemplateDatalist) return;
   focusTemplateDatalist.innerHTML = ""; 
-  globalFocusTemplates.problems.forEach(t => {
-    const option = document.createElement("option");
-    option.value = t.problem;
-    focusTemplateDatalist.appendChild(option);
-  });
+  
+  if (globalFocusTemplates.problems) {
+    globalFocusTemplates.problems.forEach(t => {
+      const option = document.createElement("option");
+      // ใช้ t.name (ชื่อสั้น) เป็นค่าที่จะแสดงในช่องค้นหา
+      option.value = t.name; 
+      // (เสริม) แสดงตัวอย่างปัญหาเล็กน้อยในวงเล็บ (Chrome อาจไม่โชว์แต่โค้ดนี้รองรับไว้)
+      option.label = t.problem.substring(0, 30) + "..."; 
+      focusTemplateDatalist.appendChild(option);
+    });
+  }
 }
 
 function openFocusProblemModal(entryData = null) {
@@ -1706,20 +1712,18 @@ document.addEventListener("DOMContentLoaded", () => {
  
   if (focusTemplateSearch) {
     focusTemplateSearch.addEventListener("input", (e) => {
-      const val = e.target.value;
-      
-      // แก้ไข: ใช้ .trim() เพื่อตัดช่องว่างหน้าหลัง และตรวจสอบว่า val ไม่ว่าง
+      const val = e.target.value; // ค่าที่พิมพ์ หรือ เลือก (คือ Template Name)
       if (!val || !globalFocusTemplates.problems) return;
 
       const cleanVal = val.trim();
 
-      // ค้นหาโดยตัดช่องว่างทั้งจากข้อมูลในตัวแปรและสิ่งที่พิมพ์เข้าไป
-      const found = globalFocusTemplates.problems.find(t => t.problem.trim() === cleanVal);
+      // แก้ไข: ค้นหาโดยเทียบกับ t.name (ชื่อเทมเพลต) แทน t.problem
+      const found = globalFocusTemplates.problems.find(t => t.name === cleanVal);
       
       if (found) {
+        // ถ้าเจอชื่อเทมเพลต ให้ดึง Problem และ Goal ตัวเต็มมาใส่
         if(focusProblemText) focusProblemText.value = found.problem;
-        // ตรวจสอบ goal ให้แน่ใจก่อน set
-        if (found.goal && focusGoalText) focusGoalText.value = found.goal;
+        if(focusGoalText) focusGoalText.value = found.goal || "";
       }
     });
   }
