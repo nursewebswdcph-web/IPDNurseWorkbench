@@ -1686,27 +1686,30 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cancelFocusBtn) cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
   if (focusProblemForm) focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
   // (Logic ค้นหา Template - แก้ไขแล้ว)
+  // (Logic ค้นหา Template - แก้ไขแล้ว V.2)
   if (focusTemplateSearch) {
-    // สร้างฟังก์ชันทำงานเมื่อมีการเลือก
     const applyTemplate = (e) => {
-        const val = e.target.value;
+        const val = e.target.value; // ค่าที่ผู้ใช้เลือกหรือพิมพ์
+        
+        if (!val) return; // ถ้าว่าง ไม่ต้องทำอะไร
+
         // ค้นหาข้อมูลจาก globalFocusTemplates
-        const found = globalFocusTemplates.problems.find(t => t.problem === val);
+        // (แก้: ใช้การเทียบแบบ trim() เพื่อตัดช่องว่างหน้าหลังที่อาจเกินมา)
+        const found = globalFocusTemplates.problems.find(t => t.problem.trim() === val.trim());
         
         if (found) {
-            // ดึง Element ใหม่อีกครั้ง เพื่อความชัวร์ 100%
+            // ดึง Element
             const pText = document.getElementById("focus-problem-text");
             const gText = document.getElementById("focus-goal-text");
             
-            // เติมข้อมูลลงช่อง (ถ้า Element มีอยู่จริง)
+            // เติมข้อมูล
             if (pText) pText.value = found.problem;
-            if (gText) gText.value = found.goal || ""; // เติม goal หรือถ้าไม่มีให้ว่างไว้
+            if (gText) gText.value = found.goal || ""; 
         }
     };
 
-    // สั่งให้ทำงานทั้งตอนพิมพ์ (input) และตอนคลิกเลือกแล้วเมาส์หลุดโฟกัส (change)
+    // ใช้ event 'input' อย่างเดียวก็พอสำหรับ datalist ส่วนใหญ่
     focusTemplateSearch.addEventListener("input", applyTemplate);
-    focusTemplateSearch.addEventListener("change", applyTemplate);
   }
   if (openFocusTemplateModalBtn) openFocusTemplateModalBtn.addEventListener("click", openAddTemplateModal);
   if (closeTemplateModalBtn) closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
