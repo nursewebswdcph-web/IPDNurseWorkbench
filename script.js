@@ -1626,6 +1626,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const beDate = convertCEtoBE(ceDate);
     detailsAgeInput.value = calculateAge(beDate);
   });
+  
+  if(closeChartBtn) closeChartBtn.addEventListener("click", closeChart);
 
   // Table
   patientTableBody.addEventListener('click', (e) => {
