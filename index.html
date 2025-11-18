@@ -161,6 +161,17 @@
                   <span class="text-blue-600 font-semibold ml-4">&gt;</span>
                 </div>
               </li>
+
+              <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="006">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">บันทึกความก้าวหน้าทางการพยาบาล</h3>
+                  <p class="text-sm text-gray-500">Nursing Progress Note (FR-IPD-006)</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm text-gray-600">อัปเดต: <span id="last-updated-006">คลิกเพื่อโหลด</span></span>
+                  <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+                </div>
+              </li>
               
             </ul>
           </div>
@@ -1236,6 +1247,95 @@
         </form>
       </div>
     </div>
+
+    <!-- (FR-IPD-006) -->
+    <div id="progress-note-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-10 z-50 hidden overflow-y-auto">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] m-4 flex flex-col">
+          
+          <div class="flex justify-between items-center p-4 border-b bg-indigo-50 rounded-t-lg">
+            <div>
+              <h3 class="text-xl font-bold text-indigo-800">Nursing Progress Note (FR-IPD-006)</h3>
+              <p class="text-sm text-gray-600">AN: <span id="prog-an-display"></span> | ชื่อ: <span id="prog-name-display"></span></p>
+            </div>
+            <div class="flex gap-2">
+              <button id="re-progress-btn" type="button" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                Re-Progress
+              </button>
+              <button id="close-progress-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+          </div>
+      
+          <form id="progress-note-form" class="p-6 overflow-y-auto flex-1">
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 bg-gray-50 p-4 rounded border">
+              <div class="md:col-span-3">
+                <label class="block text-sm font-semibold text-gray-700">วันที่</label>
+                <input type="date" name="Date" id="prog-date" class="mt-1 p-2 w-full border rounded" required>
+              </div>
+              <div class="md:col-span-3">
+                 <label class="block text-sm font-semibold text-gray-700">เวลา</label>
+                 <input type="time" name="Time" id="prog-time" class="mt-1 p-2 w-full border rounded" required>
+              </div>
+              <div class="md:col-span-6">
+                 <label class="block text-sm font-semibold text-gray-700">เวร (Shift)</label>
+                 <div class="flex gap-4 mt-2">
+                   <label><input type="radio" name="Shift" value="ดึก (00-08)" required> ดึก (00-08)</label>
+                   <label><input type="radio" name="Shift" value="เช้า (08-16)"> เช้า (08-16)</label>
+                   <label><input type="radio" name="Shift" value="บ่าย (16-24)"> บ่าย (16-24)</label>
+                 </div>
+              </div>
+              
+              <div class="md:col-span-12 border-t pt-4 mt-2">
+                 <label class="block text-sm font-bold text-blue-700">ค้นหาจากชื่อเทมเพลต (Template)</label>
+                 <div class="flex gap-2">
+                   <input type="text" id="prog-template-search" list="prog-template-list" class="mt-1 p-2 w-full border rounded bg-white shadow-sm" placeholder="พิมพ์ชื่อโรค/อาการ... (เช่น ไข้สูง, Pain, Sepsis)">
+                   <datalist id="prog-template-list"></datalist>
+                   <button type="button" id="save-as-template-btn" class="mt-1 bg-teal-500 text-white px-4 rounded hover:bg-teal-600 whitespace-nowrap">+ สร้าง Template</button>
+                 </div>
+              </div>
+            </div>
+      
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-bold text-gray-800 bg-gray-200 p-2 rounded-t">FOCUS / PROBLEM</label>
+                <input type="text" name="Focus" id="prog-focus" class="w-full p-3 border border-t-0 rounded-b focus:ring-2 focus:ring-blue-500" placeholder="ระบุปัญหาทางการพยาบาล...">
+              </div>
+      
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-red-700">S: Subjective Data</label>
+                  <textarea name="S_Data" id="prog-s" rows="3" class="w-full p-2 border rounded mt-1" placeholder="ข้อมูลจากคำบอกเล่า..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-blue-700">O: Objective Data</label>
+                  <textarea name="O_Data" id="prog-o" rows="3" class="w-full p-2 border rounded mt-1" placeholder="ผลตรวจ, V/S, สิ่งที่สังเกตเห็น..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-green-700">I: Intervention</label>
+                  <textarea name="I_Data" id="prog-i" rows="5" class="w-full p-2 border rounded mt-1" placeholder="กิจกรรมการพยาบาล..."></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-purple-700">E: Evaluation</label>
+                  <textarea name="E_Data" id="prog-e" rows="5" class="w-full p-2 border rounded mt-1" placeholder="ผลลัพธ์ทางการพยาบาล..."></textarea>
+                </div>
+              </div>
+            </div>
+      
+            <div class="mt-6 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700">พยาบาลผู้บันทึก</label>
+                <input type="text" name="Nurse_Name" list="staff-list-datalist" class="mt-1 p-2 w-full border rounded" placeholder="ค้นหาชื่อ..." required>
+              </div>
+              <div class="text-right mt-6">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg shadow-lg text-lg">
+                  บันทึกข้อมูล (Save)
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
 
   </main> <!-- (ย้าย </main> มาไว้ตรงนี้) -->
 
