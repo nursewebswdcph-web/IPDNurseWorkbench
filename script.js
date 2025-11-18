@@ -1555,9 +1555,19 @@ function closeAddTemplateModal() {
 
 async function handleSaveFocusTemplate(event) {
   event.preventDefault();
-  showLoading('กำลังบันทึกเทมเพลต...');
+
+  // --- 1. เรียก Popup Loading ทันที ---
+  showLoading('กำลังบันทึกเทมเพลต...'); 
+
   const formData = new FormData(addTemplateForm);
   const templateData = Object.fromEntries(formData.entries());
+
+  // (Optional) ตรวจสอบเบื้องต้นว่ากรอกครบไหม
+  if (!templateData.Name || !templateData.Problem) {
+    Swal.close(); // ปิด Loading
+    showError('ข้อมูลไม่ครบ', 'กรุณาระบุชื่อเทมเพลตและรายละเอียดปัญหา');
+    return;
+  }
 
   try {
     const response = await fetch(GAS_WEB_APP_URL, {
@@ -1565,14 +1575,24 @@ async function handleSaveFocusTemplate(event) {
       body: JSON.stringify({ action: "addFocusTemplate", templateData: templateData })
     });
     const result = await response.json();
+
     if (!result.success) throw new Error(result.message);
 
-    showSuccess('บันทึกเทมเพลตสำเร็จ!');
-    closeAddTemplateModal();
-    globalFocusTemplates = { problems: [], goals: [] }; 
+    // --- 2. โหลดข้อมูลเทมเพลตใหม่ทันที เพื่อให้ค้นหาเจอเลย ---
+    // (เคลียร์ค่าเดิมเพื่อให้ loadFocusTemplates ดึงใหม่จาก Server)
+    globalFocusTemplates = { problems: [] }; 
     await loadFocusTemplates(); 
     populateFocusTemplateDropdowns(); 
-  } catch (error) { showError('บันทึกเทมเพลตไม่สำเร็จ', error.message); }
+
+    // --- 3. แสดงข้อความสำเร็จ ---
+    showSuccess('บันทึกเทมเพลตสำเร็จ!');
+    closeAddTemplateModal();
+    
+  } catch (error) {
+    // ถ้าพัง ให้ปิด Loading และแสดง Error
+    Swal.close(); 
+    showError('บันทึกเทมเพลตไม่สำเร็จ', error.message); 
+  }
 }
 
 // ----------------------------------------------------------------
