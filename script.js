@@ -306,7 +306,9 @@ function populateSelect(elementId, options, defaultValue = null) {
 }
 
 function getISODate(date) {
-  return date.toISOString().split('T')[0];
+  // ใช้เทคนิคปรับ Timezone Offset เพื่อให้ได้ค่าวันที่แบบ Local (ไทย) เสมอ
+  const offsetDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+  return offsetDate.toISOString().split('T')[0];
 }
 
 // ----------------------------------------------------------------
