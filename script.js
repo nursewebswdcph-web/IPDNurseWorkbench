@@ -1397,6 +1397,7 @@ function showCriteriaPopover(categoryIndex) {
 // (9) Focus List (FR-IPD-005) Logic
 // ----------------------------------------------------------------
 
+// ในไฟล์ script.js ค้นหา function showFocusListPreview แล้วแทนที่ด้วย Code นี้
 async function showFocusListPreview(an) {
   chartPreviewTitle.textContent = "รายการปัญหาสุขภาพ (FOCUS LIST)";
   chartPreviewPlaceholder.classList.add("hidden");
@@ -1404,57 +1405,74 @@ async function showFocusListPreview(an) {
   chartAddNewBtn.classList.remove("hidden");
   chartAddNewBtn.dataset.form = "005";
 
-  await loadFocusTemplates(); 
   showLoading('กำลังโหลดรายการปัญหา...');
-  let entries = [];
+
   try {
-    const response = await fetch(`${GAS_WEB_APP_URL}?action=getFocusList&an=${an}`);
-    const result = await response.json();
+    // --- จุดที่แก้ไข: สั่งให้ทำงานพร้อมกัน 2 อย่าง (Parallel) ---
+    const templatePromise = loadFocusTemplates(); // 1. เริ่มโหลด Template (ถ้าไม่มี)
+    const listPromise = fetch(`${GAS_WEB_APP_URL}?action=getFocusList&an=${an}`); // 2. เริ่มโหลดรายการปัญหา
+    
+    // รอให้เสร็จทั้งคู่ (ใช้เวลาเท่ากับตัวที่ช้าที่สุด ไม่ใช่เวลาบวกกัน)
+    const [_, listResponse] = await Promise.all([templatePromise, listPromise]);
+    const result = await listResponse.json();
+    // -------------------------------------------------------
+
     if (!result.success) throw new Error(result.message);
-    entries = result.data;
+    const entries = result.data;
+    
+    // อัปเดตตัวเลขจำนวนปัญหา
     const span005 = document.getElementById('last-updated-005');
     if (span005) span005.textContent = entries.length > 0 ? `มี ${entries.length} ปัญหา` : "ยังไม่เคยบันทึก";
+
+    // Render ตาราง (เหมือนเดิม)
+    const template = document.getElementById("preview-template-005");
+    if (!template) return;
+    const preview = template.content.cloneNode(true);
+    const tableBody = preview.querySelector("tbody");
+
+    if (entries.length === 0) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td colspan="6" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึกปัญหา --</td>`;
+      tableBody.appendChild(row);
+    } else {
+      entries.forEach(entry => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50";
+        const activeDate = entry.ActiveDate ? new Date(entry.ActiveDate).toLocaleDateString('th-TH') : '';
+        const resolvedDate = entry.ResolvedDate ? new Date(entry.ResolvedDate).toLocaleDateString('th-TH') : '';
+        const editButton = `<button type="button" class="focus-edit-btn text-blue-600 hover:text-blue-800" data-entry-id="${entry.Entry_ID}">แก้ไข</button>`;
+
+        row.innerHTML = `<td class="p-2 border text-center">${entry.Seq}</td><td class="p-2 border text-left">${entry.Problem || ''}</td><td class="p-2 border text-left">${entry.Goal || ''}</td><td class="p-2 border text-center">${activeDate}</td><td class="p-2 border text-center">${resolvedDate}</td><td class="p-2 border text-center">${editButton}</td>`;
+        row.querySelector(".focus-edit-btn").addEventListener("click", () => { openFocusProblemModal(entry); });
+        tableBody.appendChild(row);
+      });
+    }
+
+    chartPreviewContent.innerHTML = ""; 
+    chartPreviewContent.appendChild(preview);
+    Swal.close();
+
   } catch (error) {
     Swal.close();
     showError('โหลดรายการปัญหาไม่สำเร็จ', error.message);
     return;
   }
-  
-  const template = document.getElementById("preview-template-005");
-  if (!template) return;
-  const preview = template.content.cloneNode(true);
-  const tableBody = preview.querySelector("tbody");
-
-  if (entries.length === 0) {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td colspan="6" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึกปัญหา --</td>`;
-    tableBody.appendChild(row);
-  } else {
-    entries.forEach(entry => {
-      const row = document.createElement("tr");
-      row.className = "hover:bg-gray-50";
-      const activeDate = entry.ActiveDate ? new Date(entry.ActiveDate).toLocaleDateString('th-TH') : '';
-      const resolvedDate = entry.ResolvedDate ? new Date(entry.ResolvedDate).toLocaleDateString('th-TH') : '';
-      const editButton = `<button type="button" class="focus-edit-btn text-blue-600 hover:text-blue-800" data-entry-id="${entry.Entry_ID}">แก้ไข</button>`;
-
-      row.innerHTML = `<td class="p-2 border text-center">${entry.Seq}</td><td class="p-2 border text-left">${entry.Problem || ''}</td><td class="p-2 border text-left">${entry.Goal || ''}</td><td class="p-2 border text-center">${activeDate}</td><td class="p-2 border text-center">${resolvedDate}</td><td class="p-2 border text-center">${editButton}</td>`;
-      row.querySelector(".focus-edit-btn").addEventListener("click", () => { openFocusProblemModal(entry); });
-      tableBody.appendChild(row);
-    });
-  }
-
-  chartPreviewContent.innerHTML = ""; 
-  chartPreviewContent.appendChild(preview);
-  Swal.close();
 }
 
 async function loadFocusTemplates() {
-  if (globalFocusTemplates.problems.length > 0) return;
+  // ถ้ามีข้อมูลอยู่แล้ว ให้ Return เป็น Promise ที่ Resolve ทันที (เพื่อความเร็ว)
+  if (globalFocusTemplates.problems.length > 0) return Promise.resolve();
+  
   try {
+    // Return Promise ของการ Fetch ออกไปเลย
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getFocusTemplates`);
     const result = await response.json();
-    if (result.success) globalFocusTemplates = result.data;
-  } catch (e) { console.error("Could not load focus templates:", e); }
+    if (result.success) {
+        globalFocusTemplates = result.data;
+    }
+  } catch (e) { 
+    console.error("Could not load focus templates:", e); 
+  }
 }
 
 function closeFocusProblemModal() {
@@ -1685,29 +1703,25 @@ document.addEventListener("DOMContentLoaded", () => {
   if (closeFocusModalBtn) closeFocusModalBtn.addEventListener("click", closeFocusProblemModal);
   if (cancelFocusBtn) cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
   if (focusProblemForm) focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
- // (Logic ค้นหา Template - แก้ไขแล้ว V.Final)
+ 
   if (focusTemplateSearch) {
-    const applyTemplate = (e) => {
-        const val = e.target.value; // ค่าที่ผู้ใช้เลือก
-        if (!val) return;
+    focusTemplateSearch.addEventListener("input", (e) => {
+      const val = e.target.value;
+      
+      // แก้ไข: ใช้ .trim() เพื่อตัดช่องว่างหน้าหลัง และตรวจสอบว่า val ไม่ว่าง
+      if (!val || !globalFocusTemplates.problems) return;
 
-        // ค้นหาข้อมูลจากตัวแปร global โดยตัดช่องว่างหน้าหลังออกกันพลาด
-        const found = globalFocusTemplates.problems.find(t => t.problem.trim() === val.trim());
-        
-        if (found) {
-            // ดึง Element ใหม่อีกครั้ง เพื่อความชัวร์ 100%
-            const pText = document.getElementById("focus-problem-text");
-            const gText = document.getElementById("focus-goal-text");
-            
-            // เติมข้อมูล
-            if (pText) pText.value = found.problem;
-            if (gText) gText.value = found.goal || ""; 
-        }
-    };
+      const cleanVal = val.trim();
 
-    // ใช้ทั้ง 2 event เพื่อดักจับทุกกรณี (พิมพ์เอง หรือ คลิกเลือกจาก list)
-    focusTemplateSearch.addEventListener("input", applyTemplate);
-    focusTemplateSearch.addEventListener("change", applyTemplate);
+      // ค้นหาโดยตัดช่องว่างทั้งจากข้อมูลในตัวแปรและสิ่งที่พิมพ์เข้าไป
+      const found = globalFocusTemplates.problems.find(t => t.problem.trim() === cleanVal);
+      
+      if (found) {
+        if(focusProblemText) focusProblemText.value = found.problem;
+        // ตรวจสอบ goal ให้แน่ใจก่อน set
+        if (found.goal && focusGoalText) focusGoalText.value = found.goal;
+      }
+    });
   }
   if (openFocusTemplateModalBtn) openFocusTemplateModalBtn.addEventListener("click", openAddTemplateModal);
   if (closeTemplateModalBtn) closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
