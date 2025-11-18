@@ -129,6 +129,8 @@ const chartPreviewContent = document.getElementById("chart-preview-content");
 const chartPreviewPlaceholder = document.getElementById("chart-preview-placeholder");
 const chartEditBtn = document.getElementById("chart-edit-btn");
 const chartAddNewBtn = document.getElementById("chart-add-new-btn");
+const chartBedDisplay = document.getElementById("chart-bed-display");
+const chartDoctorDisplay = document.getElementById("chart-doctor-display");
 
 // (Assessment Modal)
 const assessmentModal = document.getElementById("assessment-modal");
@@ -356,7 +358,7 @@ async function loadPatients(wardName) {
       const row = document.createElement("tr");
       row.className = "hover:bg-gray-50";
       const nameCell = `<a href="#" class="text-blue-600 hover:underline font-semibold" data-an="${pt.AN}">${pt.Name}</a>`;
-      const chartButton = `<button class="chart-btn bg-indigo-100 text-indigo-700 hover:bg-indigo-200 text-xs font-bold py-1 px-3 rounded-full" data-an="${pt.AN}" data-hn="${pt.HN}" data-name="${pt.Name}">Chart</button>`;
+      const chartButton = `<button class="chart-btn bg-indigo-100 text-indigo-700 hover:bg-indigo-200 text-xs font-bold py-1 px-3 rounded-full" data-an="${pt.AN}" data-hn="${pt.HN}" data-name="${pt.Name}" data-bed="${pt.Bed}" data-doctor="${pt.Doctor}">Chart</button>`;
       
       row.innerHTML = `
         <td class="p-3">${pt.Bed}</td>
@@ -716,7 +718,8 @@ async function openChart(an, hn, name) {
   chartAnDisplay.textContent = an;
   chartHnDisplay.textContent = hn;
   chartNameDisplay.textContent = name;
-  
+  if(chartBedDisplay) chartBedDisplay.textContent = bed || '-';
+  if(chartDoctorDisplay) chartDoctorDisplay.textContent = doctor || '-';
   showLoading('กำลังโหลดข้อมูลเวชระเบียน...');
   try {
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
@@ -1611,8 +1614,8 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault(); openDetailsModal(target.dataset.an);
     }
     if (target.classList.contains('chart-btn') && target.dataset.an) {
-      e.preventDefault(); openChart(target.dataset.an, target.dataset.hn, target.dataset.name);
-    }
+      e.preventDefault(); openChart(target.dataset.an, target.dataset.hn, target.dataset.name, target.dataset.bed, target.dataset.doctor);
+}
   });
 
   // Chart
