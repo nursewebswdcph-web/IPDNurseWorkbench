@@ -151,6 +151,20 @@ const closeClassifyModalBtn = document.getElementById("close-classify-modal-btn"
 const classifyTable = document.getElementById("classify-table");
 const classifyTableBody = document.getElementById("classify-table-body");
 
+// (ใหม่! Focus List Modal)
+const focusProblemModal = document.getElementById("focus-problem-modal");
+const focusProblemForm = document.getElementById("focus-problem-form");
+const focusModalTitle = document.getElementById("focus-modal-title");
+const closeFocusModalBtn = document.getElementById("close-focus-modal-btn");
+const cancelFocusBtn = document.getElementById("cancel-focus-btn");
+
+const focusTemplateProblem = document.getElementById("focus-template-problem");
+const focusTemplateGoal = document.getElementById("focus-template-goal");
+const focusProblemText = document.getElementById("focus-problem-text");
+const focusGoalText = document.getElementById("focus-goal-text");
+
+let globalFocusTemplates = { problems: [], goals: [] };
+
 // ----------------------------------------------------------------
 // (4) Utility Functions
 // ----------------------------------------------------------------
@@ -718,10 +732,9 @@ async function openChart(an, hn, name) {
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
     
-    currentPatientData = result.data;
-    // เก็บข้อมูลไว้ใช้
+    currentPatientData = result.data; // เก็บข้อมูลหลักไว้ใช้
     
-    // อัปเดต span ของ 004
+    // (1) อัปเดต span ของ 004 (จากข้อมูลหลัก)
     const span004 = document.getElementById('last-updated-004');
     if(span004) { 
       if(currentPatientData.LastUpdatedTime) {
@@ -732,8 +745,7 @@ async function openChart(an, hn, name) {
       }
     }
     
-    // (*** BEGIN NEW CODE FOR PROBLEM 1 ***)
-    // (แก้ไข) อัปเดต span ของ classify
+    // (2) อัปเดต span ของ classify (ดึงข้อมูลสรุป)
     const spanClassify = document.getElementById('last-updated-classify');
     if (spanClassify) {
       try {
@@ -745,7 +757,8 @@ async function openChart(an, hn, name) {
           // (ดึงข้อมูลล่าสุด = ตัวแรก, เพราะ script.gs เรียงมาแล้ว)
           const latestEntry = classifyResult.data[0];
           const entryDate = new Date(latestEntry.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-          const shift = latestEntry.shift === 'D' ? 'ดึก' : (latestEntry.shift === 'E' ? 'เช้า' : 'บ่าย');
+          // (ใช้ตรรกะเวรใหม่ N=ดึก, D=เช้า, E=บ่าย)
+          const shift = latestEntry.shift === 'N' ? 'ดึก' : (latestEntry.shift === 'D' ? 'เช้า' : 'บ่าย');
           spanClassify.textContent = `เวร ${shift} ${entryDate} โดย ${latestEntry.user || 'N/A'}`;
         } else {
           spanClassify.textContent = "ยังไม่เคยบันทึก";
@@ -754,8 +767,16 @@ async function openChart(an, hn, name) {
         spanClassify.textContent = "โหลดข้อมูลล้มเหลว";
       }
     }
-    // (*** END NEW CODE FOR PROBLEM 1 ***)
 
+    // (3) อัปเดต Span 005 (Focus List)
+    const span005 = document.getElementById('last-updated-005');
+    if (span005) {
+      // (เราจะดึงข้อมูลนี้เมื่อผู้ใช้คลิกดูฟอร์ม 005 จริงๆ)
+      // (การตั้งค่า "คลิกเพื่อโหลด" จะบังคับให้ showFocusListPreview ทำงานและอัปเดตสถานะจริงอีกครั้ง)
+      span005.textContent = "คลิกเพื่อโหลด";
+    }
+
+    // (สลับหน้าจอ)
     registryPage.classList.add("hidden");
     chartPage.classList.remove("hidden");
     
@@ -1579,7 +1600,6 @@ function showCriteriaPopover(categoryIndex) {
 // ----------------------------------------------------------------
 // (9) MAIN EVENT LISTENERS (The *only* DOMContentLoaded)
 // ----------------------------------------------------------------
-// (ค้นหาฟังก์ชันนี้ แล้วแทนที่ "ทั้งบล็อก" ด้วยโค้ดนี้)
 document.addEventListener("DOMContentLoaded", () => {
   
   // (Init)
@@ -1629,9 +1649,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const formType = targetItem.dataset.form;
       chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
       targetItem.classList.add('bg-indigo-100');
-      // (แก้ไข) เราไม่ต้อง await ที่นี่ เพราะ showFormPreview/showEntryList
-      // (จะจัดการ Swwal loading ด้วยตัวเอง)
-      showFormPreview(formType);
+      
+      // (Updated logic to handle 005)
+      if (formType === '005') {
+        showFocusListPreview(currentPatientAN);
+      } else {
+        showFormPreview(formType);
+      }
     }
   });
   
@@ -1641,9 +1665,11 @@ document.addEventListener("DOMContentLoaded", () => {
     else { showComingSoon(); }
   });
   
+  // (Updated logic to handle 005)
   chartAddNewBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
-    if (formType === 'classify') { openClassifyModal(); } 
+    if (formType === 'classify') { openClassifyModal(); }
+    else if (formType === '005') { openFocusProblemModal(); } 
     else { showComingSoon(); }
   });
   
@@ -1683,7 +1709,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.target.options[e.target.selectedIndex]?.dataset.controls : 
         (e.target.checked ? e.target.dataset.controls : null);
       
-      // (ตรรกะพิเศษสำหรับ select ที่ต้องเช็คค่า)
+      // (Special logic for selects)
       if (groupName === 'Substance_Alcohol' && (selectedValue === 'ดื่มเป็นประจำ' || selectedValue === 'ดื่มนาน ๆ ครั้ง')) selectedTargetId = 'alcohol-vol';
       if (groupName === 'Substance_Smoke' && (selectedValue === 'สูบเป็นประจำ' || selectedValue === 'สูบนาน ๆ ครั้ง')) selectedTargetId = 'smoke-vol';
       if (groupName === 'Pain_Pattern' && selectedValue === 'อื่นๆ') selectedTargetId = 'pain-pattern-other';
@@ -1703,33 +1729,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   
-  // --- (ใหม่!) Event Listeners สำหรับ Classification Modal (v2.8) ---
-  
+  // --- (Classification Modal - N/D/E Updated) ---
   closeClassifyModalBtn.addEventListener("click", closeClassifyModal);
   
-  // (ใหม่!) เพิ่ม 'click' listener ตัวเดียว
   classifyTableBody.addEventListener('click', (e) => {
     const target = e.target;
     
-    // 1. ถ้าคลิกปุ่ม "บันทึก"
+    // 1. Save button
     if (target.classList.contains('classify-save-btn')) {
       const dayIndex = target.dataset.dayIndex;
       const shift = target.dataset.shift;
       
-      // (คำนวณ)
       const { Total_Score, Category } = updateClassifyColumnTotals(dayIndex, shift);
       
-      // (ตรวจสอบว่ามีข้อมูลหรือไม่)
       if (Total_Score === '' && !classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value) {
         showError('ยังไม่มีข้อมูล', 'กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือ ลงชื่อผู้ประเมิน');
         return;
       }
       
-      // (บันทึก)
       saveClassificationShiftData(dayIndex, shift);
     }
     
-    // 2. ถ้าคลิกปุ่ม "เกณฑ์ (?)"
+    // 2. Criteria button
     if (target.classList.contains('classify-criteria-btn')) {
       const categoryIndex = target.dataset.categoryIndex;
       showCriteriaPopover(categoryIndex);
@@ -1740,9 +1761,215 @@ document.addEventListener("DOMContentLoaded", () => {
   classifyPrevPageBtn.addEventListener("click", () => changeClassifyPage(-1));
   classifyNextPageBtn.addEventListener("click", () => changeClassifyPage(1));
   
-  // (เพิ่มหน้าใหม่)
+  // (Add new page)
   classifyAddPageBtn.addEventListener("click", () => {
     showError("ยังไม่รองรับ", "ฟังก์ชันเพิ่มหน้าใหม่ (หน้า 6+) ยังไม่เปิดใช้งานครับ");
   });
 
+  // --- (NEW! Event Listeners for Focus Problem Modal FR-IPD-005) ---
+  closeFocusModalBtn.addEventListener("click", closeFocusProblemModal);
+  cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
+  focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
+  
+  // (Listeners for Template selection)
+  focusTemplateProblem.addEventListener("change", (e) => {
+    const selectedIndex = e.target.selectedIndex;
+    if (selectedIndex > 0) {
+      const selectedTemplate = globalFocusTemplates.problems[selectedIndex - 1]; // -1 for placeholder
+      focusProblemText.value = selectedTemplate.problem;
+      if (selectedTemplate.goal) {
+        focusGoalText.value = selectedTemplate.goal;
+      }
+    }
+  });
+  
+  focusTemplateGoal.addEventListener("change", (e) => {
+    const selectedText = e.target.value;
+    if (selectedText) {
+      focusGoalText.value = selectedText;
+    }
+  });
+
 });
+// ----------------------------------------------------------------
+// (ใหม่!) (10) Focus List (FR-IPD-005) Functions
+// ----------------------------------------------------------------
+
+// (ใหม่!) แสดงหน้าพรีวิวรายการปัญหา
+async function showFocusListPreview(an) {
+  chartPreviewTitle.textContent = "รายการปัญหาสุขภาพ (FOCUS LIST)";
+  chartPreviewPlaceholder.classList.add("hidden");
+  chartPreviewContent.innerHTML = ""; // เคลียร์เนื้อหาเก่า
+  
+  // 1. แสดงปุ่ม
+  chartEditBtn.classList.add("hidden");
+  chartAddNewBtn.classList.remove("hidden");
+  chartAddNewBtn.dataset.form = "005"; // ตั้งค่าปุ่ม
+
+  // 2. โหลด Template (เตรียมไว้สำหรับ Modal)
+  await loadFocusTemplates(); 
+  
+  // 3. ดึงข้อมูลรายการปัญหา
+  showLoading('กำลังโหลดรายการปัญหา...');
+  let entries = [];
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getFocusList&an=${an}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    entries = result.data;
+    
+    // (อัปเดต "อัปเดตล่าสุด" ในเมนู)
+    const span005 = document.getElementById('last-updated-005');
+    if (span005) {
+      if (entries.length > 0) {
+        span005.textContent = `มี ${entries.length} ปัญหา`;
+      } else {
+        span005.textContent = "ยังไม่เคยบันทึก";
+      }
+    }
+    
+  } catch (error) {
+    Swal.close();
+    showError('โหลดรายการปัญหาไม่สำเร็จ', error.message);
+    return;
+  }
+  
+  // 4. Clone Template ตาราง
+  const template = document.getElementById("preview-template-005");
+  if (!template) {
+    showError("ไม่พบ Template", "ไม่สามารถโหลด preview-template-005");
+    return;
+  }
+  const preview = template.content.cloneNode(true);
+  const tableBody = preview.querySelector("tbody");
+
+  if (entries.length === 0) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="6" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึกปัญหา --</td>`;
+    tableBody.appendChild(row);
+  } else {
+    // 5. วาดตาราง
+    entries.forEach(entry => {
+      const row = document.createElement("tr");
+      row.className = "hover:bg-gray-50";
+      
+      const activeDate = entry.ActiveDate ? new Date(entry.ActiveDate).toLocaleDateString('th-TH') : '';
+      const resolvedDate = entry.ResolvedDate ? new Date(entry.ResolvedDate).toLocaleDateString('th-TH') : '';
+      
+      const editButton = `<button type="button" class="focus-edit-btn text-blue-600 hover:text-blue-800" data-entry-id="${entry.Entry_ID}">แก้ไข</button>`;
+
+      row.innerHTML = `
+        <td class="p-2 border text-center">${entry.Seq}</td>
+        <td class="p-2 border text-left">${entry.Problem || ''}</td>
+        <td class="p-2 border text-left">${entry.Goal || ''}</td>
+        <td class="p-2 border text-center">${activeDate}</td>
+        <td class="p-2 border text-center">${resolvedDate}</td>
+        <td class="p-2 border text-center">${editButton}</td>
+      `;
+      
+      // (เพิ่ม Event Listener ให้ปุ่ม "แก้ไข" ในแถวนี้)
+      row.querySelector(".focus-edit-btn").addEventListener("click", () => {
+        openFocusProblemModal(entry); // ส่งข้อมูลเดิมไปแก้ไข
+      });
+      
+      tableBody.appendChild(row);
+    });
+  }
+
+  chartPreviewContent.appendChild(preview);
+  Swal.close();
+}
+
+// (ใหม่!) โหลดเทมเพลต (ถ้ายังไม่มี)
+async function loadFocusTemplates() {
+  if (globalFocusTemplates.problems.length > 0) return; // โหลดแล้ว
+  
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getFocusTemplates`);
+    const result = await response.json();
+    if (result.success) {
+      globalFocusTemplates = result.data;
+    }
+  } catch (e) {
+    console.error("Could not load focus templates:", e);
+  }
+}
+
+// (ใหม่!) เปิด Modal (สำหรับเพิ่มใหม่ หรือ แก้ไข)
+function openFocusProblemModal(entryData = null) {
+  focusProblemForm.reset();
+  
+  // 1. เติมเทมเพลตลง Dropdown
+  focusTemplateProblem.innerHTML = `<option value="">-- เลือกเทมเพลตปัญหา --</option>`;
+  globalFocusTemplates.problems.forEach(t => {
+    const option = document.createElement("option");
+    option.value = t.problem;
+    option.textContent = t.problem;
+    focusTemplateProblem.appendChild(option);
+  });
+  
+  focusTemplateGoal.innerHTML = `<option value="">-- เลือกเทมเพลตเป้าหมาย --</option>`;
+  globalFocusTemplates.goals.forEach(goalText => {
+    const option = document.createElement("option");
+    option.value = goalText;
+    option.textContent = goalText;
+    focusTemplateGoal.appendChild(option);
+  });
+
+  // 2. ตรวจสอบว่าเป็นการ "แก้ไข" หรือ "เพิ่มใหม่"
+  if (entryData) {
+    // (แก้ไข)
+    focusModalTitle.textContent = "แก้ไขรายการปัญหาสุขภาพ";
+    document.getElementById("focus-entry-id").value = entryData.Entry_ID;
+    focusProblemText.value = entryData.Problem || '';
+    focusGoalText.value = entryData.Goal || '';
+    document.getElementById("focus-active-date").value = entryData.ActiveDate || '';
+    document.getElementById("focus-resolved-date").value = entryData.ResolvedDate || '';
+  } else {
+    // (เพิ่มใหม่)
+    focusModalTitle.textContent = "เพิ่มรายการปัญหาสุขภาพ";
+    // (ตั้งค่าวันที่พบปัญหาเป็นวันนี้)
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    document.getElementById("focus-active-date").value = localDate.toISOString().split('T')[0];
+  }
+  
+  focusProblemModal.classList.remove("hidden");
+}
+
+// (ใหม่!) ปิด Modal
+function closeFocusProblemModal() {
+  focusProblemModal.classList.add("hidden");
+  focusProblemForm.reset();
+}
+
+// (ใหม่!) บันทึกข้อมูล Modal
+async function handleSaveFocusProblem(event) {
+  event.preventDefault();
+  showLoading('กำลังบันทึกข้อมูล...');
+  
+  const formData = new FormData(focusProblemForm);
+  const problemData = Object.fromEntries(formData.entries());
+
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveFocusProblem",
+        an: currentPatientAN,
+        problemData: problemData
+      })
+    });
+    
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+
+    showSuccess('บันทึกสำเร็จ!');
+    closeFocusProblemModal();
+    // (รีเฟรชรายการปัญหา)
+    showFocusListPreview(currentPatientAN); 
+    
+  } catch (error) {
+    showError('บันทึกไม่สำเร็จ', error.message);
+  }
+}
