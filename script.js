@@ -80,6 +80,7 @@ let globalConfigData = {};
 let globalStaffList = [];
 let currentClassifyPage = 1;
 let globalFocusTemplates = { problems: [], goals: [] };
+let globalProgressTemplates = [];
 
 // ----------------------------------------------------------------
 // (4) DOM Element Variables
@@ -171,6 +172,15 @@ const addTemplateForm = document.getElementById("add-template-form");
 const openFocusTemplateModalBtn = document.getElementById("open-template-modal-btn");
 const closeTemplateModalBtn = document.getElementById("close-template-modal-btn");
 const cancelTemplateModalBtn = document.getElementById("cancel-template-modal-btn");
+
+// (Progress Modal)
+const progressNoteModal = document.getElementById("progress-note-modal");
+const progressNoteForm = document.getElementById("progress-note-form");
+const progAnDisplay = document.getElementById("prog-an-display");
+const progNameDisplay = document.getElementById("prog-name-display");
+const progTemplateSearch = document.getElementById("prog-template-search");
+const reProgressBtn = document.getElementById("re-progress-btn");
+const saveAsTemplateBtn = document.getElementById("save-as-template-btn");
 
 // ----------------------------------------------------------------
 // (5) Utility Functions
@@ -1608,6 +1618,107 @@ async function handleSaveFocusTemplate(event) {
 }
 
 // ----------------------------------------------------------------
+// (FR-IPD-006) Logic
+// ----------------------------------------------------------------
+async function loadProgressTemplates() {
+  if (globalProgressTemplates.length > 0) return;
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getProgressTemplates`);
+    const result = await response.json();
+    if (result.success) {
+      globalProgressTemplates = result.data;
+      updateProgressTemplateDatalist();
+    }
+  } catch (e) { console.error(e); }
+}
+
+function updateProgressTemplateDatalist() {
+  const datalist = document.getElementById("prog-template-list");
+  if(!datalist) return;
+  datalist.innerHTML = "";
+  globalProgressTemplates.forEach(t => {
+    const option = document.createElement("option");
+    option.value = t.name;
+    option.label = t.focus.substring(0, 30) + "...";
+    datalist.appendChild(option);
+  });
+}
+
+// --- 3. ฟังก์ชันเปิด Modal และ Re-Progress ---
+async function openProgressNoteModal() {
+  progAnDisplay.textContent = currentPatientAN;
+  progNameDisplay.textContent = currentPatientData.Name;
+  
+  // Set Default Date/Time
+  const now = new Date();
+  const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+  document.getElementById("prog-date").value = localDate.toISOString().split('T')[0];
+  document.getElementById("prog-time").value = now.toTimeString().substring(0,5);
+  
+  // Set Shift Auto
+  const hour = now.getHours();
+  const shiftRadios = document.getElementsByName("Shift");
+  if (hour >= 0 && hour < 8) shiftRadios[0].checked = true; // ดึก
+  else if (hour >= 8 && hour < 16) shiftRadios[1].checked = true; // เช้า
+  else shiftRadios[2].checked = true; // บ่าย
+
+  // Load Templates
+  await loadProgressTemplates();
+  progressNoteModal.classList.remove("hidden");
+}
+
+// ฟังก์ชัน Re-Progress (หัวใจสำคัญ)
+async function handleReProgress() {
+  showLoading("กำลังค้นหาประวัติ...");
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getNursingProgressHistory&an=${currentPatientAN}`);
+    const result = await response.json();
+    if(!result.success) throw new Error(result.message);
+    
+    const history = result.data;
+    Swal.close();
+
+    if (history.length === 0) {
+      showError("ไม่พบข้อมูล", "ผู้ป่วยรายนี้ยังไม่มีประวัติการบันทึก");
+      return;
+    }
+
+    // ให้เลือกจาก 5 รายการล่าสุด
+    const options = {};
+    history.slice(0, 5).forEach((h, index) => {
+      const date = new Date(h.Date).toLocaleDateString('th-TH', {day:'2-digit', month:'short'});
+      options[index] = `${date} (${h.Shift}) - ${h.Focus}`;
+    });
+
+    const { value: selectedIndex } = await Swal.fire({
+      title: 'เลือกรายการเดิม (Re-Progress)',
+      input: 'select',
+      inputOptions: options,
+      inputPlaceholder: 'เลือกรายการที่ต้องการคัดลอก',
+      showCancelButton: true,
+      width: '600px'
+    });
+
+    if (selectedIndex !== undefined) {
+      const h = history[selectedIndex];
+      // เติมข้อมูลลงฟอร์ม
+      document.getElementById("prog-focus").value = h.Focus;
+      document.getElementById("prog-s").value = h.S_Data;
+      document.getElementById("prog-o").value = h.O_Data;
+      document.getElementById("prog-i").value = h.I_Data;
+      document.getElementById("prog-e").value = h.E_Data; // อาจจะลบออกก็ได้ถ้าต้องการประเมินใหม่
+      
+      // แจ้งเตือนเล็กน้อย
+      const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+      Toast.fire({ icon: 'success', title: 'ดึงข้อมูลเรียบร้อย' });
+    }
+
+  } catch(e) {
+    showError("เกิดข้อผิดพลาด", e.message);
+  }
+}
+
+// ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -1768,5 +1879,83 @@ document.addEventListener("DOMContentLoaded", () => {
   if (closeTemplateModalBtn) closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
   if (cancelTemplateModalBtn) cancelTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
   if (addTemplateForm) addTemplateForm.addEventListener("submit", handleSaveFocusTemplate);
+
+  // Progress FR-006
+  const btn006 = document.querySelector('.chart-list-item[data-form="006"]');
+  if(btn006) btn006.addEventListener('click', openProgressNoteModal); // หรือใช้ logic เดิมใน chartPage event delegation ก็ได้
+
+  // ปุ่มใน Modal 006
+  document.getElementById("close-progress-modal-btn").addEventListener("click", () => {
+    progressNoteModal.classList.add("hidden");
+    progressNoteForm.reset();
+  });
+  
+  reProgressBtn.addEventListener("click", handleReProgress);
+
+  // ค้นหา Template
+  progTemplateSearch.addEventListener("input", (e) => {
+     const val = e.target.value.trim();
+     if(!val) return;
+     const found = globalProgressTemplates.find(t => t.name === val);
+     if(found) {
+       document.getElementById("prog-focus").value = found.focus;
+       document.getElementById("prog-s").value = found.s;
+       document.getElementById("prog-o").value = found.o;
+       document.getElementById("prog-i").value = found.i;
+       document.getElementById("prog-e").value = found.e;
+     }
+  });
+
+  // บันทึก Progress Note
+  progressNoteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showLoading("กำลังบันทึก...");
+    const formData = new FormData(progressNoteForm);
+    const data = Object.fromEntries(formData.entries());
+    data.AN = currentPatientAN; // เติม AN
+
+    try {
+      const response = await fetch(GAS_WEB_APP_URL, {
+         method: "POST", 
+         body: JSON.stringify({ action: "saveNursingProgress", formData: data })
+      });
+      const result = await response.json();
+      if(result.success) {
+         showSuccess("บันทึกสำเร็จ");
+         progressNoteModal.classList.add("hidden");
+         progressNoteForm.reset();
+         // อัปเดตหน้าแสดงผลถ้าจำเป็น
+      } else { throw new Error(result.message); }
+    } catch(err) { showError("บันทึกไม่สำเร็จ", err.message); }
+  });
+
+  // สร้าง Template ใหม่จากหน้างาน
+  saveAsTemplateBtn.addEventListener("click", async () => {
+     const name = prompt("ตั้งชื่อ Template (Keyword สำหรับค้นหา):");
+     if(!name) return;
+     
+     const data = {
+       Name: name,
+       Focus: document.getElementById("prog-focus").value,
+       S: document.getElementById("prog-s").value,
+       O: document.getElementById("prog-o").value,
+       I: document.getElementById("prog-i").value,
+       E: document.getElementById("prog-e").value
+     };
+
+     showLoading("กำลังสร้าง Template...");
+     try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+           method: "POST", 
+           body: JSON.stringify({ action: "addProgressTemplate", templateData: data })
+        });
+        const result = await response.json();
+        if(result.success) {
+           globalProgressTemplates = []; // Clear cache
+           await loadProgressTemplates(); // Reload
+           showSuccess("สร้าง Template เรียบร้อย");
+        }
+     } catch(err) { showError("สร้างไม่สำเร็จ", err.message); }
+  });
 
 }); // End DOMContentLoaded
