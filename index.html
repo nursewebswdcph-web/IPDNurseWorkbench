@@ -1858,9 +1858,12 @@ type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 
           <legend class="text-lg font-semibold px-2">ปัญหา (FOCUS / PROBLEM)</legend>
           <div class="mt-2">
             <label for="focus-template-problem" class="block text-sm font-medium text-gray-700">เลือกจากเทมเพลต (ถ้ามี)</label>
-            <select id="focus-template-problem" class="mt-1 p-2 block w-full border rounded-md bg-gray-50">
-              <option value="">-- เลือกเทมเพลตปัญหา --</option>
-              </select>
+            <div class="flex items-center space-x-2">
+              <select id="focus-template-problem" class="mt-1 p-2 block w-full border rounded-md bg-gray-50">
+                <option value="">-- เลือกเทมเพลตปัญหา --</option>
+                </select>
+              <button type="button" id="open-template-modal-btn" class="mt-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 font-bold" title="เพิ่มเทมเพลตใหม่">+</button>
+            </div>
             <label for="focus-problem-text" class="block text-sm font-medium text-gray-700 mt-4">พิมพ์/แก้ไข ปัญหา</label>
             <textarea id="focus-problem-text" name="Problem" rows="4" class="mt-1 p-2 block w-full border rounded-md" required></textarea>
           </div>
@@ -1900,6 +1903,36 @@ type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 
         </button>
         <button type="submit" form="focus-problem-form" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">
           บันทึกปัญหา
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+  <div id="add-template-modal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-60 hidden">
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-lg m-4">
+    <form id="add-template-form">
+      <div class="flex justify-between items-center p-4 border-b">
+        <h3 class="text-xl font-semibold text-gray-800">สร้างเทมเพลตปัญหาใหม่ (FR-IPD-005)</h3>
+        <button id="close-template-modal-btn" type="button" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+      </div>
+      
+      <div class="p-6 space-y-4">
+        <div>
+          <label for="template-problem-text" class="block text-sm font-medium text-gray-700">ปัญหา (Problem)</label>
+          <textarea id="template-problem-text" name="Problem" rows="3" class="mt-1 p-2 block w-full border rounded-md" required placeholder="เช่น: เสี่ยงต่อการพลัดตกหกล้ม"></textarea>
+        </div>
+        <div>
+          <label for="template-goal-text" class="block text-sm font-medium text-gray-700">เป้าหมายที่คู่กัน (Goal)</label>
+          <textarea id="template-goal-text" name="Goal" rows="3" class="mt-1 p-2 block w-full border rounded-md" placeholder="เช่น: ไม่เกิดการพลัดตกหกล้มตลอดระยะเวลาที่อยู่ รพ."></textarea>
+        </div>
+      </div>
+      
+      <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
+        <button id="cancel-template-modal-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mr-3">
+          ยกเลิก
+        </button>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">
+          บันทึกเทมเพลต
         </button>
       </div>
     </form>
