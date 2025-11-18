@@ -1144,16 +1144,28 @@
             
             <fieldset class="border p-4 rounded-lg">
               <legend class="text-lg font-semibold px-2">ปัญหา (FOCUS / PROBLEM)</legend>
+            
               <div class="mt-2">
-                <label for="focus-template-problem" class="block text-sm font-medium text-gray-700">เลือกจากเทมเพลต (ถ้ามี)</label>
+                <label for="focus-template-search" class="block text-sm font-medium text-gray-700">ค้นหาจากเทมเพลต</label>
                 <div class="flex items-center space-x-2">
-                  <select id="focus-template-problem" class="mt-1 p-2 block w-full border rounded-md bg-gray-50">
-                    <option value="">-- เลือกเทมเพลตปัญหา --</option>
-                  </select>
+                  <input type="text" id="focus-template-search" list="focus-template-datalist" 
+                         class="mt-1 p-2 block w-full border rounded-md bg-gray-50" 
+                         placeholder="พิมพ์คำค้นหา... (เช่น เสี่ยงต่อ...)" autocomplete="off">
+                  <datalist id="focus-template-datalist"></datalist>
+                  
                   <button type="button" id="open-template-modal-btn" class="mt-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 font-bold" title="เพิ่มเทมเพลตใหม่">+</button>
                 </div>
+            
                 <label for="focus-problem-text" class="block text-sm font-medium text-gray-700 mt-4">พิมพ์/แก้ไข ปัญหา</label>
                 <textarea id="focus-problem-text" name="Problem" rows="4" class="mt-1 p-2 block w-full border rounded-md" required></textarea>
+              </div>
+            </fieldset>
+            
+            <fieldset class="border p-4 rounded-lg">
+              <legend class="text-lg font-semibold px-2">เป้าหมาย (Goal/Outcome)</legend>
+              <div class="mt-2">
+                <label for="focus-goal-text" class="block text-sm font-medium text-gray-700">พิมพ์/แก้ไข เป้าหมาย</label>
+                <textarea id="focus-goal-text" name="Goal" rows="4" class="mt-1 p-2 block w-full border rounded-md"></textarea>
               </div>
             </fieldset>
 
