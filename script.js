@@ -982,19 +982,19 @@ async function showFormPreview(formType) { // (เพิ่ม async)
 
 
 // ============ (โค้ดที่แก้ไขปัญหา 2) ============
-async function showEntryList(formType, formTitle) { // (เพิ่ม async)
+// [script.js] แก้ไขฟังก์ชัน showEntryList
+async function showEntryList(formType, formTitle) { 
   const template = document.getElementById("template-entry-list");
-  if (!template) {
-    showError("ไม่พบ Template", "ไม่สามารถโหลด template-entry-list");
-    return;
-  }
+  if (!template) return;
   
+  // 1. Clone Template ไว้ก่อน (ยังไม่แปะ)
   const preview = template.content.cloneNode(true);
-  chartPreviewContent.innerHTML = ""; // (ย้ายมาบน) ล้างเนื้อหาก่อน
   
+  // (ลบคำสั่ง chartPreviewContent.innerHTML = ""; ตรงนี้ออก) <--- จุดสำคัญที่ 1
+
   let entries = [];
-  // (ใหม่!) ดึงข้อมูลจริง
-  showLoading('กำลังโหลดรายการที่บันทึก...'); // (เพิ่ม Loading)
+  showLoading('กำลังโหลดรายการที่บันทึก...');
+  
   try {
     if (formType === 'classify') {
       const response = await fetch(`${GAS_WEB_APP_URL}?action=getClassificationSummary&an=${currentPatientAN}`);
@@ -1002,57 +1002,48 @@ async function showEntryList(formType, formTitle) { // (เพิ่ม async)
       if (!result.success) throw new Error(result.message);
       entries = result.data;
     } 
-    // else if (formType === 'progress-note') { ... } // (สำหรับฟอร์มอื่นในอนาคต)
     
     Swal.close();
-    // (ปิด Loading)
   } catch (error) {
     showError('โหลดข้อมูลไม่สำเร็จ', error.message);
     return;
   }
 
-  // สร้าง Header (ย้ายมาไว้ท้าย)
+  // 2. สร้าง Header และ รายการ
   const header = document.createElement('div');
   header.className = 'p-4 flex justify-between items-center';
-  header.innerHTML = `<p class="text-sm text-gray-500">พบ ${entries.length} รายการ</p>`; // (ใช้ข้อมูลจริง)
+  header.innerHTML = `<p class="text-sm text-gray-500">พบ ${entries.length} รายการ</p>`;
   preview.prepend(header);
-  
+
   if (entries.length === 0) {
-      // (ใหม่!) แสดงว่าไม่มีข้อมูล
       const noEntryDiv = document.createElement('div');
       noEntryDiv.className = 'p-6 text-center text-gray-400';
       noEntryDiv.innerHTML = `<p>-- ยังไม่มีการบันทึก --</p><p>กรุณากดปุ่ม "+ เพิ่มใหม่"</p>`;
       preview.appendChild(noEntryDiv);
   } else {
-    // สร้างรายการ (ใช้ entries ที่ดึงมา)
     entries.forEach(entry => {
       const entryDiv = document.createElement('div');
-      entryDiv.className = 'p-4 hover:bg-gray-100 cursor-pointer entry-list-item';
+      entryDiv.className = 'p-4 hover:bg-gray-100 cursor-pointer entry-list-item border-b'; // เพิ่ม border-b ให้สวยงาม
       
-      // (ปรับปรุงการแสดงผล)
       const entryDate = new Date(entry.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
       const shift = entry.shift === 'N' ? 'ดึก' : (entry.shift === 'D' ? 'เช้า' : 'บ่าย');
-      
       
       entryDiv.innerHTML = `
         <p class="font-semibold text-blue-600">${entryDate} (เวร ${shift})</p>
         <p class="text-sm text-gray-600">ผู้บันทึก: ${entry.user || 'N/A'}</p>
       `;
       
-      // (*** BEGIN MODIFICATION FOR PROBLEM 2 ***)
-      // (แก้ไข: เปลี่ยนจาก showComingSoon เป็น openClassifyModal)
       entryDiv.onclick = () => {
-          // (ในอนาคต: ควรดึง page_id จาก entry และเปิดไปหน้านั้น)
-          openClassifyModal(); 
+           openClassifyModal(); 
       };
-      // (*** END MODIFICATION FOR PROBLEM 2 ***)
       preview.appendChild(entryDiv);
     });
   }
   
+  // 3. (สำคัญที่สุด) ล้างหน้าจอ ตรงนี้! ก่อนจะแปะของใหม่
+  chartPreviewContent.innerHTML = ""; 
   chartPreviewContent.appendChild(preview);
 }
-// ============ (สิ้นสุดโค้ดที่แก้ไข) ============
 
 // (ค้นหาฟังก์ชันนี้ แล้วแทนที่ด้วยโค้ดนี้)
 async function openAssessmentForm() {
@@ -1959,22 +1950,20 @@ document.addEventListener("DOMContentLoaded", () => {
 // ----------------------------------------------------------------
 // (ใหม่!) (10) Focus List (FR-IPD-005) Functions
 // ----------------------------------------------------------------
-
-// (ใหม่!) แสดงหน้าพรีวิวรายการปัญหา
+// [script.js] แก้ไขฟังก์ชัน showFocusListPreview
 async function showFocusListPreview(an) {
   chartPreviewTitle.textContent = "รายการปัญหาสุขภาพ (FOCUS LIST)";
   chartPreviewPlaceholder.classList.add("hidden");
-  chartPreviewContent.innerHTML = ""; // เคลียร์เนื้อหาเก่า
   
-  // 1. แสดงปุ่ม
+  // (ลบคำสั่ง chartPreviewContent.innerHTML = ""; ตรงนี้ออก) <--- จุดสำคัญที่ 2
+  
+  // 1. ตั้งค่าปุ่ม
   chartEditBtn.classList.add("hidden");
   chartAddNewBtn.classList.remove("hidden");
-  chartAddNewBtn.dataset.form = "005"; // ตั้งค่าปุ่ม
+  chartAddNewBtn.dataset.form = "005";
 
-  // 2. โหลด Template (เตรียมไว้สำหรับ Modal)
   await loadFocusTemplates(); 
   
-  // 3. ดึงข้อมูลรายการปัญหา
   showLoading('กำลังโหลดรายการปัญหา...');
   let entries = [];
   try {
@@ -1983,14 +1972,10 @@ async function showFocusListPreview(an) {
     if (!result.success) throw new Error(result.message);
     entries = result.data;
     
-    // (อัปเดต "อัปเดตล่าสุด" ในเมนู)
+    // อัปเดตสถานะปุ่มเมนูซ้าย
     const span005 = document.getElementById('last-updated-005');
     if (span005) {
-      if (entries.length > 0) {
-        span005.textContent = `มี ${entries.length} ปัญหา`;
-      } else {
-        span005.textContent = "ยังไม่เคยบันทึก";
-      }
+      span005.textContent = entries.length > 0 ? `มี ${entries.length} ปัญหา` : "ยังไม่เคยบันทึก";
     }
     
   } catch (error) {
@@ -1999,12 +1984,9 @@ async function showFocusListPreview(an) {
     return;
   }
   
-  // 4. Clone Template ตาราง
+  // 2. Clone Template
   const template = document.getElementById("preview-template-005");
-  if (!template) {
-    showError("ไม่พบ Template", "ไม่สามารถโหลด preview-template-005");
-    return;
-  }
+  if (!template) return;
   const preview = template.content.cloneNode(true);
   const tableBody = preview.querySelector("tbody");
 
@@ -2013,14 +1995,12 @@ async function showFocusListPreview(an) {
     row.innerHTML = `<td colspan="6" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึกปัญหา --</td>`;
     tableBody.appendChild(row);
   } else {
-    // 5. วาดตาราง
     entries.forEach(entry => {
       const row = document.createElement("tr");
       row.className = "hover:bg-gray-50";
       
       const activeDate = entry.ActiveDate ? new Date(entry.ActiveDate).toLocaleDateString('th-TH') : '';
       const resolvedDate = entry.ResolvedDate ? new Date(entry.ResolvedDate).toLocaleDateString('th-TH') : '';
-      
       const editButton = `<button type="button" class="focus-edit-btn text-blue-600 hover:text-blue-800" data-entry-id="${entry.Entry_ID}">แก้ไข</button>`;
 
       row.innerHTML = `
@@ -2032,15 +2012,16 @@ async function showFocusListPreview(an) {
         <td class="p-2 border text-center">${editButton}</td>
       `;
       
-      // (เพิ่ม Event Listener ให้ปุ่ม "แก้ไข" ในแถวนี้)
       row.querySelector(".focus-edit-btn").addEventListener("click", () => {
-        openFocusProblemModal(entry); // ส่งข้อมูลเดิมไปแก้ไข
+         openFocusProblemModal(entry); 
       });
       
       tableBody.appendChild(row);
     });
   }
 
+  // 3. (สำคัญที่สุด) ล้างหน้าจอ ตรงนี้! แล้วค่อยแปะ
+  chartPreviewContent.innerHTML = ""; 
   chartPreviewContent.appendChild(preview);
   Swal.close();
 }
