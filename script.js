@@ -1685,15 +1685,28 @@ document.addEventListener("DOMContentLoaded", () => {
   if (closeFocusModalBtn) closeFocusModalBtn.addEventListener("click", closeFocusProblemModal);
   if (cancelFocusBtn) cancelFocusBtn.addEventListener("click", closeFocusProblemModal);
   if (focusProblemForm) focusProblemForm.addEventListener("submit", handleSaveFocusProblem);
+  // (Logic ค้นหา Template - แก้ไขแล้ว)
   if (focusTemplateSearch) {
-    focusTemplateSearch.addEventListener("input", (e) => {
-      const val = e.target.value;
-      const found = globalFocusTemplates.problems.find(t => t.problem === val);
-      if (found) {
-        if(focusProblemText) focusProblemText.value = found.problem;
-        if (found.goal && focusGoalText) focusGoalText.value = found.goal;
-      }
-    });
+    // สร้างฟังก์ชันทำงานเมื่อมีการเลือก
+    const applyTemplate = (e) => {
+        const val = e.target.value;
+        // ค้นหาข้อมูลจาก globalFocusTemplates
+        const found = globalFocusTemplates.problems.find(t => t.problem === val);
+        
+        if (found) {
+            // ดึง Element ใหม่อีกครั้ง เพื่อความชัวร์ 100%
+            const pText = document.getElementById("focus-problem-text");
+            const gText = document.getElementById("focus-goal-text");
+            
+            // เติมข้อมูลลงช่อง (ถ้า Element มีอยู่จริง)
+            if (pText) pText.value = found.problem;
+            if (gText) gText.value = found.goal || ""; // เติม goal หรือถ้าไม่มีให้ว่างไว้
+        }
+    };
+
+    // สั่งให้ทำงานทั้งตอนพิมพ์ (input) และตอนคลิกเลือกแล้วเมาส์หลุดโฟกัส (change)
+    focusTemplateSearch.addEventListener("input", applyTemplate);
+    focusTemplateSearch.addEventListener("change", applyTemplate);
   }
   if (openFocusTemplateModalBtn) openFocusTemplateModalBtn.addEventListener("click", openAddTemplateModal);
   if (closeTemplateModalBtn) closeTemplateModalBtn.addEventListener("click", closeAddTemplateModal);
