@@ -552,45 +552,124 @@
     </template>
 
     <template id="preview-template-007">
-      <div class="p-4 space-y-6 bg-white">
-        <div class="grid grid-cols-2 gap-4 border-b pb-4">
+      <div class="p-6 space-y-6 bg-white text-sm font-sarabun">
+        
+        <div class="grid grid-cols-2 gap-4 border-b pb-4 bg-gray-50 p-4 rounded">
           <div><span class="font-bold text-gray-700">วันที่จำหน่าย:</span> <span data-field="DischargeDate"></span></div>
-          <div><span class="font-bold text-gray-700">เวลาที่ออก:</span> <span data-field="LeaveTime"></span> น.</div>
-          <div><span class="font-bold text-gray-700">ประเภท:</span> <span data-field="DischargeType"></span></div>
-          <div><span class="font-bold text-gray-700">สภาพ:</span> <span data-field="DischargeStatus"></span></div>
+          <div><span class="font-bold text-gray-700">วันที่ออก/เวลา:</span> <span data-field="LeaveDate"></span> เวลา <span data-field="LeaveTime"></span> น.</div>
+          <div>
+             <span class="font-bold text-gray-700">ประเภท:</span> <span data-field="DischargeType"></span>
+          </div>
+          <div>
+             <span class="font-bold text-gray-700">สภาพ:</span> <span data-field="DischargeStatus"></span>
+          </div>
         </div>
 
-        <fieldset class="border p-3 rounded">
-            <legend class="font-bold text-blue-700 px-2">อาการก่อนจำหน่าย (Vital Signs)</legend>
-            <div class="grid grid-cols-4 gap-2 text-center">
-                <div>BT: <span data-field="VS_BT"></span> °C</div>
-                <div>PR: <span data-field="VS_PR"></span> /min</div>
-                <div>RR: <span data-field="VS_RR"></span> /min</div>
-                <div>BP: <span data-field="VS_BP"></span> mmHg</div>
+        <div class="border p-3 rounded">
+            <h4 class="font-bold text-blue-800 mb-2">สรุปอาการและอาการแสดงผู้ป่วยก่อนจำหน่าย</h4>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-2">
+                <div><b>BT:</b> <span data-field="VS_BT"></span> °C</div>
+                <div><b>PR:</b> <span data-field="VS_PR"></span> /min</div>
+                <div><b>RR:</b> <span data-field="VS_RR"></span> /min</div>
+                <div><b>BP:</b> <span data-field="VS_BP"></span> mmHg</div>
+                <div><b>อื่นๆ:</b> <span data-field="VS_Other"></span></div>
             </div>
-        </fieldset>
+            <div><b>อาการและอาการแสดง:</b> <span data-field="Symp_Before_Discharge"></span></div>
+        </div>
 
-        <fieldset class="border p-3 rounded">
-            <legend class="font-bold text-green-700 px-2">D-METHOD</legend>
-            <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
-                <li><b>D (Disease):</b> <span data-field="D_Details"></span></li>
-                <li><b>M (Medication):</b> <span data-field="M_Details"></span></li>
-                <li><b>E (Environment):</b> <span data-field="E_Details"></span></li>
-                <li><b>T (Treatment):</b> <span data-field="T_Details"></span></li>
-                <li><b>H (Health):</b> <span data-field="H_Details"></span></li>
-                <li><b>O (Outpatient):</b> <span data-field="O_Details"></span></li>
-                <li><b>D (Diet):</b> <span data-field="D_Diet_Details"></span></li>
-            </ul>
-        </fieldset>
+        <div class="border p-4 rounded">
+            <h4 class="font-bold text-lg text-indigo-800 mb-3 underline">การสอนสุขศึกษา / D-METHOD</h4>
+            
+            <div class="space-y-3">
+                <div>
+                    <div class="font-bold text-red-700">1. D (Disease) ความรู้เรื่องโรค</div>
+                    <div class="ml-4 grid grid-cols-2 md:grid-cols-3 gap-1 text-gray-600">
+                        <div>[<span data-field="D_Fever"></span>] มีไข้สูง</div>
+                        <div>[<span data-field="D_Wound"></span>] แผลบวมแดง/มีหนอง</div>
+                        <div>[<span data-field="D_Drowsy"></span>] ซึม/รู้สึกตัวเปลี่ยน</div>
+                        <div>[<span data-field="D_Dyspnea"></span>] หายใจหอบ</div>
+                        <div class="col-span-2">[<span data-field="D_Other"></span>] อื่นๆ: <span data-field="D_Other_Text"></span></div>
+                    </div>
+                </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm border-t pt-4">
-             <div><b>อุปกรณ์กลับบ้าน:</b> <span data-field="Supplies_Status"></span> <span data-field="Supplies_Note"></span></div>
-             <div><b>การดูแลต่อ (F/U):</b> <span data-field="FU_Status"></span> <span data-field="FU_Note"></span></div>
-             <div><b>ส่งต่อ (Refer):</b> <span data-field="Refer_To"></span></div>
+                <div>
+                    <div class="font-bold text-blue-700">2. M (Medication) ยา</div>
+                    <div class="ml-4 p-2 bg-gray-50 rounded border border-gray-200">
+                        <span data-field="M_Details"></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <div class="font-bold">3. E (Environment)</div>
+                        <div class="ml-2 text-xs">
+                            <div>[<span data-field="E_Clean"></span>] จัดสิ่งแวดล้อม</div>
+                            <div>[<span data-field="E_Other"></span>] อื่นๆ: <span data-field="E_Other_Text"></span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="font-bold">4. T (Treatment)</div>
+                        <div class="ml-2 text-xs">
+                            <div>[<span data-field="T_CleanBody"></span>] ความสะอาดร่างกาย</div>
+                            <div>[<span data-field="T_WoundCare"></span>] ทำแผล</div>
+                            <div>[<span data-field="T_Other"></span>] <span data-field="T_Other_Text"></span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="font-bold">5. H (Health)</div>
+                        <div class="ml-2 text-xs">
+                            <div>[<span data-field="H_Exercise"></span>] ออกกำลังกาย/พักผ่อน</div>
+                            <div>[<span data-field="H_Other"></span>] <span data-field="H_Other_Text"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="font-bold">6. O (Outpatient) การมาตรวจตามนัด</div>
+                    <div class="ml-4"><span data-field="O_Refer"></span></div>
+                </div>
+
+                <div>
+                    <div class="font-bold text-green-700">7. D (Diet) อาหาร</div>
+                    <div class="ml-4 grid grid-cols-2 md:grid-cols-4 gap-1 text-xs text-gray-600">
+                        <div>[<span data-field="D_Diet_5Group"></span>] ครบ 5 หมู่</div>
+                        <div>[<span data-field="D_Diet_Soft"></span>] อ่อน</div>
+                        <div>[<span data-field="D_Diet_Cooked"></span>] สุกสะอาด</div>
+                        <div>[<span data-field="D_Diet_Protein"></span>] เนื้อ นม ไข่</div>
+                        <div>[<span data-field="D_Diet_AvoidFat"></span>] เลี่ยงไขมันสูง</div>
+                        <div>[<span data-field="D_Diet_NoVeg"></span>] งดผักผลไม้</div>
+                        <div class="col-span-2">[<span data-field="D_Diet_Other"></span>] อื่นๆ: <span data-field="D_Diet_Other_Text"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm border-t pt-4 bg-yellow-50 p-4 rounded">
+             <div>
+                 <b>ยา/อุปกรณ์กลับบ้าน:</b> <span data-field="Supplies_Status"></span> <span data-field="Supplies_Note"></span>
+             </div>
+             <div>
+                 <b>การดูแลต่อ (F/U):</b> 
+                 [<span data-field="FU_No"></span>] ไม่มี 
+                 [<span data-field="FU_Yes"></span>] มีนัด: <span data-field="FU_Date"></span>
+             </div>
+             <div class="md:col-span-2">
+                 <b>การดูแลแผล:</b> 
+                 [<span data-field="Care_Wound"></span>] ล้างแผลทุกวัน 
+                 [<span data-field="Care_Stitch"></span>] ตัดไหมวันที่: <span data-field="Care_Stitch_Date"></span>
+             </div>
+             <div class="md:col-span-2 border-t border-yellow-200 pt-2 mt-2">
+                 <b>สถานที่ส่งต่อ:</b> 
+                 [<span data-field="Dest_Center"></span>] รพ.ศ. 
+                 [<span data-field="Dest_General"></span>] รพ.ท. 
+                 [<span data-field="Dest_Community"></span>] รพ.ช. 
+                 [<span data-field="Dest_HealthCenter"></span>] รพ.สต. 
+                 [<span data-field="Dest_Other"></span>] อื่นๆ: <span data-field="Dest_Other_Text"></span>
+             </div>
              <div><b>ผู้รับกลับ:</b> <span data-field="Pickup_Name"></span> (<span data-field="Pickup_Rel"></span>)</div>
-             <div class="md:col-span-2 text-right mt-2">
-                <b>พยาบาลผู้จำหน่าย:</b> <span data-field="Nurse_Name" class="text-indigo-600 font-bold"></span>
-                <div class="text-xs text-gray-400">บันทึกเมื่อ: <span data-field="Timestamp"></span></div>
+             <div class="text-right">
+                <div class="font-bold text-indigo-600 text-lg">ลงชื่อ: <span data-field="Nurse_Name"></span></div>
+                <div class="text-gray-500">ตำแหน่ง: <span data-field="Nurse_Pos"></span></div>
              </div>
         </div>
       </div>
