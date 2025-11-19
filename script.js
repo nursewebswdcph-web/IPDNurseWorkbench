@@ -74,6 +74,7 @@ const CLASSIFY_CRITERIA = {
 let currentWard = null;
 let currentPatientAN = null;
 let currentPatientData = {};
+let currentAdviceData = null;
 let allWards = [];
 let globalConfigData = {};
 let globalStaffList = [];
@@ -1953,6 +1954,8 @@ async function showAdvicePreview(an) {
     Swal.close();
     
     const data = result.data;
+    currentAdviceData = data; // <--- เก็บข้อมูลลงตัวแปร Global เพื่อใช้ตอนกดปุ่มแก้ไข
+
     const spanStatus = document.getElementById('last-updated-advice');
     if (spanStatus) spanStatus.textContent = data ? "บันทึกแล้ว" : "ยังไม่บันทึก";
 
@@ -1971,28 +1974,60 @@ async function showAdvicePreview(an) {
        const template = document.getElementById("preview-template-advice");
        const clone = template.content.cloneNode(true);
        
+       // วนลูปใส่ข้อมูล และ ซ่อนบรรทัดที่ไม่ได้เลือก
        for (const key in data) {
            const el = clone.querySelector(`[data-field="${key}"]`);
            if (el) {
                let val = data[key];
-               // Format Date
+
+               // 1. จัดการวันที่ (Format Date)
                if (key.includes('Date') && val && !key.includes('Appoint')) {
-                   try { val = new Date(val).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}); } catch(e){}
+                   try { 
+                     // แปลงวันที่เป็น พ.ศ. แบบย่อ (วว/ดด/ปป)
+                     let dateObj = new Date(val);
+                     let yearBE = (dateObj.getFullYear() + 543).toString().slice(-2);
+                     let month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                     let day = dateObj.getDate().toString().padStart(2, '0');
+                     val = `${day}/${month}/${yearBE}`;
+                   } catch(e){}
                }
-               // Checkbox handling
+
+               // 2. ตรวจสอบว่าเป็น Checkbox หรือไม่
+               // สังเกตจาก Element แม่ (parent) ว่าเป็น div/span ที่ครอบ checkbox หรือไม่
+               const isCheckboxLine = el.parentElement && (
+                  el.parentElement.tagName === 'DIV' || 
+                  el.parentElement.tagName === 'SPAN'
+               ) && el.parentElement.innerText.includes('[');
+
                if (val === 'on' || val === true || val === 'true') {
-                   el.innerHTML = '<b class="text-green-600">✓</b>';
+                   // กรณีเลือก: ใส่เครื่องหมายถูก
+                   el.innerHTML = '<b class="text-green-600 font-bold">✓</b>';
+                   // แสดงบรรทัดนี้
+                   if(isCheckboxLine) el.parentElement.style.display = ""; 
                } else if (!val || val === 'false') {
-                   el.textContent = '';
+                   // กรณีไม่ได้เลือก:
+                   el.textContent = ''; 
+                   // **สำคัญ: ซ่อนบรรทัดแม่ (Parent) ไปเลย**
+                   if(isCheckboxLine) {
+                      el.parentElement.style.display = "none";
+                   }
                } else {
+                   // กรณีเป็น Text ธรรมดา
                    el.textContent = val;
                }
            }
        }
+
+       // จัดการกรณีพิเศษ: ถ้าเป็น Text "อื่นๆ" (Other_Text) 
+       // ถ้า Checkbox "อื่นๆ" ไม่ถูกเลือก ช่อง Text ก็ควรซ่อนด้วย (Logic นี้มักจะถูกจัดการโดย checkbox แม่แล้ว แต่กันเหนียว)
+       // (โค้ดข้างบนจัดการผ่าน Parent ของ Checkbox แล้ว ดังนั้นส่วน Text ที่อยู่ในบรรทัดเดียวกันจะหายไปพร้อมกันครับ)
+
        chartPreviewContent.appendChild(clone);
        
+       // ตั้งค่าปุ่มแก้ไข
        chartEditBtn.classList.remove("hidden");
-       chartEditBtn.onclick = () => openAdviceModal(data); 
+       // chartEditBtn.onclick = ... ไม่ต้องใช้ตรงนี้แล้ว ให้ไปแก้ที่ Event Listener หลักแทน
+       
        chartAddNewBtn.classList.add("hidden"); 
     }
   } catch (e) {
@@ -2202,6 +2237,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // กรณี 007 เราผูกฟังก์ชันไว้ที่ปุ่มตอนโหลด Preview แล้ว 
         // ดังนั้นใส่เงื่อนไขว่างๆ ไว้ตรงนี้ เพื่อกันไม่ให้มันไปเรียก showComingSoon
         return; 
+    }
+    else if (formType === 'advice') {
+        // ส่งข้อมูลที่เก็บไว้ในตัวแปร Global เข้าไปใน Modal
+        openAdviceModal(currentAdviceData);
     }
     else {
         showComingSoon(); 
