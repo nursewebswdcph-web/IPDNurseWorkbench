@@ -1675,20 +1675,21 @@ async function showProgressNotePreview(an) {
 
           // แสดงข้อมูลครบทุกช่อง
           row.innerHTML = `
-            <td class="p-2 border text-center font-semibold text-gray-600">
-                ${dateStr}<br><span class="text-xs text-gray-400">${entry.Time} น.</span>
+            <td class="p-2 border text-center align-top">
+                <div class="font-bold text-gray-800 mb-1">${dateStr}</div>
+                <span class="px-2 py-0.5 rounded text-xs font-bold ${shiftClass} inline-block">${entry.Shift}</span>
             </td>
-            <td class="p-2 border text-center">
-                <span class="px-2 py-1 rounded text-xs font-bold ${shiftClass}">${entry.Shift}</span>
+            <td class="p-2 border text-center font-medium text-gray-600 align-top">
+                ${entry.Time} น.
             </td>
-            <td class="p-2 border font-bold text-blue-800">
+            <td class="p-2 border font-bold text-blue-800 align-top">
                 ${entry.Focus || '-'}
             </td>
-            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.S_Data || '-'}</td>
-            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.O_Data || '-'}</td>
-            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.I_Data || '-'}</td>
-            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.E_Data || '-'}</td>
-            <td class="p-2 border text-center text-sm font-medium">
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.S_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.O_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.I_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.E_Data || '-'}</td>
+            <td class="p-2 border text-center text-sm font-medium align-top">
                 ${entry.Nurse_Name || '-'}
             </td>
           `;
