@@ -320,7 +320,7 @@ function getISODate(date) {
 // ----------------------------------------------------------------
 
 async function loadWards() {
-  showLoading('กำลังโหลดข้อมูลตึก...');
+  showLoading('กำลังโหลดหน้าเริ่มต้น กรุณารอสักครู่...');
   try {
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getWards`);
     const result = await response.json();
