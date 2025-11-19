@@ -2102,8 +2102,17 @@ document.addEventListener("DOMContentLoaded", () => {
   
   chartEditBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
-    if (formType === '004') openAssessmentForm(); 
-    else showComingSoon(); 
+    if (formType === '004') {
+        openAssessmentForm();
+    } 
+    else if (formType === '007') {
+        // กรณี 007 เราผูกฟังก์ชันไว้ที่ปุ่มตอนโหลด Preview แล้ว 
+        // ดังนั้นใส่เงื่อนไขว่างๆ ไว้ตรงนี้ เพื่อกันไม่ให้มันไปเรียก showComingSoon
+        return; 
+    }
+    else {
+        showComingSoon(); 
+    }
   });
   
   chartAddNewBtn.addEventListener('click', (e) => {
