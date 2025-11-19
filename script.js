@@ -1654,11 +1654,11 @@ async function showProgressNotePreview(an) {
       const tableBody = preview.querySelector("tbody");
       
       if (entries.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึก --</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึก --</td></tr>`;
       } else {
         entries.forEach(entry => {
           const row = document.createElement("tr");
-          row.className = "hover:bg-gray-50 border-b";
+          row.className = "hover:bg-gray-50 border-b align-top";
           
           // จัดรูปแบบวันที่
           let dateStr = entry.Date;
@@ -1667,20 +1667,31 @@ async function showProgressNotePreview(an) {
              dateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'});
           } catch(e){}
 
-          // ตัดข้อความ Focus ไม่ให้ยาวเกิน
-          const focusShort = entry.Focus ? (entry.Focus.length > 60 ? entry.Focus.substring(0,60)+"..." : entry.Focus) : "-";
+          // กำหนดสีป้ายเวร
+          let shiftClass = 'bg-gray-100 text-gray-800';
+          if (entry.Shift.includes('ดึก')) shiftClass = 'bg-indigo-100 text-indigo-800';
+          else if (entry.Shift.includes('เช้า')) shiftClass = 'bg-yellow-100 text-yellow-800';
+          else if (entry.Shift.includes('บ่าย')) shiftClass = 'bg-green-100 text-green-800';
 
+          // แสดงข้อมูลครบทุกช่อง
           row.innerHTML = `
-            <td class="p-3 text-center align-top">${dateStr}<br><span class="text-xs text-gray-500">${entry.Time}</span></td>
-            <td class="p-3 text-center align-top"><span class="px-2 py-1 rounded text-xs font-bold ${entry.Shift.includes('ดึก') ? 'bg-indigo-100 text-indigo-800' : (entry.Shift.includes('เช้า') ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800')}">${entry.Shift}</span></td>
-            <td class="p-3 align-top">
-               <div class="font-bold text-gray-800">${focusShort}</div>
-               <div class="text-sm text-gray-600 mt-1"><span class="font-semibold text-red-600">S:</span> ${entry.S_Data || '-'}</div>
-               <div class="text-sm text-gray-600"><span class="font-semibold text-blue-600">O:</span> ${entry.O_Data || '-'}</div>
+            <td class="p-2 border text-center font-semibold text-gray-600">
+                ${dateStr}<br><span class="text-xs text-gray-400">${entry.Time} น.</span>
             </td>
-            <td class="p-3 text-center align-top text-sm">${entry.Nurse_Name || '-'}</td>
+            <td class="p-2 border text-center">
+                <span class="px-2 py-1 rounded text-xs font-bold ${shiftClass}">${entry.Shift}</span>
+            </td>
+            <td class="p-2 border font-bold text-blue-800">
+                ${entry.Focus || '-'}
+            </td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.S_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.O_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.I_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line">${entry.E_Data || '-'}</td>
+            <td class="p-2 border text-center text-sm font-medium">
+                ${entry.Nurse_Name || '-'}
+            </td>
           `;
-          // หากต้องการปุ่มดูรายละเอียดเพิ่ม ให้ใส่ <td> เพิ่มตรงนี้
 
           tableBody.appendChild(row);
         });
