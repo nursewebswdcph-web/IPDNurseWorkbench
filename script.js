@@ -1688,11 +1688,20 @@ async function showProgressNotePreview(an) {
             <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.S_Data || '-'}</td>
             <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.O_Data || '-'}</td>
             <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.I_Data || '-'}</td>
-            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.E_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">
+               ${entry.E_Data || '-'}
+               ${entry.E_Time ? `<br><span class="text-xs bg-purple-100 text-purple-800 px-1 rounded">เวลา: ${entry.E_Time}</span>` : ''}
+            </td>
             <td class="p-2 border text-center text-sm font-medium align-top">
-                ${entry.Nurse_Name || '-'}
+                ${entry.Nurse_Name || '-'}<br>
+                <button class="mt-2 text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-xs btn-edit-note">แก้ไข</button>
             </td>
           `;
+
+          // ผูก Event ปุ่มแก้ไข ให้ส่งข้อมูล entry ทั้งก้อนไปที่ฟังก์ชันเปิด Modal
+          row.querySelector('.btn-edit-note').addEventListener('click', () => {
+             openProgressNoteModal(entry); 
+          });
 
           tableBody.appendChild(row);
         });
@@ -1733,26 +1742,12 @@ function updateProgressTemplateDatalist() {
 }
 
 // --- 3. ฟังก์ชันเปิด Modal และ Re-Progress ---
-// แก้ไขฟังก์ชันนี้ใน script.js
-async function openProgressNoteModal() {
+// ฟังก์ชันเปิด Modal (รองรับทั้ง เพิ่มใหม่ และ แก้ไข)
+async function openProgressNoteModal(editData = null) {
   progAnDisplay.textContent = currentPatientAN;
   progNameDisplay.textContent = currentPatientData.Name;
   
-  // Set Date/Time
-  const now = new Date();
-  const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
-  document.getElementById("prog-date").value = localDate.toISOString().split('T')[0];
-  document.getElementById("prog-time").value = now.toTimeString().substring(0,5);
-  
-  // Set Shift
-  const hour = now.getHours();
-  const shiftRadios = document.getElementsByName("Shift");
-  shiftRadios.forEach(r => r.checked = false);
-  if (hour >= 0 && hour < 8) document.querySelector('input[name="Shift"][value^="ดึก"]').checked = true;
-  else if (hour >= 8 && hour < 16) document.querySelector('input[name="Shift"][value^="เช้า"]').checked = true;
-  else document.querySelector('input[name="Shift"][value^="บ่าย"]').checked = true;
-
-  // --- ส่วนที่เพิ่ม: โหลดรายชื่อพยาบาลเข้า Datalist ---
+  // โหลดรายชื่อพยาบาล (ถ้ายังไม่มี)
   if (globalStaffList.length === 0) {
      try {
        const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
@@ -1760,21 +1755,55 @@ async function openProgressNoteModal() {
        if (result.success) globalStaffList = result.data;
      } catch(e) { console.error(e); }
   }
-  
-  // สร้าง Datalist (ถ้ายังไม่มี) หรืออัปเดต
+  // สร้าง Datalist
   let staffDatalist = document.getElementById('staff-list-datalist');
   if (!staffDatalist) {
       staffDatalist = document.createElement('datalist');
       staffDatalist.id = 'staff-list-datalist';
       document.body.appendChild(staffDatalist);
   }
-  staffDatalist.innerHTML = ""; // เคลียร์เก่า
-  globalStaffList.forEach(staff => {
-      const option = document.createElement("option");
-      option.value = staff.fullName; // ใช้ชื่อเต็ม
-      staffDatalist.appendChild(option);
-  });
-  // -----------------------------------------------
+  staffDatalist.innerHTML = "";
+  globalStaffList.forEach(staff => staffDatalist.innerHTML += `<option value="${staff.fullName}">`);
+
+  // --- ตรวจสอบโหมด (เพิ่มใหม่ vs แก้ไข) ---
+  if (editData) {
+    // >> โหมดแก้ไข: เติมข้อมูลเดิมลงฟอร์ม
+    document.getElementById("prog-entry-id").value = editData.Entry_ID || ""; // ใส่ ID
+    document.getElementById("prog-date").value = editData.Date ? getISODate(new Date(editData.Date)) : "";
+    document.getElementById("prog-time").value = editData.Time || "";
+    
+    // เลือก Shift
+    const shiftRadios = document.getElementsByName("Shift");
+    shiftRadios.forEach(r => { r.checked = (r.value === editData.Shift); });
+
+    document.getElementById("prog-focus").value = editData.Focus || "";
+    document.getElementById("prog-s").value = editData.S_Data || "";
+    document.getElementById("prog-o").value = editData.O_Data || "";
+    document.getElementById("prog-i").value = editData.I_Data || "";
+    document.getElementById("prog-e").value = editData.E_Data || "";
+    document.getElementById("prog-e-time").value = editData.E_Time || ""; // เวลาประเมินผล
+    
+    // ชื่อพยาบาล
+    const nurseInput = document.querySelector('input[name="Nurse_Name"]');
+    if(nurseInput) nurseInput.value = editData.Nurse_Name || "";
+
+  } else {
+    // >> โหมดเพิ่มใหม่: เคลียร์ค่า, ตั้งเวลาปัจจุบัน
+    document.getElementById("progress-note-form").reset();
+    document.getElementById("prog-entry-id").value = ""; // เคลียร์ ID สำคัญมาก!
+    
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    document.getElementById("prog-date").value = localDate.toISOString().split('T')[0];
+    document.getElementById("prog-time").value = now.toTimeString().substring(0,5);
+    
+    // Auto Shift
+    const hour = now.getHours();
+    const shiftRadios = document.getElementsByName("Shift");
+    if (hour >= 0 && hour < 8) document.querySelector('input[name="Shift"][value^="ดึก"]').checked = true;
+    else if (hour >= 8 && hour < 16) document.querySelector('input[name="Shift"][value^="เช้า"]').checked = true;
+    else document.querySelector('input[name="Shift"][value^="บ่าย"]').checked = true;
+  }
 
   await loadProgressTemplates();
   progressNoteModal.classList.remove("hidden");
