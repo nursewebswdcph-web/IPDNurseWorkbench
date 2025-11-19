@@ -1336,6 +1336,31 @@
           </form>
         </div>
       </div>
+    <div id="add-progress-template-modal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[60] hidden">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-md m-4">
+        <form id="add-progress-template-form">
+          <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-xl font-semibold text-gray-800">บันทึกเป็นเทมเพลตใหม่</h3>
+            <button id="close-prog-temp-modal-btn" type="button" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+          </div>
+          
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-bold text-blue-600 mb-2">ตั้งชื่อเทมเพลต (Keyword สำหรับค้นหา)</label>
+              <input type="text" name="TemplateName" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="เช่น: ไข้สูง, Pain, Sepsis" required>
+            </div>
+            <p class="text-sm text-gray-500 bg-gray-100 p-2 rounded">
+              * ระบบจะบันทึกข้อมูล Focus, S, O, I, E จากหน้าจอปัจจุบันลงในเทมเพลตนี้
+            </p>
+          </div>
+          
+          <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
+            <button id="cancel-prog-temp-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mr-3">ยกเลิก</button>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow">ยืนยัน</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
   </main> <!-- (ย้าย </main> มาไว้ตรงนี้) -->
 
