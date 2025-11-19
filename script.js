@@ -942,7 +942,19 @@ async function showFormPreview(formType) {
     chartEditBtn.dataset.form = "004";
     chartAddNewBtn.classList.add("hidden");
     
-  } else {
+  }
+
+    else if (formType === '006') {
+    chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล (Nursing Progress Note)";
+    chartEditBtn.classList.add("hidden");
+    chartAddNewBtn.classList.remove("hidden");
+    chartAddNewBtn.dataset.form = "006"; // ผูกปุ่มให้เป็น 006
+    
+    // เรียกฟังก์ชันโหลดรายการ (ที่จะสร้างในขั้นตอนที่ 3)
+    await showProgressNotePreview(currentPatientAN);
+  }
+      
+  else {
     const formTitle = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
     chartPreviewTitle.textContent = formTitle;
     await showEntryList(formType, formTitle);
@@ -1619,6 +1631,71 @@ async function handleSaveFocusTemplate(event) {
 // ----------------------------------------------------------------
 // (FR-IPD-006) Logic
 // ----------------------------------------------------------------
+// --- ฟังก์ชันแสดงรายการย้อนหลังของ FR-006 ---
+async function showProgressNotePreview(an) {
+  showLoading('กำลังโหลดประวัติ...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getNursingProgressHistory&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success) throw new Error(result.message);
+    
+    const entries = result.data;
+    
+    // อัปเดตข้อความสถานะที่เมนูซ้าย
+    const span006 = document.getElementById('last-updated-006');
+    if (span006) span006.textContent = entries.length > 0 ? `มี ${entries.length} รายการ` : "ยังไม่เคยบันทึก";
+
+    // ดึง Template ตารางมาใช้
+    const template = document.getElementById("preview-template-006"); 
+    
+    if (template) {
+      const preview = template.content.cloneNode(true);
+      const tableBody = preview.querySelector("tbody");
+      
+      if (entries.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึก --</td></tr>`;
+      } else {
+        entries.forEach(entry => {
+          const row = document.createElement("tr");
+          row.className = "hover:bg-gray-50 border-b";
+          
+          // จัดรูปแบบวันที่
+          let dateStr = entry.Date;
+          try { 
+             const d = new Date(entry.Date);
+             dateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'});
+          } catch(e){}
+
+          // ตัดข้อความ Focus ไม่ให้ยาวเกิน
+          const focusShort = entry.Focus ? (entry.Focus.length > 60 ? entry.Focus.substring(0,60)+"..." : entry.Focus) : "-";
+
+          row.innerHTML = `
+            <td class="p-3 text-center align-top">${dateStr}<br><span class="text-xs text-gray-500">${entry.Time}</span></td>
+            <td class="p-3 text-center align-top"><span class="px-2 py-1 rounded text-xs font-bold ${entry.Shift.includes('ดึก') ? 'bg-indigo-100 text-indigo-800' : (entry.Shift.includes('เช้า') ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800')}">${entry.Shift}</span></td>
+            <td class="p-3 align-top">
+               <div class="font-bold text-gray-800">${focusShort}</div>
+               <div class="text-sm text-gray-600 mt-1"><span class="font-semibold text-red-600">S:</span> ${entry.S_Data || '-'}</div>
+               <div class="text-sm text-gray-600"><span class="font-semibold text-blue-600">O:</span> ${entry.O_Data || '-'}</div>
+            </td>
+            <td class="p-3 text-center align-top text-sm">${entry.Nurse_Name || '-'}</td>
+          `;
+          // หากต้องการปุ่มดูรายละเอียดเพิ่ม ให้ใส่ <td> เพิ่มตรงนี้
+
+          tableBody.appendChild(row);
+        });
+      }
+      
+      chartPreviewContent.innerHTML = "";
+      chartPreviewContent.appendChild(preview);
+    }
+    Swal.close();
+
+  } catch (error) {
+    Swal.close();
+    showError('โหลดข้อมูลไม่สำเร็จ', error.message);
+  }
+}
 async function loadProgressTemplates() {
   if (globalProgressTemplates.length > 0) return;
   try {
@@ -1906,10 +1983,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (addTemplateForm) addTemplateForm.addEventListener("submit", handleSaveFocusTemplate);
 
   // Progress note FR-006
-  const btn006 = document.querySelector('.chart-list-item[data-form="006"]');
-  if(btn006) btn006.addEventListener('click', openProgressNoteModal); // หรือใช้ logic เดิมใน chartPage event delegation ก็ได้
-
-  // ปุ่มใน Modal 006
+    // ปุ่มใน Modal 006
   document.getElementById("close-progress-modal-btn").addEventListener("click", () => {
     progressNoteModal.classList.add("hidden");
     progressNoteForm.reset();
