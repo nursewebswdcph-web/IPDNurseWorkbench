@@ -2334,7 +2334,8 @@ function renderMorseTable(data, page) {
   // --- Header Row 1: วันที่ ---
   const headerRow1 = document.createElement('tr');
   headerRow1.className = 'bg-gray-100';
-  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-80 align-middle bg-white sticky left-0 z-20">รายการประเมิน</th>'; 
+  // ขยายความกว้างคอลัมน์ซ้ายเพื่อให้ใส่ข้อความได้พอดี
+  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-80 align-middle bg-white sticky left-0 z-20 shadow-md">รายการประเมิน</th>'; 
   
   // --- Header Row 2: เวร ---
   const headerRow2 = document.createElement('tr');
@@ -2378,12 +2379,13 @@ function renderMorseTable(data, page) {
      const row = document.createElement('tr');
      
      // --- คอลัมน์ซ้ายสุด: แสดงหัวข้อ และ รายละเอียดตัวเลือก ---
-     let leftColHtml = `<div class="font-bold text-sm text-gray-800 pb-2 border-b border-gray-200">${item.label}</div>`;
+     // ใช้ div ซ้อนกันเพื่อจัด layout แนวตั้ง
+     let leftColHtml = `<div class="font-bold text-sm text-gray-800 pb-2 pt-2 border-b border-gray-200 bg-gray-50 px-2">${item.label}</div>`;
      item.options.forEach(opt => {
-        // ใช้ h-10 (ความสูงคงที่) เพื่อให้ตรงกับช่อง Radio ด้านขวา
-        leftColHtml += `<div class="h-10 flex items-center text-xs text-gray-600 border-b border-gray-100 pl-2">${opt.text}</div>`;
+        // กำหนดความสูง h-10 (40px) ให้แต่ละตัวเลือก เพื่อให้ตรงกับช่อง Radio ด้านขวา
+        leftColHtml += `<div class="h-10 flex items-center text-xs text-gray-600 border-b border-gray-100 pl-4 hover:bg-gray-50">${opt.text}</div>`;
      });
-     row.innerHTML = `<td class="p-2 border bg-white align-top sticky left-0 z-10 shadow-sm">${leftColHtml}</td>`;
+     row.innerHTML = `<td class="p-0 border-r border-b bg-white align-top sticky left-0 z-10 shadow-md">${leftColHtml}</td>`;
      
      // --- คอลัมน์ข้อมูล (5 วัน x 3 เวร) ---
      for (let i = 0; i < 5; i++) {
@@ -2391,18 +2393,21 @@ function renderMorseTable(data, page) {
        ['N', 'D', 'E'].forEach((shiftCode, sIdx) => { 
           const entry = data && data.find(d => d.Date === dateStr && d.Shift === shiftCode);
           const val = entry ? entry[`Morse_${idx+1}`] : "";
-          const borderClass = (sIdx === 0) ? 'border-l-2 border-gray-300' : 'border';
+          const borderClass = (sIdx === 0) ? 'border-l-2 border-gray-300' : 'border-r border-gray-200';
 
           // สร้าง Radio Buttons โดยใช้ Div กั้นความสูงให้เท่ากับข้อความทางซ้าย
-          let cellHtml = `<div class="pb-2 border-b border-transparent">&nbsp;</div>`; // Spacer สำหรับหัวข้อ
+          // Spacer สำหรับหัวข้อ (ความสูงเท่ากับหัวข้อด้านซ้าย + padding)
+          let cellHtml = `<div class="pb-2 pt-2 border-b border-gray-200 bg-gray-50">&nbsp;</div>`; 
           
           item.options.forEach(opt => {
              const isChecked = (String(val) === String(opt.score)) ? 'checked' : '';
              const radioId = `m_${idx+1}_${i}_${shiftCode}_${opt.score}`;
              
              // ใช้ h-10 และ flex center เพื่อจัดปุ่มให้อยู่ตรงกลางบรรทัดเดียวกับข้อความ
+             // เพิ่ม hover effect เพื่อให้ดูง่ายเวลากวาดสายตา
              cellHtml += `
-               <div class="h-10 flex items-center justify-center border-b border-gray-100 hover:bg-blue-50 transition-colors">
+               <div class="h-10 flex items-center justify-center border-b border-gray-100 hover:bg-blue-100 transition-colors cursor-pointer"
+                    onclick="document.getElementById('${radioId}').click()">
                  <input type="radio" id="${radioId}" 
                         name="Morse_${idx+1}_Day${i}_${shiftCode}" 
                         value="${opt.score}" 
@@ -2418,17 +2423,17 @@ function renderMorseTable(data, page) {
      tbody.appendChild(row);
   });
 
-  // --- Body Rows: Total & MAAS & Save (เหมือนเดิม) ---
+  // --- Body Rows: Total & MAAS & Save (คงเดิมแต่ปรับ Sticky ให้สวยงาม) ---
   const totalRow = document.createElement('tr');
   totalRow.className = 'bg-orange-50 font-bold';
-  totalRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-orange-50 shadow-sm">รวมคะแนน (Morse)</td>`;
+  totalRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-orange-100 shadow-md">รวมคะแนน (Morse)</td>`;
   
   const maasRow = document.createElement('tr');
   maasRow.className = 'bg-blue-50';
-  maasRow.innerHTML = `<td class="p-2 border font-bold sticky left-0 z-10 bg-blue-50 shadow-sm">แบบประเมินการดึงอุปกรณ์ฯ (MAAS)</td>`;
+  maasRow.innerHTML = `<td class="p-2 border font-bold sticky left-0 z-10 bg-blue-100 shadow-md">แบบประเมินการดึงอุปกรณ์ฯ (MAAS)</td>`;
 
   const actionRow = document.createElement('tr');
-  actionRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-white shadow-sm">พยาบาลผู้ประเมิน / บันทึก</td>`;
+  actionRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-gray-100 shadow-md">พยาบาลผู้ประเมิน / บันทึก</td>`;
 
   for (let i = 0; i < 5; i++) {
       const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
@@ -2443,7 +2448,7 @@ function renderMorseTable(data, page) {
          </td>`;
 
          // MAAS (ใช้ Dropdown เพื่อประหยัดที่ในแนวตั้ง)
-         let maasSelect = `<select class="w-full p-1 border text-[10px] text-center bg-white rounded" name="MAAS_Score" 
+         let maasSelect = `<select class="w-full p-1 border text-[10px] text-center bg-white rounded focus:ring-2 focus:ring-blue-400" name="MAAS_Score" 
                            data-day="${i}" data-shift="${shiftCode}">
                            <option value="">-เลือก-</option>`;
          MAAS_OPTIONS.forEach(opt => {
@@ -2455,7 +2460,7 @@ function renderMorseTable(data, page) {
          // Save
          actionRow.innerHTML += `<td class="p-1 ${borderClass} text-center align-top">
             <input type="text" list="staff-list-datalist" 
-                   class="w-full text-xs p-1 border mb-1 rounded bg-gray-50 focus:bg-white morse-assessor-input" 
+                   class="w-full text-xs p-1 border mb-1 rounded bg-gray-50 focus:bg-white morse-assessor-input text-center" 
                    placeholder="ชื่อ" 
                    data-day="${i}" data-shift="${shiftCode}" 
                    value="${entry ? entry.Assessor_Name : ''}">
