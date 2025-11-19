@@ -1965,15 +1965,32 @@ async function showDischargePreview(an) {
        const template = document.getElementById("preview-template-007");
        const clone = template.content.cloneNode(true);
        
-       // Map ข้อมูล
+       // (ในฟังก์ชัน showDischargePreview)
+       // Map ข้อมูลลง Template
        for (const key in data) {
            const el = clone.querySelector(`[data-field="${key}"]`);
            if (el) {
                let val = data[key];
-               if (key === 'DischargeDate' || key.includes('Timestamp')) {
-                  try { val = new Date(val).toLocaleDateString('th-TH'); } catch(e){}
+               
+               // 1. จัดการวันที่
+               if (key.includes('Date') || key.includes('Timestamp')) {
+                  try { 
+                      if(val) val = new Date(val).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }); 
+                  } catch(e){}
                }
-               el.textContent = val || '-';
+               
+               // 2. จัดการ Checkbox (ถ้าค่าเป็น on/true ให้โชว์ ✓)
+               if (val === 'on' || val === true || val === 'true') {
+                   el.innerHTML = '<b class="text-green-600 text-lg">✓</b>';
+               } 
+               // 3. ถ้าไม่มีค่า
+               else if (!val || val === 'false') {
+                   el.textContent = ''; // ปล่อยว่างในวงเล็บ []
+               } 
+               // 4. ค่าปกติ (Text)
+               else {
+                   el.textContent = val;
+               }
            }
        }
        chartPreviewContent.appendChild(clone);
