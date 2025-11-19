@@ -1946,6 +1946,7 @@ dischargeForm.querySelector('[name="Nurse_Name"]').addEventListener('change', (e
 });
 
 // 3. สร้างฟังก์ชัน showAdvicePreview (วางไว้ใกล้ๆ showDischargePreview)
+// ฟังก์ชันแสดง Preview การให้คำแนะนำ (แก้ไขเรื่องซ่อน Checkbox และปุ่ม Edit)
 async function showAdvicePreview(an) {
   showLoading('กำลังโหลดคำแนะนำ...');
   try {
@@ -1954,7 +1955,7 @@ async function showAdvicePreview(an) {
     Swal.close();
     
     const data = result.data;
-    currentAdviceData = data; // <--- เก็บข้อมูลลงตัวแปร Global เพื่อใช้ตอนกดปุ่มแก้ไข
+    currentAdviceData = data; // เก็บข้อมูลไว้ใช้ตอนกดปุ่มแก้ไข
 
     const spanStatus = document.getElementById('last-updated-advice');
     if (spanStatus) spanStatus.textContent = data ? "บันทึกแล้ว" : "ยังไม่บันทึก";
@@ -1962,6 +1963,7 @@ async function showAdvicePreview(an) {
     chartPreviewContent.innerHTML = "";
 
     if (!data) {
+       // กรณีไม่มีข้อมูล
        chartPreviewContent.innerHTML = `
          <div class="text-center py-10 text-gray-400">
             <p>-- ยังไม่มีการบันทึกคำแนะนำ --</p>
@@ -1971,19 +1973,23 @@ async function showAdvicePreview(an) {
        chartEditBtn.classList.add("hidden");
        chartAddNewBtn.classList.add("hidden");
     } else {
+       // กรณีมีข้อมูล
        const template = document.getElementById("preview-template-advice");
+       if (!template) {
+           console.error("ไม่พบ Template: preview-template-advice");
+           return;
+       }
        const clone = template.content.cloneNode(true);
        
-       // วนลูปใส่ข้อมูล และ ซ่อนบรรทัดที่ไม่ได้เลือก
+       // วนลูปใส่ข้อมูล
        for (const key in data) {
            const el = clone.querySelector(`[data-field="${key}"]`);
            if (el) {
                let val = data[key];
 
-               // 1. จัดการวันที่ (Format Date)
+               // 1. จัดการวันที่ (Format Date เป็นไทยย่อ)
                if (key.includes('Date') && val && !key.includes('Appoint')) {
                    try { 
-                     // แปลงวันที่เป็น พ.ศ. แบบย่อ (วว/ดด/ปป)
                      let dateObj = new Date(val);
                      let yearBE = (dateObj.getFullYear() + 543).toString().slice(-2);
                      let month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
@@ -1992,41 +1998,34 @@ async function showAdvicePreview(an) {
                    } catch(e){}
                }
 
-               // 2. ตรวจสอบว่าเป็น Checkbox หรือไม่
-               // สังเกตจาก Element แม่ (parent) ว่าเป็น div/span ที่ครอบ checkbox หรือไม่
-               const isCheckboxLine = el.parentElement && (
-                  el.parentElement.tagName === 'DIV' || 
-                  el.parentElement.tagName === 'SPAN'
-               ) && el.parentElement.innerText.includes('[');
+               // 2. Logic ซ่อน Checkbox ที่ไม่ได้เลือก
+               // หา Parent Element ที่เป็นบรรทัดของ Checkbox นั้น
+               const parent = el.parentElement; 
+               // ตรวจสอบว่าเป็นบรรทัด Checkbox จริงหรือไม่ (ดูจากวงเล็บ [ )
+               const isCheckboxLine = parent && (parent.innerText.includes('['));
 
                if (val === 'on' || val === true || val === 'true') {
-                   // กรณีเลือก: ใส่เครื่องหมายถูก
-                   el.innerHTML = '<b class="text-green-600 font-bold">✓</b>';
-                   // แสดงบรรทัดนี้
-                   if(isCheckboxLine) el.parentElement.style.display = ""; 
+                   // ถ้าเลือก: ใส่เครื่องหมายถูก และแสดงบรรทัดนั้น
+                   el.innerHTML = '<b class="text-green-600 font-bold">/</b>'; 
+                   if(isCheckboxLine) parent.style.display = ""; 
                } else if (!val || val === 'false') {
-                   // กรณีไม่ได้เลือก:
+                   // ถ้าไม่เลือก: ลบข้อความ และสั่งซ่อนบรรทัด (display: none)
                    el.textContent = ''; 
-                   // **สำคัญ: ซ่อนบรรทัดแม่ (Parent) ไปเลย**
                    if(isCheckboxLine) {
-                      el.parentElement.style.display = "none";
+                      parent.style.display = "none"; 
                    }
                } else {
-                   // กรณีเป็น Text ธรรมดา
+                   // ถ้าเป็น Text ธรรมดา
                    el.textContent = val;
                }
            }
        }
 
-       // จัดการกรณีพิเศษ: ถ้าเป็น Text "อื่นๆ" (Other_Text) 
-       // ถ้า Checkbox "อื่นๆ" ไม่ถูกเลือก ช่อง Text ก็ควรซ่อนด้วย (Logic นี้มักจะถูกจัดการโดย checkbox แม่แล้ว แต่กันเหนียว)
-       // (โค้ดข้างบนจัดการผ่าน Parent ของ Checkbox แล้ว ดังนั้นส่วน Text ที่อยู่ในบรรทัดเดียวกันจะหายไปพร้อมกันครับ)
-
        chartPreviewContent.appendChild(clone);
        
-       // ตั้งค่าปุ่มแก้ไข
+       // **จุดสำคัญที่แก้ปัญหาปุ่มแก้ไข:**
        chartEditBtn.classList.remove("hidden");
-       // chartEditBtn.onclick = ... ไม่ต้องใช้ตรงนี้แล้ว ให้ไปแก้ที่ Event Listener หลักแทน
+       chartEditBtn.dataset.form = "advice"; // กำหนดค่านี้ เพื่อให้ Event Listener รู้ว่าต้องเปิดฟอร์มไหน
        
        chartAddNewBtn.classList.add("hidden"); 
     }
@@ -2041,7 +2040,7 @@ function openAdviceModal(editData = null) {
     adviceForm.reset();
     
     if (editData) {
-        // เติมข้อมูลเดิม
+        // กรณีแก้ไข: เติมข้อมูลเดิม
         for (const key in editData) {
             const input = adviceForm.querySelector(`[name="${key}"]`);
             if (input) {
@@ -2055,7 +2054,7 @@ function openAdviceModal(editData = null) {
             }
         }
     } else {
-        // ถ้าเพิ่มใหม่ ให้ Default วันที่ปัจจุบันลงทุกช่อง Date
+        // กรณีเพิ่มใหม่: ใส่วันที่ปัจจุบัน
         const now = new Date();
         const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         adviceForm.querySelectorAll('input[type="date"]').forEach(inp => inp.value = localDate);
@@ -2234,12 +2233,10 @@ document.addEventListener("DOMContentLoaded", () => {
         openAssessmentForm();
     } 
     else if (formType === '007') {
-        // กรณี 007 เราผูกฟังก์ชันไว้ที่ปุ่มตอนโหลด Preview แล้ว 
-        // ดังนั้นใส่เงื่อนไขว่างๆ ไว้ตรงนี้ เพื่อกันไม่ให้มันไปเรียก showComingSoon
         return; 
     }
     else if (formType === 'advice') {
-        // ส่งข้อมูลที่เก็บไว้ในตัวแปร Global เข้าไปใน Modal
+        // เรียกฟังก์ชันเปิด Modal พร้อมส่งข้อมูลปัจจุบันเข้าไป
         openAdviceModal(currentAdviceData);
     }
     else {
