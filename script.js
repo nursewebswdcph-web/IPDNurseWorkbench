@@ -2670,7 +2670,7 @@ async function handleSaveMorse(day, shift) {
              </div>`;
         }
 
-        [cite_start]// 2. ส่วนของ MAAS (แก้ไขให้ครบตามเอกสาร) [cite: 176]
+        // 2. ส่วนของ MAAS
         if (maasScore !== null) {
             let maasHtml = "";
             
