@@ -181,6 +181,11 @@ const progTemplateSearch = document.getElementById("prog-template-search");
 const reProgressBtn = document.getElementById("re-progress-btn");
 const saveAsTemplateBtn = document.getElementById("save-as-template-btn");
 
+// (Discharge Modal)
+const dischargeModal = document.getElementById("discharge-form-modal");
+const dischargeForm = document.getElementById("discharge-form");
+const closeDischargeBtn = document.getElementById("close-discharge-modal-btn");
+
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
@@ -952,6 +957,12 @@ async function showFormPreview(formType) {
     
     // เรียกฟังก์ชันโหลดรายการ (ที่จะสร้างในขั้นตอนที่ 3)
     await showProgressNotePreview(currentPatientAN);
+  }
+
+  else if (formType === '007') {
+     chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)";
+     // เรียกฟังก์ชันแสดง Preview
+     await showDischargePreview(currentPatientAN);
   }
       
   else {
@@ -1860,6 +1871,151 @@ async function handleReProgress() {
   }
 }
 
+// --- ฟังก์ชันจัดการ 007 ---
+
+// 1. เปิด Modal (ถ้ามีข้อมูลคือ Edit, ไม่มีคือ New)
+async function openDischargeModal(editData = null) {
+  dischargeForm.reset();
+  
+  // ตั้งค่าเริ่มต้น
+  if (!editData) {
+     const now = new Date();
+     // แปลงเวลา Local
+     const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+     dischargeForm.querySelector('[name="DischargeDate"]').value = localDate.toISOString().split('T')[0];
+     dischargeForm.querySelector('[name="LeaveTime"]').value = now.toTimeString().substring(0,5);
+  } else {
+     // เติมข้อมูลเดิม (Edit Mode)
+     for (const key in editData) {
+         const input = dischargeForm.querySelector(`[name="${key}"]`);
+         if (input) {
+             if(key === 'DischargeDate') {
+                 try { input.value = getISODate(new Date(editData[key])); } catch(e){}
+             } else {
+                 input.value = editData[key];
+             }
+         }
+     }
+  }
+
+  // โหลดรายชื่อพยาบาล (ถ้ายังไม่มี)
+  if (globalStaffList.length === 0) {
+     try {
+       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
+       const result = await response.json();
+       if (result.success) {
+           globalStaffList = result.data;
+           // สร้าง datalist (ใช้ตัวเดิม staff-list-datalist)
+           let dl = document.getElementById('staff-list-datalist');
+           if(!dl) {
+               dl = document.createElement('datalist');
+               dl.id = 'staff-list-datalist';
+               document.body.appendChild(dl);
+           }
+           dl.innerHTML = "";
+           globalStaffList.forEach(s => {
+               const op = document.createElement('option');
+               op.value = s.fullName;
+               dl.appendChild(op);
+           });
+       }
+     } catch(e) {}
+  }
+
+  dischargeModal.classList.remove("hidden");
+}
+
+// 2. แสดง Preview (007)
+async function showDischargePreview(an) {
+  showLoading('กำลังโหลดข้อมูลจำหน่าย...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getDischargeForm007&an=${an}`);
+    const result = await response.json();
+    Swal.close();
+
+    const data = result.data;
+    // อัปเดตสถานะที่เมนู
+    const span007 = document.getElementById('last-updated-007');
+    if (span007) span007.textContent = data ? "บันทึกแล้ว" : "ยังไม่บันทึก";
+
+    chartPreviewContent.innerHTML = "";
+    
+    if (!data) {
+       // กรณีไม่มีข้อมูล
+       chartPreviewContent.innerHTML = `
+         <div class="text-center py-10 text-gray-400">
+            <p>-- ยังไม่มีข้อมูลการจำหน่าย --</p>
+            <button class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" onclick="openDischargeModal()">+ สร้างบันทึกจำหน่าย</button>
+         </div>
+       `;
+       chartEditBtn.classList.add("hidden");
+       chartAddNewBtn.classList.add("hidden"); // 007 มีใบเดียว ไม่ต้อง Add New ซ้ำ
+    } else {
+       // กรณีมีข้อมูล -> แสดง Template
+       const template = document.getElementById("preview-template-007");
+       const clone = template.content.cloneNode(true);
+       
+       // Map ข้อมูล
+       for (const key in data) {
+           const el = clone.querySelector(`[data-field="${key}"]`);
+           if (el) {
+               let val = data[key];
+               if (key === 'DischargeDate' || key.includes('Timestamp')) {
+                  try { val = new Date(val).toLocaleDateString('th-TH'); } catch(e){}
+               }
+               el.textContent = val || '-';
+           }
+       }
+       chartPreviewContent.appendChild(clone);
+       
+       // ปุ่มแก้ไข
+       chartEditBtn.classList.remove("hidden");
+       chartEditBtn.onclick = () => openDischargeModal(data); // ส่งข้อมูลไปแก้ไข
+       chartAddNewBtn.classList.add("hidden"); 
+    }
+
+  } catch (e) {
+    Swal.close();
+    showError('โหลดข้อมูลไม่สำเร็จ', e.message);
+  }
+}
+
+// 3. บันทึกข้อมูล (Save)
+if (dischargeForm) {
+    dischargeForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        showLoading("กำลังบันทึก...");
+        
+        const formData = new FormData(dischargeForm);
+        const data = Object.fromEntries(formData.entries());
+        data.AN = currentPatientAN; // อย่าลืม AN
+
+        try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "saveDischargeForm007", formData: data })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showSuccess("บันทึกสำเร็จ");
+                dischargeModal.classList.add("hidden");
+                // Reload Preview
+                showDischargePreview(currentPatientAN);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (err) {
+            showError("บันทึกไม่สำเร็จ", err.message);
+        }
+    });
+}
+
+// ปุ่มปิด
+if (closeDischargeBtn) {
+    closeDischargeBtn.addEventListener("click", () => {
+        dischargeModal.classList.add("hidden");
+    });
+}
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
@@ -2146,4 +2302,5 @@ document.addEventListener("DOMContentLoaded", () => {
        }
     });
   }
+  
 }); // End DOMContentLoaded
