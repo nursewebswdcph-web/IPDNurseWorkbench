@@ -847,11 +847,15 @@
     </template>
 
     <template id="preview-template-morse">
-    <div class="p-6 text-center text-gray-500">
-        <p>กรุณากดปุ่ม <b>"บันทึก/แก้ไข"</b> ด้านบนขวา</p>
-        <p>เพื่อเข้าสู่ตารางประเมินแบบละเอียด (รายเวร)</p>
-    </div>
-</template>
+      <div class="p-4">
+        <div id="morse-summary-list" class="space-y-3">
+            </div>
+        <div id="morse-empty-state" class="text-center text-gray-500 py-8 hidden">
+            <p>ยังไม่มีประวัติการประเมิน</p>
+            <p class="text-sm">กดปุ่ม <b>"แก้ไข"</b> เพื่อเริ่มการประเมิน</p>
+        </div>
+      </div>
+    </template>
 
     <!-- ============================================= -->
     <!-- (5) MODALS (Pop-ups) -->
