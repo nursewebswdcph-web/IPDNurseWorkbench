@@ -2508,8 +2508,6 @@ function calculateMorseColumn(day, shift) {
 // 5. ฟังก์ชันบันทึก และ **แสดง Pop-up แนวทางปฏิบัติ**
 async function handleSaveMorse(day, shift) {
     // 1. ดึงค่าต่างๆ ด้วย Selector ที่แม่นยำ
-    
-    // ชื่อผู้ประเมิน
     const assessorInput = document.querySelector(`.morse-assessor-input[data-day="${day}"][data-shift="${shift}"]`);
     const assessorName = assessorInput ? assessorInput.value.trim() : "";
     
@@ -2519,7 +2517,6 @@ async function handleSaveMorse(day, shift) {
         return;
     }
 
-    // วันที่
     const dateInput = document.querySelector(`input.morse-date-input[data-day-index="${day}"]`);
     const dateVal = dateInput ? dateInput.value : "";
     
@@ -2528,19 +2525,17 @@ async function handleSaveMorse(day, shift) {
         return;
     }
 
-    // คำนวณคะแนนรวมอีกครั้งเพื่อความชัวร์
+    // คำนวณคะแนนรวม Morse
     const morseTotal = calculateMorseColumn(day, shift);
     
-    // คะแนน MAAS
+    // ดึงคะแนน MAAS
     const maasSel = document.querySelector(`select[name="MAAS_Score"][data-day="${day}"][data-shift="${shift}"]`);
     const maasScore = maasSel && maasSel.value !== "" ? parseInt(maasSel.value) : null;
 
-    // ระดับความเสี่ยง
     let morseLevel = "No Risk";
     if (morseTotal >= 51) morseLevel = "High Risk";
     else if (morseTotal >= 25) morseLevel = "Low Risk";
     
-    // เตรียม Object ส่งไปบันทึก
     const entryData = {
         AN: currentPatientAN,
         Page: currentMorsePage,
@@ -2552,13 +2547,12 @@ async function handleSaveMorse(day, shift) {
         Assessor_Name: assessorName
     };
     
-    // เก็บรายละเอียดคะแนนรายข้อ (1-6)
     for (let i = 1; i <= 6; i++) {
         const checkedRadio = document.querySelector(`input[name="Morse_${i}_Day${day}_${shift}"]:checked`);
         entryData[`Morse_${i}`] = checkedRadio ? checkedRadio.value : "";
     }
 
-    // --- ส่งข้อมูลไป Google Sheets ---
+    // --- ส่งข้อมูลไปบันทึก ---
     showLoading("กำลังบันทึก...");
     try {
         const response = await fetch(GAS_WEB_APP_URL, {
@@ -2571,16 +2565,17 @@ async function handleSaveMorse(day, shift) {
         
         Swal.close();
 
-        // --- แสดง Pop-up แนวทางปฏิบัติ (เหมือนเดิม) ---
-        let interventionHtml = `<div class="text-left text-sm space-y-2">`;
+        // --- สร้างข้อความ Pop-up แนวทางปฏิบัติ ---
+        let interventionHtml = `<div class="text-left text-sm space-y-4">`;
         
-        // Morse Guidelines Logic... (ส่วนนี้ใช้โค้ดเดิมได้เลย)
+        // 1. ส่วนของ Morse Fall Scale
         if (morseTotal >= 25) {
              const colorClass = morseTotal >= 51 ? "text-red-600" : "text-orange-600";
              const riskText = morseTotal >= 51 ? "High Risk (≥ 51)" : "Low Risk (25-50)";
-             interventionHtml += `<div class="p-3 bg-gray-50 rounded border">
+             
+             interventionHtml += `<div class="p-3 bg-gray-50 rounded border border-gray-200">
                 <h4 class="font-bold ${colorClass} border-b pb-1 mb-2">เสี่ยงต่อการพลัดตกหกล้ม: ${riskText}</h4>
-                <ul class="list-disc pl-5 space-y-1 text-gray-700">
+                <ul class="list-disc pl-5 space-y-1 text-gray-700 text-xs">
                     <li>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</li>
                     <li>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</li>
                     <li>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</li>
@@ -2589,25 +2584,53 @@ async function handleSaveMorse(day, shift) {
                     <li>6. ยกเหล็กกั้นเตียง</li>
                     <li>7. ตรวจเยี่ยมผู้ป่วย ${morseTotal >= 51 ? 'ทุก 2 ชั่วโมง' : 'ทุก 4 ชั่วโมง'}</li>
                     <li>8. ติดสัญลักษณ์ความเสี่ยงการพลัดตกหกล้ม</li>
+                    ${morseTotal >= 51 ? '<li>9. ผูกมัดผู้ป่วยตามสภาพ</li>' : ''}
+                    ${morseTotal >= 51 ? '<li>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</li>' : ''}
+                    ${morseTotal >= 51 ? '<li>11. ปรึกษาสหวิชาชีพ</li>' : ''}
                 </ul>
             </div>`;
         } else {
-             interventionHtml += `<div class="p-3 bg-green-50 rounded border text-green-700 font-bold">No Risk (0-24): ปฏิบัติตามมาตรฐานทั่วไป</div>`;
-        }
-
-        if (maasScore !== null && maasScore >= 4) {
-             interventionHtml += `<div class="mt-2 p-3 bg-blue-50 rounded border text-red-700 font-bold">
-                MAAS Score ${maasScore}: ต้องผูกยึดผู้ป่วยและเฝ้าระวังใกล้ชิด (แจ้งญาติก่อน)
+             interventionHtml += `<div class="p-3 bg-green-50 rounded border border-green-200">
+                <h4 class="font-bold text-green-700 mb-1">เสี่ยงต่อการพลัดตกหกล้ม: No Risk (0-24)</h4>
+                <p class="text-gray-600 text-xs">ปฏิบัติตามมาตรฐานการดูแลทั่วไป (ข้อ 1-7 ตรวจเยี่ยมเวรละ 1 ครั้ง)</p>
              </div>`;
         }
 
+        [cite_start]// 2. ส่วนของ MAAS (แก้ไขให้ครบตามเอกสาร) [cite: 176]
+        if (maasScore !== null) {
+            let maasHtml = "";
+            
+            // กรณีคะแนน 0-3
+            if (maasScore <= 3) {
+                maasHtml = `<div class="text-green-700 font-bold">ไม่ต้องผูกยึด</div>`;
+            } 
+            // กรณีคะแนน 4-6
+            else {
+                maasHtml = `
+                <div class="text-red-700 font-bold mb-1">ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด</div>
+                <ul class="list-disc pl-5 space-y-1 text-red-600 text-xs">
+                    <li>***ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง***</li>
+                    <li>***กรณีไม่มีญาติให้ผู้ยึดได้เลย****</li>
+                </ul>`;
+            }
+
+            interventionHtml += `<div class="p-3 bg-blue-50 rounded border border-blue-200">
+                <h4 class="font-bold text-blue-800 border-b border-blue-200 pb-1 mb-2">
+                    แนวทางปฏิบัติการป้องกันการดึงอุปกรณ์ฯ (MAAS Score: ${maasScore})
+                </h4>
+                ${maasHtml}
+            </div>`;
+        }
+        
         interventionHtml += `</div>`;
 
         await Swal.fire({
             title: 'บันทึกสำเร็จ',
             html: interventionHtml,
             icon: 'info',
-            confirmButtonText: 'รับทราบ'
+            confirmButtonText: 'รับทราบ',
+            confirmButtonColor: '#3085d6',
+            width: '600px'
         });
 
     } catch (e) {
