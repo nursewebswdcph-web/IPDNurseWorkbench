@@ -1644,24 +1644,49 @@ function updateProgressTemplateDatalist() {
 }
 
 // --- 3. ฟังก์ชันเปิด Modal และ Re-Progress ---
+// แก้ไขฟังก์ชันนี้ใน script.js
 async function openProgressNoteModal() {
   progAnDisplay.textContent = currentPatientAN;
   progNameDisplay.textContent = currentPatientData.Name;
   
-  // Set Default Date/Time
+  // Set Date/Time
   const now = new Date();
   const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
   document.getElementById("prog-date").value = localDate.toISOString().split('T')[0];
   document.getElementById("prog-time").value = now.toTimeString().substring(0,5);
   
-  // Set Shift Auto
+  // Set Shift
   const hour = now.getHours();
   const shiftRadios = document.getElementsByName("Shift");
-  if (hour >= 0 && hour < 8) shiftRadios[0].checked = true; // ดึก
-  else if (hour >= 8 && hour < 16) shiftRadios[1].checked = true; // เช้า
-  else shiftRadios[2].checked = true; // บ่าย
+  shiftRadios.forEach(r => r.checked = false);
+  if (hour >= 0 && hour < 8) document.querySelector('input[name="Shift"][value^="ดึก"]').checked = true;
+  else if (hour >= 8 && hour < 16) document.querySelector('input[name="Shift"][value^="เช้า"]').checked = true;
+  else document.querySelector('input[name="Shift"][value^="บ่าย"]').checked = true;
 
-  // Load Templates
+  // --- ส่วนที่เพิ่ม: โหลดรายชื่อพยาบาลเข้า Datalist ---
+  if (globalStaffList.length === 0) {
+     try {
+       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
+       const result = await response.json();
+       if (result.success) globalStaffList = result.data;
+     } catch(e) { console.error(e); }
+  }
+  
+  // สร้าง Datalist (ถ้ายังไม่มี) หรืออัปเดต
+  let staffDatalist = document.getElementById('staff-list-datalist');
+  if (!staffDatalist) {
+      staffDatalist = document.createElement('datalist');
+      staffDatalist.id = 'staff-list-datalist';
+      document.body.appendChild(staffDatalist);
+  }
+  staffDatalist.innerHTML = ""; // เคลียร์เก่า
+  globalStaffList.forEach(staff => {
+      const option = document.createElement("option");
+      option.value = staff.fullName; // ใช้ชื่อเต็ม
+      staffDatalist.appendChild(option);
+  });
+  // -----------------------------------------------
+
   await loadProgressTemplates();
   progressNoteModal.classList.remove("hidden");
 }
@@ -1957,4 +1982,68 @@ document.addEventListener("DOMContentLoaded", () => {
         }
      } catch(err) { showError("สร้างไม่สำเร็จ", err.message); }
   });
+  // --- Logic Modal สร้างเทมเพลต (FR-006) ---
+  const addProgTempModal = document.getElementById("add-progress-template-modal");
+  const addProgTempForm = document.getElementById("add-progress-template-form");
+  const closeProgTempBtn = document.getElementById("close-prog-temp-modal-btn");
+  const cancelProgTempBtn = document.getElementById("cancel-prog-temp-btn");
+
+  // กดปุ่ม "+ สร้าง Template"
+  if(saveAsTemplateBtn) {
+    saveAsTemplateBtn.addEventListener("click", () => {
+       // เช็คก่อนว่ามีข้อมูลให้บันทึกไหม
+       if(!document.getElementById("prog-focus").value) {
+           showError("ข้อมูลไม่ครบ", "กรุณาระบุปัญหา (Focus) ก่อนสร้าง Template");
+           return;
+       }
+       addProgTempForm.reset();
+       addProgTempModal.classList.remove("hidden");
+    });
+  }
+
+  // ปุ่มปิด Modal
+  const closeTempModal = () => addProgTempModal.classList.add("hidden");
+  if(closeProgTempBtn) closeProgTempBtn.addEventListener("click", closeTempModal);
+  if(cancelProgTempBtn) cancelProgTempBtn.addEventListener("click", closeTempModal);
+
+  // กดบันทึก (Submit) ใน Modal สร้างเทมเพลต
+  if(addProgTempForm) {
+    addProgTempForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(addProgTempForm);
+      const name = formData.get("TemplateName");
+      
+      if(!name) return;
+      
+      // ดึงข้อมูลจากฟอร์มหลัก (Progress Note)
+      const data = {
+        Name: name,
+        Focus: document.getElementById("prog-focus").value,
+        S: document.getElementById("prog-s").value,
+        O: document.getElementById("prog-o").value,
+        I: document.getElementById("prog-i").value,
+        E: document.getElementById("prog-e").value
+      };
+
+      closeTempModal(); // ปิด Modal ทันที
+      showLoading("กำลังสร้าง Template...");
+
+      try {
+          const response = await fetch(GAS_WEB_APP_URL, {
+             method: "POST", 
+             body: JSON.stringify({ action: "addProgressTemplate", templateData: data })
+          });
+          const result = await response.json();
+          if(result.success) {
+             globalProgressTemplates = []; // ล้าง Cache
+             await loadProgressTemplates(); // โหลดใหม่
+             showSuccess("สร้าง Template สำเร็จ");
+          } else { 
+             throw new Error(result.message); 
+          }
+       } catch(err) { 
+          showError("สร้างไม่สำเร็จ", err.message); 
+       }
+    });
+  }
 }); // End DOMContentLoaded
