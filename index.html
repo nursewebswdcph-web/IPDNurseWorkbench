@@ -140,6 +140,17 @@
                   <span class="text-blue-600 font-semibold ml-4">&gt;</span>
                 </div>
               </li>
+
+              <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="morse_maas">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">แบบประเมินความเสี่ยง Morse / MAAS</h3>
+                  <p class="text-sm text-gray-500">Morse Fall Scale & MAAS</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm text-gray-600">สถานะ: <span id="last-updated-morse">คลิกเพื่อโหลด</span></span>
+                  <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+                </div>
+              </li>
               
               <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="004">
                 <div>
@@ -834,6 +845,13 @@
         </div>
       </div>
     </template>
+
+    <template id="preview-template-morse">
+    <div class="p-6 text-center text-gray-500">
+        <p>กรุณากดปุ่ม <b>"บันทึก/แก้ไข"</b> ด้านบนขวา</p>
+        <p>เพื่อเข้าสู่ตารางประเมินแบบละเอียด (รายเวร)</p>
+    </div>
+</template>
 
     <!-- ============================================= -->
     <!-- (5) MODALS (Pop-ups) -->
@@ -2076,6 +2094,42 @@
       </div>
     </form>
   </div>
+</div>
+    <div id="morse-modal" class="fixed inset-0 bg-white z-50 hidden overflow-y-auto">
+  <div class="sticky top-0 bg-white shadow-md z-10">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex flex-col md:flex-row justify-between md:items-center">
+        <div>
+          [cite_start]<h3 class="text-xl font-bold text-orange-800">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / MAAS [cite: 169]</h3>
+          <p class="text-gray-600">AN: <strong id="morse-an-display" class="text-orange-700"></strong> | ชื่อ: <strong id="morse-name-display" class="text-orange-700"></strong></p>
+        </div>
+        <div class="mt-3 md:mt-0 flex items-center space-x-3">
+          <div class="flex items-center space-x-2">
+            <button id="morse-prev-page-btn" type="button" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-md">&lt;</button>
+            <span class="text-lg font-semibold">หน้า <span id="morse-page-display">1</span></span>
+            <button id="morse-next-page-btn" type="button" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-md">&gt;</button>
+            <button id="morse-add-page-btn" type="button" class="px-3 py-2 bg-green-500 text-white hover:bg-green-600 rounded-md">+</button>
+          </div>
+          <button id="close-morse-modal-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">
+            ปิด
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="container mx-auto px-6 py-8">
+    <div class="overflow-x-auto">
+      <form id="morse-form">
+        <table id="morse-table" class="w-full min-w-[1200px] border-collapse border border-gray-300 text-sm">
+          <thead>
+            </thead>
+          <tbody id="morse-table-body">
+            </tbody>
+        </table>
+      </form>
+    </div>
+   </div>
 </div>
 
   </main> <!-- (ย้าย </main> มาไว้ตรงนี้) -->
