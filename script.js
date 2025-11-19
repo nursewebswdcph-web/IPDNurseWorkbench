@@ -192,6 +192,75 @@ const adviceModal = document.getElementById("advice-form-modal");
 const adviceForm = document.getElementById("advice-form");
 const closeAdviceBtn = document.getElementById("close-advice-modal-btn");
 
+// (MORSE  Modal)
+let currentMorsePage = 1;
+const morseModal = document.getElementById("morse-modal");
+const morseTableBody = document.getElementById("morse-table-body");
+const morseTable = document.getElementById("morse-table");
+// 2. Config สำหรับ Dropdown และ คะแนน (ตามเอกสาร PDF เป๊ะๆ)
+const MORSE_CRITERIA = [
+  {
+    id: "Morse_1",
+    label: "1.มีการหกล้มกะทันหัน หรือหกล้มช่วง 3 เดือนก่อนมา รพ.",
+    options: [
+      { text: "ไม่ใช่", score: 0 },
+      { text: "ใช่", score: 25 }
+    ]
+  },
+  {
+    id: "Morse_2",
+    label: "2.มีการวินิจฉัยโรคมากกว่า 1 รายการ",
+    options: [
+      { text: "ไม่ใช่", score: 0 },
+      { text: "ใช่", score: 15 }
+    ]
+  },
+  {
+    id: "Morse_3",
+    label: "3.การช่วยในการเคลื่อนย้าย",
+    options: [
+      { text: "เดินได้เองใช้/รถเข็นนั่ง/นอนพักบนเตียงหรือทำกิจกรรมบนเตียง", score: 0 },
+      { text: "ไม้ค้ำยัน/ไม้เท้า", score: 15 },
+      { text: "เดิน- โดยการยึดเกาะไปตามเตียง / โต๊ะ / เก้าอี้", score: 30 }
+    ]
+  },
+  {
+    id: "Morse_4",
+    label: "4. ให้สารละลายทางหลอดเลือด/คา Heparin lock",
+    options: [
+      { text: "ไม่ใช่", score: 0 },
+      { text: "ใช่", score: 20 }
+    ]
+  },
+  {
+    id: "Morse_5",
+    label: "5. การเดิน / การเคลื่อนย้าย",
+    options: [
+      { text: "ปกติ / นอนพักบนเตียงโดยไม่ให้ลุกจากเตียงไม่เคลื่อนไหว", score: 0 },
+      { text: "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย", score: 10 },
+      { text: "มีความบกพร่อง เช่น ลุกจากเก้าอี้ด้วยความลำบาก / ไม่สามารถเดินได้โดยปราศจากการช่วยเหลือ", score: 20 }
+    ]
+  },
+  {
+    id: "Morse_6",
+    label: "6. สภาพจิตใจ",
+    options: [
+      { text: "รับรู้บุคคล เวลา สถานที่", score: 0 },
+      { text: "ตอบสนองไม่ตรงกับความเป็นจริง ไม่รับรู้ข้อจำกัดของตนเอง", score: 15 }
+    ]
+  }
+];
+
+const MAAS_OPTIONS = [
+  { score: 0, text: "0: ไม่ตอบสนอง" },
+  { score: 1, text: "1: ตอบสนองต่อการกระตุ้นแรง ๆ" },
+  { score: 2, text: "2: ตอบสนองต่อการสัมผัสและการเรียกชื่อ" },
+  { score: 3, text: "3: สงบและให้ความร่วมมือ" },
+  { score: 4, text: "4: พักได้น้อยและไม่ให้ความร่วมมือ" },
+  { score: 5, text: "5: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา" },
+  { score: 6, text: "6: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น" }
+];
+
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
@@ -1016,6 +1085,15 @@ async function showFormPreview(formType) {
      // เรียกฟังก์ชันแสดง Preview
      await showDischargePreview(currentPatientAN);
   }
+
+  else if (formType === 'morse_maas') {
+    chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS";
+    chartPreviewContent.innerHTML = document.getElementById("preview-template-morse").innerHTML;
+    chartEditBtn.classList.remove("hidden");
+    chartEditBtn.dataset.form = "morse_maas";
+    chartEditBtn.onclick = () => openMorseModal(); // ใช้ onclick ตรงนี้ หรือจะไปแก้ใน Event Listener หลักก็ได้
+    chartAddNewBtn.classList.add("hidden");
+}
       
   else {
     const formTitle = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
@@ -2212,6 +2290,323 @@ if (closeDischargeBtn) {
         dischargeModal.classList.add("hidden");
     });
 }
+
+// 4. ฟังก์ชันหลักสำหรับ Morse/MAAS
+
+async function openMorseModal() {
+  document.getElementById("morse-an-display").textContent = currentPatientAN;
+  document.getElementById("morse-name-display").textContent = currentPatientData.Name || '';
+  currentMorsePage = 1;
+  
+  // โหลด Datalist staff
+  if (!document.getElementById('staff-list-datalist')) {
+      // (โค้ดสร้าง datalist เหมือน Classification)
+  }
+  
+  await fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
+  morseModal.classList.remove("hidden");
+}
+
+async function fetchAndRenderMorsePage(an, page) {
+  showLoading('กำลังโหลดตารางประเมิน...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getMorseMAASPage&an=${an}&page=${page}`);
+    const result = await response.json();
+    
+    renderMorseTable(result.data, page);
+    document.getElementById("morse-page-display").textContent = page;
+    document.getElementById("morse-prev-page-btn").disabled = (page <= 1);
+    
+    Swal.close();
+  } catch (e) { showError('โหลดไม่สำเร็จ', e.message); }
+}
+
+function renderMorseTable(data, page) {
+  const table = morseTable;
+  let thead = table.querySelector("thead");
+  let tbody = table.querySelector("tbody");
+  
+  if (!thead) { thead = document.createElement('thead'); table.prepend(thead); }
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+
+  // Header Row 1 & 2 (Logic เดียวกับ Classification: 5 วัน x 3 เวร)
+  const headerRow1 = document.createElement('tr');
+  headerRow1.className = 'bg-gray-100';
+  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-1/3">ประเด็น</th>'; [cite_start]// [cite: 170]
+  
+  const headerRow2 = document.createElement('tr');
+  headerRow2.className = 'bg-gray-50';
+  
+  const admitDate = new Date(currentPatientData.AdmitDate || new Date());
+  const startDate = new Date(admitDate);
+  startDate.setDate(startDate.getDate() + ((page - 1) * 5));
+  
+  for (let i = 0; i < 5; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
+    const dateString = getISODate(currentDate);
+    
+    const dateHeader = document.createElement('th');
+    dateHeader.colSpan = 3;
+    dateHeader.className = 'p-2 border text-center text-sm font-bold';
+    dateHeader.innerHTML = `<span>${currentDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'})}</span>
+                            <input type="hidden" value="${dateString}" class="morse-date-input" data-day-index="${i}">`;
+    headerRow1.appendChild(dateHeader);
+    
+    [cite_start]['ด', 'ช', 'บ'].forEach(shift => { // [cite: 170]
+       const th = document.createElement('th');
+       th.className = 'p-1 border text-xs font-normal text-center w-10';
+       th.textContent = shift;
+       headerRow2.appendChild(th);
+    });
+  }
+  thead.appendChild(headerRow1);
+  thead.appendChild(headerRow2);
+
+  // Body Rows: Morse Items
+  MORSE_CRITERIA.forEach((item, idx) => {
+     const row = document.createElement('tr');
+     row.innerHTML = `<td class="p-2 border text-sm">${item.label}</td>`;
+     
+     for (let i = 0; i < 5; i++) {
+       const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
+       ['ด', 'ช', 'บ'].forEach(shift => {
+          const shiftCode = shift === 'ด' ? 'N' : (shift === 'ช' ? 'D' : 'E');
+          const entry = data && data.find(d => d.Date === dateStr && d.Shift === shiftCode);
+          const val = entry ? entry[`Morse_${idx+1}`] : "";
+          
+          let selectHtml = `<select class="w-full p-1 border text-xs morse-score-select text-center" 
+                             data-day="${i}" data-shift="${shiftCode}" data-item="Morse_${idx+1}">
+                             <option value=""></option>`;
+          item.options.forEach(opt => {
+             selectHtml += `<option value="${opt.score}" ${String(val) === String(opt.score) ? 'selected' : ''} title="${opt.text}">${opt.score}</option>`;
+          });
+          selectHtml += `</select>`;
+          
+          row.innerHTML += `<td class="p-0 border align-top">${selectHtml}</td>`;
+       });
+     }
+     tbody.appendChild(row);
+  });
+
+  // Body Row: Total Score & Level
+  const totalRow = document.createElement('tr');
+  totalRow.className = 'bg-orange-50 font-bold';
+  totalRow.innerHTML = `<td class="p-2 border text-right">รวมคะแนน (Morse)</td>`; [cite_start]// [cite: 170]
+  
+  [cite_start]// Body Row: MAAS [cite: 171]
+  const maasRow = document.createElement('tr');
+  maasRow.className = 'bg-blue-50';
+  maasRow.innerHTML = `<td class="p-2 border font-bold">แบบประเมินการดึงอุปกรณ์ฯ (MAAS)</td>`;
+
+  // Body Row: Assessor & Save
+  const actionRow = document.createElement('tr');
+  actionRow.innerHTML = `<td class="p-2 border text-right">พยาบาลผู้ประเมิน / บันทึก</td>`; [cite_start]// [cite: 170]
+
+  for (let i = 0; i < 5; i++) {
+      const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
+      ['ด', 'ช', 'บ'].forEach(shift => {
+         const shiftCode = shift === 'ด' ? 'N' : (shift === 'ช' ? 'D' : 'E');
+         const entry = data && data.find(d => d.Date === dateStr && d.Shift === shiftCode);
+         
+         // Total Cell
+         totalRow.innerHTML += `<td class="p-1 border text-center">
+             <input type="text" readonly class="w-full text-center bg-transparent text-xs font-bold morse-total-input" 
+             data-day="${i}" data-shift="${shiftCode}" value="${entry ? entry.Morse_Total : ''}">
+         </td>`;
+
+         // MAAS Cell
+         let maasSelect = `<select class="w-full p-1 border text-xs text-center" name="MAAS_Score" 
+                           data-day="${i}" data-shift="${shiftCode}">
+                           <option value=""></option>`;
+         MAAS_OPTIONS.forEach(opt => {
+             maasSelect += `<option value="${opt.score}" ${entry && String(entry.MAAS_Score) === String(opt.score) ? 'selected' : ''} title="${opt.text}">${opt.score}</option>`;
+         });
+         maasSelect += `</select>`;
+         maasRow.innerHTML += `<td class="p-0 border align-top">${maasSelect}</td>`;
+
+         // Action Cell
+         actionRow.innerHTML += `<td class="p-1 border text-center">
+            <input type="text" list="staff-list-datalist" class="w-full text-xs p-1 border mb-1" placeholder="ชื่อ" 
+                   data-day="${i}" data-shift="${shiftCode}" value="${entry ? entry.Assessor_Name : ''}">
+            <button type="button" class="bg-green-500 text-white text-[10px] px-1 rounded w-full save-morse-btn"
+                   data-day="${i}" data-shift="${shiftCode}">บันทึก</button>
+         </td>`;
+      });
+  }
+
+  tbody.appendChild(totalRow);
+  tbody.appendChild(maasRow);
+  tbody.appendChild(actionRow);
+
+  // Add Event Listeners for Calculation
+  tbody.querySelectorAll('.morse-score-select').forEach(sel => {
+      sel.addEventListener('change', () => calculateMorseColumn(sel.dataset.day, sel.dataset.shift));
+  });
+  
+  // Add Event Listeners for Save
+  tbody.querySelectorAll('.save-morse-btn').forEach(btn => {
+      btn.addEventListener('click', () => handleSaveMorse(btn.dataset.day, btn.dataset.shift));
+  });
+}
+
+function calculateMorseColumn(day, shift) {
+    let total = 0;
+    let allFilled = true; // เช็คว่ากรอกครบไหม (ถ้าไม่ซีเรียสก็ตัดออกได้)
+    
+    for (let i = 1; i <= 6; i++) {
+        const sel = document.querySelector(`.morse-score-select[data-day="${day}"][data-shift="${shift}"][data-item="Morse_${i}"]`);
+        if (sel && sel.value !== "") {
+            total += parseInt(sel.value);
+        } else {
+            // allFilled = false; 
+        }
+    }
+    
+    const totalInput = document.querySelector(`.morse-total-input[data-day="${day}"][data-shift="${shift}"]`);
+    if (totalInput) totalInput.value = total;
+    return total;
+}
+
+// 5. ฟังก์ชันบันทึก และ **แสดง Pop-up แนวทางปฏิบัติ**
+async function handleSaveMorse(day, shift) {
+    // 1. คำนวณ Morse Total
+    const morseTotal = calculateMorseColumn(day, shift);
+    
+    // 2. อ่านค่า MAAS
+    const maasSel = document.querySelector(`select[name="MAAS_Score"][data-day="${day}"][data-shift="${shift}"]`);
+    const maasScore = maasSel ? parseInt(maasSel.value) : null;
+    
+    // 3. อ่านชื่อผู้ประเมิน
+    const assessorInput = document.querySelector(`input[list="staff-list-datalist"][data-day="${day}"][data-shift="${shift}"]`);
+    const assessorName = assessorInput ? assessorInput.value : "";
+    
+    if (!assessorName) {
+        showError("กรุณาระบุชื่อผู้ประเมิน");
+        return;
+    }
+
+    // 4. เตรียมข้อมูล
+    const dateInput = document.querySelector(`input.morse-date-input[data-day-index="${day}"]`);
+    const dateVal = dateInput.value;
+    
+    [cite_start]// Determine Morse Level [cite: 173]
+    let morseLevel = "No Risk";
+    if (morseTotal >= 51) morseLevel = "High Risk";
+    else if (morseTotal >= 25) morseLevel = "Low Risk";
+    
+    const entryData = {
+        AN: currentPatientAN,
+        Page: currentMorsePage,
+        Date: dateVal,
+        Shift: shift,
+        Morse_Total: morseTotal,
+        Morse_Level: morseLevel,
+        MAAS_Score: maasScore,
+        Assessor_Name: assessorName
+    };
+    
+    // Collect Morse Item Scores
+    for (let i = 1; i <= 6; i++) {
+        const sel = document.querySelector(`.morse-score-select[data-day="${day}"][data-shift="${shift}"][data-item="Morse_${i}"]`);
+        entryData[`Morse_${i}`] = sel ? sel.value : "";
+    }
+
+    // 5. ส่งไปบันทึก
+    showLoading("กำลังบันทึก...");
+    try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "saveMorseMAASShift", entryData: entryData })
+        });
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message);
+        
+        Swal.close(); // ปิด Loading
+        
+        [cite_start]// 6. **แสดง Pop-up แนวทางปฏิบัติ (Intervention)** [cite: 173, 176]
+        let interventionHtml = `<div class="text-left text-sm space-y-2">`;
+        
+        // 6.1 Morse Guidelines
+        if (morseTotal >= 25) {
+            const colorClass = morseTotal >= 51 ? "text-red-600" : "text-orange-600";
+            const riskText = morseTotal >= 51 ? "High Risk (≥ 51)" : "Low Risk (25-50)";
+            
+            interventionHtml += `<div class="p-3 bg-gray-50 rounded border">
+                <h4 class="font-bold ${colorClass} border-b pb-1 mb-2">เสี่ยงต่อการพลัดตกหกล้ม: ${riskText}</h4>
+                <ul class="list-disc pl-5 space-y-1 text-gray-700">
+                    <li>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</li>
+                    <li>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</li>
+                    <li>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</li>
+                    <li>4. จัดสิ่งแวดล้อมให้ปลอดภัย</li>
+                    <li>5. ให้ญาติเฝ้า</li>
+                    <li>6. ยกเหล็กกั้นเตียง</li>
+                    <li>7. ตรวจเยี่ยมผู้ป่วย ${morseTotal >= 51 ? 'ทุก 2 ชั่วโมง' : 'ทุก 4 ชั่วโมง'}</li>
+                    <li>8. ติดสัญลักษณ์ความเสี่ยงการพลัดตกหกล้ม</li>
+                    ${morseTotal >= 51 ? '<li>9. ผูกมัดผู้ป่วยตามสภาพ</li>' : ''}
+                    ${morseTotal >= 51 ? '<li>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</li>' : ''}
+                    ${morseTotal >= 51 ? '<li>11. ปรึกษาสหวิชาชีพ</li>' : ''}
+                </ul>
+            </div>`;
+        } else {
+             interventionHtml += `<div class="p-3 bg-green-50 rounded border">
+                <h4 class="font-bold text-green-700">No Risk (0-24)</h4>
+                <p>ปฏิบัติตามมาตรฐานการดูแลทั่วไป (ข้อ 1-7 ตรวจเยี่ยมเวรละ 1 ครั้ง)</p>
+             </div>`;
+        }
+
+        [cite_start]// 6.2 MAAS Guidelines [cite: 176]
+        if (maasScore !== null) {
+            interventionHtml += `<div class="mt-3 p-3 bg-blue-50 rounded border">
+                <h4 class="font-bold text-blue-800 border-b pb-1 mb-2">การดึงอุปกรณ์ (MAAS Score: ${maasScore})</h4>`;
+            
+            if (maasScore >= 4) {
+                interventionHtml += `<div class="text-red-700 font-bold">ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด</div>
+                                     <div class="text-red-600 mt-1 text-xs">***ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง (กรณีไม่มีญาติให้ผูกยึดได้เลย)***</div>`;
+            } else {
+                interventionHtml += `<div class="text-green-700">ไม่ต้องผูกยึด</div>`;
+            }
+            interventionHtml += `</div>`;
+        }
+        
+        interventionHtml += `</div>`;
+
+        // Show Popup
+        await Swal.fire({
+            title: 'บันทึกสำเร็จ! กรุณาปฏิบัติตามแนวทาง',
+            html: interventionHtml,
+            icon: 'info',
+            width: '600px',
+            confirmButtonText: 'รับทราบ'
+        });
+
+    } catch (e) {
+        showError("บันทึกไม่สำเร็จ", e.message);
+    }
+}
+
+// 6. Event Listeners (DOM Content Loaded)
+// เพิ่มบรรทัดนี้ในส่วน DOMContentLoaded ของไฟล์ script.js
+document.getElementById("morse-prev-page-btn").addEventListener("click", () => {
+    if(currentMorsePage > 1) {
+        currentMorsePage--;
+        fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
+    }
+});
+document.getElementById("morse-next-page-btn").addEventListener("click", () => {
+    currentMorsePage++;
+    fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
+});
+document.getElementById("morse-add-page-btn").addEventListener("click", () => {
+     showError("แจ้งเตือน", "ระบบจะเพิ่มหน้าอัตโนมัติเมื่อกดปุ่ม 'หน้าถัดไป' ในอนาคต");
+});
+document.getElementById("close-morse-modal-btn").addEventListener("click", () => {
+    morseModal.classList.add("hidden");
+    // Reset active state in menu
+    chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+});
+
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
@@ -2273,7 +2668,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const formType = e.target.dataset.form;
     if (formType === '004') {
         openAssessmentForm();
-    } 
+    }
+    
+    else if (formType === 'morse_maas') {
+        openMorseModal();
+    }
     else if (formType === '007') {
         return; 
     }
