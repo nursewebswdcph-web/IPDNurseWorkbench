@@ -330,24 +330,66 @@ function getISODate(date) {
 // (6) Core App Functions
 // ----------------------------------------------------------------
 
+// 
+
+// สร้าง Config สำหรับจับคู่ชื่อตึกกับไอคอนและสี
+const WARD_CONFIG = {
+  "ศัลยกรรมทั่วไป": { icon: "fa-user-doctor", color: "text-blue-600", desc: "" },
+  "ศัลยกรรมกระดูก": { icon: "fa-bone", color: "text-orange-500", desc: "" },
+  "สูติ-นรีเวช": { icon: "fa-person-pregnant", color: "text-pink-500", desc: "" },
+  "พวงชมพู": { icon: "fa-star", color: "text-pink-600", desc: "" },
+  "อายุรกรรมชาย": { icon: "fa-user-injured", color: "text-blue-500", desc: "" },
+  "อายุรกรรมหญิง": { icon: "fa-user-nurse", color: "text-rose-400", desc: "" },
+  "กุมารเวชกรรม": { icon: "fa-child-reaching", color: "text-yellow-500", desc: "" },
+  "ปาริฉัตร": { icon: "fa-bed-pulse", color: "text-indigo-600", desc: "" },
+  "สงฆ์อาพาธ": { icon: "fa-hands-praying", color: "text-yellow-600", desc: "" },
+  "ICU": { icon: "fa-heart-pulse", color: "text-red-600", desc: "" },
+  "NICU-SNB": { icon: "fa-baby", color: "text-green-500", desc: "" },
+  "Stroke": { icon: "fa-brain", color: "text-purple-600", desc: "" },
+  "รักษ์ใจปันสุข": { icon: "fa-puzzle-piece", color: "text-teal-600", desc: "" },
+  "ห้องคลอด": { icon: "fa-baby-carriage", color: "text-pink-400", desc: "" }
+};
+
 async function loadWards() {
   showLoading('กำลังโหลดหน้าเริ่มต้น กรุณารอสักครู่...');
   try {
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getWards`);
     const result = await response.json();
+    
     if (result.success) {
       allWards = result.data;
-      wardGrid.innerHTML = ""; wardSwitcher.innerHTML = "";
+      wardGrid.innerHTML = ""; 
+      wardSwitcher.innerHTML = "";
+      
       allWards.forEach(ward => {
+        const wardName = ward.value;
+        // ดึงค่า Config ถ้าไม่มีให้ใช้ค่า Default
+        const config = WARD_CONFIG[wardName] || { icon: "fa-hospital", color: "text-gray-600", desc: "" };
+
         const card = document.createElement("div");
-        card.className = "bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer text-center transform hover:-translate-y-1";
-        card.innerHTML = `<h3 class="text-xl font-bold text-blue-600">${ward.value}</h3>`;
-        card.onclick = () => selectWard(ward.value);
+        // ปรับแต่ง CSS ให้เป็นการ์ดสวยงาม มี Icon ตรงกลาง
+        card.className = "bg-white p-6 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-3 border border-gray-100 transform hover:-translate-y-1 group";
+        
+        card.innerHTML = `
+            <div class="text-4xl ${config.color} group-hover:scale-110 transition-transform duration-300">
+                <i class="fa-solid ${config.icon}"></i>
+            </div>
+            <div class="text-center">
+                <h3 class="text-lg font-bold text-gray-700 group-hover:text-blue-700 transition-colors">${wardName}</h3>
+                ${config.desc ? `<p class="text-xs text-gray-500 font-medium mt-1">${config.desc}</p>` : ''}
+            </div>
+        `;
+        
+        card.onclick = () => selectWard(wardName);
         wardGrid.appendChild(card);
+        
+        // เพิ่มลงใน Dropdown ด้วย
         const option = document.createElement("option");
-        option.value = ward.value; option.textContent = ward.value;
+        option.value = wardName; 
+        option.textContent = wardName;
         wardSwitcher.appendChild(option);
       });
+      
       Swal.close();
     } else { throw new Error(result.message); }
   } catch (error) { showError('โหลดข้อมูลตึกไม่สำเร็จ', error.message); }
