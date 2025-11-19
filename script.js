@@ -204,13 +204,13 @@ const MORSE_CRITERIA = [
     id: "Morse_1",
     label: "1. ประวัติการหกล้ม (3 เดือน)",
     options: [
-      { text: "ไม่ใช่ (0)", score: 0 },
-      { text: "ใช่ (25)", score: 25 }
+      { text: "ไม่ใช่ / ไม่มีประวัติ (0)", score: 0 },
+      { text: "ใช่ / มีประวัติหกล้ม (25)", score: 25 }
     ]
   },
   {
     id: "Morse_2",
-    label: "2. มีการวินิจฉัยโรคมากกว่า 1 รายการ",
+    label: "2. การวินิจฉัยโรคมากกว่า 1 รายการ",
     options: [
       { text: "ไม่ใช่ (0)", score: 0 },
       { text: "ใช่ (15)", score: 15 }
@@ -220,9 +220,9 @@ const MORSE_CRITERIA = [
     id: "Morse_3",
     label: "3. การช่วยในการเคลื่อนย้าย",
     options: [
-      { text: "เดินได้เอง/ใช้รถเข็นนั่ง/นอนพักบนเตียงหรือทำกิจกรรมบนเตียง (0)", score: 0 },
-      { text: "ใช้ไม้ค้ำยัน/ไม้เท้า (15)", score: 15 },
-      { text: "เดินโดยการยึดเกาะไปตามเตียง/โต๊ะ/เก้าอี้ (30)", score: 30 }
+      { text: "เดินได้เอง/ใช้รถเข็นนั่ง/นอนพักบนเตียง (0)", score: 0 },
+      { text: "ใช้ไม้ค้ำยัน/ไม้เท้า/Walker (15)", score: 15 },
+      { text: "เดินโดยการยึดเกาะเตียง/โต๊ะ/เก้าอี้ (30)", score: 30 }
     ]
   },
   {
@@ -237,9 +237,9 @@ const MORSE_CRITERIA = [
     id: "Morse_5",
     label: "5. การเดิน / การเคลื่อนย้าย",
     options: [
-      { text: "ปกติ/นอนพักบนเตียงโดยไม่ให้ลุกจากเตียงไม่เคลื่อนไหว (0)", score: 0 },
-      { text: "อ่อนแรงเล็กน้อย (10)", score: 10 },
-      { text: "มีความบกพร่อง เช่น ลุกจากเก้าอี้ด้วยความลำบาก / ไม่สามารถเดินได้โดยปราศจากการช่วยเหลือ (20)", score: 20 }
+      { text: "ปกติ / นอนพักบนเตียงโดยไม่ลุก (0)", score: 0 },
+      { text: "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (10)", score: 10 },
+      { text: "บกพร่อง ลุกนั่งลำบาก/ต้องช่วยพยุงเดิน (20)", score: 20 }
     ]
   },
   {
@@ -247,7 +247,7 @@ const MORSE_CRITERIA = [
     label: "6. สภาพจิตใจ",
     options: [
       { text: "รับรู้บุคคล เวลา สถานที่ (0)", score: 0 },
-      { text: "ตอบสนองไม่ตรงกับความเป็นจริง ไม่รับรู้ข้อจำกัดของตนเอง (15)", score: 15 }
+      { text: "ตอบสนองไม่ตรงความจริง/ไม่รับรู้ข้อจำกัด (15)", score: 15 }
     ]
   }
 ];
@@ -2334,7 +2334,7 @@ function renderMorseTable(data, page) {
   // --- Header Row 1: วันที่ ---
   const headerRow1 = document.createElement('tr');
   headerRow1.className = 'bg-gray-100';
-  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-64 align-top">รายการประเมิน</th>'; 
+  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-80 align-middle bg-white sticky left-0 z-20">รายการประเมิน</th>'; 
   
   // --- Header Row 2: เวร ---
   const headerRow2 = document.createElement('tr');
@@ -2364,9 +2364,8 @@ function renderMorseTable(data, page) {
     // Header เวร (ดึก, เช้า, บ่าย)
     ['ด', 'ช', 'บ'].forEach((shift, idx) => {
        const th = document.createElement('th');
-       // เพิ่มเส้นกั้นหนาทางซ้ายของเวรดึก เพื่อแบ่งวันให้ชัดเจน
        const borderClass = (idx === 0) ? 'border-l-2 border-gray-300' : 'border';
-       th.className = `p-1 ${borderClass} text-xs font-normal text-center min-w-[60px]`;
+       th.className = `p-1 ${borderClass} text-xs font-normal text-center min-w-[50px]`;
        th.textContent = shift;
        headerRow2.appendChild(th);
     });
@@ -2377,52 +2376,59 @@ function renderMorseTable(data, page) {
   // --- Body Rows: Morse Items ---
   MORSE_CRITERIA.forEach((item, idx) => {
      const row = document.createElement('tr');
-     row.innerHTML = `<td class="p-2 border text-sm font-semibold bg-white align-top sticky left-0 z-10">${item.label}</td>`;
      
+     // --- คอลัมน์ซ้ายสุด: แสดงหัวข้อ และ รายละเอียดตัวเลือก ---
+     let leftColHtml = `<div class="font-bold text-sm text-gray-800 pb-2 border-b border-gray-200">${item.label}</div>`;
+     item.options.forEach(opt => {
+        // ใช้ h-10 (ความสูงคงที่) เพื่อให้ตรงกับช่อง Radio ด้านขวา
+        leftColHtml += `<div class="h-10 flex items-center text-xs text-gray-600 border-b border-gray-100 pl-2">${opt.text}</div>`;
+     });
+     row.innerHTML = `<td class="p-2 border bg-white align-top sticky left-0 z-10 shadow-sm">${leftColHtml}</td>`;
+     
+     // --- คอลัมน์ข้อมูล (5 วัน x 3 เวร) ---
      for (let i = 0; i < 5; i++) {
        const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
-       ['N', 'D', 'E'].forEach((shiftCode, sIdx) => { // N=ดึก, D=เช้า, E=บ่าย
+       ['N', 'D', 'E'].forEach((shiftCode, sIdx) => { 
           const entry = data && data.find(d => d.Date === dateStr && d.Shift === shiftCode);
           const val = entry ? entry[`Morse_${idx+1}`] : "";
           const borderClass = (sIdx === 0) ? 'border-l-2 border-gray-300' : 'border';
 
-          // สร้าง Radio Buttons
-          let cellHtml = `<div class="flex flex-col space-y-1 p-1">`;
+          // สร้าง Radio Buttons โดยใช้ Div กั้นความสูงให้เท่ากับข้อความทางซ้าย
+          let cellHtml = `<div class="pb-2 border-b border-transparent">&nbsp;</div>`; // Spacer สำหรับหัวข้อ
+          
           item.options.forEach(opt => {
              const isChecked = (String(val) === String(opt.score)) ? 'checked' : '';
-             // สร้าง ID เฉพาะเพื่อผูก label กับ radio
              const radioId = `m_${idx+1}_${i}_${shiftCode}_${opt.score}`;
              
+             // ใช้ h-10 และ flex center เพื่อจัดปุ่มให้อยู่ตรงกลางบรรทัดเดียวกับข้อความ
              cellHtml += `
-               <label class="flex items-start cursor-pointer hover:bg-gray-100 rounded p-0.5" for="${radioId}">
-                  <input type="radio" id="${radioId}" 
-                         name="Morse_${idx+1}_Day${i}_${shiftCode}" 
-                         value="${opt.score}" 
-                         class="mt-0.5 morse-radio" 
-                         data-day="${i}" data-shift="${shiftCode}" 
-                         ${isChecked}>
-                  <span class="text-[10px] ml-1 leading-tight text-gray-600">${opt.text}</span>
-               </label>`;
+               <div class="h-10 flex items-center justify-center border-b border-gray-100 hover:bg-blue-50 transition-colors">
+                 <input type="radio" id="${radioId}" 
+                        name="Morse_${idx+1}_Day${i}_${shiftCode}" 
+                        value="${opt.score}" 
+                        class="morse-radio cursor-pointer transform scale-125 accent-blue-600" 
+                        data-day="${i}" data-shift="${shiftCode}" 
+                        ${isChecked}>
+               </div>`;
           });
-          cellHtml += `</div>`;
           
-          row.innerHTML += `<td class="p-0 ${borderClass} align-top bg-white">${cellHtml}</td>`;
+          row.innerHTML += `<td class="p-0 ${borderClass} align-top bg-white min-w-[50px]">${cellHtml}</td>`;
        });
      }
      tbody.appendChild(row);
   });
 
-  // --- Body Rows: Total & MAAS & Save ---
+  // --- Body Rows: Total & MAAS & Save (เหมือนเดิม) ---
   const totalRow = document.createElement('tr');
   totalRow.className = 'bg-orange-50 font-bold';
-  totalRow.innerHTML = `<td class="p-2 border text-right">รวมคะแนน (Morse)</td>`;
+  totalRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-orange-50 shadow-sm">รวมคะแนน (Morse)</td>`;
   
   const maasRow = document.createElement('tr');
   maasRow.className = 'bg-blue-50';
-  maasRow.innerHTML = `<td class="p-2 border font-bold">MAAS (เลือกคะแนน)</td>`;
+  maasRow.innerHTML = `<td class="p-2 border font-bold sticky left-0 z-10 bg-blue-50 shadow-sm">แบบประเมินการดึงอุปกรณ์ฯ (MAAS)</td>`;
 
   const actionRow = document.createElement('tr');
-  actionRow.innerHTML = `<td class="p-2 border text-right">ผู้ประเมิน / บันทึก</td>`;
+  actionRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-white shadow-sm">พยาบาลผู้ประเมิน / บันทึก</td>`;
 
   for (let i = 0; i < 5; i++) {
       const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
@@ -2430,13 +2436,13 @@ function renderMorseTable(data, page) {
          const entry = data && data.find(d => d.Date === dateStr && d.Shift === shiftCode);
          const borderClass = (sIdx === 0) ? 'border-l-2 border-gray-300' : 'border';
          
-         // Total Cell
+         // Total
          totalRow.innerHTML += `<td class="p-1 ${borderClass} text-center align-middle">
              <input type="text" readonly class="w-full text-center bg-transparent text-sm font-bold morse-total-input text-blue-600" 
              data-day="${i}" data-shift="${shiftCode}" value="${entry ? entry.Morse_Total : ''}">
          </td>`;
 
-         // MAAS Cell (ใช้ Dropdown หรือ Radio ก็ได้ แต่ Dropdown ประหยัดที่กว่าสำหรับแถวนี้)
+         // MAAS (ใช้ Dropdown เพื่อประหยัดที่ในแนวตั้ง)
          let maasSelect = `<select class="w-full p-1 border text-[10px] text-center bg-white rounded" name="MAAS_Score" 
                            data-day="${i}" data-shift="${shiftCode}">
                            <option value="">-เลือก-</option>`;
@@ -2446,11 +2452,11 @@ function renderMorseTable(data, page) {
          maasSelect += `</select>`;
          maasRow.innerHTML += `<td class="p-1 ${borderClass} align-top">${maasSelect}</td>`;
 
-         // Action Cell (Assessor + Save Button)
+         // Save
          actionRow.innerHTML += `<td class="p-1 ${borderClass} text-center align-top">
             <input type="text" list="staff-list-datalist" 
                    class="w-full text-xs p-1 border mb-1 rounded bg-gray-50 focus:bg-white morse-assessor-input" 
-                   placeholder="ชื่อพยาบาล" 
+                   placeholder="ชื่อ" 
                    data-day="${i}" data-shift="${shiftCode}" 
                    value="${entry ? entry.Assessor_Name : ''}">
             <button type="button" class="bg-green-500 hover:bg-green-600 text-white text-[10px] py-1 px-2 rounded w-full save-morse-btn shadow"
@@ -2465,16 +2471,16 @@ function renderMorseTable(data, page) {
   tbody.appendChild(maasRow);
   tbody.appendChild(actionRow);
 
-  // Event Listeners: Auto Calculate
+  // Event Listeners
   tbody.querySelectorAll('.morse-radio').forEach(radio => {
       radio.addEventListener('change', () => calculateMorseColumn(radio.dataset.day, radio.dataset.shift));
   });
   
-  // Event Listeners: Save
   tbody.querySelectorAll('.save-morse-btn').forEach(btn => {
       btn.addEventListener('click', () => handleSaveMorse(btn.dataset.day, btn.dataset.shift));
   });
 }
+
 function calculateMorseColumn(day, shift) {
     let total = 0;
     
