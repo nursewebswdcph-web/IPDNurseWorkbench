@@ -1784,6 +1784,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const formType = e.target.dataset.form;
     if (formType === 'classify') openClassifyModal(); 
     else if (formType === '005') openFocusProblemModal(); 
+    else if (formType === '006') openProgressNoteModal();
     else showComingSoon(); 
   });
 
