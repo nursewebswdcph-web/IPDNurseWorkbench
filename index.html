@@ -1287,6 +1287,7 @@
           </div>
       
           <form id="progress-note-form" class="p-6 overflow-y-auto flex-1">
+            <input type="hidden" name="Entry_ID" id="prog-entry-id">
             
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4 bg-gray-50 p-4 rounded border">
               <div class="md:col-span-3">
@@ -1335,9 +1336,15 @@
                   <label class="block text-sm font-bold text-green-700">I: Intervention</label>
                   <textarea name="I_Data" id="prog-i" rows="5" class="w-full p-2 border rounded mt-1" placeholder="กิจกรรมการพยาบาล..."></textarea>
                 </div>
-                <div>
-                  <label class="block text-sm font-bold text-purple-700">E: Evaluation</label>
-                  <textarea name="E_Data" id="prog-e" rows="5" class="w-full p-2 border rounded mt-1" placeholder="ผลลัพธ์ทางการพยาบาล..."></textarea>
+                <div class="col-span-1">
+                  <div class="flex justify-between items-end mb-1">
+                    <label class="block text-sm font-bold text-purple-700">E: Evaluation</label>
+                    <div class="flex items-center gap-1">
+                       <span class="text-xs text-gray-500">เวลาประเมิน:</span>
+                       <input type="time" name="E_Time" id="prog-e-time" class="p-1 border rounded text-sm bg-purple-50">
+                    </div>
+                  </div>
+                  <textarea name="E_Data" id="prog-e" rows="5" class="w-full p-2 border rounded" placeholder="ผลลัพธ์ทางการพยาบาล..."></textarea>
                 </div>
               </div>
             </div>
