@@ -1955,7 +1955,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   
-  // --- Logic Modal สร้างเทมเพลต (FR-006) ---
+  // --- Logic Modal สร้างเทมเพลต (FR-006) [แก้ไขล่าสุด] ---
   const addProgTempModal = document.getElementById("add-progress-template-modal");
   const addProgTempForm = document.getElementById("add-progress-template-form");
   const closeProgTempBtn = document.getElementById("close-prog-temp-modal-btn");
@@ -1964,9 +1964,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // กดปุ่ม "+ สร้าง Template"
   if(saveAsTemplateBtn) {
     saveAsTemplateBtn.addEventListener("click", () => {
-       // เปิด Modal ทันที ไม่ต้องเช็คข้อมูล
-       if (addProgTempForm) addProgTempForm.reset();
-       if (addProgTempModal) addProgTempModal.classList.remove("hidden");
+       // 1. เคลียร์ฟอร์มก่อน
+       addProgTempForm.reset();
+
+       // 2. ดึงข้อมูลจากหน้าจอหลัก (ถ้ามี) มาใส่เป็นค่าเริ่มต้น เพื่อความสะดวก
+       document.getElementById("temp-focus-input").value = document.getElementById("prog-focus").value || "";
+       document.getElementById("temp-s-input").value = document.getElementById("prog-s").value || "";
+       document.getElementById("temp-o-input").value = document.getElementById("prog-o").value || "";
+       document.getElementById("temp-i-input").value = document.getElementById("prog-i").value || "";
+       document.getElementById("temp-e-input").value = document.getElementById("prog-e").value || "";
+
+       // 3. เปิด Modal
+       addProgTempModal.classList.remove("hidden");
     });
   }
 
@@ -1979,22 +1988,21 @@ document.addEventListener("DOMContentLoaded", () => {
   if(addProgTempForm) {
     addProgTempForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const formData = new FormData(addProgTempForm);
-      const name = formData.get("TemplateName");
+      // อ่านค่าจากฟอร์มใน Modal (temp-input) ไม่ใช่จากหน้าจอหลัก
+      const name = document.getElementById("temp-name-input").value;
       
       if(!name) return;
       
-      // ดึงข้อมูลจากฟอร์มหลัก (Progress Note)
       const data = {
         Name: name,
-        Focus: document.getElementById("prog-focus").value,
-        S: document.getElementById("prog-s").value,
-        O: document.getElementById("prog-o").value,
-        I: document.getElementById("prog-i").value,
-        E: document.getElementById("prog-e").value
+        Focus: document.getElementById("temp-focus-input").value,
+        S: document.getElementById("temp-s-input").value,
+        O: document.getElementById("temp-o-input").value,
+        I: document.getElementById("temp-i-input").value,
+        E: document.getElementById("temp-e-input").value
       };
 
-      closeTempModal(); // ปิด Modal ทันที
+      closeTempModal(); // ปิด Modal
       showLoading("กำลังสร้าง Template...");
 
       try {
