@@ -1918,18 +1918,26 @@ document.addEventListener("DOMContentLoaded", () => {
   reProgressBtn.addEventListener("click", handleReProgress);
 
   // ค้นหา Template
-  progTemplateSearch.addEventListener("input", (e) => {
-     const val = e.target.value.trim();
-     if(!val) return;
-     const found = globalProgressTemplates.find(t => t.name === val);
-     if(found) {
-       document.getElementById("prog-focus").value = found.focus;
-       document.getElementById("prog-s").value = found.s;
-       document.getElementById("prog-o").value = found.o;
-       document.getElementById("prog-i").value = found.i;
-       document.getElementById("prog-e").value = found.e;
-     }
-  });
+  // 5. ค้นหา Template (Input Event) [แก้ไขล่าสุด]
+  const progSearchInput = document.getElementById("prog-template-search");
+  if(progSearchInput) {
+      progSearchInput.addEventListener("input", (e) => {
+         const val = e.target.value; // ไม่ต้อง trim() ทันที เผื่อพิมพ์วรรค
+         if(!val) return;
+         
+         // ค้นหาโดยเทียบชื่อ (Name)
+         // ใช้ .trim() ทั้งคู่เพื่อให้แม่นยำขึ้น
+         const found = globalProgressTemplates.find(t => t.name.trim() === val.trim());
+         
+         if(found) {
+           document.getElementById("prog-focus").value = found.focus || "";
+           document.getElementById("prog-s").value = found.s || "";
+           document.getElementById("prog-o").value = found.o || "";
+           document.getElementById("prog-i").value = found.i || "";
+           document.getElementById("prog-e").value = found.e || "";
+         }
+      });
+  }
 
   // บันทึก Progress Note
   progressNoteForm.addEventListener("submit", async (e) => {
