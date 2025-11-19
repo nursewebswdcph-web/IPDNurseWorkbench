@@ -1088,13 +1088,87 @@ async function showFormPreview(formType) {
   }
 
   else if (formType === 'morse_maas') {
-    chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS";
-    chartPreviewContent.innerHTML = document.getElementById("preview-template-morse").innerHTML;
+    chartPreviewTitle.textContent = "ประวัติการประเมินความเสี่ยง Morse / MAAS";
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "morse_maas";
-    chartEditBtn.onclick = () => openMorseModal(); // ใช้ onclick ตรงนี้ หรือจะไปแก้ใน Event Listener หลักก็ได้
+    chartEditBtn.onclick = () => openMorseModal();
     chartAddNewBtn.classList.add("hidden");
-}
+
+    // โหลด Template พื้นฐานมารอก่อน
+    chartPreviewContent.innerHTML = document.getElementById("preview-template-morse").innerHTML;
+    const listContainer = document.getElementById("morse-summary-list");
+    const emptyState = document.getElementById("morse-empty-state");
+    const statusSpan = document.getElementById("last-updated-morse");
+
+    showLoading("กำลังโหลดประวัติ...");
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getMorseMAASSummary&an=${currentPatientAN}`);
+        const result = await response.json();
+        
+        if (!result.success) throw new Error(result.message);
+        const entries = result.data;
+        Swal.close();
+
+        // อัปเดตสถานะที่เมนูซ้าย
+        if (entries.length > 0) {
+            const last = entries[0];
+            const d = new Date(last.date);
+            const dateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+            statusSpan.textContent = `ล่าสุด: ${dateStr} เวร${last.shift}`;
+            statusSpan.classList.add("text-green-600");
+            
+            emptyState.classList.add("hidden");
+            
+            // สร้างรายการแสดงผล
+            let html = "";
+            entries.forEach(item => {
+                const d = new Date(item.date);
+                const dateStr = d.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'});
+                const shiftText = item.shift === 'N' ? 'ดึก' : (item.shift === 'D' ? 'เช้า' : 'บ่าย');
+                const shiftColor = item.shift === 'N' ? 'bg-indigo-100 text-indigo-800' : (item.shift === 'D' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800');
+                
+                // สีความเสี่ยง Morse
+                let riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-800">No Risk</span>`;
+                if(item.morse_total >= 51) riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-800">High Risk (${item.morse_total})</span>`;
+                else if(item.morse_total >= 25) riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold bg-orange-100 text-orange-800">Low Risk (${item.morse_total})</span>`;
+
+                // ข้อมูล MAAS
+                let maasInfo = `<span class="text-gray-400">-</span>`;
+                if(item.maas_score !== "" && item.maas_score !== null) {
+                     maasInfo = `<span class="font-bold text-blue-600">MAAS: ${item.maas_score}</span>`;
+                     if(item.maas_score >= 4) maasInfo += ` <span class="text-xs text-red-600">(ผูกยึด)</span>`;
+                }
+
+                html += `
+                <div class="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center" onclick="openMorseModal()">
+                    <div class="flex items-center space-x-3">
+                        <div class="text-center min-w-[60px]">
+                            <div class="text-sm font-bold text-gray-700">${dateStr}</div>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${shiftColor}">${shiftText}</span>
+                        </div>
+                        <div class="border-l pl-3 space-y-1">
+                            <div>${riskBadge}</div>
+                            <div class="text-xs">${maasInfo}</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-xs text-gray-500">
+                        <div>${item.assessor || '-'}</div>
+                    </div>
+                </div>`;
+            });
+            listContainer.innerHTML = html;
+
+        } else {
+            statusSpan.textContent = "ยังไม่เคยบันทึก";
+            listContainer.innerHTML = "";
+            emptyState.classList.remove("hidden");
+        }
+
+    } catch (error) {
+        Swal.close();
+        showError("โหลดข้อมูลไม่สำเร็จ", error.message);
+    }
+  }
       
   else {
     const formTitle = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
