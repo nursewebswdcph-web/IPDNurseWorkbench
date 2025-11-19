@@ -172,7 +172,17 @@
                   <span class="text-blue-600 font-semibold ml-4">&gt;</span>
                 </div>
               </li>
-              
+
+              <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="007">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย</h3>
+                  <p class="text-sm text-gray-500">PR-IPD-007</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm text-gray-600">สถานะ: <span id="last-updated-007">คลิกเพื่อโหลด</span></span>
+                  <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+                </div>
+              </li>
             </ul>
           </div>
         </div>
@@ -538,6 +548,51 @@
           <tbody class="bg-white divide-y divide-gray-200">
             </tbody>
         </table>
+      </div>
+    </template>
+
+    <template id="preview-template-007">
+      <div class="p-4 space-y-6 bg-white">
+        <div class="grid grid-cols-2 gap-4 border-b pb-4">
+          <div><span class="font-bold text-gray-700">วันที่จำหน่าย:</span> <span data-field="DischargeDate"></span></div>
+          <div><span class="font-bold text-gray-700">เวลาที่ออก:</span> <span data-field="LeaveTime"></span> น.</div>
+          <div><span class="font-bold text-gray-700">ประเภท:</span> <span data-field="DischargeType"></span></div>
+          <div><span class="font-bold text-gray-700">สภาพ:</span> <span data-field="DischargeStatus"></span></div>
+        </div>
+
+        <fieldset class="border p-3 rounded">
+            <legend class="font-bold text-blue-700 px-2">อาการก่อนจำหน่าย (Vital Signs)</legend>
+            <div class="grid grid-cols-4 gap-2 text-center">
+                <div>BT: <span data-field="VS_BT"></span> °C</div>
+                <div>PR: <span data-field="VS_PR"></span> /min</div>
+                <div>RR: <span data-field="VS_RR"></span> /min</div>
+                <div>BP: <span data-field="VS_BP"></span> mmHg</div>
+            </div>
+        </fieldset>
+
+        <fieldset class="border p-3 rounded">
+            <legend class="font-bold text-green-700 px-2">D-METHOD</legend>
+            <ul class="list-disc pl-5 space-y-1 text-sm text-gray-700">
+                <li><b>D (Disease):</b> <span data-field="D_Details"></span></li>
+                <li><b>M (Medication):</b> <span data-field="M_Details"></span></li>
+                <li><b>E (Environment):</b> <span data-field="E_Details"></span></li>
+                <li><b>T (Treatment):</b> <span data-field="T_Details"></span></li>
+                <li><b>H (Health):</b> <span data-field="H_Details"></span></li>
+                <li><b>O (Outpatient):</b> <span data-field="O_Details"></span></li>
+                <li><b>D (Diet):</b> <span data-field="D_Diet_Details"></span></li>
+            </ul>
+        </fieldset>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm border-t pt-4">
+             <div><b>อุปกรณ์กลับบ้าน:</b> <span data-field="Supplies_Status"></span> <span data-field="Supplies_Note"></span></div>
+             <div><b>การดูแลต่อ (F/U):</b> <span data-field="FU_Status"></span> <span data-field="FU_Note"></span></div>
+             <div><b>ส่งต่อ (Refer):</b> <span data-field="Refer_To"></span></div>
+             <div><b>ผู้รับกลับ:</b> <span data-field="Pickup_Name"></span> (<span data-field="Pickup_Rel"></span>)</div>
+             <div class="md:col-span-2 text-right mt-2">
+                <b>พยาบาลผู้จำหน่าย:</b> <span data-field="Nurse_Name" class="text-indigo-600 font-bold"></span>
+                <div class="text-xs text-gray-400">บันทึกเมื่อ: <span data-field="Timestamp"></span></div>
+             </div>
+        </div>
       </div>
     </template>
 
@@ -1405,6 +1460,131 @@
           <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
             <button id="cancel-prog-temp-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg mr-3">ยกเลิก</button>
             <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow text-lg">บันทึกเทมเพลต</button>
+          </div>
+        </form>
+      </div>
+    </div>
+<------ FR-IPD-007------->
+    <div id="discharge-form-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start pt-10 z-50 hidden overflow-y-auto">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl m-4 mb-20">
+        <form id="discharge-form">
+          <div class="flex justify-between items-center p-4 border-b bg-pink-50 rounded-t-lg">
+            <h3 class="text-xl font-bold text-pink-800">แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)</h3>
+            <button id="close-discharge-modal-btn" type="button" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+          </div>
+          
+          <div class="p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-bold">วันที่จำหน่าย</label>
+                    <input type="date" name="DischargeDate" class="w-full p-2 border rounded" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold">เวลาที่ออก</label>
+                    <input type="time" name="LeaveTime" class="w-full p-2 border rounded" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold">ประเภท</label>
+                    <select name="DischargeType" class="w-full p-2 border rounded">
+                        <option value="แพทย์อนุญาต">แพทย์อนุญาต</option>
+                        <option value="ปฏิเสธการรักษา">ปฏิเสธการรักษา</option>
+                        <option value="หนีกลับ">หนีกลับ</option>
+                        <option value="REFER">REFER</option>
+                        <option value="ตาย (ไม่ชันสูตร)">ตาย (ไม่ชันสูตร)</option>
+                        <option value="ตาย (ชันสูตร)">ตาย (ชันสูตร)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold">สภาพการจำหน่าย</label>
+                    <select name="DischargeStatus" class="w-full p-2 border rounded">
+                        <option value="ดีขึ้น">ดีขึ้น</option>
+                        <option value="หายสนิท">หายสนิท</option>
+                        <option value="ไม่ดีขึ้น">ไม่ดีขึ้น</option>
+                        <option value="ทรุดลง">ทรุดลง</option>
+                    </select>
+                </div>
+            </div>
+
+            <fieldset class="border p-3 rounded bg-gray-50">
+                <legend class="text-sm font-bold text-gray-700 px-2">สัญญาณชีพก่อนจำหน่าย</legend>
+                <div class="grid grid-cols-4 gap-4">
+                    <input type="text" name="VS_BT" placeholder="BT (°C)" class="p-2 border rounded">
+                    <input type="text" name="VS_PR" placeholder="PR (/min)" class="p-2 border rounded">
+                    <input type="text" name="VS_RR" placeholder="RR (/min)" class="p-2 border rounded">
+                    <input type="text" name="VS_BP" placeholder="BP (mmHg)" class="p-2 border rounded">
+                </div>
+            </fieldset>
+
+            <fieldset class="border p-4 rounded">
+                <legend class="text-lg font-bold text-blue-700 px-2">D-METHOD (คำแนะนำ)</legend>
+                <div class="space-y-3">
+                    <div>
+                        <label class="font-bold text-red-600">D (Disease):</label>
+                        <input type="text" name="D_Details" class="w-full p-2 border rounded" placeholder="ความรู้เรื่องโรค, อาการผิดปกติที่ต้องมาพบแพทย์">
+                    </div>
+                    <div>
+                        <label class="font-bold text-blue-600">M (Medication):</label>
+                        <input type="text" name="M_Details" class="w-full p-2 border rounded" placeholder="วิธีใช้ยา, ผลข้างเคียง">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div><label class="font-bold">E (Environment):</label><input type="text" name="E_Details" class="w-full p-2 border rounded"></div>
+                        <div><label class="font-bold">T (Treatment):</label><input type="text" name="T_Details" class="w-full p-2 border rounded"></div>
+                        <div><label class="font-bold">H (Health):</label><input type="text" name="H_Details" class="w-full p-2 border rounded"></div>
+                        <div><label class="font-bold">O (Outpatient):</label><input type="text" name="O_Details" class="w-full p-2 border rounded"></div>
+                    </div>
+                    <div>
+                        <label class="font-bold text-green-600">D (Diet):</label>
+                        <input type="text" name="D_Diet_Details" class="w-full p-2 border rounded" placeholder="อาหารที่เหมาะสม / ควรงด">
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                <div>
+                    <label class="block text-sm font-bold">ยา/อุปกรณ์กลับบ้าน</label>
+                    <select name="Supplies_Status" class="w-full p-2 border rounded mb-1">
+                        <option value="ได้ครบ">ได้ครบ</option>
+                        <option value="ได้ไม่ครบ">ได้ไม่ครบ</option>
+                    </select>
+                    <input type="text" name="Supplies_Note" placeholder="ระบุ (ถ้าไม่ครบ)" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold">นัดตรวจ (F/U)</label>
+                    <select name="FU_Status" class="w-full p-2 border rounded mb-1">
+                        <option value="มีนัด">มีนัด</option>
+                        <option value="ไม่มีนัด">ไม่มีนัด</option>
+                    </select>
+                    <input type="text" name="FU_Note" placeholder="ระบุวันนัด / การดูแลแผล" class="w-full p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold">สถานที่รับการดูแลต่อ</label>
+                    <input type="text" name="Refer_To" list="refer-list" class="w-full p-2 border rounded" placeholder="เช่น รพ.สต., รพ.ศูนย์...">
+                    <datalist id="refer-list">
+                        <option value="บ้าน">
+                        <option value="รพ.ศูนย์">
+                        <option value="รพ.ทั่วไป">
+                        <option value="รพ.ชุมชน">
+                        <option value="รพ.สต.">
+                    </datalist>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold">ผู้รับตัวกลับ / ความสัมพันธ์</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="Pickup_Name" class="w-2/3 p-2 border rounded" placeholder="ชื่อ-สกุล">
+                        <input type="text" name="Pickup_Rel" class="w-1/3 p-2 border rounded" placeholder="เกี่ยวข้องเป็น">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t">
+                <label class="block text-sm font-bold text-indigo-700">พยาบาลผู้จำหน่าย</label>
+                <input type="text" name="Nurse_Name" list="staff-list-datalist" class="w-full p-2 border rounded" placeholder="ค้นหาชื่อพยาบาล..." required>
+            </div>
+
+          </div>
+          
+          <div class="flex justify-end items-center p-4 border-t bg-gray-50 rounded-b-lg">
+             <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-8 rounded-lg shadow text-lg">บันทึก (Save)</button>
           </div>
         </form>
       </div>
