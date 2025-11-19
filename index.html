@@ -582,7 +582,7 @@
             
             <div class="space-y-3">
                 <div>
-                    <div class="font-bold text-red-700">1. D (Disease) ความรู้เรื่องโรค</div>
+                    <div class="font-bold text-red-700">1. D (Disease) ความรู้เรื่องโรค/การสังเกตอาการผิดปกติ</div>
                     <div class="ml-4 grid grid-cols-2 md:grid-cols-3 gap-1 text-gray-600">
                         <div>[<span data-field="D_Fever"></span>] มีไข้สูง</div>
                         <div>[<span data-field="D_Wound"></span>] แผลบวมแดง/มีหนอง</div>
@@ -1622,8 +1622,10 @@
                   </div>
 
                   <div>
-                     <div class="font-bold text-blue-700 mb-1">2. M (Medication) ความรู้เกี่ยวกับยา ฤทธิ์ยา การใช้ยา ข้อควรระวัง</div>
-                     <textarea name="M_Details" rows="2" class="w-full p-2 border rounded ml-4" placeholder="ระบุรายละเอียด..."></textarea>
+                      <div class="font-bold text-blue-700 mb-1">2. M (Medication) ความรู้เกี่ยวกับยา ฤทธิ์ยา การใช้ยา ข้อควรระวัง</div>
+                      <textarea name="M_Details" rows="4" class="w-full p-2 border rounded ml-4">
+                  ได้รับคำแนะนำเรื่อง: ชื่อยา, ฤทธิ์ของยา/วัตถุประสงค์, วิธีใช้ (ขนาด/เวลา), ข้อควรระวัง/ข้อห้าม, การเก็บรักษา และสังเกตอาการแพ้ยา (หากมีผื่น/บวม ให้หยุดยาและพบแพทย์ทันที)
+                  </textarea>
                   </div>
 
                   <div>
@@ -1661,10 +1663,10 @@
                   </div>
 
                   <div>
-                     <div class="font-bold mb-1">6. O (Outpatient refer) การมาตรวจตามนัด/แหล่งประโยชน์/1669</div>
-                     <div class="ml-4">
-                        <textarea name="O_Refer" rows="1" class="w-full p-2 border rounded" placeholder="ระบุรายละเอียด..."></textarea>
-                     </div>
+                      <div class="font-bold mb-1">6. O (Outpatient refer) การมาตรวจตามนัด/แหล่งประโยชน์/1669</div>
+                      <div class="ml-4">
+                          <textarea name="O_Refer" rows="3" class="w-full p-2 border rounded">เน้นย้ำมาตรวจตามนัด แนะนำแหล่งประโยชน์ใกล้บ้าน และโทร 1669 กรณีมีอาการผิดปกติฉุกเฉิน</textarea>
+                      </div>
                   </div>
 
                   <div>
