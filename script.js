@@ -2354,16 +2354,14 @@ function renderMorseTable(data, page) {
                             <input type="hidden" value="${dateString}" class="morse-date-input" data-day-index="${i}">`;
     headerRow1.appendChild(dateHeader);
     
-    .forEach(shift => {
+    ['ด', 'ช', 'บ'].forEach(shift => {
        const th = document.createElement('th');
-       th.className = 'p-1 border text-xs font-normal text-center w-10';
+       // ปรับแต่ง Class ให้สวยงามและจัดกึ่งกลาง
+       th.className = 'p-1 border text-xs font-normal text-center w-10 bg-gray-50'; 
        th.textContent = shift;
        headerRow2.appendChild(th);
     });
   }
-  thead.appendChild(headerRow1);
-  thead.appendChild(headerRow2);
-
   // Body Rows: Morse Items
   MORSE_CRITERIA.forEach((item, idx) => {
      const row = document.createElement('tr');
