@@ -2333,7 +2333,7 @@ function renderMorseTable(data, page) {
   // Header Row 1 & 2 (Logic เดียวกับ Classification: 5 วัน x 3 เวร)
   const headerRow1 = document.createElement('tr');
   headerRow1.className = 'bg-gray-100';
-  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-1/3">ประเด็น</th>'; [cite_start]// [cite: 170]
+  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-1/3">ประเด็น</th>';
   
   const headerRow2 = document.createElement('tr');
   headerRow2.className = 'bg-gray-50';
@@ -2354,7 +2354,7 @@ function renderMorseTable(data, page) {
                             <input type="hidden" value="${dateString}" class="morse-date-input" data-day-index="${i}">`;
     headerRow1.appendChild(dateHeader);
     
-    [cite_start]['ด', 'ช', 'บ'].forEach(shift => { // [cite: 170]
+    .forEach(shift => {
        const th = document.createElement('th');
        th.className = 'p-1 border text-xs font-normal text-center w-10';
        th.textContent = shift;
@@ -2393,16 +2393,16 @@ function renderMorseTable(data, page) {
   // Body Row: Total Score & Level
   const totalRow = document.createElement('tr');
   totalRow.className = 'bg-orange-50 font-bold';
-  totalRow.innerHTML = `<td class="p-2 border text-right">รวมคะแนน (Morse)</td>`; [cite_start]// [cite: 170]
+  totalRow.innerHTML = `<td class="p-2 border text-right">รวมคะแนน (Morse)</td>`;
   
-  [cite_start]// Body Row: MAAS [cite: 171]
+  // Body Row: MAAS
   const maasRow = document.createElement('tr');
   maasRow.className = 'bg-blue-50';
   maasRow.innerHTML = `<td class="p-2 border font-bold">แบบประเมินการดึงอุปกรณ์ฯ (MAAS)</td>`;
 
   // Body Row: Assessor & Save
   const actionRow = document.createElement('tr');
-  actionRow.innerHTML = `<td class="p-2 border text-right">พยาบาลผู้ประเมิน / บันทึก</td>`; [cite_start]// [cite: 170]
+  actionRow.innerHTML = `<td class="p-2 border text-right">พยาบาลผู้ประเมิน / บันทึก</td>`;
 
   for (let i = 0; i < 5; i++) {
       const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
@@ -2491,7 +2491,7 @@ async function handleSaveMorse(day, shift) {
     const dateInput = document.querySelector(`input.morse-date-input[data-day-index="${day}"]`);
     const dateVal = dateInput.value;
     
-    [cite_start]// Determine Morse Level [cite: 173]
+    // Determine Morse Level
     let morseLevel = "No Risk";
     if (morseTotal >= 51) morseLevel = "High Risk";
     else if (morseTotal >= 25) morseLevel = "Low Risk";
@@ -2525,7 +2525,7 @@ async function handleSaveMorse(day, shift) {
         
         Swal.close(); // ปิด Loading
         
-        [cite_start]// 6. **แสดง Pop-up แนวทางปฏิบัติ (Intervention)** [cite: 173, 176]
+        // 6. **แสดง Pop-up แนวทางปฏิบัติ (Intervention)**
         let interventionHtml = `<div class="text-left text-sm space-y-2">`;
         
         // 6.1 Morse Guidelines
@@ -2556,7 +2556,7 @@ async function handleSaveMorse(day, shift) {
              </div>`;
         }
 
-        [cite_start]// 6.2 MAAS Guidelines [cite: 176]
+        // 6.2 MAAS Guidelines 
         if (maasScore !== null) {
             interventionHtml += `<div class="mt-3 p-3 bg-blue-50 rounded border">
                 <h4 class="font-bold text-blue-800 border-b pb-1 mb-2">การดึงอุปกรณ์ (MAAS Score: ${maasScore})</h4>`;
