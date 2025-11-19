@@ -2586,26 +2586,6 @@ async function handleSaveMorse(day, shift) {
     }
 }
 
-// 6. Event Listeners (DOM Content Loaded)
-// เพิ่มบรรทัดนี้ในส่วน DOMContentLoaded ของไฟล์ script.js
-document.getElementById("morse-prev-page-btn").addEventListener("click", () => {
-    if(currentMorsePage > 1) {
-        currentMorsePage--;
-        fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
-    }
-});
-document.getElementById("morse-next-page-btn").addEventListener("click", () => {
-    currentMorsePage++;
-    fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
-});
-document.getElementById("morse-add-page-btn").addEventListener("click", () => {
-     showError("แจ้งเตือน", "ระบบจะเพิ่มหน้าอัตโนมัติเมื่อกดปุ่ม 'หน้าถัดไป' ในอนาคต");
-});
-document.getElementById("close-morse-modal-btn").addEventListener("click", () => {
-    morseModal.classList.add("hidden");
-    // Reset active state in menu
-    chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
-});
 
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
@@ -2942,5 +2922,24 @@ if (adviceForm) {
         }
     });
 }
+ 
+document.getElementById("morse-prev-page-btn").addEventListener("click", () => {
+    if(currentMorsePage > 1) {
+        currentMorsePage--;
+        fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
+    }
+});
+document.getElementById("morse-next-page-btn").addEventListener("click", () => {
+    currentMorsePage++;
+    fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
+});
+document.getElementById("morse-add-page-btn").addEventListener("click", () => {
+     showError("แจ้งเตือน", "ระบบจะเพิ่มหน้าอัตโนมัติเมื่อกดปุ่ม 'หน้าถัดไป' ในอนาคต");
+});
+document.getElementById("close-morse-modal-btn").addEventListener("click", () => {
+    morseModal.classList.add("hidden");
+    // Reset active state in menu
+    chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+});
   
 }); // End DOMContentLoaded
