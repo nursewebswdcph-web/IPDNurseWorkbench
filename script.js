@@ -1954,34 +1954,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch(err) { showError("บันทึกไม่สำเร็จ", err.message); }
   });
 
-  // สร้าง Template ใหม่จากหน้างาน
-  saveAsTemplateBtn.addEventListener("click", async () => {
-     const name = prompt("ตั้งชื่อ Template (Keyword สำหรับค้นหา):");
-     if(!name) return;
-     
-     const data = {
-       Name: name,
-       Focus: document.getElementById("prog-focus").value,
-       S: document.getElementById("prog-s").value,
-       O: document.getElementById("prog-o").value,
-       I: document.getElementById("prog-i").value,
-       E: document.getElementById("prog-e").value
-     };
-
-     showLoading("กำลังสร้าง Template...");
-     try {
-        const response = await fetch(GAS_WEB_APP_URL, {
-           method: "POST", 
-           body: JSON.stringify({ action: "addProgressTemplate", templateData: data })
-        });
-        const result = await response.json();
-        if(result.success) {
-           globalProgressTemplates = []; // Clear cache
-           await loadProgressTemplates(); // Reload
-           showSuccess("สร้าง Template เรียบร้อย");
-        }
-     } catch(err) { showError("สร้างไม่สำเร็จ", err.message); }
-  });
+  
   // --- Logic Modal สร้างเทมเพลต (FR-006) ---
   const addProgTempModal = document.getElementById("add-progress-template-modal");
   const addProgTempForm = document.getElementById("add-progress-template-form");
