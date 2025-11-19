@@ -186,6 +186,11 @@ const dischargeModal = document.getElementById("discharge-form-modal");
 const dischargeForm = document.getElementById("discharge-form");
 const closeDischargeBtn = document.getElementById("close-discharge-modal-btn");
 
+// (Discharge Plan Modal)
+const adviceModal = document.getElementById("advice-form-modal");
+const adviceForm = document.getElementById("advice-form");
+const closeAdviceBtn = document.getElementById("close-advice-modal-btn");
+
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
@@ -947,6 +952,10 @@ async function showFormPreview(formType) {
     chartEditBtn.dataset.form = "004";
     chartAddNewBtn.classList.add("hidden");
     
+  }
+    else if (formType === 'advice') {
+    chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัวระหว่างเข้ารับการรักษาในโรงพยาบาลและเมื่อผู้ป่วยกลับบ้าน";
+    await showAdvicePreview(currentPatientAN);
   }
 
     else if (formType === '006') {
@@ -1935,6 +1944,90 @@ dischargeForm.querySelector('[name="Nurse_Name"]').addEventListener('change', (e
     }
 });
 
+// 3. สร้างฟังก์ชัน showAdvicePreview (วางไว้ใกล้ๆ showDischargePreview)
+async function showAdvicePreview(an) {
+  showLoading('กำลังโหลดคำแนะนำ...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAdviceFormData&an=${an}`);
+    const result = await response.json();
+    Swal.close();
+    
+    const data = result.data;
+    const spanStatus = document.getElementById('last-updated-advice');
+    if (spanStatus) spanStatus.textContent = data ? "บันทึกแล้ว" : "ยังไม่บันทึก";
+
+    chartPreviewContent.innerHTML = "";
+
+    if (!data) {
+       chartPreviewContent.innerHTML = `
+         <div class="text-center py-10 text-gray-400">
+            <p>-- ยังไม่มีการบันทึกคำแนะนำ --</p>
+            <button class="mt-4 bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600" onclick="openAdviceModal()">+ สร้างบันทึกคำแนะนำ</button>
+         </div>
+       `;
+       chartEditBtn.classList.add("hidden");
+       chartAddNewBtn.classList.add("hidden");
+    } else {
+       const template = document.getElementById("preview-template-advice");
+       const clone = template.content.cloneNode(true);
+       
+       for (const key in data) {
+           const el = clone.querySelector(`[data-field="${key}"]`);
+           if (el) {
+               let val = data[key];
+               // Format Date
+               if (key.includes('Date') && val && !key.includes('Appoint')) {
+                   try { val = new Date(val).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}); } catch(e){}
+               }
+               // Checkbox handling
+               if (val === 'on' || val === true || val === 'true') {
+                   el.innerHTML = '<b class="text-green-600">✓</b>';
+               } else if (!val || val === 'false') {
+                   el.textContent = '';
+               } else {
+                   el.textContent = val;
+               }
+           }
+       }
+       chartPreviewContent.appendChild(clone);
+       
+       chartEditBtn.classList.remove("hidden");
+       chartEditBtn.onclick = () => openAdviceModal(data); 
+       chartAddNewBtn.classList.add("hidden"); 
+    }
+  } catch (e) {
+    Swal.close();
+    showError('โหลดข้อมูลไม่สำเร็จ', e.message);
+  }
+}
+
+// 4. สร้างฟังก์ชัน openAdviceModal
+function openAdviceModal(editData = null) {
+    adviceForm.reset();
+    
+    if (editData) {
+        // เติมข้อมูลเดิม
+        for (const key in editData) {
+            const input = adviceForm.querySelector(`[name="${key}"]`);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    if (editData[key] === 'on' || editData[key] === true || editData[key] === 'true') input.checked = true;
+                } else if (input.type === 'date') {
+                     try { input.value = getISODate(new Date(editData[key])); } catch(e){}
+                } else {
+                    input.value = editData[key];
+                }
+            }
+        }
+    } else {
+        // ถ้าเพิ่มใหม่ ให้ Default วันที่ปัจจุบันลงทุกช่อง Date
+        const now = new Date();
+        const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        adviceForm.querySelectorAll('input[type="date"]').forEach(inp => inp.value = localDate);
+    }
+    adviceModal.classList.remove("hidden");
+}
+
 // 2. แสดง Preview (007)
 async function showDischargePreview(an) {
   showLoading('กำลังโหลดข้อมูลจำหน่าย...');
@@ -2117,7 +2210,8 @@ document.addEventListener("DOMContentLoaded", () => {
   
   chartAddNewBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
-    if (formType === 'classify') openClassifyModal(); 
+    if (formType === 'classify') openClassifyModal();
+    else if (formType === 'advice') openAdviceModal();
     else if (formType === '005') openFocusProblemModal(); 
     else if (formType === '006') openProgressNoteModal();
     else showComingSoon(); 
@@ -2338,5 +2432,38 @@ document.addEventListener("DOMContentLoaded", () => {
        }
     });
   }
+  // Discharge Plan
+  if (closeAdviceBtn) {
+    closeAdviceBtn.addEventListener("click", () => adviceModal.classList.add("hidden"));
+}
+
+// Submit Form
+if (adviceForm) {
+    adviceForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        showLoading("กำลังบันทึก...");
+        
+        const formData = new FormData(adviceForm);
+        const data = Object.fromEntries(formData.entries());
+        data.AN = currentPatientAN;
+
+        try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "saveAdviceFormData", formData: data })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showSuccess("บันทึกสำเร็จ");
+                adviceModal.classList.add("hidden");
+                showAdvicePreview(currentPatientAN);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (err) {
+            showError("บันทึกไม่สำเร็จ", err.message);
+        }
+    });
+}
   
 }); // End DOMContentLoaded
