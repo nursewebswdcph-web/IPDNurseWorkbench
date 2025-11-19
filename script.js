@@ -1964,13 +1964,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // กดปุ่ม "+ สร้าง Template"
   if(saveAsTemplateBtn) {
     saveAsTemplateBtn.addEventListener("click", () => {
-       // เช็คก่อนว่ามีข้อมูลให้บันทึกไหม
-       if(!document.getElementById("prog-focus").value) {
-           showError("ข้อมูลไม่ครบ", "กรุณาระบุปัญหา (Focus) ก่อนสร้าง Template");
-           return;
-       }
-       addProgTempForm.reset();
-       addProgTempModal.classList.remove("hidden");
+       // เปิด Modal ทันที ไม่ต้องเช็คข้อมูล
+       if (addProgTempForm) addProgTempForm.reset();
+       if (addProgTempModal) addProgTempModal.classList.remove("hidden");
     });
   }
 
