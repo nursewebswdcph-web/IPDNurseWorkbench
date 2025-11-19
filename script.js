@@ -1874,22 +1874,28 @@ async function handleReProgress() {
 // --- ฟังก์ชันจัดการ 007 ---
 
 // 1. เปิด Modal (ถ้ามีข้อมูลคือ Edit, ไม่มีคือ New)
+// ฟังก์ชันเปิด Modal 007 (อัปเดตล่าสุด)
 async function openDischargeModal(editData = null) {
   dischargeForm.reset();
   
   // ตั้งค่าเริ่มต้น
   if (!editData) {
      const now = new Date();
-     // แปลงเวลา Local
      const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
      dischargeForm.querySelector('[name="DischargeDate"]').value = localDate.toISOString().split('T')[0];
+     dischargeForm.querySelector('[name="LeaveDate"]').value = localDate.toISOString().split('T')[0]; // วันที่ออก
      dischargeForm.querySelector('[name="LeaveTime"]').value = now.toTimeString().substring(0,5);
   } else {
-     // เติมข้อมูลเดิม (Edit Mode)
+     // เติมข้อมูลเดิม (Loop ใส่ค่า)
+     // (หมายเหตุ: สำหรับ Checkbox ต้องเช็ค value ให้ตรง ถ้าใน DB เก็บเป็น true/false หรือ comma separated อาจต้องเขียน logic เพิ่ม)
+     // เบื้องต้นใช้ logic พื้นฐาน:
      for (const key in editData) {
          const input = dischargeForm.querySelector(`[name="${key}"]`);
          if (input) {
-             if(key === 'DischargeDate') {
+             if(input.type === 'checkbox' || input.type === 'radio') {
+                 // กรณี Checkbox ต้องดูว่าค่าตรงกันไหม (โค้ดนี้รองรับแบบง่าย)
+                 if(input.value === editData[key] || editData[key] === true || editData[key] === 'true') input.checked = true;
+             } else if(key.includes('Date')) {
                  try { input.value = getISODate(new Date(editData[key])); } catch(e){}
              } else {
                  input.value = editData[key];
@@ -1898,14 +1904,13 @@ async function openDischargeModal(editData = null) {
      }
   }
 
-  // โหลดรายชื่อพยาบาล (ถ้ายังไม่มี)
+  // โหลดรายชื่อพยาบาล + ตำแหน่ง
   if (globalStaffList.length === 0) {
      try {
        const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
        const result = await response.json();
        if (result.success) {
            globalStaffList = result.data;
-           // สร้าง datalist (ใช้ตัวเดิม staff-list-datalist)
            let dl = document.getElementById('staff-list-datalist');
            if(!dl) {
                dl = document.createElement('datalist');
@@ -1913,17 +1918,22 @@ async function openDischargeModal(editData = null) {
                document.body.appendChild(dl);
            }
            dl.innerHTML = "";
-           globalStaffList.forEach(s => {
-               const op = document.createElement('option');
-               op.value = s.fullName;
-               dl.appendChild(op);
-           });
+           globalStaffList.forEach(s => dl.innerHTML += `<option value="${s.fullName}">`);
        }
      } catch(e) {}
   }
 
   dischargeModal.classList.remove("hidden");
 }
+
+// เพิ่ม Event Listener ให้ช่องชื่อพยาบาล เพื่อดึงตำแหน่งมาใส่
+dischargeForm.querySelector('[name="Nurse_Name"]').addEventListener('change', (e) => {
+    const val = e.target.value;
+    const staff = globalStaffList.find(s => s.fullName === val);
+    if(staff) {
+        dischargeForm.querySelector('[name="Nurse_Pos"]').value = staff.position || "";
+    }
+});
 
 // 2. แสดง Preview (007)
 async function showDischargePreview(an) {
