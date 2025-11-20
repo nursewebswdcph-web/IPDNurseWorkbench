@@ -869,11 +869,17 @@
     </template>
 
     <template id="preview-template-braden">
-    <div class="p-6 text-center text-gray-500">
-        <p>กรุณากดปุ่ม <b>"แก้ไข"</b> ด้านบนขวา</p>
-        <p>เพื่อเข้าสู่ตารางประเมิน (ชุดละ 10 วัน)</p>
+  <div class="p-4">
+    <div id="braden-summary-list" class="space-y-3">
+        </div>
+    <div id="braden-empty-state" class="text-center text-gray-500 py-8 hidden">
+        <p>ยังไม่มีประวัติการประเมิน</p>
+        <button class="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onclick="openBradenModal()">
+            + เริ่มประเมิน
+        </button>
     </div>
-  </template>
+  </div>
+</template>
 
     <!-- ============================================= -->
     <!-- (5) MODALS (Pop-ups) -->
