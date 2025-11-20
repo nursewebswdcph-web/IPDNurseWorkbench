@@ -282,7 +282,7 @@ const BRADEN_CRITERIA = [
             { val: 1, text: "2.1 เปียกชุ่มตลอดเวลา Diarrhea" },
             { val: 2, text: "2.2 ปัสสาวะราด / อุจจาระราดบ่อยครั้ง" },
             { val: 3, text: "2.3 ปัสสาวะราด / อุจจาระราดบางครั้ง" },
-            { val: 4, text: "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้/Retain Cath" }
+            { val: 4, text: "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้" }
         ]
     },
     {
@@ -300,7 +300,7 @@ const BRADEN_CRITERIA = [
         name: "4. การเคลื่อนไหว",
         options: [
             { val: 1, text: "4.1 เคลื่อนไหวเองไม่ได้" },
-            { val: 2, text: "4.2 เคลื่อนไหวเองได้น้อย / มีข้อติด / ต้องมีผู้ช่วยเหลือ" },
+            { val: 2, text: "4.2 เคลื่อนไหวเองได้น้อย / มีข้อติด" },
             { val: 3, text: "4.3 เคลื่อนไหวเองได้ มีผู้ช่วยเหลือบางครั้ง" },
             { val: 4, text: "4.4 เคลื่อนไหวเองได้ปกติ" }
         ]
@@ -310,18 +310,18 @@ const BRADEN_CRITERIA = [
         name: "5. การรับอาหาร",
         options: [
             { val: 1, text: "5.1 NPO / กินได้ 1/3 ถาด" },
-            { val: 2, text: "5.2 รับประทานอาหารได้บ้างเล็กน้อย / กินได้ 1/2 ถาด" },
-            { val: 3, text: "5.3 รับประทานอาหารได้พอควร / กินได้ > 1/2 ถาด" },
-            { val: 4, text: "5.4 รับประทานอาหารได้ปกติ / Feed รับได้หมด" }
+            { val: 2, text: "5.2 กินได้บ้างเล็กน้อย / กินได้ 1/2 ถาด" },
+            { val: 3, text: "5.3 กินได้พอควร / กินได้ > 1/2 ถาด" },
+            { val: 4, text: "5.4 กินได้ปกติ / Feed รับได้หมด" }
         ]
     },
     {
         id: "Friction",
         name: "6. การเสียดสี",
         options: [
-            { val: 1, text: "6.1 มีกล้ามเนื้อหดเกร็ง ต้องมีผู้ช่วยหลายคนในการเคลื่อนย้าย" },
-            { val: 2, text: "6.2 เวลานั่งลื่นไถลได้ / ใช้ผู้ช่วยน้อยคนในการเคลื่อนย้าย" },
-            { val: 3, text: "6.3 เคลื่อนย้ายบนเตียงได้อย่างอิสระ ไม่มีปัญหาการเสียดสี" }
+            { val: 1, text: "6.1 มีกล้ามเนื้อหดเกร็ง / ใช้ผู้ช่วยหลายคน" },
+            { val: 2, text: "6.2 เวลานั่งลื่นไถลได้ / ใช้ผู้ช่วยน้อยคน" },
+            { val: 3, text: "6.3 เคลื่อนย้ายอิสระ ไม่มีปัญหาการเสียดสี" }
         ]
     }
 ];
@@ -2816,6 +2816,35 @@ async function fetchAndRenderBradenPage(an, page) {
         document.getElementById("braden-hb").value = data.Hb || "";
         
         renderBradenTable(data);
+        
+        // เติมข้อมูลส่วนที่ 4 (สรุป)
+        const form = document.getElementById("braden-form");
+        if (data.Discharge_Status) {
+             const statusRadio = form.querySelector(`input[name="Discharge_Status"][value="${data.Discharge_Status}"]`);
+             if(statusRadio) statusRadio.checked = true;
+        }
+        form.querySelector('[name="Discharge_Position"]').value = data.Discharge_Position || "";
+        form.querySelector('[name="Discharge_Stage"]').value = data.Discharge_Stage || "";
+        
+        // แปลงวันที่ถ้ามี
+        if(data.Discharge_Date) {
+             try { form.querySelector('[name="Discharge_Date"]').value = getISODate(new Date(data.Discharge_Date)); } catch(e){}
+        }
+        
+        form.querySelector('[name="Discharge_Size"]').value = data.Discharge_Size || "";
+        form.querySelector('[name="Discharge_Char"]').value = data.Discharge_Char || "";
+        form.querySelector('[name="Discharge_Count"]').value = data.Discharge_Count || "";
+
+        // เติมข้อมูลส่วนที่ 3 (บันทึกแผล)
+        if (data.Wound_Record_JSON) {
+             try {
+                 const records = JSON.parse(data.Wound_Record_JSON);
+                 renderWoundRows(records);
+             } catch(e) { console.error("Error parsing wound records", e); }
+        } else {
+             renderWoundRows([]); // สร้างแถวว่าง
+        }
+
         document.getElementById("braden-page-display").textContent = page;
         document.getElementById("braden-prev-page").disabled = (page <= 1);
         
@@ -2827,90 +2856,228 @@ function renderBradenTable(data) {
     const table = document.getElementById("braden-table");
     table.innerHTML = "";
     
-    // --- Header Row: วันที่ 1-10 ---
-    let theadHtml = `<thead class="bg-red-50"><tr><th class="p-2 border w-64 text-left sticky left-0 bg-red-50 z-20 shadow">ปัจจัยส่งเสริมการเกิดแผลกดทับ</th>`;
+    // --- HEADER (ส่วนที่ 1) ---
+    // ใช้ Sticky Column ซ้ายเพื่อให้เลื่อนดูวันที่ 1-10 ได้โดยหัวข้อไม่หาย
+    let theadHtml = `<thead class="bg-red-50">
+      <tr>
+        <th class="p-2 border w-80 text-left sticky left-0 bg-red-50 z-20 shadow-md align-bottom">
+            <div class="font-bold text-red-800 text-lg">ส่วนที่ 1 การประเมินความเสี่ยง</div>
+            <div class="text-xs text-gray-600 font-normal mt-1">ปัจจัยส่งเสริมการเกิดแผลกดทับ</div>
+        </th>`;
     
     for (let i = 1; i <= 10; i++) {
         const dateVal = data[`Date_${i}`] ? getISODate(new Date(data[`Date_${i}`])) : "";
-        theadHtml += `<th class="p-2 border min-w-[100px] text-center">
-            <div class="text-xs text-gray-500 mb-1">วันที่ประเมิน (${i})</div>
-            <input type="date" name="Date_${i}" class="w-full text-xs border rounded p-1 braden-date-input" value="${dateVal}">
+        theadHtml += `<th class="p-2 border min-w-[80px] text-center bg-red-50">
+            <div class="text-[10px] text-gray-500 mb-1">วันที่ (${i})</div>
+            <input type="date" name="Date_${i}" class="w-full text-[10px] border rounded p-0.5 braden-date-input text-center" value="${dateVal}">
         </th>`;
     }
     theadHtml += `</tr></thead>`;
     table.insertAdjacentHTML('beforeend', theadHtml);
     
-    // --- Body Rows: Criteria ---
+    // --- BODY (BRADEN SCALE) ---
     let tbodyHtml = `<tbody>`;
     
     BRADEN_CRITERIA.forEach((criteria, cIdx) => {
-        let rowHtml = `<tr>
-            <td class="p-2 border align-top bg-white sticky left-0 z-10 shadow-sm font-semibold text-sm">
-                ${criteria.name}
-            </td>`;
+        let rowHtml = `<tr>`;
         
+        // Column ซ้าย: ข้อความตัวเลือก
+        let leftColHtml = `<div class="font-bold text-sm text-gray-800 pb-2 pt-2 border-b border-gray-200 bg-white px-2">${criteria.name}</div>`;
+        criteria.options.forEach(opt => {
+            // ใช้ h-8 (32px) เพื่อประหยัดพื้นที่แนวตั้ง
+            leftColHtml += `<div class="h-8 flex items-center text-xs text-gray-600 border-b border-gray-100 pl-4 hover:bg-gray-50">${opt.text}</div>`;
+        });
+        rowHtml += `<td class="p-0 border-r border-b bg-white align-top sticky left-0 z-10 shadow-md">${leftColHtml}</td>`;
+        
+        // Column ขวา: Radio Buttons 10 วัน
         for (let i = 1; i <= 10; i++) {
             const savedVal = data[`${criteria.id}_${i}`];
-            let optionsHtml = `<div class="flex flex-col gap-1">`;
+            let cellHtml = `<div class="pb-2 pt-2 border-b border-gray-200 bg-white">&nbsp;</div>`; // Spacer หัวข้อ
             
             criteria.options.forEach(opt => {
                 const isChecked = (String(savedVal) === String(opt.val)) ? "checked" : "";
                 const radioId = `braden_${criteria.id}_${i}_${opt.val}`;
                 
-                optionsHtml += `
-                <label class="flex items-start gap-1 cursor-pointer hover:bg-red-50 p-1 rounded border border-transparent hover:border-red-100" title="${opt.text}">
+                cellHtml += `
+                <div class="h-8 flex items-center justify-center border-b border-gray-100 hover:bg-red-50 transition-colors cursor-pointer"
+                     onclick="document.getElementById('${radioId}').click()">
                     <input type="radio" name="${criteria.id}_${i}" value="${opt.val}" id="${radioId}" 
-                           class="mt-0.5 accent-red-600 braden-radio" data-day="${i}" ${isChecked}>
-                    <span class="text-[10px] leading-tight text-gray-700">${opt.val} : ${opt.text.split(' ')[1]}..</span>
-                </label>`;
+                           class="mt-0.5 accent-red-600 braden-radio cursor-pointer" data-day="${i}" ${isChecked}>
+                </div>`;
             });
-            optionsHtml += `</div>`;
-            rowHtml += `<td class="p-1 border align-top bg-white min-w-[120px]">${optionsHtml}</td>`;
+            rowHtml += `<td class="p-0 border align-top bg-white min-w-[80px]">${cellHtml}</td>`;
         }
         rowHtml += `</tr>`;
         tbodyHtml += rowHtml;
     });
 
-    // --- Summary Rows ---
-    // 1. คะแนนรวม
+    // --- SUMMARY ROWS ---
+    // คะแนนรวม
     let totalRow = `<tr class="bg-gray-100 font-bold">
-        <td class="p-2 border text-right sticky left-0 bg-gray-100 z-10">คะแนนรวม</td>`;
+        <td class="p-2 border text-right sticky left-0 bg-gray-100 z-10 text-sm">คะแนนรวม</td>`;
     for(let i=1; i<=10; i++) {
-        totalRow += `<td class="p-2 border text-center">
-            <input type="text" readonly name="Total_${i}" class="w-full text-center bg-transparent font-bold text-blue-700 braden-total" data-day="${i}" value="${data[`Total_${i}`] || ''}">
+        totalRow += `<td class="p-1 border text-center">
+            <input type="text" readonly name="Total_${i}" class="w-full text-center bg-transparent font-bold text-blue-700 braden-total text-sm" data-day="${i}" value="${data[`Total_${i}`] || ''}">
         </td>`;
     }
-    totalRow += `</tr>`;
-    
-    // 2. ความเสี่ยง
+    tbodyHtml += totalRow + `</tr>`;
+
+    // แปลผล
     let riskRow = `<tr class="bg-white">
-        <td class="p-2 border text-right sticky left-0 bg-white z-10">แปลผลความเสี่ยง</td>`;
+        <td class="p-2 border text-right sticky left-0 bg-white z-10 text-xs">แปลผลความเสี่ยง</td>`;
     for(let i=1; i<=10; i++) {
-        riskRow += `<td class="p-2 border text-center text-xs">
+        riskRow += `<td class="p-1 border text-center text-[10px]">
             <input type="text" readonly name="Risk_${i}" class="w-full text-center bg-transparent" id="risk_text_${i}" value="${data[`Risk_${i}`] || ''}">
         </td>`;
     }
-    riskRow += `</tr>`;
+    tbodyHtml += riskRow + `</tr>`;
 
-    // 3. พยาบาลผู้ประเมิน
+    // ผู้ประเมิน
     let assessorRow = `<tr class="bg-gray-50">
-        <td class="p-2 border text-right sticky left-0 bg-gray-50 z-10">พยาบาลผู้ประเมิน</td>`;
+        <td class="p-2 border text-right sticky left-0 bg-gray-50 z-10 text-sm">พยาบาลผู้ประเมิน</td>`;
     for(let i=1; i<=10; i++) {
         assessorRow += `<td class="p-1 border text-center">
             <input type="text" list="staff-list-datalist" name="Assessor_${i}" 
-                   class="w-full text-xs p-1 border rounded text-center bg-white focus:ring-1 focus:ring-red-500" 
+                   class="w-full text-[10px] p-1 border rounded text-center bg-white focus:ring-1 focus:ring-red-500" 
                    placeholder="ลงชื่อ" value="${data[`Assessor_${i}`] || ''}">
         </td>`;
     }
-    assessorRow += `</tr>`;
-
-    tbodyHtml += totalRow + riskRow + assessorRow + `</tbody>`;
+    tbodyHtml += assessorRow + `</tr></tbody>`;
     table.insertAdjacentHTML('beforeend', tbodyHtml);
 
-    // Event Listeners
+    // --- APPEND EXTRA PARTS (2, 3, 4) ---
+    // ตรวจสอบว่ามีส่วนเสริมหรือยัง ถ้ามีให้ลบก่อนสร้างใหม่
+    const existingExtra = document.getElementById("braden-extra-parts");
+    if (existingExtra) existingExtra.remove();
+
+    const extraHtml = `
+    <div id="braden-extra-parts" class="mt-6 space-y-6 border-t pt-4">
+        
+        <div class="bg-white p-4 rounded border shadow-sm">
+            <h4 class="font-bold text-red-800 mb-2 text-lg">ส่วนที่ 2 การปฏิบัติเพื่อป้องกัน / ดูแลการเกิดแผลกดทับ</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-red-50 p-3 rounded">
+                    <div class="font-bold mb-2 text-red-700">การป้องกัน</div>
+                    <ul class="space-y-1 list-disc pl-4 text-gray-700">
+                        <li>พลิกตะแคงตัวทุก 2 ชั่วโมง ตรงตามเวลาที่กำหนด</li>
+                        <li>ใช้ที่นอนลม</li>
+                        <li>จับคู่ช่วยกันพลิกตะแคงตัว / ไม่ดึงลากเวลาพลิก</li>
+                        <li>ดึงผ้าปูที่นอนให้เรียบตึง</li>
+                        <li>ประเมินผิวหนังปุ่มกระดูกบริเวณกดทับทุกเวร</li>
+                    </ul>
+                </div>
+                <div class="bg-blue-50 p-3 rounded">
+                    <div class="font-bold mb-2 text-blue-700">การดูแลแผล</div>
+                    <ul class="space-y-1 list-disc pl-4 text-gray-700">
+                        <li>บันทึกการเกิดแผลกดทับทุกครั้งที่พบแผลใหม่</li>
+                        <li>บันทึกเมื่อมีการเปลี่ยนแปลงของแผล (รอยแดง/ใหญ่ขึ้น/หาย)</li>
+                        <li>ทำความสะอาดแผลด้วย NSS ทา Zinc Paste</li>
+                        <li>แผลมีเนื้อตาย รายงานแพทย์ ตัดเนื้อตาย Wet Dressing</li>
+                        <li>ดูแลให้ผู้ป่วยมีภาวะโภชนาการที่เหมาะสม</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded border shadow-sm">
+            <h4 class="font-bold text-red-800 mb-2 text-lg">ส่วนที่ 3 บันทึกแผลกดทับ</h4>
+            <p class="text-xs text-gray-500 mb-2">(ระดับ 1 ผิวหนังแดง, ระดับ 2 มี Bleb แตก, ระดับ 3 ลึกถึง Subcutaneous, ระดับ 4 ลึกถึงกล้ามเนื้อ กระดูก)</p>
+            
+            <table class="w-full border-collapse border text-sm" id="wound-record-table">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="border p-2 w-32">ว/ด/ป</th>
+                        <th class="border p-2">ตำแหน่งแผล</th>
+                        <th class="border p-2 w-24">ระดับ</th>
+                        <th class="border p-2">ลักษณะแผล</th>
+                        <th class="border p-2 w-32">ชื่อผู้บันทึก</th>
+                        <th class="border p-2 w-10">ลบ</th>
+                    </tr>
+                </thead>
+                <tbody id="wound-record-body">
+                    </tbody>
+            </table>
+            <button type="button" onclick="addWoundRow()" class="mt-2 text-sm text-blue-600 hover:underline">+ เพิ่มรายการบันทึกแผล</button>
+        </div>
+
+        <div class="bg-white p-4 rounded border shadow-sm">
+            <h4 class="font-bold text-red-800 mb-2 text-lg">ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย/ย้าย)</h4>
+            
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center gap-2">
+                    <input type="radio" name="Discharge_Status" value="ไม่เกิดแผลกดทับ">
+                    <label>ไม่เกิดแผลกดทับ</label>
+                </div>
+                <div class="flex items-start gap-2">
+                    <input type="radio" name="Discharge_Status" value="เกิดแผลกดทับ">
+                    <div class="w-full">
+                        <label class="font-bold">เกิดแผลกดทับ</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 bg-gray-50 p-3 rounded border">
+                            <div class="flex items-center gap-2">
+                                <label>วันที่เกิด:</label>
+                                <input type="date" name="Discharge_Date" class="border rounded p-1">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>ตำแหน่ง:</label>
+                                <input type="text" name="Discharge_Position" class="border rounded p-1 w-full">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>ระดับ:</label>
+                                <input type="text" name="Discharge_Stage" class="border rounded p-1 w-20 text-center">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>ขนาด:</label>
+                                <input type="text" name="Discharge_Size" class="border rounded p-1 w-full">
+                            </div>
+                            <div class="flex items-center gap-2 col-span-2">
+                                <label>ลักษณะแผล:</label>
+                                <input type="text" name="Discharge_Char" class="border rounded p-1 w-full">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>จำนวนแผล:</label>
+                                <input type="number" name="Discharge_Count" class="border rounded p-1 w-20 text-center"> แผล
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    // แทรกต่อจากตาราง
+    table.insertAdjacentHTML('afterend', extraHtml);
+
+    // Event Listeners for Table
     table.querySelectorAll('.braden-radio').forEach(r => {
         r.addEventListener('change', () => calculateBradenDay(r.dataset.day));
     });
+}
+
+// --- Helper Functions สำหรับ Part 3 (Wound Record) ---
+function addWoundRow(data = {}) {
+    const tbody = document.getElementById("wound-record-body");
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td class="border p-1"><input type="date" class="w-full border rounded p-1 text-xs wound-date" value="${data.date || ''}"></td>
+        <td class="border p-1"><input type="text" class="w-full border rounded p-1 text-xs wound-pos" value="${data.pos || ''}"></td>
+        <td class="border p-1"><input type="text" class="w-full border rounded p-1 text-xs text-center wound-stage" value="${data.stage || ''}"></td>
+        <td class="border p-1"><input type="text" class="w-full border rounded p-1 text-xs wound-char" value="${data.char || ''}"></td>
+        <td class="border p-1"><input type="text" list="staff-list-datalist" class="w-full border rounded p-1 text-xs text-center wound-user" value="${data.user || ''}"></td>
+        <td class="border p-1 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-red-500 hover:text-red-700">x</button></td>
+    `;
+    tbody.appendChild(row);
+}
+
+function renderWoundRows(records) {
+    const tbody = document.getElementById("wound-record-body");
+    if(tbody) {
+        tbody.innerHTML = "";
+        if (records.length > 0) {
+            records.forEach(rec => addWoundRow(rec));
+        } else {
+            addWoundRow(); // Default 1 row
+        }
+    }
 }
 
 function calculateBradenDay(day) {
@@ -3298,5 +3465,48 @@ document.getElementById("close-morse-modal-btn").addEventListener("click", () =>
     // Reset active state in menu
     chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
 });
-  
+ // --- Braden Scale Listeners ---
+document.getElementById("braden-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showLoading("กำลังบันทึก...");
+    
+    const formData = new FormData(document.getElementById("braden-form"));
+    const data = Object.fromEntries(formData.entries());
+    
+    // Meta Data
+    data.AN = currentPatientAN;
+    data.Page = currentBradenPage;
+    data.BMI = document.getElementById("braden-bmi").value;
+    data.Albumin = document.getElementById("braden-albumin").value;
+    data.Hb = document.getElementById("braden-hb").value;
+
+    // Collect Part 3 Wound Records as JSON
+    const woundRows = document.querySelectorAll("#wound-record-body tr");
+    const woundRecords = [];
+    woundRows.forEach(row => {
+        const date = row.querySelector(".wound-date").value;
+        if (date) { // เก็บเฉพาะแถวที่มีวันที่
+            woundRecords.push({
+                date: date,
+                pos: row.querySelector(".wound-pos").value,
+                stage: row.querySelector(".wound-stage").value,
+                char: row.querySelector(".wound-char").value,
+                user: row.querySelector(".wound-user").value
+            });
+        }
+    });
+    data.Wound_Record_JSON = JSON.stringify(woundRecords);
+
+    try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "saveBradenPage", formData: data })
+        });
+        const result = await response.json();
+        if (result.success) {
+            showSuccess("บันทึกสำเร็จ");
+            bradenModal.classList.add("hidden");
+        } else throw new Error(result.message);
+    } catch(err) { showError("บันทึกไม่สำเร็จ", err.message); }
+}); 
 }); // End DOMContentLoaded
