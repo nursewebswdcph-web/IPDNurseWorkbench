@@ -1152,13 +1152,76 @@ async function showFormPreview(formType) {
   
   else if (formType === 'braden') {
     chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale)";
-    chartPreviewContent.innerHTML = document.getElementById("preview-template-braden").innerHTML;
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "braden"; 
-    chartEditBtn.onclick = () => openBradenModal();
+    chartEditBtn.onclick = () => openBradenModal(); // เปิดหน้า 1 โดย default
     chartAddNewBtn.classList.add("hidden");
-}
 
+    // 1. โหลด Template
+    chartPreviewContent.innerHTML = document.getElementById("preview-template-braden").innerHTML;
+    const listContainer = document.getElementById("braden-summary-list");
+    const emptyState = document.getElementById("braden-empty-state");
+    const statusSpan = document.getElementById("last-updated-braden");
+
+    // 2. ดึงข้อมูล
+    showLoading("กำลังโหลดประวัติ...");
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${currentPatientAN}`);
+        const result = await response.json();
+        
+        if (!result.success) throw new Error(result.message);
+        const entries = result.data;
+        Swal.close();
+
+        if (entries.length > 0) {
+            emptyState.classList.add("hidden");
+            
+            // อัปเดตสถานะ Sidebar
+            const lastEntry = entries[entries.length - 1];
+            let lastDateStr = "-";
+            if(lastEntry.last_assess_date) {
+                const d = new Date(lastEntry.last_assess_date);
+                lastDateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'short'});
+            }
+            statusSpan.textContent = `ล่าสุด: ${lastDateStr} (ชุดที่ ${lastEntry.page})`;
+            statusSpan.classList.add("text-green-600");
+
+            // สร้างรายการ (Cards)
+            let html = "";
+            entries.forEach(item => {
+                const updatedDate = new Date(item.timestamp).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
+                
+                html += `
+                <div class="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center" 
+                     onclick="openBradenModal(${item.page})">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-red-100 text-red-700 font-bold rounded-full w-10 h-10 flex items-center justify-center">
+                            ${item.page}
+                        </div>
+                        <div>
+                            <div class="font-bold text-gray-800">แบบประเมินชุดที่ ${item.page}</div>
+                            <div class="text-xs text-gray-500">ประเมินไปแล้ว ${item.count} วัน</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">แก้ไขล่าสุด: ${updatedDate}</div>
+                        <div class="text-blue-600 text-sm font-semibold mt-1">เปิดดู ></div>
+                    </div>
+                </div>`;
+            });
+            listContainer.innerHTML = html;
+
+        } else {
+            statusSpan.textContent = "ยังไม่เคยบันทึก";
+            listContainer.innerHTML = "";
+            emptyState.classList.remove("hidden");
+        }
+
+    } catch (error) {
+        Swal.close();
+        showError("โหลดข้อมูลไม่สำเร็จ", error.message);
+    }
+}
   else if (formType === 'morse_maas') {
     chartPreviewTitle.textContent = "ประวัติการประเมินความเสี่ยง Morse / MAAS";
     chartEditBtn.classList.remove("hidden");
@@ -2788,14 +2851,15 @@ async function handleSaveMorse(day, shift) {
 // Braden Scale Logic
 // ----------------------------------------------------------------
 
-async function openBradenModal() {
+async function openBradenModal(targetPage = 1) {
     document.getElementById("braden-an-display").textContent = currentPatientAN;
     document.getElementById("braden-name-display").textContent = currentPatientData.Name || '';
-    currentBradenPage = 1;
     
-    // เตรียม Datalist Staff (ถ้ายังไม่มี)
+    // กำหนดหน้าที่จะเปิด (ถ้าส่งมาให้ใช้หน้านั้น ถ้าไม่ส่งให้เริ่มที่ 1)
+    currentBradenPage = targetPage || 1;
+    
     if (!document.getElementById('staff-list-datalist')) {
-       // Logic สร้าง datalist (ถ้าจำเป็นต้องใช้ซ้ำ)
+       // (Logic datalist เดิม...)
     }
 
     await fetchAndRenderBradenPage(currentPatientAN, currentBradenPage);
