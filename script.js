@@ -261,7 +261,70 @@ const MAAS_OPTIONS = [
   { score: 5, text: "5: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา" },
   { score: 6, text: "6: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น" }
 ];
-
+// (Braden  Modal)
+let currentBradenPage = 1;
+const bradenModal = document.getElementById("braden-modal");
+const BRADEN_CRITERIA = [
+    {
+        id: "Sensory",
+        name: "1. การรับความรู้สึก",
+        options: [
+            { val: 1, text: "1.1 ไม่ตอบสนอง" },
+            { val: 2, text: "1.2 มี Pain Stimuli" },
+            { val: 3, text: "1.3 สับสน สื่อไม่ได้ทุกครั้ง" },
+            { val: 4, text: "1.4 ไม่มีความบกพร่อง ปกติ" }
+        ]
+    },
+    {
+        id: "Moisture",
+        name: "2. การเปียกชื้นของผิวหนัง",
+        options: [
+            { val: 1, text: "2.1 เปียกชุ่มตลอดเวลา Diarrhea" },
+            { val: 2, text: "2.2 ปัสสาวะราด / อุจจาระราดบ่อยครั้ง" },
+            { val: 3, text: "2.3 ปัสสาวะราด / อุจจาระราดบางครั้ง" },
+            { val: 4, text: "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้/Retain Cath" }
+        ]
+    },
+    {
+        id: "Activity",
+        name: "3. การทำกิจกรรม",
+        options: [
+            { val: 1, text: "3.1 ต้องอยู่บนเตียงตลอดเวลา" },
+            { val: 2, text: "3.2 ทรงตัวไม่อยู่ / ต้องนั่งรถเข็น" },
+            { val: 3, text: "3.3 เดินได้ระยะสั้น ต้องช่วยพยุง" },
+            { val: 4, text: "3.4 เดินได้เอง / ทำกิจกรรมเองได้" }
+        ]
+    },
+    {
+        id: "Mobility",
+        name: "4. การเคลื่อนไหว",
+        options: [
+            { val: 1, text: "4.1 เคลื่อนไหวเองไม่ได้" },
+            { val: 2, text: "4.2 เคลื่อนไหวเองได้น้อย / มีข้อติด / ต้องมีผู้ช่วยเหลือ" },
+            { val: 3, text: "4.3 เคลื่อนไหวเองได้ มีผู้ช่วยเหลือบางครั้ง" },
+            { val: 4, text: "4.4 เคลื่อนไหวเองได้ปกติ" }
+        ]
+    },
+    {
+        id: "Nutrition",
+        name: "5. การรับอาหาร",
+        options: [
+            { val: 1, text: "5.1 NPO / กินได้ 1/3 ถาด" },
+            { val: 2, text: "5.2 รับประทานอาหารได้บ้างเล็กน้อย / กินได้ 1/2 ถาด" },
+            { val: 3, text: "5.3 รับประทานอาหารได้พอควร / กินได้ > 1/2 ถาด" },
+            { val: 4, text: "5.4 รับประทานอาหารได้ปกติ / Feed รับได้หมด" }
+        ]
+    },
+    {
+        id: "Friction",
+        name: "6. การเสียดสี",
+        options: [
+            { val: 1, text: "6.1 มีกล้ามเนื้อหดเกร็ง ต้องมีผู้ช่วยหลายคนในการเคลื่อนย้าย" },
+            { val: 2, text: "6.2 เวลานั่งลื่นไถลได้ / ใช้ผู้ช่วยน้อยคนในการเคลื่อนย้าย" },
+            { val: 3, text: "6.3 เคลื่อนย้ายบนเตียงได้อย่างอิสระ ไม่มีปัญหาการเสียดสี" }
+        ]
+    }
+];
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
@@ -1086,6 +1149,15 @@ async function showFormPreview(formType) {
      // เรียกฟังก์ชันแสดง Preview
      await showDischargePreview(currentPatientAN);
   }
+  
+  else if (formType === 'braden') {
+    chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale)";
+    chartPreviewContent.innerHTML = document.getElementById("preview-template-braden").innerHTML;
+    chartEditBtn.classList.remove("hidden");
+    chartEditBtn.dataset.form = "braden"; 
+    chartEditBtn.onclick = () => openBradenModal();
+    chartAddNewBtn.classList.add("hidden");
+}
 
   else if (formType === 'morse_maas') {
     chartPreviewTitle.textContent = "ประวัติการประเมินความเสี่ยง Morse / MAAS";
@@ -2713,6 +2785,162 @@ async function handleSaveMorse(day, shift) {
 }
 
 // ----------------------------------------------------------------
+// Braden Scale Logic
+// ----------------------------------------------------------------
+
+async function openBradenModal() {
+    document.getElementById("braden-an-display").textContent = currentPatientAN;
+    document.getElementById("braden-name-display").textContent = currentPatientData.Name || '';
+    currentBradenPage = 1;
+    
+    // เตรียม Datalist Staff (ถ้ายังไม่มี)
+    if (!document.getElementById('staff-list-datalist')) {
+       // Logic สร้าง datalist (ถ้าจำเป็นต้องใช้ซ้ำ)
+    }
+
+    await fetchAndRenderBradenPage(currentPatientAN, currentBradenPage);
+    bradenModal.classList.remove("hidden");
+}
+
+async function fetchAndRenderBradenPage(an, page) {
+    showLoading("กำลังโหลดตาราง...");
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${an}&page=${page}`);
+        const result = await response.json();
+        
+        const data = result.data || {}; 
+        
+        // เติม Header Inputs
+        document.getElementById("braden-bmi").value = data.BMI || "";
+        document.getElementById("braden-albumin").value = data.Albumin || "";
+        document.getElementById("braden-hb").value = data.Hb || "";
+        
+        renderBradenTable(data);
+        document.getElementById("braden-page-display").textContent = page;
+        document.getElementById("braden-prev-page").disabled = (page <= 1);
+        
+        Swal.close();
+    } catch (e) { showError("โหลดข้อมูลไม่สำเร็จ", e.message); }
+}
+
+function renderBradenTable(data) {
+    const table = document.getElementById("braden-table");
+    table.innerHTML = "";
+    
+    // --- Header Row: วันที่ 1-10 ---
+    let theadHtml = `<thead class="bg-red-50"><tr><th class="p-2 border w-64 text-left sticky left-0 bg-red-50 z-20 shadow">ปัจจัยส่งเสริมการเกิดแผลกดทับ</th>`;
+    
+    for (let i = 1; i <= 10; i++) {
+        const dateVal = data[`Date_${i}`] ? getISODate(new Date(data[`Date_${i}`])) : "";
+        theadHtml += `<th class="p-2 border min-w-[100px] text-center">
+            <div class="text-xs text-gray-500 mb-1">วันที่ประเมิน (${i})</div>
+            <input type="date" name="Date_${i}" class="w-full text-xs border rounded p-1 braden-date-input" value="${dateVal}">
+        </th>`;
+    }
+    theadHtml += `</tr></thead>`;
+    table.insertAdjacentHTML('beforeend', theadHtml);
+    
+    // --- Body Rows: Criteria ---
+    let tbodyHtml = `<tbody>`;
+    
+    BRADEN_CRITERIA.forEach((criteria, cIdx) => {
+        let rowHtml = `<tr>
+            <td class="p-2 border align-top bg-white sticky left-0 z-10 shadow-sm font-semibold text-sm">
+                ${criteria.name}
+            </td>`;
+        
+        for (let i = 1; i <= 10; i++) {
+            const savedVal = data[`${criteria.id}_${i}`];
+            let optionsHtml = `<div class="flex flex-col gap-1">`;
+            
+            criteria.options.forEach(opt => {
+                const isChecked = (String(savedVal) === String(opt.val)) ? "checked" : "";
+                const radioId = `braden_${criteria.id}_${i}_${opt.val}`;
+                
+                optionsHtml += `
+                <label class="flex items-start gap-1 cursor-pointer hover:bg-red-50 p-1 rounded border border-transparent hover:border-red-100" title="${opt.text}">
+                    <input type="radio" name="${criteria.id}_${i}" value="${opt.val}" id="${radioId}" 
+                           class="mt-0.5 accent-red-600 braden-radio" data-day="${i}" ${isChecked}>
+                    <span class="text-[10px] leading-tight text-gray-700">${opt.val} : ${opt.text.split(' ')[1]}..</span>
+                </label>`;
+            });
+            optionsHtml += `</div>`;
+            rowHtml += `<td class="p-1 border align-top bg-white min-w-[120px]">${optionsHtml}</td>`;
+        }
+        rowHtml += `</tr>`;
+        tbodyHtml += rowHtml;
+    });
+
+    // --- Summary Rows ---
+    // 1. คะแนนรวม
+    let totalRow = `<tr class="bg-gray-100 font-bold">
+        <td class="p-2 border text-right sticky left-0 bg-gray-100 z-10">คะแนนรวม</td>`;
+    for(let i=1; i<=10; i++) {
+        totalRow += `<td class="p-2 border text-center">
+            <input type="text" readonly name="Total_${i}" class="w-full text-center bg-transparent font-bold text-blue-700 braden-total" data-day="${i}" value="${data[`Total_${i}`] || ''}">
+        </td>`;
+    }
+    totalRow += `</tr>`;
+    
+    // 2. ความเสี่ยง
+    let riskRow = `<tr class="bg-white">
+        <td class="p-2 border text-right sticky left-0 bg-white z-10">แปลผลความเสี่ยง</td>`;
+    for(let i=1; i<=10; i++) {
+        riskRow += `<td class="p-2 border text-center text-xs">
+            <input type="text" readonly name="Risk_${i}" class="w-full text-center bg-transparent" id="risk_text_${i}" value="${data[`Risk_${i}`] || ''}">
+        </td>`;
+    }
+    riskRow += `</tr>`;
+
+    // 3. พยาบาลผู้ประเมิน
+    let assessorRow = `<tr class="bg-gray-50">
+        <td class="p-2 border text-right sticky left-0 bg-gray-50 z-10">พยาบาลผู้ประเมิน</td>`;
+    for(let i=1; i<=10; i++) {
+        assessorRow += `<td class="p-1 border text-center">
+            <input type="text" list="staff-list-datalist" name="Assessor_${i}" 
+                   class="w-full text-xs p-1 border rounded text-center bg-white focus:ring-1 focus:ring-red-500" 
+                   placeholder="ลงชื่อ" value="${data[`Assessor_${i}`] || ''}">
+        </td>`;
+    }
+    assessorRow += `</tr>`;
+
+    tbodyHtml += totalRow + riskRow + assessorRow + `</tbody>`;
+    table.insertAdjacentHTML('beforeend', tbodyHtml);
+
+    // Event Listeners
+    table.querySelectorAll('.braden-radio').forEach(r => {
+        r.addEventListener('change', () => calculateBradenDay(r.dataset.day));
+    });
+}
+
+function calculateBradenDay(day) {
+    let total = 0;
+    const criteriaIds = ["Sensory", "Moisture", "Activity", "Mobility", "Nutrition", "Friction"];
+    
+    criteriaIds.forEach(id => {
+        const checked = document.querySelector(`input[name="${id}_${day}"]:checked`);
+        if (checked) total += parseInt(checked.value);
+    });
+
+    // Update Total
+    const totalInput = document.querySelector(`input[name="Total_${day}"]`);
+    if (totalInput && total > 0) totalInput.value = total;
+
+    // Update Risk
+    const riskInput = document.getElementById(`risk_text_${day}`);
+    if (riskInput && total > 0) {
+        if (total <= 16) {
+            riskInput.value = "เสี่ยงสูง";
+            riskInput.classList.add("text-red-600", "font-bold");
+            riskInput.classList.remove("text-green-600");
+        } else {
+            riskInput.value = "เสี่ยงต่ำ";
+            riskInput.classList.add("text-green-600", "font-bold");
+            riskInput.classList.remove("text-red-600");
+        }
+    }
+}
+// ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -2785,6 +3013,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // เรียกฟังก์ชันเปิด Modal พร้อมส่งข้อมูลปัจจุบันเข้าไป
         openAdviceModal(currentAdviceData);
     }
+    else if (formType === 'braden') {
+      openBradenModal();
+    }
     else {
         showComingSoon(); 
     }
@@ -2794,6 +3025,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const formType = e.target.dataset.form;
     if (formType === 'classify') openClassifyModal();
     else if (formType === 'advice') openAdviceModal();
+      
     else if (formType === '005') openFocusProblemModal(); 
     else if (formType === '006') openProgressNoteModal();
     else showComingSoon(); 
