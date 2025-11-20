@@ -151,6 +151,17 @@
                   <span class="text-blue-600 font-semibold ml-4">&gt;</span>
                 </div>
               </li>
+
+              <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="braden">
+                <div>
+                  <h3 class="text-lg font-semibold text-gray-900">แบบประเมินแผลกดทับ (Braden)</h3>
+                  <p class="text-sm text-gray-500">Braden Scale</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm text-gray-600">สถานะ: <span id="last-updated-braden">คลิกเพื่อโหลด</span></span>
+                  <span class="text-blue-600 font-semibold ml-4">&gt;</span>
+                </div>
+              </li>  
               
               <li class="p-4 hover:bg-gray-50 flex justify-between items-center cursor-pointer chart-list-item" data-form="004">
                 <div>
@@ -856,6 +867,13 @@
         </div>
       </div>
     </template>
+
+    <template id="preview-template-braden">
+    <div class="p-6 text-center text-gray-500">
+        <p>กรุณากดปุ่ม <b>"แก้ไข"</b> ด้านบนขวา</p>
+        <p>เพื่อเข้าสู่ตารางประเมิน (ชุดละ 10 วัน)</p>
+    </div>
+  </template>
 
     <!-- ============================================= -->
     <!-- (5) MODALS (Pop-ups) -->
@@ -2134,6 +2152,56 @@
       </form>
     </div>
    </div>
+</div>
+    <div id="braden-modal" class="fixed inset-0 bg-white z-50 hidden overflow-y-auto">
+  <div class="sticky top-0 bg-white shadow-md z-10">
+    <div class="container mx-auto px-4 py-3">
+      <div class="flex flex-col lg:flex-row justify-between items-center gap-4">
+        <div>
+          <h3 class="text-xl font-bold text-red-800">แบบบันทึกการพยาบาลเพื่อป้องกันและการดูแลผู้ป่วยที่มีแผลกดทับ</h3>
+          <p class="text-sm text-gray-600">AN: <strong id="braden-an-display"></strong> | ชื่อ: <strong id="braden-name-display"></strong></p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+           <button id="braden-prev-page" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">&lt;</button>
+           <span class="font-bold">ชุดที่ <span id="braden-page-display">1</span></span>
+           <button id="braden-next-page" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">&gt;</button>
+           <button id="braden-add-page" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm">+ เพิ่มชุดใหม่</button>
+           <button id="close-braden-modal" class="bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 ml-2">ปิด</button>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 bg-red-50 p-3 rounded border border-red-100 text-sm">
+          <div class="flex items-center gap-2">
+              <label>BMI =</label>
+              <input type="text" id="braden-bmi" class="border rounded p-1 w-20 text-center">
+          </div>
+          <div class="flex items-center gap-2">
+              <label>Serum Albumin =</label>
+              <input type="text" id="braden-albumin" class="border rounded p-1 w-20 text-center"> mg/dL
+          </div>
+          <div class="flex items-center gap-2">
+              <label>Hb =</label>
+              <input type="text" id="braden-hb" class="border rounded p-1 w-20 text-center">
+          </div>
+          <div class="text-xs text-gray-500 self-center">
+              *ค่าปกติ Albumin 3.5-5.4 mg/dL
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-4 py-6 overflow-x-auto">
+      <form id="braden-form">
+          <table id="braden-table" class="w-full min-w-[1500px] border-collapse border border-gray-300 text-sm">
+              </table>
+          <div class="mt-4 flex justify-end">
+             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-8 rounded shadow-lg">
+                บันทึกข้อมูล (Save)
+             </button>
+          </div>
+      </form>
+  </div>
 </div>
 
   </main> <!-- (ย้าย </main> มาไว้ตรงนี้) -->
