@@ -2171,25 +2171,69 @@
         </div>
       </div>
       
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 bg-red-50 p-3 rounded border border-red-100 text-sm">
+      <div class="mt-4 bg-red-50 p-4 rounded border border-red-100 text-sm space-y-3 text-gray-700 font-sarabun">
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="flex items-center gap-2">
+                  <label class="font-bold whitespace-nowrap">วันที่ Admit:</label>
+                  <input type="date" id="braden-admit-date" name="AdmitDate_Braden" class="border-b border-gray-400 bg-transparent w-full focus:outline-none text-center">
+              </div>
+              <div class="flex items-center gap-2">
+                  <label class="font-bold whitespace-nowrap">วันที่รับย้าย:</label>
+                  <input type="date" name="TransferDate" class="border-b border-gray-400 bg-transparent w-full focus:outline-none text-center">
+              </div>
+              <div class="flex items-center gap-2">
+                  <label class="font-bold whitespace-nowrap">จาก Ward:</label>
+                  <input type="text" name="FromWard" class="border-b border-gray-400 bg-transparent w-full focus:outline-none text-center">
+              </div>
+              <div class="flex items-center gap-2">
+                  <label class="font-bold whitespace-nowrap">วันที่ประเมินครั้งแรก:</label>
+                  <input type="date" name="FirstAssessDate" class="border-b border-gray-400 bg-transparent w-full focus:outline-none text-center">
+              </div>
+          </div>
+
           <div class="flex items-center gap-2">
-              <label>BMI =</label>
-              <input type="text" id="braden-bmi" class="border rounded p-1 w-20 text-center">
+              <label class="font-bold whitespace-nowrap">Diagnosis/Operation:</label>
+              <input type="text" id="braden-dx" name="Dx_Op" class="border-b border-gray-400 bg-transparent w-full focus:outline-none">
           </div>
-          <div class="flex items-center gap-2">
-              <label>Serum Albumin =</label>
-              <input type="text" id="braden-albumin" class="border rounded p-1 w-20 text-center"> mg/dL
+
+          <div class="flex flex-wrap items-center gap-4">
+              <label class="font-bold">แผลกดทับแรกรับ:</label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="PressureUlcer_Adm_Status" value="ไม่มี" class="accent-red-600"> ไม่มี
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                  <input type="radio" name="PressureUlcer_Adm_Status" value="มี" class="accent-red-600"> มี
+              </label>
+              <div class="flex items-center gap-2 flex-1">
+                  <label class="whitespace-nowrap">ตำแหน่ง/ลักษณะ/ขนาด:</label>
+                  <input type="text" name="PressureUlcer_Adm_Detail" class="border-b border-gray-400 bg-transparent w-full focus:outline-none">
+              </div>
           </div>
-          <div class="flex items-center gap-2">
-              <label>Hb =</label>
-              <input type="text" id="braden-hb" class="border rounded p-1 w-20 text-center">
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2 border-t border-red-200">
+              <div class="flex items-center gap-1">
+                  <span class="font-bold">Serum Albumin</span>
+                  <input type="text" id="braden-albumin" name="Albumin" class="border-b border-gray-400 bg-transparent w-12 text-center focus:outline-none">
+                  <span class="text-xs text-gray-500">mg/dL (3.5-5.4)</span>
+              </div>
+              <div class="flex items-center gap-1">
+                  <span class="font-bold">Hb =</span>
+                  <input type="text" id="braden-hb" name="Hb" class="border-b border-gray-400 bg-transparent w-12 text-center focus:outline-none">
+                  <span>mg%</span>
+              </div>
+              <div class="flex items-center gap-1">
+                  <span class="font-bold">Hct =</span>
+                  <input type="text" name="Hct" class="border-b border-gray-400 bg-transparent w-12 text-center focus:outline-none">
+                  <span>Vol%</span>
+              </div>
+              <div class="flex items-center gap-1">
+                  <span class="font-bold">BMI =</span>
+                  <input type="text" id="braden-bmi" name="BMI" class="border-b border-gray-400 bg-transparent w-12 text-center focus:outline-none">
+              </div>
           </div>
-          <div class="text-xs text-gray-500 self-center">
-              *ค่าปกติ Albumin 3.5-5.4 mg/dL
-          </div>
+
       </div>
-    </div>
-  </div>
 
   <div class="container mx-auto px-4 py-6 overflow-x-auto">
       <form id="braden-form">
