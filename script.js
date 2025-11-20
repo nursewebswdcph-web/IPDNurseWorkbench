@@ -2811,50 +2811,65 @@ async function fetchAndRenderBradenPage(an, page) {
         const data = result.data || {}; 
         
         // --- เติมข้อมูลส่วนหัว (Header Inputs) ---
-        const form = document.getElementById("braden-form");
+        // ใช้ document.getElementById เพื่อความแม่นยำ และเช็คว่ามี element จริงไหม
         
-        // 1. วันที่ Admit (ถ้าไม่มีใน Braden ให้ดึงจากข้อมูลผู้ป่วยหลัก)
+        const safeSetValue = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.value = value;
+        };
+        
+        const safeSetByName = (name, value) => {
+            const el = document.querySelector(`[name="${name}"]`);
+            if (el) el.value = value;
+        };
+
+        // 1. วันที่ Admit
         const admitDateVal = data.AdmitDate_Braden || currentPatientData.AdmitDate || "";
-        form.querySelector('[name="AdmitDate_Braden"]').value = admitDateVal;
+        safeSetValue("braden-admit-date", admitDateVal);
 
-        // 2. Diagnosis (ถ้าไม่มีใน Braden ให้ดึงจากข้อมูลผู้ป่วยหลัก)
+        // 2. Diagnosis
         const dxVal = data.Dx_Op || currentPatientData.AdmittingDx || "";
-        form.querySelector('[name="Dx_Op"]').value = dxVal;
+        safeSetValue("braden-dx", dxVal);
 
-        // 3. ข้อมูลอื่นๆ
-        form.querySelector('[name="TransferDate"]').value = data.TransferDate || "";
-        form.querySelector('[name="FromWard"]').value = data.FromWard || "";
-        form.querySelector('[name="FirstAssessDate"]').value = data.FirstAssessDate || "";
+        // 3. ข้อมูลอื่นๆ (ใช้ Name เพราะบางตัวไม่ได้ตั้ง ID)
+        safeSetByName("TransferDate", data.TransferDate || "");
+        safeSetByName("FromWard", data.FromWard || "");
+        safeSetByName("FirstAssessDate", data.FirstAssessDate || "");
         
         // 4. แผลกดทับแรกรับ (Radio)
         if (data.PressureUlcer_Adm_Status) {
-            const puRadio = form.querySelector(`input[name="PressureUlcer_Adm_Status"][value="${data.PressureUlcer_Adm_Status}"]`);
+            const puRadio = document.querySelector(`input[name="PressureUlcer_Adm_Status"][value="${data.PressureUlcer_Adm_Status}"]`);
             if (puRadio) puRadio.checked = true;
         }
-        form.querySelector('[name="PressureUlcer_Adm_Detail"]').value = data.PressureUlcer_Adm_Detail || "";
+        safeSetByName("PressureUlcer_Adm_Detail", data.PressureUlcer_Adm_Detail || "");
 
         // 5. Labs
-        document.getElementById("braden-albumin").value = data.Albumin || "";
-        document.getElementById("braden-hb").value = data.Hb || "";
-        form.querySelector('[name="Hct"]').value = data.Hct || "";
-        document.getElementById("braden-bmi").value = data.BMI || "";
+        safeSetValue("braden-albumin", data.Albumin || "");
+        safeSetValue("braden-hb", data.Hb || "");
+        safeSetByName("Hct", data.Hct || "");
+        safeSetValue("braden-bmi", data.BMI || "");
         
         // --- สร้างตาราง ---
         renderBradenTable(data);
         
         // --- เติมข้อมูลส่วนที่ 4 (สรุป) ---
         if (data.Discharge_Status) {
-             const statusRadio = form.querySelector(`input[name="Discharge_Status"][value="${data.Discharge_Status}"]`);
+             const statusRadio = document.querySelector(`input[name="Discharge_Status"][value="${data.Discharge_Status}"]`);
              if(statusRadio) statusRadio.checked = true;
         }
-        form.querySelector('[name="Discharge_Position"]').value = data.Discharge_Position || "";
-        form.querySelector('[name="Discharge_Stage"]').value = data.Discharge_Stage || "";
+        safeSetByName("Discharge_Position", data.Discharge_Position || "");
+        safeSetByName("Discharge_Stage", data.Discharge_Stage || "");
+        
         if(data.Discharge_Date) {
-             try { form.querySelector('[name="Discharge_Date"]').value = getISODate(new Date(data.Discharge_Date)); } catch(e){}
+             try { 
+                 const dateEl = document.querySelector('[name="Discharge_Date"]');
+                 if(dateEl) dateEl.value = getISODate(new Date(data.Discharge_Date)); 
+             } catch(e){}
         }
-        form.querySelector('[name="Discharge_Size"]').value = data.Discharge_Size || "";
-        form.querySelector('[name="Discharge_Char"]').value = data.Discharge_Char || "";
-        form.querySelector('[name="Discharge_Count"]').value = data.Discharge_Count || "";
+        
+        safeSetByName("Discharge_Size", data.Discharge_Size || "");
+        safeSetByName("Discharge_Char", data.Discharge_Char || "");
+        safeSetByName("Discharge_Count", data.Discharge_Count || "");
 
         // --- เติมข้อมูลส่วนที่ 3 (บันทึกแผล) ---
         if (data.Wound_Record_JSON) {
@@ -2866,11 +2881,17 @@ async function fetchAndRenderBradenPage(an, page) {
              renderWoundRows([]); 
         }
 
-        document.getElementById("braden-page-display").textContent = page;
-        document.getElementById("braden-prev-page").disabled = (page <= 1);
+        const pageDisplay = document.getElementById("braden-page-display");
+        if(pageDisplay) pageDisplay.textContent = page;
+        
+        const prevBtn = document.getElementById("braden-prev-page");
+        if(prevBtn) prevBtn.disabled = (page <= 1);
         
         Swal.close();
-    } catch (e) { showError("โหลดข้อมูลไม่สำเร็จ", e.message); }
+    } catch (e) { 
+        console.error(e);
+        showError("โหลดข้อมูลไม่สำเร็จ", e.message); 
+    }
 }
 
 function renderBradenTable(data) {
@@ -3486,53 +3507,88 @@ document.getElementById("close-morse-modal-btn").addEventListener("click", () =>
     // Reset active state in menu
     chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
 });
- // --- Braden Scale Listeners ---
-document.getElementById("braden-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    showLoading("กำลังบันทึก...");
-    
-    const formData = new FormData(document.getElementById("braden-form"));
-    const data = Object.fromEntries(formData.entries());
-    
-    // Meta Data
-    data.AN = currentPatientAN;
-    data.Page = currentBradenPage;
-    
-    // เก็บค่า Header Inputs (บางตัวอาจไม่อยู่ใน form entries ถ้า disabled หรืออื่นๆ ดึงตรงชัวร์กว่า)
-    data.AdmitDate_Braden = document.getElementById("braden-admit-date").value;
-    data.Dx_Op = document.getElementById("braden-dx").value;
-    data.Albumin = document.getElementById("braden-albumin").value;
-    data.Hb = document.getElementById("braden-hb").value;
-    data.BMI = document.getElementById("braden-bmi").value;
-    // Hct และอื่นๆ จะถูกดึงผ่าน formData อัตโนมัติเพราะมี name attribute
 
-    // Collect Part 3 Wound Records as JSON
-    const woundRows = document.querySelectorAll("#wound-record-body tr");
-    const woundRecords = [];
-    woundRows.forEach(row => {
-        const date = row.querySelector(".wound-date").value;
-        if (date) { 
-            woundRecords.push({
-                date: date,
-                pos: row.querySelector(".wound-pos").value,
-                stage: row.querySelector(".wound-stage").value,
-                char: row.querySelector(".wound-char").value,
-                user: row.querySelector(".wound-user").value
-            });
-        }
-    });
-    data.Wound_Record_JSON = JSON.stringify(woundRecords);
+  // --- Braden Scale Listeners (Submit) ---
+const bradenForm = document.getElementById("braden-form");
+if (bradenForm) {
+    bradenForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        showLoading("กำลังบันทึก...");
+        
+        // 1. ดึงข้อมูลจากในฟอร์ม (ตาราง)
+        const formData = new FormData(bradenForm);
+        const data = Object.fromEntries(formData.entries());
+        
+        // 2. ดึงข้อมูลส่วนหัว (Header Inputs) ที่อยู่นอกฟอร์ม
+        // Helper function เพื่อดึงค่าอย่างปลอดภัย
+        const getValById = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.value : "";
+        };
+        const getValByName = (name) => {
+            const el = document.querySelector(`[name="${name}"]`);
+            return el ? el.value : "";
+        };
+        const getRadioVal = (name) => {
+            const el = document.querySelector(`input[name="${name}"]:checked`);
+            return el ? el.value : "";
+        };
 
-    try {
-        const response = await fetch(GAS_WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify({ action: "saveBradenPage", formData: data })
+        data.AN = currentPatientAN;
+        data.Page = currentBradenPage;
+        
+        // Manual Collection (เพราะอยู่นอก form tag ใน HTML)
+        data.AdmitDate_Braden = getValById("braden-admit-date");
+        data.TransferDate = getValByName("TransferDate");
+        data.FromWard = getValByName("FromWard");
+        data.FirstAssessDate = getValByName("FirstAssessDate");
+        data.Dx_Op = getValById("braden-dx");
+        
+        data.PressureUlcer_Adm_Status = getRadioVal("PressureUlcer_Adm_Status");
+        data.PressureUlcer_Adm_Detail = getValByName("PressureUlcer_Adm_Detail");
+        
+        data.Albumin = getValById("braden-albumin");
+        data.Hb = getValById("braden-hb");
+        data.Hct = getValByName("Hct");
+        data.BMI = getValById("braden-bmi");
+
+        // Collect Part 4 (Summary) - ถ้าอยู่นอกฟอร์มก็ต้องดึงแบบนี้
+        data.Discharge_Status = getRadioVal("Discharge_Status");
+        data.Discharge_Date = getValByName("Discharge_Date");
+        data.Discharge_Position = getValByName("Discharge_Position");
+        data.Discharge_Stage = getValByName("Discharge_Stage");
+        data.Discharge_Size = getValByName("Discharge_Size");
+        data.Discharge_Char = getValByName("Discharge_Char");
+        data.Discharge_Count = getValByName("Discharge_Count");
+
+        // Collect Part 3 Wound Records as JSON
+        const woundRows = document.querySelectorAll("#wound-record-body tr");
+        const woundRecords = [];
+        woundRows.forEach(row => {
+            const dateInput = row.querySelector(".wound-date");
+            if (dateInput && dateInput.value) { 
+                woundRecords.push({
+                    date: dateInput.value,
+                    pos: row.querySelector(".wound-pos").value,
+                    stage: row.querySelector(".wound-stage").value,
+                    char: row.querySelector(".wound-char").value,
+                    user: row.querySelector(".wound-user").value
+                });
+            }
         });
-        const result = await response.json();
-        if (result.success) {
-            showSuccess("บันทึกสำเร็จ");
-            bradenModal.classList.add("hidden");
-        } else throw new Error(result.message);
-    } catch(err) { showError("บันทึกไม่สำเร็จ", err.message); }
-});
+        data.Wound_Record_JSON = JSON.stringify(woundRecords);
+
+        try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "saveBradenPage", formData: data })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showSuccess("บันทึกสำเร็จ");
+                document.getElementById("braden-modal").classList.add("hidden");
+            } else throw new Error(result.message);
+        } catch(err) { showError("บันทึกไม่สำเร็จ", err.message); }
+    });
+}
 }); // End DOMContentLoaded
