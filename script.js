@@ -266,6 +266,7 @@ const MAAS_OPTIONS = [
 // (Braden  Modal)
 let currentBradenPage = 1;
 const bradenModal = document.getElementById("braden-modal");
+const bradenForm = document.getElementById("braden-form");
 const BRADEN_CRITERIA = [
     {
         id: "Sensory",
@@ -3358,17 +3359,18 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(updateClock, 1000);
     loadWards();
 
-    // เรียกใช้ฟังก์ชันสร้างตารางพื้นฐานแบบปลอดภัย
+    // เรียกใช้ฟังก์ชันสร้างตารางพื้นฐานแบบปลอดภัย (Try-Catch ป้องกันหน้าเว็บค้าง)
     try {
         if (typeof renderADLTable === "function") renderADLTable();
-        // เรียก Braden สำหรับหน้า 004 และหน้าเฝ้าระวังแบบว่างเปล่า
+        // สร้างตาราง Braden สำหรับหน้าแรกรับ (004)
         if (typeof renderBradenInitial === "function") renderBradenInitial();
+        // สร้างตาราง Braden สำหรับหน้าเฝ้าระวัง (ส่ง {} เพื่อป้องกัน TypeError: Date_1)
         if (typeof renderBradenMonitoring === "function") renderBradenMonitoring({}); 
     } catch (e) {
-        console.error("Initial table rendering failed:", e);
+        console.warn("Initial table rendering failed:", e);
     }
 
-    // --- [2] ส่วนจัดการ Ward switcher ---
+    // --- [2] ส่วนจัดการการเลือกตึก (Ward Switcher) ---
     if (wardSwitcher) {
         wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
     }
@@ -3376,55 +3378,45 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- [3] ส่วนคลิกในตารางทะเบียนผู้ป่วย (Details & Chart) ---
     patientTableBody.addEventListener('click', (e) => {
         const target = e.target;
-        // คลิกชื่อผู้ป่วย -> เปิดดูรายละเอียด
         if (target.tagName === 'A' && target.dataset.an) {
             e.preventDefault(); 
             openDetailsModal(target.dataset.an);
         }
-        // คลิกปุ่ม Chart -> เปิดหน้าเวชระเบียน
         if (target.classList.contains('chart-btn') && target.dataset.an) {
             e.preventDefault(); 
             openChart(target.dataset.an, target.dataset.hn, target.dataset.name, target.dataset.bed, target.dataset.doctor);
         }
     });
 
-    // --- [4] ส่วน Modal Admit ผู้ป่วยใหม่ ---
+    // --- [4] ส่วน Modal Admit และ Details ผู้ป่วย ---
     if (openAdmitModalBtn) openAdmitModalBtn.addEventListener("click", openAdmitModal);
     if (closeAdmitModalBtn) closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
-    if (cancelAdmitBtn) cancelAdmitBtn.addEventListener("click", closeAdmitModal);
     if (admitForm) admitForm.addEventListener("submit", handleAdmitSubmit);
 
     admitDobInput.addEventListener("change", () => {
-        const ceDate = admitDobInput.value;
-        const beDate = convertCEtoBE(ceDate);
+        const beDate = convertCEtoBE(admitDobInput.value);
         if (admitAgeInput) admitAgeInput.value = calculateAge(beDate);
     });
 
-    // --- [5] ส่วน Modal รายละเอียดผู้ป่วย (Details) ---
     if (closeDetailsModalBtn) closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
     if (editPatientBtn) editPatientBtn.addEventListener("click", enableEditMode);
-    if (cancelEditBtn) cancelEditBtn.addEventListener("click", resetDetailsModalState);
     if (detailsForm) detailsForm.addEventListener("submit", handleUpdateSubmit);
-    if (dischargeBtn) dischargeBtn.addEventListener("click", handleDischarge);
-    if (transferWardBtn) transferWardBtn.addEventListener("click", handleTransferWard);
 
     detailsDobInput.addEventListener("change", () => {
-        const ceDate = detailsDobInput.value;
-        const beDate = convertCEtoBE(ceDate);
+        const beDate = convertCEtoBE(detailsDobInput.value);
         if (detailsAgeInput) detailsAgeInput.value = calculateAge(beDate);
     });
 
     if (closeChartBtn) closeChartBtn.addEventListener("click", closeChart);
 
-    // --- [6] ส่วนหน้า Chart (Menu & Edit/Add Buttons) ---
+    // --- [5] ส่วนปุ่มควบคุมในหน้าเวชระเบียน (Chart Page) ---
     chartPage.addEventListener('click', (e) => {
         const targetItem = e.target.closest('.chart-list-item');
         if (targetItem) {
             const formType = targetItem.dataset.form;
             chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
             targetItem.classList.add('bg-indigo-100');
-            if (formType === '005') showFocusListPreview(currentPatientAN);
-            else showFormPreview(formType);
+            showFormPreview(formType);
         }
     });
 
@@ -3433,40 +3425,46 @@ document.addEventListener("DOMContentLoaded", () => {
         const formType = e.currentTarget.dataset.form; 
         if (formType === '004') openAssessmentForm();
         else if (formType === 'morse_maas') openMorseModal();
-        else if (formType === 'braden') openBradenModal(); // เปิดชุด Monitoring 10 วัน
+        else if (formType === 'braden') openBradenModal();
         else if (formType === 'advice') openAdviceModal(currentAdviceData);
-        else if (formType === '007') openDischargeModal();
         else showComingSoon();
     });
 
-    // ปุ่มเพิ่มรายการ (Add New) ในหน้า Preview
+    // ปุ่มเพิ่มรายการใหม่ (Add New)
     chartAddNewBtn.addEventListener('click', (e) => {
         const formType = e.target.dataset.form;
         if (formType === 'classify') openClassifyModal();
-        else if (formType === 'advice') openAdviceModal();
         else if (formType === '005') openFocusProblemModal(); 
         else if (formType === '006') openProgressNoteModal();
         else showComingSoon(); 
     });
 
-    // --- [7] ฟังก์ชันเฉพาะของแบบประเมินต่างๆ ---
-
-    // แบบประเมิน FR-004 (ระบบ Toggle และคำนวณ Braden ภายในฟอร์ม)
+    // --- [6] ระบบทำงานภายในฟอร์มประเมิน FR-004 ---
     if (assessmentForm) {
         assessmentForm.addEventListener("submit", handleSaveAssessment);
+        
         assessmentForm.addEventListener('change', (e) => {
-            // เมื่อติ๊กคะแนน Braden ในหน้าแรกรับ (004) ให้คำนวณผลรวมทันที
+            // 6.1 คำนวณ Braden Score อัตโนมัติในฟอร์ม 004
             if (e.target.classList.contains('braden-score')) {
-                calculateBradenScore(assessmentForm);
+                let total = 0;
+                assessmentForm.querySelectorAll('.braden-score:checked').forEach(r => total += parseInt(r.value));
+                const totalInp = document.getElementById("braden-total-score");
+                if (totalInp) {
+                    totalInp.value = total;
+                    updateBradenResult(total); // ฟังก์ชันแปลผลตามเกณฑ์ใหม่ (Very High - Low Risk)
+                }
             }
-            // ระบบ Toggle ซ่อน/แสดง Input "ระบุเพิ่มเติม"
+            
+            // 6.2 ระบบ Toggle ซ่อน/แสดงช่องระบุเพิ่มเติม (data-controls)
             if (e.target.classList.contains('assessment-radio-toggle')) {
                 const groupName = e.target.name;
-                const form = e.target.closest('form'); 
+                const form = e.target.closest('form');
+                // ซ่อนกลุ่มพี่น้องทั้งหมดก่อน
                 form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
                     const tid = sibling.dataset.controls;
                     if (tid) form.querySelector(`#${tid}`)?.classList.add('hidden');
                 });
+                // แสดงเฉพาะตัวที่เลือก
                 const targetId = e.target.dataset.controls;
                 if (e.target.checked && targetId) {
                     form.querySelector(`#${targetId}`)?.classList.remove('hidden');
@@ -3475,23 +3473,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // บันทึกทางการพยาบาล (Progress Note 006)
-    if (progressNoteForm) {
-        progressNoteForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            // เรียกใช้ Logic บันทึกเดิมของคุณ
-            handleSaveProgressNote(); 
-        });
-    }
-
-    // --- [8] ระบบพิมพ์ค้นหาพยาบาล (Unified Staff Search) ---
+    // --- [7] ระบบค้นหาและเติมชื่อพยาบาลอัตโนมัติ (Unified Search) ---
     document.body.addEventListener('input', (e) => {
-        // ตรวจสอบว่าเป็นการเลือกจาก Datalist ของพยาบาลหรือไม่
         if (e.target.list && e.target.list.id === 'staff-list-datalist') {
-            const val = e.target.value;
-            const staff = globalStaffList.find(s => s.fullName === val);
+            const staff = globalStaffList.find(s => s.fullName === e.target.value.trim());
             if (staff) {
-                // หาช่อง "ตำแหน่ง" ที่อยู่ในฟอร์มเดียวกันหรือตาม ID มาตรฐาน
+                // หาช่อง "ตำแหน่ง" ในฟอร์มปัจจุบัน
                 const parentForm = e.target.closest('form') || document;
                 const posInput = parentForm.querySelector('[name*="Position"]') || 
                                  parentForm.querySelector('[name*="Pos"]') ||
@@ -3502,15 +3489,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- [9] ระบบบันทึก Braden Monitoring (หน้าจอ 10 วัน) ---
-    if (bradenForm) {
-        bradenForm.addEventListener("submit", async (e) => {
+    // --- [8] การบันทึก Braden Monitoring (หน้าจอ 10 วัน) ---
+    const bForm = document.getElementById("braden-form");
+    if (bForm) {
+        bForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            handleSaveBradenMonitoring(); // เรียก Logic บันทึก Braden 10 วัน
+            // เรียกใช้ฟังก์ชันบันทึกข้อมูล Braden Monitoring
+            if (typeof handleSaveBradenMonitoring === "function") {
+                handleSaveBradenMonitoring();
+            }
         });
     }
 
-    // --- [10] Morse Fall Scale Paging ---
+    // --- [9] การจัดการหน้า Morse / MAAS ---
     const mPrev = document.getElementById("morse-prev-page-btn");
     const mNext = document.getElementById("morse-next-page-btn");
     if(mPrev) mPrev.addEventListener("click", () => {
@@ -3519,4 +3510,4 @@ document.addEventListener("DOMContentLoaded", () => {
     if(mNext) mNext.addEventListener("click", () => {
         currentMorsePage++; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
     });
-});
+}); // จบ DOMContentLoaded อย่างสมบูรณ์
