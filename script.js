@@ -1611,29 +1611,26 @@ function populateAssessmentForm(data, targetForm) {
 async function handleSaveAssessment(event) {
   event.preventDefault();
   
-  // ตรวจสอบ AN ผู้ป่วยก่อนบันทึก
+  // ตรวจสอบว่ามี AN หรือไม่
   if (!currentPatientAN) {
-    showError('ไม่พบข้อมูลผู้ป่วย', 'กรุณาเปิด Chart ใหม่อีกครั้ง');
+    showError('บันทึกไม่สำเร็จ', 'ไม่พบข้อมูล AN ของผู้ป่วย กรุณาเลือกผู้ป่วยใหม่อีกครั้ง');
     return;
   }
 
   showLoading('กำลังบันทึกแบบประเมิน...');
 
-  const formData = new FormData(assessmentForm);
-  const data = Object.fromEntries(formData.entries());
-
-  // 1. จัดการ Checkbox ทั้งหมด (FormData จะไม่ส่งชื่อฟิลด์ถ้าไม่ได้ติ๊ก)
-  // เราต้องวนลูปหา Checkbox ทุกตัวเพื่อส่งค่า false หากไม่มีการเลือก
-  assessmentForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    data[cb.name] = cb.checked; 
-  });
-
-  // 2. จัดการฟิลด์ Radio (เผื่อกรณีลืมติ๊ก แต่ต้องการให้ค่าเดิมในชีตหายไป)
-  // ปกติ Radio จะส่งค่าได้เพียงค่าเดียวในชื่อนั้นๆ
-
   try {
+    const formData = new FormData(assessmentForm);
+    const data = Object.fromEntries(formData.entries());
+
+    // จัดการ Checkbox (ให้เป็น true/false แทน on/undefined)
+    assessmentForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      data[cb.name] = cb.checked;
+    });
+
     const response = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
+      // ส่ง Action และ Data ไปในก้อนเดียว
       body: JSON.stringify({
         action: "saveAssessmentData",
         an: currentPatientAN,
@@ -1642,26 +1639,23 @@ async function handleSaveAssessment(event) {
       })
     });
 
-    const result = await response.json();
-    if (!result.success) throw new Error(result.message);
+    // ตรวจสอบว่า HTTP Status OK หรือไม่
+    if (!response.ok) throw new Error('Network response was not ok');
 
-    showSuccess('บันทึกข้อมูลสำเร็จ!');
+    const result = await response.json(); // บรรทัดที่ 1646 เดิม
     
-    // ปิด Modal และรีเฟรชหน้า Preview
-    if (typeof closeAssessmentModal === "function") {
-        closeAssessmentModal();
+    if (result.success) {
+      showSuccess('บันทึกสำเร็จ!', result.message);
+      closeAssessmentModal();
+      showFormPreview('004'); // รีเฟรชหน้า Preview
     } else {
-        assessmentModal.classList.add("hidden");
+      throw new Error(result.message);
     }
-    
-    showFormPreview('004'); 
-    
   } catch (error) {
     console.error("Save Error:", error);
-    showError('บันทึกไม่สำเร็จ', error.message);
+    showError('เกิดข้อผิดพลาดในการบันทึก', error.message);
   }
 }
-
 // ----------------------------------------------------------------
 // (8) Classification Logic
 // ----------------------------------------------------------------
