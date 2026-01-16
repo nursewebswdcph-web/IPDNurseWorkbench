@@ -261,279 +261,111 @@
 
     <!-- (Template 004) -->
     <template id="preview-template-004">
-      <div class="space-y-6">
+      <div class="space-y-6 text-sm font-sarabun text-gray-800">
         <style>
-          .preview-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; }
-          @media (min-width: 768px) { .preview-grid { grid-template-columns: repeat(3, 1fr); } }
-          .preview-grid dt { font-size: 0.875rem; font-weight: 600; color: #4B5563; }
-          .preview-grid dd { font-size: 1rem; color: #1F2937; min-height: 1.5rem; border-bottom: 1px dashed #D1D5DB; padding-bottom: 2px; }
-          .preview-grid .col-span-full { grid-column: 1 / -1; }
-          .preview-grid-2 { grid-template-columns: repeat(2, 1fr); }
-          .preview-grid-4 { grid-template-columns: repeat(4, 1fr); }
+          .preview-section { border: 1px solid #e5e7eb; padding: 1rem; border-radius: 0.5rem; background-color: white; }
+          .preview-title { font-weight: bold; color: #1e40af; border-bottom: 2px solid #1e40af; margin-bottom: 0.75rem; padding-bottom: 0.25rem; font-size: 1rem; }
+          .preview-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px dashed #f3f4f6; padding-bottom: 0.25rem; }
+          .label { font-weight: 600; color: #4b5563; grid-column: span 3; }
+          .value { color: #111827; grid-column: span 9; min-height: 1.25rem; }
+          .grid-2 { grid-column: span 6; display: flex; gap: 0.5rem; }
+          .grid-3 { grid-column: span 4; display: flex; gap: 0.5rem; }
         </style>
-        <!-- (เนื้อหา Fieldset ทั้งหมดของ 004...) -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">ข้อมูลทั่วไป</legend>
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2 preview-grid">
-            <div><dt>วันที่รับ:</dt><dd data-field="AdmitDate"></dd></div>
-            <div><dt>เวลารับ:</dt><dd data-field="AdmitTime"></dd></div>
-            <div><dt>รับจาก:</dt><dd data-field="AdmittedFrom"></dd></div>
-            <div><dt>Refer จาก:</dt><dd data-field="Refer"></dd></div>
-            <div><dt>มาโดย:</dt><dd data-field="ArriveBy"></dd></div>
-            <div><dt>ผู้ให้ข้อมูล:</dt><dd data-field="InfoSource"></dd></div>
-            <div class="md:col-span-2"><dt>ผู้ดูแลหลัก:</dt><dd data-field="MainCaregiver_Name"></dd></div>
-            <div class="md:col-span-2"><dt>ความสัมพันธ์:</dt><dd data-field="MainCaregiver_Rel"></dd></div>
-            <div class="col-span-full"><dt>อาการสำคัญ (CC):</dt><dd data-field="ChiefComplaint"></dd></div>
-            <div class="col-span-full"><dt>ประวัติปัจจุบัน (PI):</dt><dd data-field="PresentIllness"></dd></div>
-            <div class="col-span-full"><dt>อาการแรกรับ:</dt><dd data-field="AdmitSymptoms"></dd></div>
-            <div><dt>BT:</dt><dd data-field="Admit_BT"></dd></div>
-            <div><dt>PR:</dt><dd data-field="Admit_PR"></dd></div>
-            <div><dt>RR:</dt><dd data-field="Admit_RR"></dd></div>
-            <div><dt>BP:</dt><dd data-field="Admit_BP"></dd></div>
-          </div>
-        </fieldset>
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">ประวัติการเจ็บป่วย (History)</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>โรคประจำตัว:</dt><dd data-field="Hx_Status"></dd></div>
-            <div class="col-span-full"><dt>รายละเอียดโรค:</dt><dd id="preview-hx-details"></dd></div>
-            <div><dt>การแพ้ยา:</dt><dd data-field="Allergy_Status"></dd></div>
-            <div class="col-span-full"><dt>รายละเอียดการแพ้:</dt><dd data-field="Allergy_Details"></dd></div>
-            <div><dt>การผ่าตัด:</dt><dd data-field="Sx_Status"></dd></div>
-            <div class="md:col-span-2"><dt>รายละเอียดผ่าตัด:</dt><dd id="preview-sx-details"></dd></div>
-            <div><dt>การนอน รพ.:</dt><dd data-field="AdmitHx_Status"></dd></div>
-            <div class="md:col-span-2"><dt>รายละเอียดการนอน รพ.:</dt><dd id="preview-admit-hx-details"></dd></div>
-            <div><dt>ประวัติครอบครัว:</dt><dd data-field="FamilyHx_Status"></dd></div>
-            <div class="md:col-span-2"><dt>รายละเอียดประวัติครอบครัว:</dt><dd data-field="FamilyHx_Details"></dd></div>
-            <div><dt>สุรา:</dt><dd data-field="Substance_Alcohol"></dd></div>
-            <div class="md:col-span-2"><dt>ปริมาณสุรา:</dt><dd data-field="Substance_Alcohol_Vol"></dd></div>
-            <div><dt>บุหรี่:</dt><dd data-field="Substance_Smoke"></dd></div>
-            <div class="md:col-span-2"><dt>ปริมาณบุหรี่:</dt><dd data-field="Substance_Smoke_Vol"></dd></div>
-            <div><dt>ยาที่ใช้ประจำ:</dt><dd data-field="Meds_Status"></dd></div>
-            <div class="col-span-full"><dt>รายละเอียดยา:</dt><dd data-field="Meds_Details"></dd></div>
-          </div>
-        </fieldset>
-        
-        <!-- 1. การรับรู้สุขภาพ -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">1. การรับรู้สุขภาพ</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>ก่อนป่วย:</dt><dd data-field="HP_Before"></dd></div>
-            <div class="md:col-span-2"><dt>รายละเอียด (ก่อนป่วย):</dt><dd data-field="HP_Before_Detail"></dd></div>
-            <div><dt>ครั้งนี้:</dt><dd data-field="HP_Current"></dd></div>
-            <div><dt>การดูแล:</dt><dd data-field="HP_Care"></dd></div>
-            <div class="md:col-span-2"><dt>ดูแล (อื่นๆ):</dt><dd data-field="HP_Care_Other"></dd></div>
-            <div class="col-span-full"><dt>ความคาดหวัง:</dt><dd data-field="HP_Expect"></dd></div>
-          </div>
-        </fieldset>
 
-        <!-- 2. โภชนาการ -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">2. โภชนาการ</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>รับประทาน:</dt><dd data-field="Nutri_Meals"></dd></div>
-            <div><dt>ประเภทอาหาร:</dt><dd data-field="Nutri_Type"></dd></div>
-            <div><dt>อาหารเฉพาะโรค:</dt><dd data-field="Nutri_Type_Detail"></dd></div>
-            <div><dt>ปัญหาการกิน:</dt><dd data-field="Nutri_Problem"></dd></div>
-            <div><dt>ผิวหนัง:</dt><dd data-field="Nutri_Skin"></dd></div>
-            <div class="md:col-span-2"><dt>ผิวหนัง (ระบุ):</dt><dd data-field="Nutri_Skin_Detail"></dd></div>
+        <div class="preview-section">
+          <div class="preview-title">ข้อมูลการรับเข้าและอาการสำคัญ</div>
+          <div class="preview-row">
+            <div class="grid-3"><span class="label">รับจาก:</span><span class="value" data-field="AdmittedFrom"></span></div>
+            <div class="grid-3"><span class="label">REFER จาก:</span><span class="value" data-field="Refer"></span></div>
+            <div class="grid-3"><span class="label">มาโดย:</span><span class="value" data-field="ArriveBy"></span></div>
           </div>
-        </fieldset>
-
-        <!-- 3. การขับถ่าย -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">3. การขับถ่าย</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>ปัสสาวะ (ครั้ง/วัน):</dt><dd data-field="Elim_Urine_Freq"></dd></div>
-            <div><dt>สถานะปัสสาวะ:</dt><dd data-field="Elim_Urine_Status"></dd></div>
-            <div><dt>ปัสสาวะ (ระบุ):</dt><dd data-field="Elim_Urine_Detail"></dd></div>
-            <div><dt>อุจจาระ (ครั้ง/วัน):</dt><dd data-field="Elim_Bowel_Freq"></dd></div>
-            <div><dt>สถานะอุจจาระ:</dt><dd data-field="Elim_Bowel_Status"></dd></div>
-            <div><dt>อุจจาระ (ระบุ):</dt><dd data-field="Elim_Bowel_Detail"></dd></div>
-            <div class="col-span-full"><dt>ขับถ่ายทางหน้าท้อง:</dt><dd data-field="Elim_Stoma"></dd></div>
+          <div class="preview-row">
+            <div class="grid-3"><span class="label">ผู้ให้ข้อมูล:</span><span class="value" data-field="InfoSource"></span></div>
+            <div class="grid-3"><span class="label">ผู้ดูแลหลัก:</span><span class="value" data-field="MainCaregiver_Name"></span></div>
+            <div class="grid-3"><span class="label">ความสัมพันธ์:</span><span class="value" data-field="MainCaregiver_Rel"></span></div>
           </div>
-        </fieldset>
+          <div class="preview-row"><span class="label">อาการสำคัญ (CC):</span><span class="value" data-field="ChiefComplaint"></span></div>
+          <div class="preview-row"><span class="label">ประวัติการเจ็บป่วย (PI):</span><span class="value" data-field="PresentIllness"></span></div>
+          <div class="preview-row"><span class="label">อาการแรกรับ:</span><span class="value" data-field="AdmitSymptoms"></span></div>
+          <div class="preview-row">
+            <div class="grid-3"><b>BT:</b> <span data-field="Admit_BT"></span> °C</div>
+            <div class="grid-3"><b>PR:</b> <span data-field="Admit_PR"></span> /min</div>
+            <div class="grid-3"><b>RR:</b> <span data-field="Admit_RR"></span> /min</div>
+            <div class="grid-3"><b>BP:</b> <span data-field="Admit_BP"></span> mmHg</div>
+          </div>
+        </div>
 
-        <!-- 4. ADL -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">4. กิจวัตรประจำวัน (ADL)</legend>
-          <div class="overflow-x-auto mt-2">
-            <table class="w-full text-sm">
-              <thead class="bg-gray-50">
-                <tr class="text-left">
-                  <th class="p-2 border">กิจกรรม</th>
-                  <th class="p-2 border">ก่อนการเจ็บป่วย</th>
-                  <th class="p-2 border">ขณะเจ็บป่วย</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td class="p-2 border">การรับประทานอาหาร</td><td class="p-2 border"><dd data-field="ADL_Eat_Before"></dd></td><td class="p-2 border"><dd data-field="ADL_Eat_Current"></dd></td></tr>
-                <tr><td class="p-2 border">การทำความสะอาดปาก/ฟัน</td><td class="p-2 border"><dd data-field="ADL_Brush_Before"></dd></td><td class="p-2 border"><dd data-field="ADL_Brush_Current"></dd></td></tr>
-                <tr><td class="p-2 border">การแต่งตัว</td><td class="p-2 border"><dd data-field="ADL_Dress_Before"></dd></td><td class="p-2 border"><dd data-field="ADL_Dress_Current"></dd></td></tr>
-                <tr><td class="p-2 border">การเดิน</td><td class="p-2 border"><dd data-field="ADL_Walk_Before"></dd></td><td class="p-2 border"><dd data-field="ADL_Walk_Current"></dd></td></tr>
-                <tr><td class="p-2 border">การขับถ่าย</td><td class="p-2 border"><dd data-field="ADL_Toilet_Before"></dd></td><td class="p-2 border"><dd data-field="ADL_Toilet_Current"></dd></td></tr>
-                <tr><td class="p-2 border">การอาบน้ำ</td><td class="p-2 border"><dd data-field="ADL_Bath_Before"></dd></td><td class="p-2 border"><dd data-field="ADL_Bath_Current"></dd></td></tr>
-              </tbody>
+        <div class="preview-section">
+          <div class="preview-title">ประวัติสุขภาพ</div>
+          <div class="preview-row"><span class="label">โรคประจำตัว:</span><span class="value" id="preview-hx-details"></span></div>
+          <div class="preview-row">
+            <div class="grid-2"><span class="label">การแพ้ยา:</span><span class="value" data-field="Allergy_Details"></span></div>
+            <div class="grid-2"><span class="label">การผ่าตัด:</span><span class="value" id="preview-sx-details"></span></div>
+          </div>
+          <div class="preview-row">
+            <div class="grid-2"><span class="label">ประวัติครอบครัว:</span><span class="value" data-field="FamilyHx_Details"></span></div>
+            <div class="grid-2"><span class="label">การรักษาตัวใน รพ.:</span><span class="value" id="preview-admit-hx-details"></span></div>
+          </div>
+          <div class="preview-row">
+            <div class="grid-2"><span class="label">ดื่มสุรา:</span><span class="value" data-field="Substance_Alcohol_Vol"></span></div>
+            <div class="grid-2"><span class="label">สูบบุหรี่:</span><span class="value" data-field="Substance_Smoke_Vol"></span></div>
+          </div>
+        </div>
+
+        <div class="preview-section">
+          <div class="preview-title">การประเมินสมรรถนะผู้ป่วย (11 แบบแผนสุขภาพ)</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <p><b>1. การรับรู้สุขภาพ:</b> ก่อนป่วย <span data-field="HP_Before"></span> (<span data-field="HP_Before_Detail"></span>) | ดูแลโดย <span data-field="HP_Care"></span></p>
+              <p><b>2. โภชนาการ:</b> <span data-field="Nutri_Meals"></span> มื้อ/วัน | ประเภท: <span data-field="Nutri_Type"></span> | ปัญหา: <span id="preview-nutri-prob"></span></p>
+              <p><b>3. การขับถ่าย:</b> ปัสสาวะ <span data-field="Elim_Urine_Freq"></span> ครั้ง/วัน (<span data-field="Elim_Urine_Status"></span>) | อุจจาระ <span data-field="Elim_Bowel_Freq"></span> ครั้ง/วัน (<span data-field="Elim_Bowel_Status"></span>)</p>
+              <p><b>5. การพักผ่อน:</b> นอน <span data-field="Sleep_Hours"></span> ชม. | <span data-field="Sleep_Adequacy"></span></p>
+              <p><b>6. การรับรู้:</b> LOC: <span data-field="Cogn_LOC"></span> | การพูด: <span data-field="Cogn_Speech"></span></p>
+            </div>
+            <div class="space-y-2">
+              <p><b>8. การเผชิญความเครียด:</b> สิ่งที่กังวล: <span id="preview-cope-stress-details"></span> | วิธีแก้: <span data-field="Cope_Method"></span></p>
+              <p><b>11. ความเชื่อ:</b> สาเหตุการป่วย: <span data-field="Belief_Cause"></span> | สิ่งยึดเหนี่ยว: <span data-field="Belief_Anchor"></span></p>
+              <p><b>12. การมีส่วนร่วม:</b> <span data-field="Partic_Status"></span> | ต้องการ: <span id="preview-partic-details"></span></p>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <p class="font-bold mb-1">4. กิจวัตรประจำวัน (ADL):</p>
+            <table class="w-full text-[10px] border">
+              <tr class="bg-gray-100">
+                <th class="border p-1">กิจกรรม</th><th class="border p-1">ก่อนป่วย</th><th class="border p-1">ขณะป่วย</th>
+              </tr>
+              <tr><td class="border p-1">กินอาหาร</td><td class="border p-1" data-field="ADL_Eat_Before"></td><td class="border p-1" data-field="ADL_Eat_Current"></td></tr>
+              <tr><td class="border p-1">เดิน</td><td class="border p-1" data-field="ADL_Walk_Before"></td><td class="border p-1" data-field="ADL_Walk_Current"></td></tr>
+              <tr><td class="border p-1">ขับถ่าย</td><td class="border p-1" data-field="ADL_Toilet_Before"></td><td class="border p-1" data-field="ADL_Toilet_Current"></td></tr>
             </table>
           </div>
-        </fieldset>
-        
-        <!-- 5. การพักผ่อน -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">5. การพักผ่อน</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>ชั่วโมงนอน:</dt><dd data-field="Sleep_Hours"></dd></div>
-            <div><dt>เพียงพอ:</dt><dd data-field="Sleep_Adequacy"></dd></div>
-            <div><dt>ปัญหาการนอน:</dt><dd data-field="Sleep_Problem"></dd></div>
-            <div class="col-span-full"><dt>ปัญหา (ระบุ):</dt><dd data-field="Sleep_Problem_Detail"></dd></div>
-          </div>
-        </fieldset>
+        </div>
 
-        <!-- 6. การรับรู้ -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">6. การรับรู้และประสาทสัมผัส</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>ระดับความรู้สึก:</dt><dd data-field="Cogn_LOC"></dd></div>
-            <div><dt>การมองเห็น:</dt><dd data-field="Cogn_Vision"></dd></div>
-            <div><dt>มองเห็น (อื่นๆ):</dt><dd data-field="Cogn_Vision_Other"></dd></div>
-            <div><dt>การได้ยิน:</dt><dd data-field="Cogn_Hearing"></dd></div>
-            <div><dt>ได้ยิน (อื่นๆ):</dt><dd data-field="Cogn_Hearing_Other"></dd></div>
-            <div><dt>การพูด:</dt><dd data-field="Cogn_Speech"></dd></div>
-            <div class="md:col-span-2"><dt>พูด (ภาษา):</dt><dd data-field="Cogn_Speech_Other"></dd></div>
-            <div><dt>การเคลื่อนไหว:</dt><dd data-field="Cogn_Movement"></dd></div>
-            <div class="md:col-span-2"><dt>เคลื่อนไหว (อื่นๆ):</dt><dd data-field="Cogn_Movement_Other"></dd></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="preview-section bg-red-50 border-red-100">
+            <div class="preview-title" style="color:#b91c1c; border-color:#b91c1c;">13. PAIN MANAGEMENT</div>
+            <p><b>สถานะ:</b> <span data-field="Pain_Status"></span> | <b>ตำแหน่ง:</b> <span data-field="Pain_Location"></span></p>
+            <p><b>Score:</b> <span class="text-lg font-bold" data-field="Pain_Scale_Score"></span> / 10 | <span data-field="Pain_Pattern"></span></p>
+            <p><b>กระทบต่อ:</b> <span id="preview-pain-effect"></span></p>
+            <p><b>บรรเทาโดย:</b> <span id="preview-pain-relief"></span></p>
           </div>
-        </fieldset>
-        
-        <!-- 7. การรับรู้ตนเอง -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">7. การรับรู้ตนเอง</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>กระทบภาพลักษณ์:</dt><dd data-field="Self_Image"></dd></div>
-            <div class="md:col-span-2"><dt>ภาพลักษณ์ (ระบุ):</dt><dd data-field="Self_Image_Detail"></dd></div>
-            <div><dt>กระทบอารมณ์:</dt><dd data-field="Self_Mood"></dd></div>
-            <div class="md:col-span-2"><dt>อารมณ์ (ระบุ):</dt><dd data-field="Self_Mood_Detail"></dd></div>
-            <div><dt>กระทบความสามารถ:</dt><dd data-field="Self_Ability"></dd></div>
-            <div class="md:col-span-2"><dt>ความสามารถ (ระบุ):</dt><dd data-field="Self_Ability_Detail"></dd></div>
-          </div>
-        </fieldset>
 
-        <!-- 8. การเผชิญภาวะเครียด -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">8. การเผชิญภาวะเครียด</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>สิ่งไม่สบายใจ:</dt><dd data-field="Cope_Stress_Status"></dd></div>
-            <div class="col-span-full"><dt>รายละเอียด (Checkbox):</dt><dd id="preview-cope-stress-details"></dd></div>
-            <div class="col-span-full"><dt>รายละเอียด (อื่นๆ):</dt><dd data-field="Cope_Stress_Other_Text"></dd></div>
-            <div><dt>การแสดงออก:</dt><dd data-field="Cope_Expression"></dd></div>
-            <div class="md:col-span-2"><dt>แสดงออก (อื่นๆ):</dt><dd data-field="Cope_Expression_Other"></dd></div>
-            <div><dt>วิธีแก้ไข:</dt><dd data-field="Cope_Method"></dd></div>
-            <div class="md:col-span-2"><dt>วิธีแก้ไข (อื่นๆ):</dt><dd data-field="Cope_Method_Other"></dd></div>
+          <div class="preview-section bg-yellow-50 border-yellow-100">
+            <div class="preview-title" style="color:#a16207; border-color:#a16207;">14 & 15. RISK ASSESSMENT</div>
+            <p><b>Braden Scale:</b> <span class="font-bold" data-field="Braden_Total"></span> (<span data-field="Braden_Result"></span>)</p>
+            <p><b>Fall Risk:</b> <span id="preview-fall-risk-list"></span></p>
+            <p><b>สรุปผลหกล้ม:</b> <span class="font-bold text-red-600" data-field="Fall_Result"></span></p>
           </div>
-        </fieldset>
+        </div>
 
-        <!-- 9. บทบาท -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">9. บทบาทและสัมพันธภาพ</legend>
-          <div class="preview-grid preview-grid-4 mt-2">
-            <div><dt>กระทบครอบครัว:</dt><dd data-field="Role_Effect_Family"></dd></div>
-            <div><dt>กระทบอาชีพ:</dt><dd data-field="Role_Effect_Career"></dd></div>
-            <div><dt>กระทบการศึกษา:</dt><dd data-field="Role_Effect_Education"></dd></div>
-            <div><dt>กระทบสัมพันธภาพ:</dt><dd data-field="Role_Effect_Relationship"></dd></div>
+        <div class="preview-section bg-gray-50">
+          <div class="flex justify-between items-center">
+            <div><b>ผู้ประเมิน:</b> <span data-field="Assessor_Name"></span></div>
+            <div><b>ตำแหน่ง:</b> <span data-field="Assessor_Position"></span></div>
+            <div><b>วันที่บันทึก:</b> <span id="preview-last-updated-time"></span></div>
           </div>
-        </fieldset>
-
-        <!-- 10. เพศ -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">10. เพศและการเจริญพันธุ์</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>ประจำเดือน:</dt><dd data-field="Sex_Menses"></dd></div>
-            <div><dt>สถานะประจำเดือน:</dt><dd data-field="Sex_Menses_Status"></dd></div>
-            <div><dt>เต้านม:</dt><dd data-field="Sex_Breast"></dd></div>
-            <div><dt>อวัยวะสืบพันธ์:</dt><dd data-field="Sex_Genital"></dd></div>
-          </div>
-        </fieldset>
-        
-        <!-- 11. ความเชื่อ -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">11. คุณค่าและความเชื่อ</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>สาเหตุที่ป่วย:</dt><dd data-field="Belief_Cause"></dd></div>
-            <div class="md:col-span-2"><dt>สาเหตุ (อื่นๆ):</dt><dd data-field="Belief_Cause_Other"></dd></div>
-            <div><dt>กิจทางศาสนา:</dt><dd data-field="Belief_Ritual"></dd></div>
-            <div class="md:col-span-2"><dt>กิจ (ระบุ):</dt><dd data-field="Belief_Ritual_Detail"></dd></div>
-            <div><dt>สิ่งยึดเหนี่ยว:</dt><dd data-field="Belief_Anchor"></dd></div>
-            <div class="md:col-span-2"><dt>สิ่งยึดเหนี่ยว (ระบุ):</dt><dd data-field="Belief_Anchor_Detail"></dd></div>
-          </div>
-        </fieldset>
-        
-        <!-- 12. การมีส่วนร่วม -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">12. การมีส่วนร่วม</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>สถานะ:</dt><dd data-field="Partic_Status"></dd></div>
-            <div class="col-span-full"><dt>ไม่ต้องการ (เนื่องจาก):</dt><dd data-field="Partic_No_Detail"></dd></div>
-            <div class="col-span-full"><dt>ต้องการ (Checkbox):</dt><dd id="preview-partic-details"></dd></div>
-            <div class="col-span-full"><dt>ต้องการ (อื่นๆ):</dt><dd data-field="Partic_Want_Other"></dd></div>
-          </div>
-        </fieldset>
-
-        <!-- 13. Pain -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">13. PAIN MANAGEMENT</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>สถานะปวด:</dt><dd data-field="Pain_Status"></dd></div>
-            <div class="md:col-span-2"><dt>บริเวณ:</dt><dd data-field="Pain_Location"></dd></div>
-            <div><dt>สาเหตุ:</dt><dd data-field="Pain_Cause"></dd></div>
-            <div><dt>ลักษณะ:</dt><dd data-field="Pain_Pattern"></dd></div>
-            <div class="md:col-span-2"><dt>ลักษณะ (อื่นๆ):</dt><dd data-field="Pain_Pattern_Other"></dd></div>
-            <div><dt>Scale (Numeric):</dt><dd data-field="Pain_Scale_Score"></dd></div>
-            <div class="md:col-span-2"><dt>Scale (Face):</dt><dd data-field="Pain_Scale_Face"></dd></div>
-            <div class="col-span-full"><dt>กระทบต่อ:</dt><dd id="preview-pain-effect"></dd></div>
-            <div class="col-span-full"><dt>สิ่งที่บรรเทา:</dt><dd id="preview-pain-relief"></dd></div>
-          </div>
-        </fieldset>
-        
-        <!-- 14. Braden -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">14. Braden Scale</legend>
-          <div class="preview-grid mt-2">
-            <div><dt>การรับรู้:</dt><dd data-field="Braden_Sensory"></dd></div>
-            <div><dt>ความเปียกชื้น:</dt><dd data-field="Braden_Moisture"></dd></div>
-            <div><dt>กิจกรรม:</dt><dd data-field="Braden_Activity"></dd></div>
-            <div><dt>การเคลื่อนไหว:</dt><dd data-field="Braden_Mobility"></dd></div>
-            <div><dt>โภชนาการ:</dt><dd data-field="Braden_Nutrition"></dd></div>
-            <div><dt>การเสียดสี:</dt><dd data-field="Braden_Friction"></dd></div>
-            <div class="md:col-span-2"><dt>คะแนนรวม (Total):</dt><dd data-field="Braden_Total" class="font-bold text-blue-700"></dd></div>
-            <div><dt>แปลผล:</dt><dd data-field="Braden_Result"></dd></div>
-          </div>
-        </fieldset>
-
-        <!-- 15. Fall Risk -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">15. Fall risk assessment</legend>
-          <div class="preview-grid preview-grid-4 mt-2">
-            <div><dt>วัยเด็ก:</dt><dd data-field="Fall_Age_Child"></dd></div>
-            <div><dt>ผู้สูงอายุ >65:</dt><dd data-field="Fall_Age_Elder"></dd></div>
-            <div><dt>สภาวะทางจิต:</dt><dd data-field="Fall_Mental"></dd></div>
-            <div><dt>ประวัติหกล้ม:</dt><dd data-field="Fall_History"></dd></div>
-            <div><dt>ใช้ยา:</dt><dd data-field="Fall_Meds"></dd></div>
-            <div><dt>การมองเห็น:</dt><dd data-field="Fall_Vision"></dd></div>
-            <div><dt>การเดิน/ทรงตัว:</dt><dd data-field="Fall_Gait"></dd></div>
-            <div><dt>ผลลัพธ์:</dt><dd data-field="Fall_Result"></dd></div>
-          </div>
-        </fieldset>
-        
-        <!-- ผู้ประเมิน -->
-        <fieldset class="border p-4 rounded-lg">
-          <legend class="text-lg font-semibold px-2">ผู้ประเมิน</legend>
-          <div class="preview-grid mt-2">
-            <div class="md:col-span-2"><dt>ชื่อผู้ประเมิน:</dt><dd data-field="Assessor_Name"></dd></div>
-            <div><dt>ตำแหน่ง:</dt><dd data-field="Assessor_Position"></dd></div>
-            <div class="col-span-full"><dt>อัปเดตล่าสุด:</dt><dd data-field="LastUpdatedTime" id="preview-last-updated-time"></dd></div>
-            <div class="col-span-full"><dt>อัปเดตโดย:</dt><dd data-field="LastUpdatedBy"></dd></div>
-          </div>
-        </fieldset>
+        </div>
       </div>
     </template>
 
