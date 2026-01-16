@@ -1512,15 +1512,29 @@ function populateAssessmentForm(data, targetForm) {
 async function handleSaveAssessment(event) {
   event.preventDefault();
   showLoading('กำลังบันทึกแบบประเมิน...');
+  
   const formData = new FormData(assessmentForm);
-  const data = Object.fromEntries(formData.entries());
-  const currentUser = data.Assessor_Name || "System"; 
+  const data = {};
+  
+  // จัดการข้อมูลให้รองรับ Checkbox หลายตัว
+  for (let [key, value] of formData.entries()) {
+    if (value === 'on') data[key] = true;
+    else data[key] = value;
+  }
+
+  // สำหรับ Checkbox ที่ไม่ได้ติ๊ก (ซึ่งจะไม่ปรากฏใน formData) ให้เซตเป็น false
+  assessmentForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    if (!cb.checked) data[cb.name] = false;
+  });
 
   try {
     const response = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "saveAssessmentData", an: currentPatientAN, formData: data, user: currentUser
+        action: "saveAssessmentData", 
+        an: currentPatientAN, 
+        formData: data, 
+        user: data.Assessor_Name || "System"
       })
     });
     const result = await response.json();
@@ -1528,7 +1542,8 @@ async function handleSaveAssessment(event) {
 
     showSuccess('บันทึกข้อมูลสำเร็จ!');
     closeAssessmentModal();
-    openChart(currentPatientAN, chartHnDisplay.textContent, chartNameDisplay.textContent); 
+    // โหลดข้อมูลพรีวิวใหม่
+    showFormPreview('004'); 
   } catch (error) {
     showError('บันทึกไม่สำเร็จ', error.message);
   }
