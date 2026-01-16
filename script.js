@@ -1541,96 +1541,123 @@ function closeAssessmentModal() {
 }
 
 function populateAssessmentForm(data, targetForm) {
-  targetForm.reset();
-  if (targetForm.id === 'assessment-form') { 
-    targetForm.querySelector('#assess-an-display').textContent = data.AN || '';
-    targetForm.querySelector('#assess-name-display').textContent = data.Name || '';
+  if (!targetForm) return;
+  targetForm.reset(); // ล้างค่าเก่าออกก่อนเสมอ
+
+  // 1. แสดง AN และ ชื่อผู้ป่วย (ส่วน Header ของ Modal)
+  if (targetForm.id === 'assessment-form') {
+    const anDisplay = targetForm.querySelector('#assess-an-display');
+    const nameDisplay = targetForm.querySelector('#assess-name-display');
+    if (anDisplay) anDisplay.textContent = data.AN || '';
+    if (nameDisplay) nameDisplay.textContent = data.Name || '';
   }
-  
-  const fieldsToSync = {
-    'AdmitDate': 'assess-admit-date', 'AdmitTime': 'assess-admit-time',
-    'AdmittedFrom': 'assess-admit-from', 'Refer': 'assess-refer-from',
-    'ChiefComplaint': 'assess-cc', 'PresentIllness': 'assess-pi'
+
+  // 2. แมพฟิลด์พิเศษที่ใช้ ID (ส่วนใหญ่เป็นฟิลด์ Readonly จากหน้าแรกรับ)
+  const fieldsById = {
+    'AdmitDate': 'assess-admit-date',
+    'AdmitTime': 'assess-admit-time',
+    'AdmittedFrom': 'assess-admit-from',
+    'Refer': 'assess-refer-from',
+    'ChiefComplaint': 'assess-cc',
+    'PresentIllness': 'assess-pi'
   };
-  for (const key in fieldsToSync) {
-      const el = targetForm.querySelector(`#${fieldsToSync[key]}`);
-      if (el) el.value = data[key] || '';
+
+  for (const [key, id] of Object.entries(fieldsById)) {
+    const el = targetForm.querySelector(`#${id}`);
+    if (el) el.value = data[key] || '';
   }
-  
-  for (const key in data) {
-    if (data.hasOwnProperty(key)) {
-      if (fieldsToSync.hasOwnProperty(key)) continue;
-      const field = targetForm.querySelector(`[name="${key}"]`);
-      if (field) {
-        if (field.type === 'radio') {
-          targetForm.querySelectorAll(`[name="${key}"][value="${data[key]}"]`).forEach(el => el.checked = true);
-        } else if (field.type === 'checkbox') {
-          if (data[key] === true || data[key] === 'true' || data[key] === 'on') field.checked = true;
-        } else {
-          field.value = data[key];
+
+  // 3. วนลูปจัดการฟิลด์อื่นๆ ตาม "name" (Radio, Checkbox, Text, Select)
+  Object.keys(data).forEach(key => {
+    const value = data[key];
+    const inputs = targetForm.querySelectorAll(`[name="${key}"]`);
+
+    inputs.forEach(input => {
+      if (input.type === 'radio') {
+        // ถ้าค่าใน data ตรงกับ value ของ radio ให้ติ๊กเลือก
+        if (String(input.value) === String(value)) {
+          input.checked = true;
         }
+      } else if (input.type === 'checkbox') {
+        // จัดการ Checkbox (รองรับทั้งค่า boolean และ string "true")
+        input.checked = (value === true || value === 'true' || value === 'on');
+      } else if (input.tagName === 'SELECT' || input.tagName === 'TEXTAREA' || input.type === 'text' || input.type === 'number') {
+        // ฟิลด์ทั่วไป
+        input.value = value || '';
       }
-    }
-  }
-  
+    });
+  });
+
+  // 4. สั่งให้ระบบ Toggle (ซ่อน/แสดงช่องระบุเพิ่มเติม) ทำงานทันที
+  // วนลูปหา Input ที่เป็นตัวควบคุมการเปิด-ปิดช่องพิเศษ
   targetForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
-    if ((el.tagName === 'SELECT') || (el.type === 'radio' && el.checked)) {
-      el.dispatchEvent(new Event('change', { 'bubbles': true }));
+    if (el.tagName === 'SELECT' || (el.type === 'radio' && el.checked)) {
+      el.dispatchEvent(new Event('change', { bubbles: true }));
     }
   });
-  
-  calculateBradenScore(targetForm); 
-  
-  // แก้ไขจุดที่ทำให้ Crash: ตรวจสอบว่าเป็น SELECT หรือไม่ก่อนเช็ค options
+
+  // 5. จัดการข้อมูลผู้ประเมิน (Datalist/Position)
   const assessorNameEl = targetForm.querySelector("#assessor-name");
   const assessorPosEl = targetForm.querySelector("#assessor-position");
-  if (assessorNameEl && assessorPosEl) {
-    // ถ้าเป็น Select ให้เติมข้อมูลพยาบาล
-    if(assessorNameEl.tagName === 'SELECT' && assessorNameEl.options.length <= 1 && globalStaffList.length > 0) {
-        populateSelect(assessorNameEl.id, globalStaffList.map(s => s.fullName));
-    }
-    // ใส่ค่าชื่อและตำแหน่ง
-    assessorNameEl.value = data.Assessor_Name || "";
-    assessorPosEl.value = data.Assessor_Position || "";
+  if (assessorNameEl) assessorNameEl.value = data.Assessor_Name || "";
+  if (assessorPosEl) assessorPosEl.value = data.Assessor_Position || "";
+
+  // 6. คำนวณคะแนน Braden ใหม่ตามข้อมูลที่ถูกติ๊ก
+  if (typeof calculateBradenScore === "function") {
+    calculateBradenScore(targetForm);
   }
 }
 
 async function handleSaveAssessment(event) {
   event.preventDefault();
-  showLoading('กำลังบันทึกแบบประเมิน...');
   
-  const formData = new FormData(assessmentForm);
-  const data = {};
-  
-  // จัดการข้อมูลให้รองรับ Checkbox หลายตัว
-  for (let [key, value] of formData.entries()) {
-    if (value === 'on') data[key] = true;
-    else data[key] = value;
+  // ตรวจสอบ AN ผู้ป่วยก่อนบันทึก
+  if (!currentPatientAN) {
+    showError('ไม่พบข้อมูลผู้ป่วย', 'กรุณาเปิด Chart ใหม่อีกครั้ง');
+    return;
   }
 
-  // สำหรับ Checkbox ที่ไม่ได้ติ๊ก (ซึ่งจะไม่ปรากฏใน formData) ให้เซตเป็น false
+  showLoading('กำลังบันทึกแบบประเมิน...');
+
+  const formData = new FormData(assessmentForm);
+  const data = Object.fromEntries(formData.entries());
+
+  // 1. จัดการ Checkbox ทั้งหมด (FormData จะไม่ส่งชื่อฟิลด์ถ้าไม่ได้ติ๊ก)
+  // เราต้องวนลูปหา Checkbox ทุกตัวเพื่อส่งค่า false หากไม่มีการเลือก
   assessmentForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    if (!cb.checked) data[cb.name] = false;
+    data[cb.name] = cb.checked; 
   });
+
+  // 2. จัดการฟิลด์ Radio (เผื่อกรณีลืมติ๊ก แต่ต้องการให้ค่าเดิมในชีตหายไป)
+  // ปกติ Radio จะส่งค่าได้เพียงค่าเดียวในชื่อนั้นๆ
 
   try {
     const response = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "saveAssessmentData", 
-        an: currentPatientAN, 
-        formData: data, 
+        action: "saveAssessmentData",
+        an: currentPatientAN,
+        formData: data,
         user: data.Assessor_Name || "System"
       })
     });
+
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
 
     showSuccess('บันทึกข้อมูลสำเร็จ!');
-    closeAssessmentModal();
-    // โหลดข้อมูลพรีวิวใหม่
+    
+    // ปิด Modal และรีเฟรชหน้า Preview
+    if (typeof closeAssessmentModal === "function") {
+        closeAssessmentModal();
+    } else {
+        assessmentModal.classList.add("hidden");
+    }
+    
     showFormPreview('004'); 
+    
   } catch (error) {
+    console.error("Save Error:", error);
     showError('บันทึกไม่สำเร็จ', error.message);
   }
 }
