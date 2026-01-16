@@ -452,6 +452,16 @@ function populateSelect(elementId, options, defaultValue = null) {
     select.appendChild(option);
   });
 }
+function populateDatalist(datalistId, options) {
+  const datalist = document.getElementById(datalistId);
+  if (!datalist) return;
+  datalist.innerHTML = ""; // ล้างข้อมูลเก่า
+  options.forEach(optValue => {
+    const option = document.createElement("option");
+    option.value = optValue;
+    datalist.appendChild(option);
+  });
+}
 
 function getISODate(date) {
   // ใช้เทคนิคปรับ Timezone Offset เพื่อให้ได้ค่าวันที่แบบ Local (ไทย) เสมอ
@@ -463,7 +473,21 @@ function getISODate(date) {
 // (6) Core App Functions
 // ----------------------------------------------------------------
 
-// 
+async function refreshStaffDatalists() {
+  if (globalStaffList.length === 0) {
+    try {
+      [cite_start]const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`); [cite: 21, 57]
+      const result = await response.json();
+      if (result.success) {
+        [cite_start]globalStaffList = result.data; [cite: 58]
+      }
+    } catch (e) { console.error("Load staff failed", e); }
+  }
+  
+  // เติมข้อมูลลงใน datalist สำหรับพยาบาลเพื่อให้พิมพ์ค้นหาได้
+  const staffNames = globalStaffList.map(s => s.fullName);
+  populateDatalist("staff-list-datalist", staffNames);
+}
 
 // สร้าง Config สำหรับจับคู่ชื่อตึกกับไอคอนและสี
 const WARD_CONFIG = {
@@ -595,12 +619,17 @@ async function openAdmitModal() {
   if (!currentWard) return;
   showLoading('กำลังเตรียมฟอร์ม...');
   try {
-    const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard);
+    const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard); [cite: 101-102]
+    
+    // เติม Datalist สำหรับแพทย์
+    populateDatalist("doctor-list", doctors.map(o => o.value)); 
+    
+    // ส่วนอื่นๆ คงเดิม
     populateSelect("admit-from", admittedFrom.map(o => o.value));
     populateSelect("admit-bed", availableBeds);
     populateSelect("admit-dept", departments.map(o => o.value));
-    populateSelect("admit-doctor", doctors.map(o => o.value));
-    admitForm.reset(); setFormDefaults(); admitAgeInput.value = ""; 
+    
+    admitForm.reset(); setFormDefaults();
     admitModal.classList.remove("hidden");
     Swal.close();
   } catch (error) { showError('เตรียมฟอร์มไม่สำเร็จ', error.message); }
@@ -1371,30 +1400,22 @@ async function showEntryList(formType, formTitle) {
 // --- ASSESSMENT FORM LOGIC (FR-004) ---
 async function openAssessmentForm() {
   showLoading('กำลังเตรียมฟอร์มประเมิน...');
-  if(globalStaffList.length === 0) {
-    try {
-      const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
-      const result = await response.json();
-      if (result.success) {
-        globalStaffList = result.data;
-        populateSelect(document.getElementById("assessor-name").id, globalStaffList.map(s => s.fullName));
-      }
-    } catch (e) { }
-  }
+  
+  // เรียกใช้ฟังก์ชันใหม่ที่นี่เพื่อให้พิมพ์ค้นหาชื่อพยาบาลได้
+  await refreshStaffDatalists(); 
   
   try {
-    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`);
+    [cite_start]const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`); [cite: 23, 60]
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
     currentPatientData = result.data;
+    
+    populateAssessmentForm(currentPatientData, assessmentForm); 
+    assessmentModal.classList.remove("hidden");
+    Swal.close();
   } catch(e) {
     showError('ไม่สามารถโหลดข้อมูลล่าสุดได้', e.message);
-    return;
   }
-  
-  populateAssessmentForm(currentPatientData, assessmentForm); 
-  assessmentModal.classList.remove("hidden");
-  Swal.close();
 }
 
 function closeAssessmentModal() {
@@ -2217,7 +2238,7 @@ async function handleReProgress() {
 // ฟังก์ชันเปิด Modal 007 (อัปเดตล่าสุด)
 async function openDischargeModal(editData = null) {
   dischargeForm.reset();
-  
+  await refreshStaffDatalists();
   // ตั้งค่าเริ่มต้น
   if (!editData) {
      const now = new Date();
@@ -3552,7 +3573,24 @@ if (adviceForm) {
         }
     });
 }
- 
+ document.getElementById("assessor-name").addEventListener("input", (e) => {
+  const val = e.target.value;
+  const staff = globalStaffList.find(s => s.fullName === val);
+  if (staff) {
+    // เมื่อเลือกชื่อพยาบาล ให้ดึงตำแหน่งมาใส่ในช่องตำแหน่งอัตโนมัติ
+    const posInput = document.getElementById("assessor-position");
+    [cite_start]if(posInput) posInput.value = staff.position;
+  }
+});
+
+document.getElementById("discharge-nurse-name").addEventListener("input", (e) => {
+  const val = e.target.value;
+  const staff = globalStaffList.find(s => s.fullName === val);
+  if (staff) {
+    const posInput = document.getElementById("discharge-nurse-pos");
+    if(posInput) posInput.value = staff.position;
+  }
+});
 document.getElementById("morse-prev-page-btn").addEventListener("click", () => {
     if(currentMorsePage > 1) {
         currentMorsePage--;
