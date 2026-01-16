@@ -1435,8 +1435,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">ลงชื่อผู้ประเมิน</label>
-                  <select id="assessor-name" name="Assessor_Name" class="mt-1 p-2 block w-full border rounded-md">
-                    <option value="">-- กรุณาเลือก --</option>
+                  <input type="text" id="assessor-name" name="Assessor_Name" list="staff-list-datalist" class="mt-1 p-2 block w-full border rounded-md" placeholder="พิมพ์ชื่อพยาบาลเพื่อค้นหา...">
                     <!-- (จะถูกเติมโดย script.js) -->
                   </select>
                 </div>
@@ -1945,9 +1944,11 @@
             <div class="pt-4 border-t bg-gray-100 p-3 rounded">
                 <div class="flex flex-wrap gap-4 items-center">
                    <label class="font-bold text-indigo-700">พยาบาลผู้จำหน่าย:</label>
-                   <input type="text" name="Nurse_Name" list="staff-list-datalist" class="p-2 border rounded w-64" placeholder="ค้นหาชื่อ..." required>
+                   <input type="text" id="discharge-nurse-name" name="Nurse_Name" list="staff-list-datalist" class="p-2 border rounded w-64" placeholder="ค้นหาชื่อ..." required>
+                   
                    <label>ตำแหน่ง:</label>
-                   <input type="text" name="Nurse_Pos" class="p-2 border rounded w-48 bg-white" readonly> </div>
+                   <input type="text" id="discharge-nurse-pos" name="Nurse_Pos" class="p-2 border rounded w-48 bg-white" readonly> 
+                </div>
             </div>
 
           </div>
