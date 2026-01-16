@@ -1863,6 +1863,7 @@ function updateClassifyColumnTotals(dayIndex, shift) {
   return { Total_Score: total > 0 ? total : '', Category: categoryInput.value };
 }
 
+// แก้ไขการบันทึกและรวมคะแนน Classification
 async function saveClassificationShiftData(dayIndex, shift) {
     const dateInput = classifyTable.querySelector(`input.classify-date-input[data-day-index="${dayIndex}"]`);
     if (!dateInput) return;
@@ -1872,6 +1873,7 @@ async function saveClassificationShiftData(dayIndex, shift) {
     let hasData = false;
     let total = 0;
     
+    // วนลูปเก็บคะแนน 8 ข้อ และรวมคะแนนทันที
     for (let i = 1; i <= 8; i++) {
         const sel = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
         const val = parseInt(sel.value) || 0;
@@ -1888,7 +1890,18 @@ async function saveClassificationShiftData(dayIndex, shift) {
         showError("ยังไม่มีข้อมูล", "กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือลงชื่อผู้ประเมิน");
         return;
     }
+
+    // คำนวณประเภทผู้ป่วย (Category)
+    let category = 0;
+    if (total > 0 && total <= 8) category = 1;
+    else if (total >= 9 && total <= 14) category = 2;
+    else if (total >= 15 && total <= 20) category = 3;
+    else if (total >= 21 && total <= 26) category = 4;
+    else if (total >= 27) category = 5;
     
+    entryData.Total_Score = total;
+    entryData.Category = category;
+
     showLoading('กำลังบันทึก...');
     try {
         const response = await fetch(GAS_WEB_APP_URL, {
@@ -1897,10 +1910,10 @@ async function saveClassificationShiftData(dayIndex, shift) {
         });
         const result = await response.json();
         if (result.success) {
-            // อัปเดตการแสดงผลคะแนนในตารางทันที
-            const updated = result.updatedData;
-            classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Total_Score;
-            classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Category;
+            // อัปเดตช่องคะแนนรวมและประเภทในตารางทันที
+            classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = total;
+            classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = category;
+            
             showSuccess('บันทึกสำเร็จ!', `เวร ${shift} วันที่ ${date} เรียบร้อย`);
         } else throw new Error(result.message);
     } catch (error) { showError('บันทึกไม่สำเร็จ', error.message); }
