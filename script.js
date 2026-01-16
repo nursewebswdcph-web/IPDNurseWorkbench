@@ -455,10 +455,10 @@ function populateSelect(elementId, options, defaultValue = null) {
 function populateDatalist(datalistId, options) {
   const datalist = document.getElementById(datalistId);
   if (!datalist) return;
-  datalist.innerHTML = ""; // ล้างข้อมูลเก่า
-  options.forEach(optValue => {
+  datalist.innerHTML = ""; 
+  options.forEach(val => {
     const option = document.createElement("option");
-    option.value = optValue;
+    option.value = val;
     datalist.appendChild(option);
   });
 }
@@ -474,27 +474,20 @@ function getISODate(date) {
 // ----------------------------------------------------------------
 
 async function refreshStaffDatalists() {
-  // 1. ตรวจสอบว่ามีข้อมูลใน Cache (globalStaffList) หรือไม่ 
-  if (globalStaffList.length === 0) {
-    try {
-      // ดึงข้อมูลจาก Google Apps Script ผ่าน action=getStaffList [cite: 16, 21]
+  try {
+    // โหลดข้อมูลพยาบาลถ้ายังไม่มีในตัวแปร global
+    if (globalStaffList.length === 0) {
       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
       const result = await response.json();
-      
-      if (result.success) {
-        // บันทึกข้อมูลพยาบาล (username, fullName, position) ลงในตัวแปร Global [cite: 58, 59]
-        globalStaffList = result.data;
-      }
-    } catch (e) { 
-      console.error("Load staff failed", e); 
+      if (result.success) globalStaffList = result.data;
     }
+    
+    // อัปเดต datalist สำหรับพยาบาล
+    const names = globalStaffList.map(s => s.fullName);
+    populateDatalist("staff-list-datalist", names);
+  } catch (e) {
+    console.error("Staff List Error:", e);
   }
-  
-  // 2. กรองเฉพาะชื่อ (fullName) เพื่อนำไปใส่ใน Datalist [cite: 59]
-  const staffNames = globalStaffList.map(s => s.fullName);
-  
-  // 3. อัปเดตรายการใน <datalist id="staff-list-datalist"> [cite: 161]
-  populateDatalist("staff-list-datalist", staffNames);
 }
 
 // สร้าง Config สำหรับจับคู่ชื่อตึกกับไอคอนและสี
@@ -624,23 +617,44 @@ async function loadPatients(wardName) {
 
 // --- ADMIT MODAL ---
 async function openAdmitModal() {
-  if (!currentWard) return;
+  if (!currentWard) {
+    showError('กรุณาเลือกหอผู้ป่วยก่อนทำรายการ');
+    return;
+  }
+
   showLoading('กำลังเตรียมฟอร์ม...');
+  
   try {
-    const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard); 
+    // ดึงข้อมูลพื้นฐานจาก Server (หอผู้ป่วย, รายชื่อแพทย์, แผนก, เตียงว่าง)
+    const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard);
     
-    // เติม Datalist สำหรับแพทย์
-    populateDatalist("doctor-list", doctors.map(o => o.value)); 
-    
-    // ส่วนอื่นๆ คงเดิม
+    // 1. เติมรายชื่อแพทย์ลงใน Datalist เพื่อให้ช่อง Input ค้นหาได้
+    if (doctors && doctors.length > 0) {
+      populateDatalist("doctor-list", doctors.map(o => o.value));
+    }
+
+    // 2. เติมข้อมูลลงใน Select Dropdown ปกติ
     populateSelect("admit-from", admittedFrom.map(o => o.value));
     populateSelect("admit-bed", availableBeds);
     populateSelect("admit-dept", departments.map(o => o.value));
     
-    admitForm.reset(); setFormDefaults();
+    // 3. รีเซ็ตฟอร์มและตั้งค่าเริ่มต้นใหม่
+    admitForm.reset();
+    setFormDefaults();
+    
+    // ล้างค่าอายุผู้ป่วย (ถ้ามี)
+    if (document.getElementById("admit-age")) {
+      document.getElementById("admit-age").value = "";
+    }
+
+    // แสดง Modal
     admitModal.classList.remove("hidden");
     Swal.close();
-  } catch (error) { showError('เตรียมฟอร์มไม่สำเร็จ', error.message); }
+    
+  } catch (error) {
+    console.error('Error in openAdmitModal:', error);
+    showError('เตรียมฟอร์มไม่สำเร็จ', 'ไม่สามารถโหลดข้อมูลพื้นฐานจากระบบได้ กรุณาลองใหม่อีกครั้ง');
+  }
 }
 
 function closeAdmitModal() {
@@ -1407,22 +1421,32 @@ async function showEntryList(formType, formTitle) {
 
 // --- ASSESSMENT FORM LOGIC (FR-004) ---
 async function openAssessmentForm() {
-  showLoading('กำลังเตรียมฟอร์มประเมิน...');
+  if (!currentPatientAN) {
+    showError('ไม่พบข้อมูล AN ของผู้ป่วย');
+    return;
+  }
   
-  // เรียกใช้ฟังก์ชันใหม่ที่นี่เพื่อให้พิมพ์ค้นหาชื่อพยาบาลได้
+  showLoading('กำลังโหลดข้อมูลล่าสุด...');
+  // ต้องโหลดรายชื่อพยาบาลก่อนเสมอ
   await refreshStaffDatalists(); 
   
   try {
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`);
     const result = await response.json();
-    if (!result.success) throw new Error(result.message);
-    currentPatientData = result.data;
     
-    populateAssessmentForm(currentPatientData, assessmentForm); 
-    assessmentModal.classList.remove("hidden");
-    Swal.close();
+    if (result.success) {
+      // นำข้อมูลล่าสุดมาใส่ในฟอร์ม
+      populateAssessmentForm(result.data, assessmentForm);
+      assessmentModal.classList.remove("hidden");
+      Swal.close();
+    } else {
+      // หากยังไม่มีข้อมูลบันทึกมาก่อน ให้เปิดฟอร์มเปล่า
+      assessmentForm.reset();
+      assessmentModal.classList.remove("hidden");
+      Swal.close();
+    }
   } catch(e) {
-    showError('ไม่สามารถโหลดข้อมูลล่าสุดได้', e.message);
+    showError('เกิดข้อผิดพลาดในการโหลดข้อมูล', e.message);
   }
 }
 
@@ -3617,7 +3641,21 @@ document.getElementById("close-morse-modal-btn").addEventListener("click", () =>
     // Reset active state in menu
     chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
 });
-
+document.body.addEventListener('input', function(e) {
+  // เมื่อมีการพิมพ์ชื่อพยาบาล
+  if (e.target.list && e.target.list.id === 'staff-list-datalist') {
+    const staff = globalStaffList.find(s => s.fullName === e.target.value);
+    if (staff) {
+      // หาช่องตำแหน่งที่อยู่ในฟอร์มเดียวกัน
+      const parentForm = e.target.closest('form');
+      const posInput = parentForm.querySelector('[name*="Position"]') || 
+                       parentForm.querySelector('[name*="Pos"]') ||
+                       document.getElementById('assessor-position') ||
+                       document.getElementById('discharge-nurse-pos');
+      if (posInput) posInput.value = staff.position;
+    }
+  }
+});
   // --- Braden Scale Listeners (Submit) ---
 const bradenForm = document.getElementById("braden-form");
 if (bradenForm) {
