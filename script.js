@@ -3092,21 +3092,21 @@ async function fetchAndRenderBradenPage(an, page) {
     }
 }
 
-function renderBradenTable(data) {
+function renderBradenTable(data = {}) { 
     const table = document.getElementById("braden-table");
+    if (!table) return; // ป้องกันถ้าหาตารางไม่เจอ
     table.innerHTML = "";
     
-    // --- HEADER (ส่วนที่ 1) ---
-    // ใช้ Sticky Column ซ้ายเพื่อให้เลื่อนดูวันที่ 1-10 ได้โดยหัวข้อไม่หาย
+    // โค้ดส่วนที่เหลือคงเดิม...
     let theadHtml = `<thead class="bg-red-50">
       <tr>
         <th class="p-2 border w-80 text-left sticky left-0 bg-red-50 z-20 shadow-md align-bottom">
             <div class="font-bold text-red-800 text-lg">ส่วนที่ 1 การประเมินความเสี่ยง</div>
-            <div class="text-xs text-gray-600 font-normal mt-1">ปัจจัยส่งเสริมการเกิดแผลกดทับ</div>
         </th>`;
     
     for (let i = 1; i <= 10; i++) {
-        const dateVal = data[`Date_${i}`] ? getISODate(new Date(data[`Date_${i}`])) : "";
+        // เมื่อมี = {} ด้านบน data[`Date_${i}`] จะไม่พัง แต่จะได้ค่าว่างแทน
+        const dateVal = data && data[`Date_${i}`] ? getISODate(new Date(data[`Date_${i}`])) : "";
         theadHtml += `<th class="p-2 border min-w-[80px] text-center bg-red-50">
             <div class="text-[10px] text-gray-500 mb-1">วันที่ (${i})</div>
             <input type="date" name="Date_${i}" class="w-full text-[10px] border rounded p-0.5 braden-date-input text-center" value="${dateVal}">
@@ -3355,8 +3355,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateClock(); 
     setInterval(updateClock, 1000);
     loadWards();
-    renderADLTable(); // สร้างตาราง ADL รอไว้
-    renderBradenTable(); // สร้างตาราง Braden รอไว้
+    try {
+        renderADLTable(); 
+        renderBradenTable({}); // ส่ง Object ว่างเข้าไปเพื่อป้องกัน crash
+    } catch (e) {
+        console.warn("Table initialization skipped:", e);
+    }
 
     // --- [2] ส่วนทะเบียนผู้ป่วย (Registry) ---
     if (wardSwitcher) {
