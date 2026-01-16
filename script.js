@@ -331,7 +331,16 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
-
+// ฟังก์ชันกลางสำหรับปิด Modal ทุกตัวในระบบ
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add("hidden");
+        // ถ้ามีฟอร์มข้างใน ให้ Reset ข้อมูลด้วย (ถ้าต้องการ)
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+    }
+}
 function showLoading(title = 'กำลังประมวลผล...') {
   Swal.fire({ title: title, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }, });
 }
@@ -3358,6 +3367,36 @@ document.addEventListener("DOMContentLoaded", () => {
     updateClock(); 
     setInterval(updateClock, 1000);
     loadWards();
+  // --- รวบรวมปุ่มปิดทุกตัวในที่เดียว ---
+    const closeButtons = [
+        { btn: "close-admit-modal-btn", modal: "admit-modal" },
+        { btn: "cancel-admit-btn", modal: "admit-modal" },
+        { btn: "close-details-modal-btn", modal: "details-modal" },
+        { btn: "close-assessment-modal-btn", modal: "assessment-modal" },
+        { btn: "close-assessment-modal-btn-bottom", modal: "assessment-modal" },
+        { btn: "close-classify-modal-btn", modal: "classify-modal" },
+        { btn: "close-focus-modal-btn", modal: "focus-problem-modal" },
+        { btn: "cancel-focus-btn", modal: "focus-problem-modal" },
+        { btn: "close-progress-modal-btn", modal: "progress-note-modal" },
+        { btn: "close-discharge-modal-btn", modal: "discharge-form-modal" },
+        { btn: "close-advice-modal-btn", modal: "advice-form-modal" },
+        { btn: "close-morse-modal-btn", modal: "morse-modal" },
+        { btn: "close-braden-modal", modal: "braden-modal" }
+    ];
+
+    closeButtons.forEach(item => {
+        const btn = document.getElementById(item.btn);
+        if (btn) {
+            btn.addEventListener("click", () => closeModal(item.modal));
+        }
+    });
+
+    // --- เพิ่มเติม: ปิด Modal เมื่อคลิกพื้นที่สีดำรอบๆ ---
+    window.addEventListener("click", (e) => {
+        if (e.target.classList.contains('fixed') && e.target.classList.contains('bg-black')) {
+            e.target.classList.add("hidden");
+        }
+    });
 
     // เรียกใช้ฟังก์ชันสร้างตารางพื้นฐานแบบปลอดภัย (Try-Catch ป้องกันหน้าเว็บค้าง)
     try {
