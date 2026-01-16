@@ -476,7 +476,7 @@ function getISODate(date) {
 async function refreshStaffDatalists() {
   if (globalStaffList.length === 0) {
     try {
-      [cite_start]const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`); [cite: 21, 57]
+      [cite_start]const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
       const result = await response.json();
       if (result.success) {
         [cite_start]globalStaffList = result.data; [cite: 58]
