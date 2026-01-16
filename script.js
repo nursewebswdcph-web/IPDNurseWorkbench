@@ -474,18 +474,26 @@ function getISODate(date) {
 // ----------------------------------------------------------------
 
 async function refreshStaffDatalists() {
+  // 1. ตรวจสอบว่ามีข้อมูลใน Cache (globalStaffList) หรือไม่ 
   if (globalStaffList.length === 0) {
     try {
+      // ดึงข้อมูลจาก Google Apps Script ผ่าน action=getStaffList [cite: 16, 21]
       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
       const result = await response.json();
+      
       if (result.success) {
+        // บันทึกข้อมูลพยาบาล (username, fullName, position) ลงในตัวแปร Global [cite: 58, 59]
         globalStaffList = result.data;
       }
-    } catch (e) { console.error("Load staff failed", e); }
+    } catch (e) { 
+      console.error("Load staff failed", e); 
+    }
   }
   
-  // เติมข้อมูลลงใน datalist สำหรับพยาบาลเพื่อให้พิมพ์ค้นหาได้
+  // 2. กรองเฉพาะชื่อ (fullName) เพื่อนำไปใส่ใน Datalist [cite: 59]
   const staffNames = globalStaffList.map(s => s.fullName);
+  
+  // 3. อัปเดตรายการใน <datalist id="staff-list-datalist"> [cite: 161]
   populateDatalist("staff-list-datalist", staffNames);
 }
 
