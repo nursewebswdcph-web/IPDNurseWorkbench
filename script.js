@@ -1205,7 +1205,6 @@ async function showFormPreview(formType) {
     chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale)";
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "braden"; 
-    chartEditBtn.onclick = () => openBradenModal(); // เปิดหน้า 1 โดย default
     chartAddNewBtn.classList.add("hidden");
 
     // 1. โหลด Template
@@ -1277,7 +1276,6 @@ async function showFormPreview(formType) {
     chartPreviewTitle.textContent = "ประวัติการประเมินความเสี่ยง Morse / MAAS";
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "morse_maas";
-    chartEditBtn.onclick = () => openMorseModal();
     chartAddNewBtn.classList.add("hidden");
 
     // โหลด Template พื้นฐานมารอก่อน
@@ -3322,30 +3320,25 @@ document.addEventListener("DOMContentLoaded", () => {
       else showFormPreview(formType);
     }
   });
-  
   chartEditBtn.addEventListener('click', (e) => {
-    const formType = e.target.dataset.form;
+    const formType = e.currentTarget.dataset.form; // ใช้ currentTarget เพื่อความแม่นยำ
+
     if (formType === '004') {
         openAssessmentForm();
     }
-    
     else if (formType === 'morse_maas') {
         openMorseModal();
     }
-    else if (formType === '007') {
-        return; 
+    else if (formType === 'braden') {
+        openBradenModal();
     }
     else if (formType === 'advice') {
-        // เรียกฟังก์ชันเปิด Modal พร้อมส่งข้อมูลปัจจุบันเข้าไป
         openAdviceModal(currentAdviceData);
-    }
-    else if (formType === 'braden') {
-      openBradenModal();
     }
     else {
         showComingSoon(); 
     }
-  });
+});
   
   chartAddNewBtn.addEventListener('click', (e) => {
     const formType = e.target.dataset.form;
