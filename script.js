@@ -9,6 +9,8 @@ const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_W
 // ----------------------------------------------------------------
 // (2) Constants & Configs
 // ----------------------------------------------------------------
+const ADL_TASKS = ["การรับประทานอาหาร", "การทำความสะอาดปาก/ฟัน", "การแต่งตัว", "การเดิน", "การขับถ่าย", "การอาบน้ำ"];
+const ADL_OPTIONS = ["ทำได้เอง", "บางส่วน", "ไม่ได้เลย", "ใช้อุปกรณ์"];
 const CLASSIFY_CRITERIA = {
   "1": {
     title: "1. สัญญาณชีพ",
@@ -475,19 +477,22 @@ function getISODate(date) {
 
 async function refreshStaffDatalists() {
   try {
-    // โหลดข้อมูลพยาบาลถ้ายังไม่มีในตัวแปร global
     if (globalStaffList.length === 0) {
       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
       const result = await response.json();
       if (result.success) globalStaffList = result.data;
     }
-    
-    // อัปเดต datalist สำหรับพยาบาล
-    const names = globalStaffList.map(s => s.fullName);
-    populateDatalist("staff-list-datalist", names);
-  } catch (e) {
-    console.error("Staff List Error:", e);
-  }
+    // อัปเดต datalist
+    const dl = document.getElementById("staff-list-datalist");
+    if (dl) {
+      dl.innerHTML = "";
+      globalStaffList.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.fullName;
+        dl.appendChild(opt);
+      });
+    }
+  } catch (e) { console.error("Error loading staff", e); }
 }
 
 // สร้าง Config สำหรับจับคู่ชื่อตึกกับไอคอนและสี
@@ -1047,6 +1052,27 @@ function showPreviewPlaceholder() {
 }
 
 // --- CHART PREVIEW LOGIC ---
+function renderADLTable() {
+  const tbody = document.getElementById("adl-table-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  ADL_TASKS.forEach((task, idx) => {
+    const fieldPrefix = ["Eat", "Brush", "Dress", "Walk", "Toilet", "Bath"][idx];
+    let row = `<tr><td class="border p-3 text-left font-medium">${task}</td>`;
+    
+    // ก่อนป่วย
+    row += `<td class="border p-2"><select name="ADL_${fieldPrefix}_Before" class="w-full p-1 border rounded">`;
+    ADL_OPTIONS.forEach(opt => row += `<option value="${opt}">${opt}</option>`);
+    row += `</select></td>`;
+    
+    // ขณะป่วย
+    row += `<td class="border p-2"><select name="ADL_${fieldPrefix}_Current" class="w-full p-1 border rounded">`;
+    ADL_OPTIONS.forEach(opt => row += `<option value="${opt}">${opt}</option>`);
+    row += `</select></td></tr>`;
+    
+    tbody.innerHTML += row;
+  });
+}
 async function showFormPreview(formType) {
   chartPreviewPlaceholder.classList.add("hidden");
   chartPreviewContent.innerHTML = "";
@@ -3279,6 +3305,7 @@ function calculateBradenDay(day) {
 document.addEventListener("DOMContentLoaded", () => {
   updateClock(); setInterval(updateClock, 1000);
   loadWards();
+  renderADLTable();
   wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
   
   // Admit
