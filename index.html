@@ -261,138 +261,174 @@
 
     <!-- (Template 004) -->
   <template id="preview-template-004">
-  <div class="p-10 bg-white text-black font-sarabun leading-tight print-area" style="width: 210mm; min-height: 297mm; margin: auto; border: 1px solid #ddd; font-size: 13px;">
+  <div class="p-4 sm:p-8 bg-white text-black font-sarabun leading-tight text-[13px] border shadow-sm mx-auto shadow-inner" style="max-width: 900px; color: #000;">
     <style>
-      .print-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-      .print-table th, .print-table td { border: 1px solid black; padding: 4px; vertical-align: top; }
-      .checkbox-set { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0; }
-      .checked-box { font-family: 'DejaVu Sans', Arial; font-weight: bold; margin-right: 2px; font-size: 16px; }
-      .header-title { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-      .sub-header { text-align: right; font-size: 11px; margin-bottom: 10px; }
-      .section-label { font-weight: bold; text-decoration: underline; margin-top: 10px; display: block; }
-      .line-dotted { border-bottom: 1px dotted #333; padding: 0 4px; font-weight: bold; }
-      @media print {
-        body * { visibility: hidden; }
-        .print-area, .print-area * { visibility: visible; }
-        .print-area { position: absolute; left: 0; top: 0; width: 100%; border: none; }
-      }
+      .form-table td, .form-table th { border: 1px solid black; padding: 2px 4px; }
+      .chk-box { display: inline-block; width: 14px; height: 14px; border: 1px solid black; text-align: center; line-height: 12px; margin-right: 2px; font-size: 10px; font-weight: bold; vertical-align: middle; }
+      .underline-dots { border-bottom: 1px dotted #000; padding: 0 4px; min-width: 40px; display: inline-block; }
+      .section-title { font-weight: bold; text-decoration: underline; margin-top: 10px; margin-bottom: 5px; }
     </style>
 
-    <div class="sub-header text-right">FR-IPD-004<br>IPDNurseWorkbench</div>
-    <div class="header-title">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน<br>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</div>
-
-    <div class="flex justify-between mb-4">
-      <div>วันที่ <span class="line-dotted" data-field="AdmitDate"></span> เวลา <span class="line-dotted" data-field="AdmitTime"></span> น.</div>
-      <div>รับจาก <span class="line-dotted" data-field="AdmittedFrom"></span></div>
-      <div>รับ REFER จาก <span class="line-dotted" data-field="Refer"></span></div>
+    <div class="flex justify-between items-start border-b border-black pb-2 mb-4">
+      <div>
+        <h2 class="text-lg font-bold">แบบประเมินประวัติและสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
+        <p>โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</p>
+      </div>
+      <div class="text-right">
+        <p class="font-bold text-lg">FR-IPD-004</p>
+        <p class="text-[10px]">แก้ไขครั้งที่ 02 : 01 ธ.ค. 2568</p>
+      </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
-      <div class="checkbox-set">
-        <span>มาโดย:</span>
-        <span data-check="ArriveBy" data-val="เดินมา"></span> เดินมา
-        <span data-check="ArriveBy" data-val="รถนั่ง"></span> รถนั่ง
-        <span data-check="ArriveBy" data-val="เปลนอน"></span> เปลนอน
+    <div class="grid grid-cols-2 gap-x-10 mb-2">
+      <div>
+        วันที่ <span class="underline-dots" data-field="AdmitDate"></span> 
+        เวลา <span class="underline-dots" data-field="AdmitTime"></span> น.
       </div>
-      <div class="checkbox-set">
-        <span>ผู้ให้ข้อมูล:</span>
-        <span data-check="InfoSource" data-val="ผู้ป่วย"></span> ผู้ป่วย
-        <span data-check="InfoSource" data-val="ผู้นำส่ง/ญาติ"></span> ผู้นำส่ง/ญาติ
+      <div class="text-right">
+        รับจาก <span class="underline-dots" data-field="AdmittedFrom"></span> 
+        รับ REFER จาก <span class="underline-dots" data-field="Refer"></span>
       </div>
     </div>
 
     <div class="mb-2">
-      ผู้ดูแลหลักชื่อ <span class="line-dotted" data-field="MainCaregiver_Name"></span> 
-      ความสัมพันธ์ <span data-check="MainCaregiver_Rel" data-val="บิดา-มารดา"></span> บิดา-มารดา
-      <span data-check="MainCaregiver_Rel" data-val="สามี-ภรรยา"></span> สามี-ภรรยา
-      <span data-check="MainCaregiver_Rel" data-val="บุตร"></span> บุตร
-      <span data-check="MainCaregiver_Rel" data-val="ญาติ"></span> ญาติ
-      <span data-check="MainCaregiver_Rel" data-val="อื่นๆ"></span> อื่นๆ <span class="line-dotted" data-field="MainCaregiver_Rel_Other_Text"></span>
+      <span class="chk" data-chk="ArriveBy:เดินมา"></span> เดินมา &nbsp;
+      <span class="chk" data-chk="ArriveBy:รถนั่ง"></span> รถนั่ง &nbsp;
+      <span class="chk" data-chk="ArriveBy:เปลนอน"></span> เปลนอน &nbsp;&nbsp; | &nbsp;&nbsp;
+      ผู้ให้ข้อมูล: <span class="chk" data-chk="InfoSource:ผู้ป่วย"></span> ผู้ป่วย &nbsp;
+      <span class="chk" data-chk="InfoSource:ผู้นำส่ง/ญาติ"></span> ผู้นำส่ง/ญาติ
     </div>
 
-    <div class="mb-1">อาการสำคัญ: <span class="line-dotted" data-field="ChiefComplaint"></span></div>
-    <div class="mb-1">ประวัติการเจ็บป่วย: <span class="line-dotted" data-field="PresentIllness"></span></div>
-    <div class="mb-2">อาการแรกรับ: <span class="line-dotted" data-field="AdmitSymptoms"></span></div>
-    
-    <div class="flex gap-10 mb-3 font-bold border p-2 rounded">
-      <span>BT: <span data-field="Admit_BT"></span> °C</span>
-      <span>PR: <span data-field="Admit_PR"></span> /min</span>
-      <span>RR: <span data-field="Admit_RR"></span> /min</span>
-      <span>BP: <span data-field="Admit_BP"></span> mmHg</span>
-    </div>
-
-    <span class="section-label">ประวัติสุขภาพและพฤติกรรมเสี่ยง</span>
     <div class="mb-2">
-      โรคประจำตัว: <span data-check="Hx_Status" data-val="ไม่มี"></span> ไม่มี <span data-check="Hx_Status" data-val="ไม่ทราบ"></span> ไม่ทราบ <span data-check="Hx_Status" data-val="ไม่เคยตรวจ"></span> ไม่เคยตรวจ
-      <span data-check="Hx_Status" data-val="มี"></span> มี ได้แก่:
-      <span data-check="Hx_HT"></span> HT <span data-check="Hx_DM"></span> DM <span data-check="Hx_Heart"></span> Heart <span data-check="Hx_Kidney"></span> Kidney 
-      <span data-check="Hx_TB"></span> TB <span data-check="Hx_Cancer"></span> มะเร็ง <span class="line-dotted" data-field="Hx_Other"></span>
+      ผู้ดูแลหลักชื่อ <span class="underline-dots w-48" data-field="MainCaregiver_Name"></span> 
+      ความสัมพันธ์: <span class="chk" data-chk="MainCaregiver_Rel:บิดา-มารดา"></span> บิดา-มารดา &nbsp;
+      <span class="chk" data-chk="MainCaregiver_Rel:สามี-ภรรยา"></span> สามี-ภรรยา &nbsp;
+      <span class="chk" data-chk="MainCaregiver_Rel:บุตร"></span> บุตร &nbsp;
+      <span class="chk" data-chk="MainCaregiver_Rel:ญาติ"></span> ญาติ &nbsp;
+      <span class="chk" data-chk="MainCaregiver_Rel:อื่นๆ"></span> อื่นๆ <span class="underline-dots" data-field="MainCaregiver_Rel_Other_Text"></span>
+    </div>
+
+    <div class="mb-2">
+      <b>อาการสำคัญ:</b> <span class="underline-dots w-full block mt-1" data-field="ChiefComplaint"></span>
+      <b>ประวัติการเจ็บป่วย:</b> <span class="underline-dots w-full block mt-1" data-field="PresentIllness"></span>
+    </div>
+
+    <div class="mb-2">
+      <b>อาการและอาการแสดงแรกรับ:</b> <span class="underline-dots w-full block" data-field="AdmitSymptoms"></span>
+      <b>สัญญาณชีพแรกรับ:</b> BT <span class="underline-dots" data-field="Admit_BT"></span> °C &nbsp;
+      PR <span class="underline-dots" data-field="Admit_PR"></span> ครั้ง/min &nbsp;
+      RR <span class="underline-dots" data-field="Admit_RR"></span> ครั้ง/min &nbsp;
+      BP <span class="underline-dots" data-field="Admit_BP"></span> mmHg
+    </div>
+
+    <div class="mb-2">
+      <b>โรคประจำตัว:</b> 
+      <span class="chk" data-chk="Hx_Status:ไม่มี"></span> ไม่มี &nbsp;
+      <span class="chk" data-chk="Hx_Status:ไม่ทราบ"></span> ไม่ทราบ &nbsp;
+      <span class="chk" data-chk="Hx_Status:ไม่เคยตรวจ"></span> ไม่เคยตรวจ &nbsp;
+      <span class="chk" data-chk="Hx_Status:มี"></span> มี ได้แก่:
+      <span class="chk" data-chk="Hx_HT:true"></span> HT &nbsp;
+      <span class="chk" data-chk="Hx_Heart:true"></span> Heart &nbsp;
+      <span class="chk" data-chk="Hx_DM:true"></span> DM &nbsp;
+      <span class="chk" data-chk="Hx_Kidney:true"></span> Kidney &nbsp;
+      <span class="chk" data-chk="Hx_Cancer:true"></span> มะเร็ง &nbsp;
+      อื่น <span class="underline-dots" data-field="Hx_Other"></span>
     </div>
 
     <div class="grid grid-cols-2 gap-4 mb-2">
-      <div>แพ้ยา: <span data-check="Allergy_Status" data-val="ไม่เคย"></span> ไม่เคย <span data-check="Allergy_Status" data-val="เคย"></span> เคย: <span class="line-dotted" data-field="Allergy_Details"></span></div>
-      <div>การผ่าตัด: <span data-check="Sx_Status" data-val="ไม่เคย"></span> ไม่เคย <span data-check="Sx_Status" data-val="เคย"></span> เคย: <span class="line-dotted" data-field="Sx_Details"></span> (<span data-field="Sx_Date"></span>)</div>
+      <div>
+        การแพ้ยา/สาร: <span class="chk" data-chk="Allergy_Status:ไม่เคย"></span> ไม่เคย &nbsp;
+        <span class="chk" data-chk="Allergy_Status:เคย"></span> เคย <span class="underline-dots" data-field="Allergy_Details"></span>
+      </div>
+      <div>
+        การผ่าตัด: <span class="chk" data-chk="Sx_Status:ไม่เคย"></span> ไม่เคย &nbsp;
+        <span class="chk" data-chk="Sx_Status:เคย"></span> เคย <span class="underline-dots" data-field="Sx_Details"></span> เมื่อ <span class="underline-dots" data-field="Sx_Date"></span>
+      </div>
     </div>
-    <div class="mb-3">การรักษาใน รพ.: <span data-check="AdmitHx_Status" data-val="ไม่เคย"></span> ไม่เคย <span data-check="AdmitHx_Status" data-val="เคย"></span> เคย: <span class="line-dotted" data-field="AdmitHx_Disease"></span> เมื่อ <span data-field="AdmitHx_Date"></span></div>
 
-    <span class="section-label">แบบแผนสุขภาพ 12 ด้าน</span>
-    <div class="space-y-1 mb-4">
-      <div>1) รับรู้สุขภาพ: ก่อนป่วย <span class="line-dotted" data-field="HP_Before"></span> เจ็บป่วยครั้งนี้ <span class="line-dotted" data-field="HP_Current"></span> ดูแล <span class="line-dotted" data-field="HP_Care"></span></div>
-      <div>2) โภชนาการ: <span class="line-dotted" data-field="Nutri_Meals"></span> มื้อ/วัน ประเภท <span class="line-dotted" data-field="Nutri_Type"></span> ปัญหา <span class="line-dotted" data-field="Nutri_Problem_Detail"></span></div>
-      <div>3) การขับถ่าย: ปัสสาวะ <span class="line-dotted" data-field="Elim_Urine_Freq"></span> ครั้ง/วัน อุจจาระ <span class="line-dotted" data-field="Elim_Bowel_Freq"></span> ครั้ง/วัน หน้าท้อง <span data-check="Elim_Stoma" data-val="มี"></span> มี</div>
+    <div class="mb-4">
+      ประวัติครอบครัว: <span class="chk" data-chk="FamilyHx_Status:ไม่มี"></span> ไม่มี &nbsp;
+      <span class="chk" data-chk="FamilyHx_Status:มี"></span> มี <span class="underline-dots" data-field="FamilyHx_Details"></span>
+    </div>
+
+    <div class="section-title">การประเมินสมรรถนะผู้ป่วย (11 แบบแผนสุขภาพ)</div>
+    <div class="grid grid-cols-1 gap-2">
+      <div>1) <b>การรับรู้สุขภาพ:</b> ก่อนป่วย <span class="chk" data-chk="HP_Before:ดี"></span> ดี <span class="chk" data-chk="HP_Before:ไม่ดี"></span> ไม่ดี <span class="underline-dots" data-field="HP_Before_Detail"></span> | ปัจจุบัน <span class="chk" data-chk="HP_Current:รุนแรง"></span> รุนแรง <span class="chk" data-chk="HP_Current:ไม่รุนแรง"></span> ไม่รุนแรง</div>
+      <div>2) <b>โภชนาการ:</b> <span class="underline-dots" data-field="Nutri_Meals"></span> มื้อ/วัน | ประเภท: <span class="chk" data-chk="Nutri_Type:อาหารธรรมดา"></span> ธรรมดา <span class="chk" data-chk="Nutri_Type:อาหารอ่อน"></span> อ่อน <span class="chk" data-chk="Nutri_Type:อาหารทางสายยาง"></span> สายยาง | ปัญหา: <span class="chk" data-chk="Nutri_Problem:ไม่มี"></span> ไม่มี <span class="chk" data-chk="Nutri_Problem:มี"></span> มี <span class="underline-dots" data-field="Nutri_Problem_Detail"></span></div>
+      <div>3) <b>การขับถ่าย:</b> ปัสสาวะ <span class="underline-dots" data-field="Elim_Urine_Freq"></span> ครั้ง/วัน <span class="chk" data-chk="Elim_Urine_Status:ปกติ"></span> ปกติ <span class="chk" data-chk="Elim_Urine_Status:ไม่ปกติ"></span> ไม่ปกติ <span class="underline-dots" data-field="Elim_Urine_Detail"></span> | อุจจาระ <span class="underline-dots" data-field="Elim_Bowel_Freq"></span> ครั้ง/วัน <span class="chk" data-chk="Elim_Bowel_Status:ปกติ"></span> ปกติ <span class="chk" data-chk="Elim_Bowel_Status:ไม่ปกติ"></span> ไม่ปกติ | หน้าท้อง <span class="chk" data-chk="Elim_Stoma:ไม่มี"></span> ไม่มี <span class="chk" data-chk="Elim_Stoma:มี"></span> มี</div>
       
-      <table class="print-table mt-2">
-        <tr class="bg-gray-100 font-bold"><td>4) กิจวัตรประจำวัน (ADL)</td><td>ก่อนป่วย</td><td>ขณะป่วย</td></tr>
-        <tr><td>การรับประทานอาหาร</td><td data-field="ADL_Eat_Before"></td><td data-field="ADL_Eat_Current"></td></tr>
-        <tr><td>การเดิน/เคลื่อนไหว</td><td data-field="ADL_Walk_Before"></td><td data-field="ADL_Walk_Current"></td></tr>
-        <tr><td>การขับถ่าย</td><td data-field="ADL_Toilet_Before"></td><td data-field="ADL_Toilet_Current"></td></tr>
-      </table>
-
-      <div class="grid grid-cols-2 gap-4">
-        <div>5) นอนหลับ: <span class="line-dotted" data-field="Sleep_Hours"></span> ชม./วัน (<span data-field="Sleep_Adequacy"></span>)</div>
-        <div>6) ประสาทสัมผัส: LOC <span data-field="Cogn_LOC"></span> สายตา <span data-field="Cogn_Vision"></span></div>
+      <div class="mt-2">
+        <p>4) <b>กิจวัตรประจำวัน (ADL):</b></p>
+        <table class="w-full text-center border-collapse form-table mt-1">
+          <thead><tr class="bg-gray-50"><th>กิจกรรม</th><th>ก่อนเจ็บป่วย</th><th>ขณะเจ็บป่วย</th></tr></thead>
+          <tbody>
+            <tr><td class="text-left">การรับประทานอาหาร</td><td data-field="ADL_Eat_Before"></td><td data-field="ADL_Eat_Current"></td></tr>
+            <tr><td class="text-left">การเคลื่อนไหว/เดิน</td><td data-field="ADL_Walk_Before"></td><td data-field="ADL_Walk_Current"></td></tr>
+            <tr><td class="text-left">การอาบน้ำ</td><td data-field="ADL_Bath_Before"></td><td data-field="ADL_Bath_Current"></td></tr>
+          </tbody>
+        </table>
       </div>
-      <div>8) เผชิญความเครียด: สิ่งที่กังวล <span id="preview-full-stress-list"></span> วิธีแก้ <span class="line-dotted" data-field="Cope_Method"></span></div>
+
+      <div class="grid grid-cols-2 gap-4 mt-2">
+        <div>5) <b>พักผ่อน:</b> นอน <span class="underline-dots" data-field="Sleep_Hours"></span> ชม. <span class="chk" data-chk="Sleep_Adequacy:เพียงพอ"></span> พอ <span class="chk" data-chk="Sleep_Adequacy:ไม่เพียงพอ"></span> ไม่พอ | ปัญหา <span class="chk" data-chk="Sleep_Problem:ไม่มี"></span> ไม่มี <span class="chk" data-chk="Sleep_Problem:มี"></span> มี <span class="underline-dots" data-field="Sleep_Problem_Detail"></span></div>
+        <div>6) <b>ประสาทสัมผัส:</b> LOC <span class="underline-dots" data-field="Cogn_LOC"></span> | เห็น <span class="underline-dots" data-field="Cogn_Vision"></span> | พูด <span class="underline-dots" data-field="Cogn_Speech"></span></div>
+      </div>
+      <div>8) <b>เครียด/ปรับตัว:</b> ไม่สบายใจ <span class="chk" data-chk="Stress_Status:ไม่มี"></span> ไม่มี <span class="chk" data-chk="Stress_Status:มี"></span> มี ( <span class="chk" data-chk="Cope_Stress_Fear:true"></span> กลัวไม่หาย <span class="chk" data-chk="Cope_Stress_Cost:true"></span> ค่ารักษา <span class="chk" data-chk="Cope_Stress_Work:true"></span> ขาดงาน ) วิธีแก้ <span class="underline-dots w-48" data-field="Cope_Method"></span></div>
     </div>
 
-    <div class="border-t-2 border-black pt-2">
-      <span class="font-bold">13. PAIN MANAGEMENT:</span> 
-      สถานะ <span data-check="Pain_Status" data-val="ไม่มี"></span> ไม่มี <span data-check="Pain_Status" data-val="มี"></span> มี 
-      Score <span class="line-dotted" data-field="Pain_Scale_Score"></span>/10 
-      บริเวณ <span class="line-dotted" data-field="Pain_Location"></span>
-      <div class="checkbox-set text-[11px] mt-1">
-        กระทบต่อ: <span data-check="Pain_Effect_Eat"></span> กิน <span data-check="Pain_Effect_Sleep"></span> นอน <span data-check="Pain_Effect_Activity"></span> กิจกรรม <span data-check="Pain_Effect_Mood"></span> อารมณ์
+    <div class="section-title">13. PAIN MANAGEMENT</div>
+    <div class="border p-2 bg-red-50/30 flex gap-4">
+      <div class="w-2/3">
+        ปวด: <span class="chk" data-chk="Pain_Status:ไม่มี"></span> ไม่มี <span class="chk" data-chk="Pain_Status:มี"></span> มี บริเวณ <span class="underline-dots" data-field="Pain_Location"></span> สาเหตุ <span class="underline-dots" data-field="Pain_Cause"></span><br>
+        ลักษณะ: <span class="chk" data-chk="Pain_Pattern:ครั้งคราว"></span> ครั้งคราว <span class="chk" data-chk="Pain_Pattern:ตลอดเวลา"></span> ตลอดเวลา | Pain Scale (0-10): <span class="font-bold underline" data-field="Pain_Scale_Score"></span><br>
+        ปวดกระทบต่อ: <span class="chk" data-chk="Pain_Effect_Eat:true"></span> กิน <span class="chk" data-chk="Pain_Effect_Sleep:true"></span> นอน <span class="chk" data-chk="Pain_Effect_Activity:true"></span> กิจกรรม <span class="chk" data-chk="Pain_Effect_Mood:true"></span> อารมณ์ <span class="chk" data-chk="Pain_Effect_Elim:true"></span> ขับถ่าย<br>
+        การบรรเทา: <span class="chk" data-chk="Pain_Relief_Cold:true"></span> Cold <span class="chk" data-chk="Pain_Relief_Hot:true"></span> Hot <span class="chk" data-chk="Pain_Relief_Massage:true"></span> นวด <span class="chk" data-chk="Pain_Relief_Meds:true"></span> ยา
+      </div>
+      <div class="w-1/3">
+        <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" class="w-full border" alt="Pain Scale">
       </div>
     </div>
 
-    <div class="mt-4">
-      <span class="font-bold">14. Braden Scale (ประเมินแผลกดทับ):</span>
-      <div class="grid grid-cols-6 gap-2 text-center border p-2 bg-gray-50 mt-1">
-        <div>Sensory<br><span class="font-bold" data-field="Braden_Sensory"></span></div>
-        <div>Moisture<br><span class="font-bold" data-field="Braden_Moisture"></span></div>
-        <div>Activity<br><span class="font-bold" data-field="Braden_Activity"></span></div>
-        <div>Mobility<br><span class="font-bold" data-field="Braden_Mobility"></span></div>
-        <div>Nutrition<br><span class="font-bold" data-field="Braden_Nutrition"></span></div>
-        <div>Friction<br><span class="font-bold" data-field="Braden_Friction"></span></div>
+    <div class="section-title">14. Braden Scale for Predicting Pressure Sore Risk</div>
+    <table class="w-full text-[10px] border-collapse form-table">
+      <thead class="bg-gray-100">
+        <tr><th>Parameter</th><th>1 (เสี่ยงมาก)</th><th>2</th><th>3</th><th>4 (ปกติ)</th><th>Score</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>การรับรู้/ความรู้สึก</td><td class="chk-cell" data-chk="Braden_Sensory:1"></td><td class="chk-cell" data-chk="Braden_Sensory:2"></td><td class="chk-cell" data-chk="Braden_Sensory:3"></td><td class="chk-cell" data-chk="Braden_Sensory:4"></td><td class="font-bold text-center" data-field="Braden_Sensory"></td></tr>
+        <tr><td>ความเปียกชื้น</td><td class="chk-cell" data-chk="Braden_Moisture:1"></td><td class="chk-cell" data-chk="Braden_Moisture:2"></td><td class="chk-cell" data-chk="Braden_Moisture:3"></td><td class="chk-cell" data-chk="Braden_Moisture:4"></td><td class="font-bold text-center" data-field="Braden_Moisture"></td></tr>
+        <tr><td>กิจกรรม</td><td class="chk-cell" data-chk="Braden_Activity:1"></td><td class="chk-cell" data-chk="Braden_Activity:2"></td><td class="chk-cell" data-chk="Braden_Activity:3"></td><td class="chk-cell" data-chk="Braden_Activity:4"></td><td class="font-bold text-center" data-field="Braden_Activity"></td></tr>
+        <tr><td>การเคลื่อนไหว</td><td class="chk-cell" data-chk="Braden_Mobility:1"></td><td class="chk-cell" data-chk="Braden_Mobility:2"></td><td class="chk-cell" data-chk="Braden_Mobility:3"></td><td class="chk-cell" data-chk="Braden_Mobility:4"></td><td class="font-bold text-center" data-field="Braden_Mobility"></td></tr>
+        <tr><td>โภชนาการ</td><td class="chk-cell" data-chk="Braden_Nutrition:1"></td><td class="chk-cell" data-chk="Braden_Nutrition:2"></td><td class="chk-cell" data-chk="Braden_Nutrition:3"></td><td class="chk-cell" data-chk="Braden_Nutrition:4"></td><td class="font-bold text-center" data-field="Braden_Nutrition"></td></tr>
+        <tr><td>การเสียดสี/แรงลาก</td><td class="chk-cell" data-chk="Braden_Friction:1"></td><td class="chk-cell" data-chk="Braden_Friction:2"></td><td class="chk-cell" data-chk="Braden_Friction:3"></td><td class="bg-gray-200"></td><td class="font-bold text-center" data-field="Braden_Friction"></td></tr>
+        <tr class="bg-blue-50 font-bold">
+          <td colspan="5" class="text-right">Total Score</td>
+          <td class="text-center text-blue-700" data-field="Braden_Total"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="mt-1 text-xs">แปลผล: <span class="font-bold underline" data-field="Braden_Result"></span></div>
+
+    <div class="section-title">15. Fall risk assessment</div>
+    <div class="grid grid-cols-2 gap-4 border p-2">
+      <div>
+        <span class="chk" data-chk="Fall_Age_Child:true"></span> วัยเด็ก &nbsp;
+        <span class="chk" data-chk="Fall_Age_Elder:true"></span> ผู้สูงอายุ > 65 ปี &nbsp;
+        <span class="chk" data-chk="Fall_Mental:มี"></span> สภาวะทางสมอง/จิตผิดปกติ
       </div>
-      <div class="text-right font-bold mt-1">Total Score: <span data-field="Braden_Total" class="text-lg"></span> (<span data-field="Braden_Result"></span>)</div>
+      <div>
+        ผลการประเมิน: <span class="underline-dots" data-field="Fall_Prevention"></span> | <span data-field="Fall_Result"></span>
+      </div>
     </div>
 
-    <div class="mt-4 border p-2">
-      <span class="font-bold">15. Fall Risk:</span>
-      <span data-check="Fall_Age_Child"></span> วัยเด็ก <span data-check="Fall_Age_Elder"></span> สูงอายุ 
-      <span data-check="Fall_Mental"></span> จิตผิดปกติ <span data-check="Fall_History"></span> ประวัติล้ม
-      <span data-check="Fall_Vision"></span> สายตา <span data-check="Fall_Gait"></span> การทรงตัว 
-      | ผล: <span class="line-dotted" data-field="Fall_Prevention"></span>
-    </div>
-
-    <div class="mt-10 flex justify-between">
-      <div class="text-center">...........................................................<br>(<span data-field="Assessor_Name"></span>)<br>พยาบาลผู้ประเมิน</div>
-      <div class="text-center">...........................................................<br>หัวหน้าหอผู้ป่วย / ผู้ตรวจสอบ</div>
+    <div class="mt-6 flex justify-end gap-10">
+      <div class="text-center">
+        <p>ลงชื่อ <span class="underline-dots w-40" data-field="Assessor_Name"></span> ผู้ประเมิน</p>
+        <p class="mt-1 text-xs">( <span data-field="Assessor_Position"></span> )</p>
+      </div>
     </div>
   </div>
 </template>
-    
     <!-- (Template 005) -->
     <template id="preview-template-005">
       <div class="overflow-x-auto">
