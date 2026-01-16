@@ -942,244 +942,204 @@
     </div>
 
     <!-- (Modal: Assessment FR-IPD-004) -->
-    <div id="assessment-modal" class="fixed inset-0 bg-white z-50 hidden overflow-y-auto">
-      <form id="assessment-form">
-        <div class="sticky top-0 bg-white shadow-md z-10">
-          <div class="container mx-auto px-6 py-4 flex flex-col md:flex-row justify-between md:items-center border-b">
-            <div>
-              <h3 class="text-2xl font-bold text-indigo-800">แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)</h3>
-              <p class="text-gray-600">AN: <strong id="assess-an-display" class="text-indigo-700"></strong> | ชื่อ: <strong id="assess-name-display" class="text-indigo-700"></strong></p>
-            </div>
-            <div class="mt-3 md:mt-0 flex gap-2">
-              <button id="close-assessment-modal-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow">ปิด</button>
-              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow">บันทึกข้อมูล</button>
-            </div>
-          </div>
+    <div id="assessment-modal" class="fixed inset-0 bg-white z-50 hidden overflow-y-auto font-sarabun text-base">
+  <form id="assessment-form">
+    <div class="sticky top-0 bg-white shadow-md z-10 border-b">
+      <div class="container mx-auto px-6 py-4 flex flex-col md:flex-row justify-between md:items-center">
+        <div>
+          <h3 class="text-2xl font-bold text-indigo-800">แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)</h3>
+          <p class="text-sm text-gray-600">AN: <strong id="assess-an-display" class="text-indigo-700"></strong> | ชื่อ: <strong id="assess-name-display" class="text-indigo-700"></strong></p>
         </div>
-        
-        <div class="container mx-auto px-6 py-8">
-          <div class="space-y-8">
-            
-            <fieldset class="border p-4 rounded-lg shadow-sm bg-white">
-              <legend class="text-xl font-semibold px-2 text-gray-800">ข้อมูลทั่วไป</legend>
-              <div class="grid grid-cols-12 gap-4 mt-4">
-                <div class="col-span-12 md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700">รับจาก</label>
-                  <input type="text" id="assess-admit-from" name="AdmittedFrom" class="mt-1 p-2 block w-full border rounded-md bg-gray-100" readonly>
-                </div>
-                <div class="col-span-12 md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700">รับ REFER จาก</label>
-                  <input type="text" id="assess-refer-from" name="Refer" class="mt-1 p-2 block w-full border rounded-md bg-gray-100" readonly>
-                </div>
-                <div class="col-span-12 md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700">มาโดย</label>
-                  <div class="mt-2 flex gap-4">
-                    <label><input type="radio" name="ArriveBy" value="เดินมา"> เดินมา</label>
-                    <label><input type="radio" name="ArriveBy" value="รถนั่ง"> รถนั่ง</label>
-                    <label><input type="radio" name="ArriveBy" value="เปลนอน"> เปลนอน</label>
-                  </div>
-                </div>
-                <div class="col-span-12 md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700">ผู้ให้ข้อมูล</label>
-                  <div class="mt-2 flex gap-4">
-                    <label><input type="radio" name="InfoSource" value="ผู้ป่วย"> ผู้ป่วย</label>
-                    <label><input type="radio" name="InfoSource" value="ผู้นำส่ง ญาติ"> ผู้นำส่ง ญาติ</label>
-                  </div>
-                </div>
-                <div class="col-span-12 md:col-span-6">
-                  <label class="block text-sm font-medium text-gray-700">ผู้ดูแลหลักชื่อ</label>
-                  <input type="text" name="MainCaregiver_Name" class="mt-1 p-2 block w-full border rounded-md">
-                </div>
-                <div class="col-span-12 md:col-span-6">
-                  <label class="block text-sm font-medium text-gray-700">ความสัมพันธ์กับผู้ป่วย</label>
-                  <div class="mt-2 flex flex-wrap gap-4">
-                    <label><input type="radio" name="MainCaregiver_Rel" value="บิดา-มารดา"> บิดา-มารดา</label>
-                    <label><input type="radio" name="MainCaregiver_Rel" value="สามี,ภรรยา,บุตร"> สามี,ภรรยา,บุตร</label>
-                    <label><input type="radio" name="MainCaregiver_Rel" value="ญาติ"> ญาติ</label>
-                    <label><input type="radio" name="MainCaregiver_Rel" value="อื่นๆ" class="assessment-radio-toggle" data-controls="rel-other"> อื่นๆ:</label>
-                    <input type="text" name="MainCaregiver_Rel_Other_Text" id="rel-other" class="p-1 border-b focus:outline-none hidden" placeholder="ระบุ...">
-                  </div>
-                </div>
-                <div class="col-span-12"><label class="block text-sm font-medium">อาการสำคัญ</label><textarea name="ChiefComplaint" rows="2" class="mt-1 p-2 w-full border rounded-md"></textarea></div>
-                <div class="col-span-12"><label class="block text-sm font-medium">ประวัติการเจ็บป่วย</label><textarea name="PresentIllness" rows="2" class="mt-1 p-2 w-full border rounded-md"></textarea></div>
-                <div class="col-span-12"><label class="block text-sm font-medium">อาการและอาการแสดงแรกรับ</label><textarea name="AdmitSymptoms" rows="2" class="mt-1 p-2 w-full border rounded-md"></textarea></div>
-              </div>
-            </fieldset>
-
-            <fieldset class="border p-4 rounded-lg shadow-sm bg-white">
-              <legend class="text-xl font-semibold px-2 text-gray-800">ประวัติสุขภาพ</legend>
-              <div class="space-y-4 mt-2">
-                <div>
-                  <label class="block text-sm font-bold mb-2">โรคประจำตัว:</label>
-                  <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    <label><input type="checkbox" name="Hx_HT" value="true"> ความดันโลหิตสูง</label>
-                    <label><input type="checkbox" name="Hx_Heart" value="true"> โรคหัวใจ</label>
-                    <label><input type="checkbox" name="Hx_Liver" value="true"> โรคตับ</label>
-                    <label><input type="checkbox" name="Hx_Kidney" value="true"> โรคไต</label>
-                    <label><input type="checkbox" name="Hx_DM" value="true"> เบาหวาน</label>
-                    <label><input type="checkbox" name="Hx_Asthma" value="true"> หอบหืด</label>
-                    <label><input type="checkbox" name="Hx_Epilepsy" value="true"> ลมชัก</label>
-                    <label><input type="checkbox" name="Hx_TB" value="true"> วัณโรค</label>
-                    <label><input type="checkbox" name="Hx_Cancer" value="true"> มะเร็ง</label>
-                    <div class="col-span-1 md:col-span-2 flex items-center gap-1">
-                      <label>อื่นๆ:</label><input type="text" name="Hx_Other" class="border-b focus:outline-none flex-1">
-                    </div>
-                  </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="p-2 border rounded bg-red-50">
-                    <label class="block text-sm font-bold">การแพ้ยา/สารต่าง ๆ:</label>
-                    <div class="flex gap-4 mt-1">
-                      <label><input type="radio" name="Allergy_Status" value="ไม่เคย"> ไม่เคย</label>
-                      <label><input type="radio" name="Allergy_Status" value="เคย" class="assessment-radio-toggle" data-controls="allergy-detail"> เคย:</label>
-                    </div>
-                    <input type="text" name="Allergy_Details" id="allergy-detail" class="mt-1 p-1 w-full border rounded hidden" placeholder="ระบุชนิด, อาการ, การแก้ไข...">
-                  </div>
-                  <div class="p-2 border rounded bg-blue-50">
-                    <label class="block text-sm font-bold">การผ่าตัด:</label>
-                    <div class="flex gap-4 mt-1">
-                      <label><input type="radio" name="Sx_Status" value="ไม่เคย"> ไม่เคย</label>
-                      <label><input type="radio" name="Sx_Status" value="เคย" class="assessment-radio-toggle" data-controls="sx-detail"> เคย:</label>
-                    </div>
-                    <div id="sx-detail" class="hidden space-y-1 mt-1">
-                      <input type="text" name="Sx_Details" class="w-full border rounded p-1" placeholder="ระบุการผ่าตัด...">
-                      <div class="flex items-center gap-1"><span>เมื่อ:</span><input type="text" name="Sx_Date" class="border-b focus:outline-none"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div class="p-2 border rounded">
-                      <label class="block text-sm font-bold">ประวัติครอบครัว:</label>
-                      <input type="text" name="FamilyHx_Details" class="w-full border-b focus:outline-none" placeholder="ระบุ...">
-                   </div>
-                   <div class="p-2 border rounded bg-gray-50">
-                      <label class="block text-sm font-bold">สารเสพติด:</label>
-                      <div class="flex gap-4">
-                        <label>สุรา: <input type="text" name="Substance_Alcohol_Vol" class="border-b w-24 text-center"></label>
-                        <label>บุหรี่: <input type="text" name="Substance_Smoke_Vol" class="border-b w-24 text-center"></label>
-                      </div>
-                   </div>
-                </div>
-              </div>
-            </fieldset>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <fieldset class="border p-4 rounded-lg bg-white">
-                <legend class="font-bold text-indigo-700">1. การรับรู้สุขภาพ</legend>
-                <label class="block text-xs">ก่อนป่วย: 
-                  <label><input type="radio" name="HP_Before" value="ดี"> ดี</label>
-                  <label><input type="radio" name="HP_Before" value="ไม่ดี"> ไม่ดี</label>
-                </label>
-                <label class="block text-xs mt-2">วิธีดูแล: 
-                  <select name="HP_Care" class="border text-xs rounded assessment-radio-toggle">
-                    <option value="ไปรพ./คลินิก">ไปรพ./คลินิก</option>
-                    <option value="ซื้อยากินเอง">ซื้อยากินเอง</option>
-                    <option value="อื่นๆ" data-controls="hp-care-other">อื่นๆ</option>
-                  </select>
-                </label>
-                <input type="text" name="HP_Care_Other" id="hp-care-other" class="mt-1 w-full border rounded p-1 text-xs hidden">
-              </fieldset>
-
-              <fieldset class="border p-4 rounded-lg bg-white">
-                <legend class="font-bold text-indigo-700">2. โภชนาการ</legend>
-                <label class="block text-xs">อาหาร/วัน: <input type="number" name="Nutri_Meals" class="w-10 border rounded"></label>
-                <div class="grid grid-cols-2 gap-1 mt-2 text-[10px]">
-                  <label><input type="checkbox" name="Nutri_Prob_Appetite" value="เบื่ออาหาร"> เบื่ออาหาร</label>
-                  <label><input type="checkbox" name="Nutri_Prob_Nausea" value="คลื่นไส้"> คลื่นไส้</label>
-                  <label><input type="checkbox" name="Nutri_Prob_Swallow" value="กลืนลำบาก"> กลืนลำบาก</label>
-                </div>
-                <label class="block text-xs mt-2">ผิวหนัง: <input type="text" name="Nutri_Skin_Detail" class="w-full border-b"></label>
-              </fieldset>
-
-              <fieldset class="border p-4 rounded-lg bg-white">
-                <legend class="font-bold text-indigo-700">3. การขับถ่าย</legend>
-                <label class="block text-xs">ปัสสาวะ: <input type="text" name="Elim_Urine_Freq" class="w-10 border"> ครั้ง/วัน</label>
-                <label class="block text-xs mt-1">ลักษณะ: <input type="text" name="Elim_Urine_Detail" class="w-full border-b"></label>
-                <label class="block text-xs mt-2">อุจจาระ: <input type="text" name="Elim_Bowel_Freq" class="w-10 border"> ครั้ง/วัน</label>
-              </fieldset>
-            </div>
-
-            <fieldset class="border p-4 rounded-lg bg-white shadow-sm">
-              <legend class="font-bold text-indigo-700 px-2">4. กิจวัตรประจำวัน (ADL)</legend>
-              <div class="overflow-x-auto">
-                <table class="w-full text-xs border">
-                  <tr class="bg-gray-100"><th>กิจกรรม</th><th>ก่อนป่วย</th><th>ขณะป่วย</th></tr>
-                  <tr><td class="p-2 border">รับประทานอาหาร</td><td class="border p-1"><input name="ADL_Eat_Before" class="w-full"></td><td class="border p-1"><input name="ADL_Eat_Current" class="w-full"></td></tr>
-                  <tr><td class="p-2 border">ความสะอาดปาก/ฟัน</td><td class="border p-1"><input name="ADL_Brush_Before" class="w-full"></td><td class="border p-1"><input name="ADL_Brush_Current" class="w-full"></td></tr>
-                  <tr><td class="p-2 border">การแต่งตัว</td><td class="border p-1"><input name="ADL_Dress_Before" class="w-full"></td><td class="border p-1"><input name="ADL_Dress_Current" class="w-full"></td></tr>
-                  <tr><td class="p-2 border">การเคลื่อนไหว/เดิน</td><td class="border p-1"><input name="ADL_Walk_Before" class="w-full"></td><td class="border p-1"><input name="ADL_Walk_Current" class="w-full"></td></tr>
-                  <tr><td class="p-2 border">การขับถ่าย</td><td class="border p-1"><input name="ADL_Toilet_Before" class="w-full"></td><td class="border p-1"><input name="ADL_Toilet_Current" class="w-full"></td></tr>
-                  <tr><td class="p-2 border">การอาบน้ำ</td><td class="border p-1"><input name="ADL_Bath_Before" class="w-full"></td><td class="border p-1"><input name="ADL_Bath_Current" class="w-full"></td></tr>
-                </table>
-              </div>
-            </fieldset>
-
-            <fieldset class="border p-4 rounded-lg bg-red-50 border-red-200">
-              <legend class="text-lg font-bold text-red-700 px-2">13. PAIN MANAGEMENT</legend>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div class="flex gap-4">
-                    <label><input type="radio" name="Pain_Status" value="ไม่มี"> ไม่มี</label>
-                    <label><input type="radio" name="Pain_Status" value="มี"> มี บริเวณ: <input type="text" name="Pain_Location" class="border-b bg-transparent"></label>
-                  </div>
-                  <div class="mt-2 text-xs">
-                    <span class="font-bold">ลักษณะการปวด:</span>
-                    <label class="ml-2"><input type="radio" name="Pain_Pattern" value="เป็นครั้งคราว"> เป็นครั้งคราว</label>
-                    <label class="ml-2"><input type="radio" name="Pain_Pattern" value="ตลอดเวลา"> ตลอดเวลา</label>
-                  </div>
-                  <div class="mt-2">
-                    <span class="text-xs font-bold">Pain Scale (0-10):</span>
-                    <input type="number" name="Pain_Scale_Score" min="0" max="10" class="w-16 border rounded text-center ml-2">
-                  </div>
-                </div>
-                <div class="text-[10px]">
-                  <span class="font-bold">ปวดกระทบต่อ:</span>
-                  <div class="grid grid-cols-3 gap-1 mt-1">
-                    <label><input type="checkbox" name="Pain_Effect_Eat" value="true"> การกิน</label>
-                    <label><input type="checkbox" name="Pain_Effect_Sleep" value="true"> การนอน</label>
-                    <label><input type="checkbox" name="Pain_Effect_Activity" value="true"> กิจกรรม</label>
-                    <label><input type="checkbox" name="Pain_Effect_Mood" value="true"> อารมณ์</label>
-                  </div>
-                  <span class="font-bold block mt-2">สิ่งที่บรรเทา:</span>
-                  <div class="grid grid-cols-3 gap-1 mt-1">
-                    <label><input type="checkbox" name="Pain_Relief_Cold" value="true"> Cold comp.</label>
-                    <label><input type="checkbox" name="Pain_Relief_Hot" value="true"> Hot comp.</label>
-                    <label><input type="checkbox" name="Pain_Relief_Meds" value="true"> ยา</label>
-                  </div>
-                </div>
-              </div>
-            </fieldset>
-
-            <fieldset class="border p-4 rounded-lg bg-orange-50">
-              <legend class="font-bold text-orange-700">15. Fall risk assessment (7 จุดประเมิน)</legend>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
-                <label><input type="checkbox" name="Fall_Age_Child" value="true"> วัยเด็ก</label>
-                <label><input type="checkbox" name="Fall_Age_Elder" value="true"> ผู้สูงอายุ >65</label>
-                <label><input type="checkbox" name="Fall_Mental" value="true"> สภาวะทางจิต</label>
-                <label><input type="checkbox" name="Fall_History" value="true"> ประวัติหกล้ม</label>
-                <label><input type="checkbox" name="Fall_Meds" value="true"> ใช้ยาเสี่ยง</label>
-                <label><input type="checkbox" name="Fall_Vision" value="true"> การมองเห็น</label>
-                <label><input type="checkbox" name="Fall_Gait" value="true"> การทรงตัว</label>
-                <div class="font-bold text-red-600">ผล: <input type="text" name="Fall_Result" class="border-b bg-transparent w-20"></div>
-              </div>
-            </fieldset>
-
-            <fieldset class="border p-4 rounded-lg shadow-sm bg-gray-50">
-              <legend class="text-lg font-semibold px-2">ผู้ประเมิน</legend>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="text" id="assessor-name" name="Assessor_Name" list="staff-list-datalist" class="p-2 border rounded" placeholder="ชื่อพยาบาล...">
-                <input type="text" id="assessor-position" name="Assessor_Position" class="p-2 border rounded bg-gray-100" readonly placeholder="ตำแหน่ง...">
-              </div>
-            </fieldset>
-
-          </div>
-          
-          <div class="mt-8 pt-6 border-t flex justify-end">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-12 rounded-lg shadow-lg">บันทึกแบบประเมิน (Save)</button>
-          </div>
+        <div class="mt-3 md:mt-0 flex gap-2">
+          <button id="close-assessment-modal-btn" type="button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded-lg shadow">ปิด</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded-lg shadow">บันทึกข้อมูล (Save)</button>
         </div>
-      </form>
+      </div>
     </div>
+
+    <div class="container mx-auto px-6 py-8 space-y-10">
+      
+      <fieldset class="border-2 border-indigo-100 p-6 rounded-xl bg-indigo-50/30">
+        <legend class="text-xl font-bold px-3 text-indigo-800 bg-white border-2 border-indigo-100 rounded-lg">1. ข้อมูลการรับใหม่ (ดึงจากทะเบียน)</legend>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+          <div><label class="block font-semibold mb-1">รับจาก</label><input type="text" id="assess-admit-from" name="AdmittedFrom" class="w-full p-2 border rounded bg-gray-100" readonly></div>
+          <div><label class="block font-semibold mb-1">รับ REFER จาก</label><input type="text" id="assess-refer-from" name="Refer" class="w-full p-2 border rounded bg-gray-100" readonly></div>
+          <div class="md:col-span-2"><label class="block font-semibold mb-1">อาการสำคัญ</label><textarea id="assess-cc" name="ChiefComplaint" rows="2" class="w-full p-2 border rounded bg-gray-100" readonly></textarea></div>
+          <div class="md:col-span-2"><label class="block font-semibold mb-1">ประวัติการเจ็บป่วย</label><textarea id="assess-pi" name="PresentIllness" rows="2" class="w-full p-2 border rounded bg-gray-100" readonly></textarea></div>
+          <div class="md:col-span-2"><label class="block font-semibold mb-1">ประวัติในครอบครัว</label>
+            <div class="flex gap-4 mt-2">
+              <label class="flex items-center"><input type="radio" name="FamilyHx_Status" value="ไม่มี" class="mr-2"> ไม่มี</label>
+              <label class="flex items-center"><input type="radio" name="FamilyHx_Status" value="มี" class="mr-2 assessment-radio-toggle" data-controls="family-hx-detail"> มี ระบุ:</label>
+              <input type="text" name="FamilyHx_Details" id="family-hx-detail" class="flex-1 border-b border-gray-400 focus:outline-none hidden" placeholder="...">
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="border-2 border-gray-200 p-6 rounded-xl">
+        <legend class="text-xl font-bold px-3 text-gray-700 bg-white border-2 border-gray-200 rounded-lg">3. การขับถ่าย</legend>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+          <div class="p-4 border rounded-lg bg-blue-50/20">
+            <span class="font-bold border-b-2 border-blue-200 block mb-3">ปัสสาวะ</span>
+            <div class="flex items-center gap-2 mb-3">วันละ <input type="text" name="Elim_Urine_Freq" class="w-16 border rounded text-center"> ครั้ง</div>
+            <div class="flex gap-4">
+              <label><input type="radio" name="Elim_Urine_Status" value="ปกติ"> ปกติ</label>
+              <label><input type="radio" name="Elim_Urine_Status" value="ไม่ปกติ" class="assessment-radio-toggle" data-controls="urine-detail"> ไม่ปกติ ระบุ:</label>
+            </div>
+            <input type="text" name="Elim_Urine_Detail" id="urine-detail" class="w-full border rounded p-2 mt-2 hidden" placeholder="ระบุความผิดปกติ...">
+          </div>
+          <div class="p-4 border rounded-lg bg-orange-50/20">
+            <span class="font-bold border-b-2 border-orange-200 block mb-3">อุจจาระ</span>
+            <div class="flex items-center gap-2 mb-3">วันละ <input type="text" name="Elim_Bowel_Freq" class="w-16 border rounded text-center"> ครั้ง</div>
+            <div class="flex gap-4">
+              <label><input type="radio" name="Elim_Bowel_Status" value="ปกติ"> ปกติ</label>
+              <label><input type="radio" name="Elim_Bowel_Status" value="ไม่ปกติ" class="assessment-radio-toggle" data-controls="bowel-detail"> ไม่ปกติ ระบุ:</label>
+            </div>
+            <input type="text" name="Elim_Bowel_Detail" id="bowel-detail" class="w-full border rounded p-2 mt-2 hidden" placeholder="ระบุความผิดปกติ...">
+          </div>
+          <div class="md:col-span-2">
+            <span class="font-bold">การขับถ่ายทางหน้าท้อง:</span>
+            <label class="ml-4"><input type="radio" name="Elim_Stoma" value="ไม่มี"> ไม่มี</label>
+            <label class="ml-4"><input type="radio" name="Elim_Stoma" value="มี"> มี</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="border-2 border-gray-200 p-6 rounded-xl">
+        <legend class="text-xl font-bold px-3 text-gray-700 bg-white border-2 border-gray-200 rounded-lg">4. กิจวัตรประจำวัน (ADL)</legend>
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full border-collapse text-center">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border p-3 text-left">กิจกรรม</th>
+                <th class="border p-3">ก่อนการเจ็บป่วย</th>
+                <th class="border p-3">ขณะเจ็บป่วย</th>
+              </tr>
+            </thead>
+            <tbody id="adl-table-body">
+              </tbody>
+          </table>
+        </div>
+      </fieldset>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="border p-6 rounded-xl bg-white shadow-sm">
+          <h4 class="text-lg font-bold text-indigo-700 mb-4 border-b">5. การพักผ่อนนอนหลับ</h4>
+          <div class="space-y-4">
+            <div class="flex items-center gap-2">นอน <input type="number" name="Sleep_Hours" class="w-16 border rounded text-center"> ชม./วัน</div>
+            <div class="flex gap-4">
+               <label><input type="radio" name="Sleep_Adequacy" value="เพียงพอ"> เพียงพอ</label>
+               <label><input type="radio" name="Sleep_Adequacy" value="ไม่เพียงพอ"> ไม่เพียงพอ</label>
+            </div>
+            <div>
+              <span class="font-semibold">ปัญหาการนอน:</span>
+              <label class="ml-4"><input type="radio" name="Sleep_Problem" value="ไม่มี"> ไม่มี</label>
+              <label class="ml-4"><input type="radio" name="Sleep_Problem" value="มี" class="assessment-radio-toggle" data-controls="sleep-prob-detail"> มี ระบุ:</label>
+              <input type="text" name="Sleep_Problem_Detail" id="sleep-prob-detail" class="w-full border rounded p-2 mt-2 hidden">
+            </div>
+          </div>
+        </div>
+
+        <div class="border p-6 rounded-xl bg-white shadow-sm">
+          <h4 class="text-lg font-bold text-indigo-700 mb-4 border-b">6. การรับรู้และประสาทสัมผัส</h4>
+          <div class="space-y-3 text-sm">
+            <div class="flex gap-2 items-center flex-wrap"><b>ระดับความรู้สึก:</b>
+              <label><input type="radio" name="Cogn_LOC" value="รู้สึกตัวดี"> รู้สึกตัวดี</label>
+              <label><input type="radio" name="Cogn_LOC" value="สับสน"> สับสน</label>
+              <label><input type="radio" name="Cogn_LOC" value="ซึม"> ซึม</label>
+              <label><input type="radio" name="Cogn_LOC" value="ไม่รู้สึกตัว"> ไม่รู้สึกตัว</label>
+            </div>
+            <div><b>การมองเห็น:</b>
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">
+                <label><input type="checkbox" name="Vision_Normal" value="ปกติ"> ปกติ</label>
+                <label><input type="checkbox" name="Vision_Short" value="สายตาสั้น"> สายตาสั้น</label>
+                <label><input type="checkbox" name="Vision_Long" value="สายตายาว"> สายตายาว</label>
+                <label><input type="checkbox" name="Vision_Glasses" value="ใช้แว่นตา"> ใช้แว่นตา</label>
+                <input type="text" name="Vision_Other" class="border-b focus:outline-none" placeholder="อื่นๆ...">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <fieldset class="border-2 border-red-200 p-6 rounded-xl bg-red-50/20">
+        <legend class="text-xl font-bold px-3 text-red-700 bg-white border-2 border-red-200 rounded-lg">13. PAIN MANAGEMENT</legend>
+        <div class="space-y-6 mt-4">
+          <div class="flex flex-wrap gap-6 items-center">
+            <div class="flex items-center gap-2"><b>Pain:</b> 
+              <label><input type="radio" name="Pain_Status" value="ไม่มี"> ไม่มี</label>
+              <label><input type="radio" name="Pain_Status" value="มี" class="assessment-radio-toggle" data-controls="pain-info"> มี</label>
+            </div>
+            <div id="pain-info" class="flex gap-4 flex-1 hidden">
+              บริเวณ: <input type="text" name="Pain_Location" class="border-b border-gray-400 bg-transparent flex-1 focus:outline-none">
+              สาเหตุ: <input type="text" name="Pain_Cause" class="border-b border-gray-400 bg-transparent flex-1 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+             <b>Pain Scale:</b> (0=ไม่ปวด, 10=ปวดมากที่สุด)
+             <div class="flex flex-wrap gap-3 mt-4 justify-between bg-white p-4 rounded-lg border">
+                <label class="text-center cursor-pointer">
+                  <div class="text-2xl">😊</div><input type="radio" name="Pain_Scale_Score" value="0" class="mt-2"><div class="text-xs">0</div>
+                </label>
+                <label class="text-center cursor-pointer">
+                  <div class="text-2xl">🙂</div><input type="radio" name="Pain_Scale_Score" value="2" class="mt-2"><div class="text-xs">2</div>
+                </label>
+                <label class="text-center cursor-pointer">
+                  <div class="text-2xl">😐</div><input type="radio" name="Pain_Scale_Score" value="4" class="mt-2"><div class="text-xs">4</div>
+                </label>
+                <label class="text-center cursor-pointer">
+                  <div class="text-2xl">🙁</div><input type="radio" name="Pain_Scale_Score" value="6" class="mt-2"><div class="text-xs">6</div>
+                </label>
+                <label class="text-center cursor-pointer">
+                  <div class="text-2xl">😰</div><input type="radio" name="Pain_Scale_Score" value="8" class="mt-2"><div class="text-xs">8</div>
+                </label>
+                <label class="text-center cursor-pointer">
+                  <div class="text-2xl">😭</div><input type="radio" name="Pain_Scale_Score" value="10" class="mt-2"><div class="text-xs">10</div>
+                </label>
+             </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="border-2 border-orange-200 p-6 rounded-xl bg-orange-50/10">
+        <legend class="text-xl font-bold px-3 text-orange-700 bg-white border-2 border-orange-200 rounded-lg">14. Braden Scale Assessment</legend>
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full border text-sm text-center">
+            <thead class="bg-orange-100">
+              <tr>
+                <th class="border p-2">ปัจจัย</th>
+                <th class="border p-2">1 (น้อยที่สุด)</th>
+                <th class="border p-2">2</th>
+                <th class="border p-2">3</th>
+                <th class="border p-2">4 (ดีที่สุด)</th>
+              </tr>
+            </thead>
+            <tbody id="braden-table-body">
+              </tbody>
+          </table>
+          <div class="mt-4 p-4 bg-white border-2 border-orange-300 rounded-lg flex justify-between items-center">
+            <span class="text-lg font-bold">Total Score: <input type="text" id="braden-total-score" name="Braden_Total" readonly class="w-16 border-none text-center text-blue-700 text-2xl font-black bg-transparent"></span>
+            <span id="braden-result" class="font-bold text-red-600 underline"></span>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="bg-gray-100 p-6 rounded-xl flex flex-col md:flex-row gap-6 items-end">
+        <div class="flex-1 w-full">
+           <label class="block font-bold mb-1 text-blue-700">พยาบาลผู้ประเมิน (คีย์ค้นหาชื่อ):</label>
+           <input type="text" id="assessor-name" name="Assessor_Name" list="staff-list-datalist" class="w-full p-3 border rounded shadow-sm focus:ring-2 focus:ring-blue-400" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+           <datalist id="staff-list-datalist"></datalist>
+        </div>
+        <div class="flex-1 w-full">
+           <label class="block font-bold mb-1">ตำแหน่ง:</label>
+           <input type="text" id="assessor-position" name="Assessor_Position" class="w-full p-3 border rounded bg-gray-50" readonly>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
 
     <!-- (Modal: Classification) -->
     <div id="classify-modal" class="fixed inset-0 bg-white z-50 hidden overflow-y-auto">
