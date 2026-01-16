@@ -971,6 +971,39 @@
             <input type="text" id="assess-refer-from" name="Refer" class="w-full p-2 border rounded bg-gray-100" readonly>
           </div>
           <div class="col-span-12 md:col-span-3">
+      <label class="block text-sm font-medium">มาโดย</label>
+      <select name="ArriveBy" class="p-2 border rounded w-full">
+        <option value="">--เลือก--</option>
+        <option value="เดินมา">เดินมา</option>
+        <option value="รถนั่ง">รถนั่ง</option>
+        <option value="เปลนอน">เปลนอน</option>
+      </select>
+    </div>
+    <div class="col-span-12 md:col-span-3">
+      <label class="block text-sm font-medium">ผู้ให้ข้อมูล</label>
+      <select name="InfoSource" class="p-2 border rounded w-full">
+        <option value="">--เลือก--</option>
+        <option value="ผู้ป่วย">ผู้ป่วย</option>
+        <option value="ผู้นำส่ง/ญาติ">ผู้นำส่ง/ญาติ</option>
+      </select>
+    </div>
+    <div class="col-span-12 md:col-span-3">
+      <label class="block text-sm font-medium">ผู้ดูแลหลักชื่อ</label>
+      <input type="text" name="MainCaregiver_Name" class="p-2 border rounded w-full">
+    </div>
+    
+    <div class="col-span-12 md:col-span-6">
+      <label class="block text-sm font-medium">ความสัมพันธ์กับผู้ป่วย</label>
+      <div class="flex flex-wrap gap-3 mt-1">
+        <label><input type="radio" name="MainCaregiver_Rel" value="บิดา-มารดา"> บิดา-มารดา</label>
+        <label><input type="radio" name="MainCaregiver_Rel" value="สามี-ภรรยา"> สามี-ภรรยา</label>
+        <label><input type="radio" name="MainCaregiver_Rel" value="บุตร"> บุตร</label>
+        <label><input type="radio" name="MainCaregiver_Rel" value="ญาติ"> ญาติ</label>
+        <label><input type="radio" name="MainCaregiver_Rel" value="อื่นๆ" class="assessment-radio-toggle" data-controls="rel-other"> อื่นๆระบุ</label>
+        <input type="text" id="rel-other" name="MainCaregiver_Rel_Other_Text" class="border-b hidden focus:outline-none" placeholder="...">
+      </div>
+    </div>
+          <div class="col-span-12 md:col-span-3">
             <label class="block font-bold">อาการสำคัญ</label>
             <textarea id="assess-cc" name="ChiefComplaint" rows="1" class="w-full p-2 border rounded bg-gray-100" readonly></textarea>
           </div>
@@ -1299,27 +1332,52 @@
          </div>
       </fieldset>
 
-      <fieldset class="border-2 border-gray-200 p-6 rounded-xl bg-gray-50">
-        <legend class="text-lg font-bold px-3 text-gray-700 bg-white border border-gray-200 rounded">15. Fall Risk Assessment</legend>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <div class="space-y-2">
-              <label class="block"><input type="checkbox" name="Fall_Age_Child" value="true"> วัยเด็ก</label>
-              <label class="block"><input type="checkbox" name="Fall_Age_Elder" value="true"> ผู้สูงอายุมากกว่า 65 ปี</label>
-              <label class="block"><input type="checkbox" name="Fall_Mental" value="true"> สภาวะทางสมอง/จิตผิดปกติ</label>
-              <label class="block"><input type="checkbox" name="Fall_History" value="true"> มีประวัติการพลัดตกหกล้ม</label>
-              <label class="block"><input type="checkbox" name="Fall_Meds" value="true"> ใช้ยาเสี่ยง (ยานอนหลับ/Psychotropics)</label>
-              <label class="block"><input type="checkbox" name="Fall_Vision" value="true"> มีปัญหาในการมองเห็น</label>
-              <label class="block"><input type="checkbox" name="Fall_Gait" value="true"> มีปัญหาในการเดิน/ทรงตัว</label>
-           </div>
-           <div class="bg-white p-4 border rounded">
-              <b>ความจำเป็นในการป้องกัน:</b>
-              <div class="flex gap-6 mt-2">
-                 <label><input type="radio" name="Fall_Result" value="จำเป็น"> จำเป็น</label>
-                 <label><input type="radio" name="Fall_Result" value="ไม่จำเป็น"> ไม่จำเป็น</label>
-              </div>
-           </div>
+      <fieldset class="border p-4 rounded-lg shadow-sm">
+  <legend class="text-lg font-semibold px-2">15. Fall risk assessment</legend>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+    <div class="space-y-3">
+      <label class="flex items-center"><input type="checkbox" name="Fall_Age_Child" value="true" class="mr-2"> วัยเด็ก</label>
+      <label class="flex items-center"><input type="checkbox" name="Fall_Age_Elder" value="true" class="mr-2"> ผู้สูงอายุมากกว่า 65 ปี</label>
+    </div>
+    <div class="space-y-2 border-l pl-4">
+      <div class="flex justify-between items-center">
+        <span class="text-sm">- สภาวะทางสมอง/ทางจิตผิดปกติ</span>
+        <div class="flex gap-2">
+          <label><input type="radio" name="Fall_Mental" value="ไม่มี"> ไม่มี</label>
+          <label><input type="radio" name="Fall_Mental" value="มี"> มี</label>
         </div>
-      </fieldset>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-sm">- มีประวัติการพลัดตกหกล้ม</span>
+        <div class="flex gap-2">
+          <label><input type="radio" name="Fall_History" value="ไม่มี"> ไม่มี</label>
+          <label><input type="radio" name="Fall_History" value="มี"> มี</label>
+        </div>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-sm">- ใช้ยานอนหลับ / Psychotropics / Sedative</span>
+        <div class="flex gap-2">
+          <label><input type="radio" name="Fall_Meds" value="ไม่มี"> ไม่มี</label>
+          <label><input type="radio" name="Fall_Meds" value="มี"> มี</label>
+        </div>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-sm">- มีปัญหาในการมองเห็น</span>
+        <div class="flex gap-2">
+          <label><input type="radio" name="Fall_Vision" value="ไม่มี"> ไม่มี</label>
+          <label><input type="radio" name="Fall_Vision" value="มี"> มี</label>
+        </div>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-sm">- มีปัญหาในการเดิน/ทรงตัว</span>
+        <div class="flex gap-2">
+          <label><input type="radio" name="Fall_Gait" value="ไม่มี"> ไม่มี</label>
+          <label><input type="radio" name="Fall_Gait" value="มี"> มี</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</fieldset>
 
       <div class="bg-indigo-900 text-white p-6 rounded-xl flex flex-col md:flex-row gap-6 items-end shadow-lg">
         <div class="flex-1 w-full">
