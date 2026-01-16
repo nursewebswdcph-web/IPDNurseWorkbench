@@ -1445,32 +1445,34 @@ async function showEntryList(formType, formTitle) {
 
 // --- ASSESSMENT FORM LOGIC (FR-004) ---
 async function openAssessmentForm() {
-  if (!currentPatientAN) {
-    showError('ไม่พบข้อมูล AN ของผู้ป่วย');
-    return;
-  }
+  if (!currentPatientAN) return;
+  showLoading('กำลังเตรียมฟอร์มประเมิน...');
   
-  showLoading('กำลังโหลดข้อมูลล่าสุด...');
-  // ต้องโหลดรายชื่อพยาบาลก่อนเสมอ
+  // 1. โหลดรายชื่อพยาบาลเข้า Datalist (แก้ไขเคสคีย์คำค้นไม่ขึ้น)
   await refreshStaffDatalists(); 
   
   try {
+    // 2. ดึงข้อมูลประเมิน + ข้อมูลจากทะเบียนผู้ป่วย (Patients)
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`);
     const result = await response.json();
+    if (!result.success) throw new Error(result.message);
     
-    if (result.success) {
-      // นำข้อมูลล่าสุดมาใส่ในฟอร์ม
-      populateAssessmentForm(result.data, assessmentForm);
-      assessmentModal.classList.remove("hidden");
-      Swal.close();
-    } else {
-      // หากยังไม่มีข้อมูลบันทึกมาก่อน ให้เปิดฟอร์มเปล่า
-      assessmentForm.reset();
-      assessmentModal.classList.remove("hidden");
-      Swal.close();
-    }
+    const data = result.data;
+    
+    // 3. Populate Form (ฟังก์ชันเดิมของคุณ)
+    populateAssessmentForm(data, assessmentForm);
+    
+    // 4. Force Fill Readonly Fields (Admit Info) จากตัวแปร global ที่บันทึกไว้
+    // (เพื่อให้ช่อง รับจาก, Refer, อาการสำคัญ ขึ้นอัตโนมัติ)
+    document.getElementById("assess-admit-from").value = data.AdmittedFrom || "";
+    document.getElementById("assess-refer-from").value = data.Refer || "";
+    document.getElementById("assess-cc").value = data.ChiefComplaint || "";
+    document.getElementById("assess-pi").value = data.PresentIllness || "";
+
+    assessmentModal.classList.remove("hidden");
+    Swal.close();
   } catch(e) {
-    showError('เกิดข้อผิดพลาดในการโหลดข้อมูล', e.message);
+    showError('เกิดข้อผิดพลาด', e.message);
   }
 }
 
