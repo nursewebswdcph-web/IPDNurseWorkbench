@@ -1864,43 +1864,46 @@ function updateClassifyColumnTotals(dayIndex, shift) {
 }
 
 async function saveClassificationShiftData(dayIndex, shift) {
-  const dateInput = classifyTable.querySelector(`input.classify-date-input[data-day-index="${dayIndex}"]`);
-  if (!dateInput) return;
-  const date = dateInput.value;
-  
-  const entryData = { AN: currentPatientAN, Page: currentClassifyPage, Date: date, Shift: shift };
-  let hasData = false;
-  for (let i = 1; i <= 8; i++) {
-    const val = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
-    if (val && val != "0") hasData = true;
-    entryData[`Score_${i}`] = val;
-  }
-  entryData.Assessor_Name = classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value;
-  if (entryData.Assessor_Name) hasData = true;
-  
-  if (!hasData) {
-    showError("ยังไม่มีข้อมูล", "กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือ ลงชื่อผู้ประเมิน");
-    return;
-  }
-  
-  showLoading('กำลังบันทึก...');
-  try {
-    const response = await fetch(GAS_WEB_APP_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "saveClassificationShift", entryData: entryData })
-    });
-    const result = await response.json();
-    if (!result.success) throw new Error(result.message);
+    const dateInput = classifyTable.querySelector(`input.classify-date-input[data-day-index="${dayIndex}"]`);
+    if (!dateInput) return;
+    const date = dateInput.value;
     
-    const updated = result.updatedData;
-    classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Total_Score;
-    classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Category;
+    const entryData = { AN: currentPatientAN, Page: currentClassifyPage, Date: date, Shift: shift };
+    let hasData = false;
+    let total = 0;
     
-    const shiftText = shift === 'N' ? 'ดึก' : (shift === 'D' ? 'เช้า' : 'บ่าย');
-    showSuccess('บันทึกสำเร็จ!', `บันทึกเวร ${shiftText} วันที่ ${date} เรียบร้อย`);
-  } catch (error) {
-    showError('บันทึกไม่สำเร็จ', error.message);
-  }
+    for (let i = 1; i <= 8; i++) {
+        const sel = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+        const val = parseInt(sel.value) || 0;
+        if (val > 0) hasData = true;
+        entryData[`Score_${i}`] = val;
+        total += val;
+    }
+    
+    const assessorInp = classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+    entryData.Assessor_Name = assessorInp ? assessorInp.value : "";
+    if (entryData.Assessor_Name) hasData = true;
+    
+    if (!hasData) {
+        showError("ยังไม่มีข้อมูล", "กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือลงชื่อผู้ประเมิน");
+        return;
+    }
+    
+    showLoading('กำลังบันทึก...');
+    try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "saveClassificationShift", entryData: entryData })
+        });
+        const result = await response.json();
+        if (result.success) {
+            // อัปเดตการแสดงผลคะแนนในตารางทันที
+            const updated = result.updatedData;
+            classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Total_Score;
+            classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = updated.Category;
+            showSuccess('บันทึกสำเร็จ!', `เวร ${shift} วันที่ ${date} เรียบร้อย`);
+        } else throw new Error(result.message);
+    } catch (error) { showError('บันทึกไม่สำเร็จ', error.message); }
 }
 
 function changeClassifyPage(direction) {
@@ -3104,12 +3107,11 @@ async function fetchAndRenderBradenPage(an, page) {
     }
 }
 
-function renderBradenMonitoring(data = {}) { 
+function renderBradenTable(data = {}) { 
     const table = document.getElementById("braden-table");
-    if (!table) return; 
+    if (!table) return;
     table.innerHTML = "";
     
-    // ส่วนหัวตาราง 10 วัน
     let theadHtml = `<thead class="bg-red-50">
       <tr>
         <th class="p-2 border w-80 text-left sticky left-0 bg-red-50 z-20 shadow-md align-bottom">
@@ -3117,7 +3119,7 @@ function renderBradenMonitoring(data = {}) {
         </th>`;
     
     for (let i = 1; i <= 10; i++) {
-        // ตรวจสอบข้อมูลแบบปลอดภัยป้องกัน Error Uncaught TypeError
+        // ใช้การตรวจสอบข้อมูลป้องกัน Error Date_1
         const dateVal = (data && data[`Date_${i}`]) ? getISODate(new Date(data[`Date_${i}`])) : "";
         theadHtml += `<th class="p-2 border min-w-[80px] text-center bg-red-50">
             <div class="text-[10px] text-gray-500 mb-1">วันที่ (${i})</div>
