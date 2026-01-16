@@ -476,10 +476,10 @@ function getISODate(date) {
 async function refreshStaffDatalists() {
   if (globalStaffList.length === 0) {
     try {
-      [cite_start]const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
+      const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
       const result = await response.json();
       if (result.success) {
-        [cite_start]globalStaffList = result.data; [cite: 58]
+        globalStaffList = result.data;
       }
     } catch (e) { console.error("Load staff failed", e); }
   }
@@ -619,7 +619,7 @@ async function openAdmitModal() {
   if (!currentWard) return;
   showLoading('กำลังเตรียมฟอร์ม...');
   try {
-    const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard); [cite: 101-102]
+    const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard); 
     
     // เติม Datalist สำหรับแพทย์
     populateDatalist("doctor-list", doctors.map(o => o.value)); 
@@ -1405,7 +1405,7 @@ async function openAssessmentForm() {
   await refreshStaffDatalists(); 
   
   try {
-    [cite_start]const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`); [cite: 23, 60]
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`);
     const result = await response.json();
     if (!result.success) throw new Error(result.message);
     currentPatientData = result.data;
@@ -3579,7 +3579,7 @@ if (adviceForm) {
   if (staff) {
     // เมื่อเลือกชื่อพยาบาล ให้ดึงตำแหน่งมาใส่ในช่องตำแหน่งอัตโนมัติ
     const posInput = document.getElementById("assessor-position");
-    [cite_start]if(posInput) posInput.value = staff.position;
+    if(posInput) posInput.value = staff.position;
   }
 });
 
