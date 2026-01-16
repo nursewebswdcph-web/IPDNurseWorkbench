@@ -261,288 +261,115 @@
 
     <!-- (Template 004) -->
   <template id="preview-template-004">
-  <div class="p-8 space-y-8 text-base text-gray-800 font-sarabun leading-relaxed bg-white border rounded-xl shadow-inner">
-    <style>
-      .p-section-title { border-bottom: 2px solid #4f46e5; padding-bottom: 0.5rem; margin-bottom: 1rem; font-weight: bold; color: #3730a3; text-transform: uppercase; font-size: 1.1rem; }
-      .p-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
-      .p-label { font-weight: 700; color: #4b5563; }
-      .p-box { background: #f9fafb; padding: 1rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
-      .p-sub-title { font-weight: 700; color: #4338ca; border-left: 4px solid #4338ca; padding-left: 0.5rem; margin-bottom: 0.75rem; }
-      .p-val { color: #111827; }
-    </style>
-
-    <div>
-      <div class="p-section-title">1. ข้อมูลแรกรับ</div>
-      <div class="p-grid mt-2">
-        <div class="col-span-12 md:col-span-4"><span class="p-label">วันที่รับ/เวลา:</span> <span data-field="AdmitDate"></span> <span data-field="AdmitTime"></span> น.</div>
-        <div class="col-span-12 md:col-span-4"><span class="p-label">มาโดย:</span> <span data-field="ArriveBy"></span></div>
-        <div class="col-span-12 md:col-span-4"><span class="p-label">ผู้ให้ข้อมูล:</span> <span data-field="InfoSource"></span></div>
-        <div class="col-span-12 md:col-span-4"><span class="p-label">รับจาก:</span> <span data-field="AdmittedFrom"></span></div>
-        <div class="col-span-12 md:col-span-4"><span class="p-label">รับ REFER จาก:</span> <span data-field="Refer"></span></div>
-        <div class="col-span-12 md:col-span-4"><span class="p-label">ผู้ดูแลหลัก:</span> <span data-field="MainCaregiver_Name"></span> (<span data-field="MainCaregiver_Rel"></span> <span data-field="MainCaregiver_Rel_Other_Text"></span>)</div>
+  <div class="p-4 sm:p-10 bg-white font-sarabun text-gray-900 leading-tight print:p-0 mx-auto max-w-[210mm]" style="font-size: 14px;">
+    <div class="flex justify-between items-start border-b-2 border-black pb-2 mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 border-2 border-black flex items-center justify-center font-bold">LOGO</div>
+        <div>
+          <h1 class="font-bold text-lg">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h1>
+          <p class="font-bold">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</p>
+        </div>
       </div>
-      
-      <div class="mt-4 p-box space-y-2">
-        <p><span class="p-label">อาการสำคัญ (CC):</span> <span data-field="ChiefComplaint" class="p-val"></span></p>
-        <p><span class="p-label">ประวัติการเจ็บป่วย (PI):</span> <span data-field="PresentIllness" class="p-val"></span></p>
-        <p><span class="p-label text-indigo-700">อาการและอาการแสดงแรกรับ:</span> <span data-field="AdmitSymptoms" class="p-val"></span></p>
-      </div>
-
-      <div class="flex flex-wrap gap-8 mt-4 bg-blue-50 p-3 rounded-lg border border-blue-100 justify-center">
-        <div class="flex items-center gap-1"><span class="p-label">BT:</span> <span data-field="Admit_BT" class="font-bold"></span> °C</div>
-        <div class="flex items-center gap-1"><span class="p-label">PR:</span> <span data-field="Admit_PR" class="font-bold"></span> /min</div>
-        <div class="col-span-1 flex items-center gap-1"><span class="p-label">RR:</span> <span data-field="Admit_RR" class="font-bold"></span> /min</div>
-        <div class="flex items-center gap-1"><span class="p-label">BP:</span> <span data-field="Admit_BP" class="font-bold"></span> mmHg</div>
+      <div class="text-right text-xs">
+        <p class="font-bold text-base">FR-IPD-004</p>
+        <p>แก้ไขครั้งที่ 02 : 24 ก.ย. 52</p>
       </div>
     </div>
 
-    <div>
-      <div class="p-section-title">2. ประวัติสุขภาพและพฤติกรรมเสี่ยง</div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-        <div class="p-box">
-          <div class="p-sub-title">โรคประจำตัวและการผ่าตัด</div>
-          <p><span class="p-label">สถานะ:</span> <span data-field="Hx_Status"></span></p>
-          <p class="mt-1"><span class="p-label">ระบุ:</span> <span id="preview-hx-list"></span> <span data-field="Hx_Other"></span></p>
-          <p class="mt-2 pt-2 border-t border-gray-200"><span class="p-label">ประวัติการรักษาใน รพ.:</span> <span data-field="AdmitHx_Status"></span> <span data-field="AdmitHx_Disease"></span> <span data-field="AdmitHx_Date"></span></p>
-          <p class="mt-1"><span class="p-label">ประวัติการผ่าตัด:</span> <span data-field="Sx_Status"></span> <span data-field="Sx_Details"></span> <span data-field="Sx_Date"></span></p>
-          <p class="mt-1"><span class="p-label">ประวัติครอบครัว:</span> <span data-field="FamilyHx_Status"></span> <span data-field="FamilyHx_Details"></span></p>
-        </div>
-        <div class="p-box">
-          <div class="p-sub-title">แพ้ยาและสารเสพติด</div>
-          <p><span class="p-label text-red-600">การแพ้ยา/สาร:</span> <span data-field="Allergy_Status"></span> <span data-field="Allergy_Details"></span></p>
-          <p class="mt-1"><span class="p-label text-green-700">ยาที่ใช้ประจำ:</span> <span data-field="Meds_Status"></span> <span data-field="Meds_Details"></span></p>
-          <div class="mt-3 pt-2 border-t border-gray-200 grid grid-cols-2 gap-2">
-            <div>
-              <span class="p-label block">สุรา:</span>
-              <span data-field="Substance_Alcohol"></span> <span data-field="Substance_Alcohol_Vol"></span>
-            </div>
-            <div>
-              <span class="p-label block">บุหรี่:</span>
-              <span data-field="Substance_Smoke"></span> <span data-field="Substance_Smoke_Vol"></span>
-            </div>
-          </div>
-        </div>
+    <div class="space-y-2 mb-4">
+      <div class="flex flex-wrap gap-x-4">
+        <span><b>วันที่:</b> <span class="border-b border-dotted border-black px-2" data-field="AdmitDate"></span></span>
+        <span><b>เวลา:</b> <span class="border-b border-dotted border-black px-2" data-field="AdmitTime"></span> <b>น.</b></span>
+        <span><b>รับจาก:</b> <span class="border-b border-dotted border-black px-2" data-field="AdmittedFrom"></span></span>
+        <span><b>รับ REFER จาก:</b> <span class="border-b border-dotted border-black px-2" data-field="Refer"></span></span>
+      </div>
+      <div class="flex flex-wrap gap-x-6">
+        <span><b>มาโดย:</b> <span class="border-b border-dotted border-black px-2" data-field="ArriveBy"></span></span>
+        <span><b>ผู้ให้ข้อมูล:</b> <span class="border-b border-dotted border-black px-2" data-field="InfoSource"></span></span>
+      </div>
+      <div class="flex flex-wrap gap-x-4">
+        <span><b>ผู้ดูแลหลักชื่อ:</b> <span class="border-b border-dotted border-black px-2" data-field="MainCaregiver_Name"></span></span>
+        <span><b>ความสัมพันธ์กับผู้ป่วย:</b> <span class="border-b border-dotted border-black px-2" data-field="MainCaregiver_Rel"></span> <span data-field="MainCaregiver_Rel_Other_Text"></span></span>
+      </div>
+      <div class="grid grid-cols-1 gap-1 mt-2">
+        <p><b>อาการสำคัญ:</b> <span class="border-b border-dotted border-black block w-full" data-field="ChiefComplaint"></span></p>
+        <p><b>ประวัติการเจ็บป่วย:</b> <span class="border-b border-dotted border-black block w-full" data-field="PresentIllness"></span></p>
+        <p><b>อาการและอาการแสดงแรกรับ:</b> <span class="border-b border-dotted border-black block w-full" data-field="AdmitSymptoms"></span></p>
+      </div>
+      <div class="flex gap-8 font-bold bg-gray-50 p-2 border border-black justify-center mt-2">
+        <span>BT: <span data-field="Admit_BT"></span> °C</span>
+        <span>PR: <span data-field="Admit_PR"></span> /min</span>
+        <span>RR: <span data-field="Admit_RR"></span> /min</span>
+        <span>BP: <span data-field="Admit_BP"></span> mmHg</span>
       </div>
     </div>
 
-    <div>
-      <div class="p-section-title">3. การประเมินแบบแผนสุขภาพ (ตอนที่ 1)</div>
-      <div class="p-box space-y-3">
-        <p><b>1) การรับรู้สุขภาพ:</b> ก่อนป่วย <span data-field="HP_Before"></span> (<span data-field="HP_Before_Detail"></span>) | ปัจจุบัน <span data-field="HP_Current"></span> | ดูแล <span data-field="HP_Care"></span> <span data-field="HP_Care_Other"></span> | คาดหวัง <span data-field="HP_Expect"></span></p>
+    <div class="border border-black p-3 space-y-3 mb-4">
+      <div class="flex flex-wrap gap-x-2">
+        <span class="font-bold">โรคประจำตัว:</span>
+        <span class="px-2" data-field="Hx_Status"></span>
+        <span class="italic text-xs" id="preview-hx-list"></span>
+        <span><span class="font-bold ml-2">อื่น ๆ:</span> <span class="border-b border-dotted border-black" data-field="Hx_Other"></span></span>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <p><b>การแพ้ยา/สารต่าง ๆ:</b> <span data-field="Allergy_Status"></span> <span class="border-b border-dotted border-black px-1" data-field="Allergy_Details"></span></p>
+        <p><b>ประวัติครอบครัว:</b> <span data-field="FamilyHx_Status"></span> <span class="border-b border-dotted border-black px-1" data-field="FamilyHx_Details"></span></p>
+      </div>
+      <div class="grid grid-cols-2 gap-4 border-t border-gray-300 pt-2">
+        <p><b>การรักษาตัวใน รพ.:</b> <span data-field="AdmitHx_Status"></span> <span data-field="AdmitHx_Disease"></span> เมื่อ <span data-field="AdmitHx_Date"></span></p>
+        <p><b>การผ่าตัด:</b> <span data-field="Sx_Status"></span> <span data-field="Sx_Details"></span> เมื่อ <span data-field="Sx_Date"></span></p>
+      </div>
+      <div class="grid grid-cols-2 gap-4 border-t border-gray-300 pt-2">
+        <div class="flex gap-4">
+          <span><b>สุรา:</b> <span data-field="Substance_Alcohol"></span> <span data-field="Substance_Alcohol_Vol"></span></span>
+          <span><b>บุหรี่:</b> <span data-field="Substance_Smoke"></span> <span data-field="Substance_Smoke_Vol"></span></span>
+        </div>
+        <p><b>ยาที่ใช้ประจำ:</b> <span data-field="Meds_Status"></span> <span class="border-b border-dotted border-black px-1" data-field="Meds_Details"></span></p>
+      </div>
+    </div>
+
+    <div class="space-y-4 mb-4">
+      <h3 class="font-bold underline">การประเมินสมรรถนะผู้ป่วย (11 แบบแผนสุขภาพ)</h3>
+      <div class="grid grid-cols-1 gap-2">
+        <p><b>1) การรับรู้สุขภาพ:</b> ก่อนป่วย <span data-field="HP_Before"></span> (<span data-field="HP_Before_Detail"></span>) | เจ็บป่วยครั้งนี้ <span data-field="HP_Current"></span> | ดูแลโดย <span data-field="HP_Care"></span> <span data-field="HP_Care_Other"></span> | หวัง <span data-field="HP_Expect"></span></p>
         <p><b>2) โภชนาการ:</b> <span data-field="Nutri_Meals"></span> มื้อ/วัน | ประเภท <span data-field="Nutri_Type"></span> <span data-field="Nutri_Type_Detail"></span> | ปัญหา <span data-field="Nutri_Problem"></span> <span data-field="Nutri_Problem_Detail"></span> | ผิวหนัง <span data-field="Nutri_Skin"></span> <span data-field="Nutri_Skin_Detail"></span></p>
-        <p><b>3) การขับถ่าย:</b> ปัสสาวะ <span data-field="Elim_Urine_Freq"></span> ครั้ง/วัน (<span data-field="Elim_Urine_Status"></span> <span data-field="Elim_Urine_Detail"></span>) | อุจจาระ <span data-field="Elim_Bowel_Freq"></span> ครั้ง/วัน (<span data-field="Elim_Bowel_Status"></span> <span data-field="Elim_Bowel_Detail"></span>) | หน้าท้อง <span data-field="Elim_Stoma"></span></p>
-        <p><b>5) การพักผ่อน:</b> นอน <span data-field="Sleep_Hours"></span> | การนอนหลับ <span data-field="Sleep_Adequacy"></span> | ปัญหา <span data-field="Sleep_Problem"></span> <span data-field="Sleep_Problem_Detail"></span></p>
-        <p><b>6) ประสาทสัมผัส:</b> LOC: <span data-field="Cogn_LOC"></span> | การมองเห็น <span data-field="Cogn_Vision"></span> <span data-field="Cogn_Vision_Other"></span> | การพูด <span data-field="Cogn_Speech"></span> <span data-field="Cogn_Speech_Detail"></span> <span data-field="Cogn_Speech_Other"></span> | การเคลื่อนไหว <span data-field="Cogn_Movement"></span> <span data-field="Cogn_Movement_Other"></span></p>
-        <p><b>7) อัตมโนทัศน์:</b> ภาพลักษณ์ <span data-field="Self_Image"></span> <span data-field="Self_Image_Detail"></span> | อารมณ์ <span data-field="Self_Mood"></span> <span data-field="Self_Mood_Detail"></span> | ดูแลตนเอง <span data-field="Self_Ability"></span> <span data-field="Self_Ability_Detail"></span></p>
+        <p><b>3) การขับถ่าย:</b> ปัสสาวะ <span data-field="Elim_Urine_Freq"></span> ครั้ง/วัน (<span data-field="Elim_Urine_Status"></span>) | อุจจาระ <span data-field="Elim_Bowel_Freq"></span> ครั้ง/วัน (<span data-field="Elim_Bowel_Status"></span>) | หน้าท้อง <span data-field="Elim_Stoma"></span></p>
+        <p><b>4) กิจวัตรประจำวัน (ADL):</b> <span class="text-xs italic">(แสดงเฉพาะรายการที่มีปัญหาหรือต้องการการช่วยเหลือ)</span></p>
+        <div class="pl-4 text-xs italic" id="preview-adl-summary"></div>
+        <p><b>5) พักผ่อน:</b> นอน <span data-field="Sleep_Hours"></span> | การนอนหลับ <span data-field="Sleep_Adequacy"></span> | ปัญหา <span data-field="Sleep_Problem"></span> <span data-field="Sleep_Problem_Detail"></span></p>
+        <p><b>6) ประสาทสัมผัส:</b> LOC: <span data-field="Cogn_LOC"></span> | การมองเห็น <span data-field="Cogn_Vision"></span> | การพูด <span data-field="Cogn_Speech"></span> | การเคลื่อนไหว <span data-field="Cogn_Movement"></span> <span data-field="Cogn_Movement_Other"></span></p>
+        <p><b>7-12) อื่น ๆ:</b> ภาพลักษณ์ <span data-field="Self_Image_Detail"></span> | อารมณ์ <span data-field="Self_Mood_Detail"></span> | สิ้นใจ <span data-field="Cope_Method"></span> | ความเชื่อ <span data-field="Belief_Cause"></span> | ส่วนร่วม <span data-field="Partic_Status"></span></p>
       </div>
     </div>
 
-    <div>
-      <div class="p-section-title">4. การประเมินแบบแผนสุขภาพ (ตอนที่ 2)</div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="p-box">
-          <div class="p-sub-title">8) การเผชิญความเครียด</div>
-          <p><span class="p-label">สถานะ:</span> <span data-field="Stress_Status"></span></p>
-          <p><span class="p-label">สิ่งที่กังวล:</span> <span id="preview-stress-causes"></span> <span data-field="Cope_Stress_Other"></span></p>
-          <p><span class="p-label">การแสดงออก:</span> <span data-field="Stress_Express"></span> <span data-field="Stress_Express_Other"></span></p>
-          <p><span class="p-label">วิธีแก้ไข:</span> <span data-field="Cope_Method"></span> <span data-field="Cope_Method_Other"></span></p>
-        </div>
-        <div class="p-box space-y-2">
-          <div class="p-sub-title">9-12) บทบาท / เพศ / ความเชื่อ / ส่วนร่วม</div>
-          <p><b>9) ผลกระทบต่อ:</b> <span id="preview-role-effects"></span></p>
-          <p><b>10) เพศ:</b> ประจำเดือน <span data-field="Sex_Menses"></span> <span data-field="Sex_Menses_Status"></span> | เต้านม <span data-field="Sex_Breast"></span> | อวัยวะสืบพันธุ์ <span data-field="Sex_Genitals"></span> <span data-field="Sex_Genitals_Detail"></span></p>
-          <p><b>11) ความเชื่อ:</b> สาเหตุ <span data-field="Belief_Cause"></span> <span data-field="Belief_Cause_Detail"></span> | ศาสนกิจ <span data-field="Religion_Practice"></span> <span data-field="Religion_Practice_Detail"></span> | สิ่งยึดเหนี่ยว <span data-field="Belief_Anchor_Status"></span> <span data-field="Belief_Anchor_Detail"></span></p>
-          <p><b>12) การมีส่วนร่วม:</b> <span data-field="Partic_Status"></span> | <span id="preview-partic-needs"></span> <span data-field="Partic_Other"></span></p>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="border border-black p-2">
+        <p class="font-bold border-b border-black mb-1">13. PAIN MANAGEMENT</p>
+        <div class="text-xs space-y-1">
+          <p><b>สถานะ:</b> <span data-field="Pain_Status"></span> <b>ระดับ:</b> <span class="font-bold text-sm" data-field="Pain_Scale_Score"></span> / 10</p>
+          <p><b>ตำแหน่ง:</b> <span data-field="Pain_Location"></span> | <b>ลักษณะ:</b> <span data-field="Pain_Pattern"></span></p>
+          <p><b>ผลกระทบ:</b> <span id="preview-pain-effects"></span></p>
+          <p><b>การบรรเทา:</b> <span id="preview-pain-reliefs"></span></p>
         </div>
       </div>
-    </div>
-
-    <div>
-      <div class="p-section-title text-red-700" style="border-color: #ef4444;">5. ผลการประเมินความเสี่ยงและภาวะปวด</div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
-        <div class="p-box border-red-200 bg-red-50">
-          <div class="p-sub-title text-red-700" style="border-color: #ef4444;">13) PAIN</div>
-          <p><span class="p-label">สถานะ:</span> <span data-field="Pain_Status"></span></p>
-          <p><span class="p-label">ระดับปวด:</span> <span class="text-xl font-bold text-red-600" data-field="Pain_Scale_Score"></span> / 10</p>
-          <p><span class="p-label">ตำแหน่ง/สาเหตุ:</span> <span data-field="Pain_Location"></span> / <span data-field="Pain_Cause"></span></p>
-          <p><span class="p-label">ลักษณะ:</span> <span data-field="Pain_Pattern"></span></p>
-          <p class="mt-2 text-xs"><span class="p-label">กระทบต่อ:</span> <span id="preview-pain-effects"></span></p>
-          <p class="mt-1 text-xs"><span class="p-label">บรรเทาโดย:</span> <span id="preview-pain-reliefs"></span></p>
-        </div>
-        <div class="p-box border-orange-200 bg-orange-50">
-          <div class="p-sub-title text-orange-700" style="border-color: #f97316;">14) BRADEN (แผลกดทับ)</div>
-          <div class="text-center py-4">
-            <span class="p-label block">คะแนนรวม:</span>
-            <span class="text-4xl font-black text-orange-600" data-field="Braden_Total"></span>
-            <span class="block font-bold mt-2 underline" data-field="Braden_Result"></span>
-          </div>
-        </div>
-        <div class="p-box border-gray-200 bg-gray-50">
-          <div class="p-sub-title text-gray-700" style="border-color: #374151;">15) FALL RISK (หกล้ม)</div>
-          <p class="text-xs mb-2 italic"><span id="preview-fall-list"></span></p>
-          <div class="mt-4 pt-2 border-t border-gray-200">
-            <span class="p-label">ความจำเป็นในการป้องกัน:</span>
-            <div class="text-lg font-bold text-indigo-700" data-field="Fall_Prevention"></div>
+      <div class="border border-black p-2 bg-gray-50">
+        <p class="font-bold border-b border-black mb-1">14. BRADEN SCALE & 15. FALL RISK</p>
+        <div class="text-xs space-y-1">
+          <p><b>Braden Score:</b> <span class="font-bold text-sm" data-field="Braden_Total"></span> (<span data-field="Braden_Result"></span>)</p>
+          <div class="border-t border-gray-300 mt-1 pt-1">
+            <p><b>Fall Risk:</b> <span id="preview-fall-list"></span></p>
+            <p><b>สรุป:</b> <span class="font-bold" data-field="Fall_Prevention"></span> | <span data-field="Fall_Result"></span></p>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="flex justify-between items-center p-4 bg-indigo-900 text-white rounded-xl shadow-lg">
-      <div><span class="opacity-75">พยาบาลผู้ประเมิน:</span> <span class="font-bold ml-2" data-field="Assessor_Name"></span></div>
-      <div><span class="opacity-75">ตำแหน่ง:</span> <span class="font-bold ml-2" data-field="Assessor_Position"></span></div>
+    <div class="mt-10 flex justify-end gap-10 border-t border-black pt-4">
+      <p><b>ลงชื่อ:</b> <span class="border-b border-dotted border-black w-48 inline-block text-center" data-field="Assessor_Name"></span></p>
+      <p><b>ตำแหน่ง:</b> <span class="border-b border-dotted border-black w-48 inline-block text-center" data-field="Assessor_Position"></span></p>
     </div>
   </div>
 </template>
-
-    <!-- (Template Discharge Plan) -->
-    <template id="preview-template-advice">
-  <div class="p-4 bg-white font-sarabun text-sm">
-    <h3 class="text-xl font-bold text-center mb-4">การให้คำแนะนำการปฏิบัติตัวระหว่างเข้ารับการรักษาในโรงพยาบาลและเมื่อผู้ป่วยกลับบ้าน</h3>
-    
-    <div class="overflow-x-auto">
-      <table class="w-full border-collapse border border-gray-400">
-        <thead>
-          <tr class="bg-gray-100">
-            <th class="border border-gray-400 p-2 w-1/6 text-center">เรื่อง</th>
-            <th class="border border-gray-400 p-2 w-1/2 text-center">คำแนะนำ</th>
-            <th class="border border-gray-400 p-2 text-center">ว/ด/ป ที่ให้</th>
-            <th class="border border-gray-400 p-2 text-center">ผู้ให้</th>
-            <th class="border border-gray-400 p-2 text-center">ผู้รับ</th>
-          </tr>
-        </thead>
-        <tbody class="align-top">
-          <tr>
-            <td class="border border-gray-400 p-2 font-bold">D=Diagnosis การให้ความรู้เรื่องโรค</td>
-            <td class="border border-gray-400 p-2">
-              <div>ให้ความรู้เรื่องโรคที่เป็นอยู่ถึงสาเหตุ อาการ การปฏิบัติตัว ระบุ:</div>
-              <div class="ml-2 text-blue-700 border-b border-dotted border-gray-300" data-field="D_Detail"></div>
-            </td>
-            <td class="border border-gray-400 p-2 text-center" data-field="D_Date"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="D_Giver"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="D_Receiver"></td>
-          </tr>
-          <tr>
-            <td class="border border-gray-400 p-2 font-bold">M=Medicine การให้ความรู้เรื่องยา</td>
-            <td class="border border-gray-400 p-2">
-               <div>ชนิดของยา: <span class="text-blue-700" data-field="M_Detail"></span></div>
-               <div>ฤทธิ์ของยา / ผลข้างเคียง: <span class="text-blue-700" data-field="M_SideEffect"></span></div>
-            </td>
-            <td class="border border-gray-400 p-2 text-center" data-field="M_Date"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="M_Giver"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="M_Receiver"></td>
-          </tr>
-          <tr>
-            <td class="border border-gray-400 p-2 font-bold">E=Environment & Economic<br>การให้ความรู้ด้านสิ่งแวดล้อมและสภาวะเศรษฐกิจ</td>
-            <td class="border border-gray-400 p-2">
-              <div class="font-bold mb-1">- การดำรงชีวิตที่เหมาะสมกับสภาวะของโรค</div>
-              <div class="grid grid-cols-1 gap-1 ml-2">
-                <div>[<span data-field="E_Nutrition"></span>] การจัดการโภชนาการที่เหมาะสม</div>
-                <div>[<span data-field="E_Exercise"></span>] การออกกำลังกายที่สม่ำเสมอ</div>
-                <div>[<span data-field="E_Meds"></span>] การใช้ยาและการปฏิบัติตามแผนการรักษา</div>
-                <div>[<span data-field="E_Stress"></span>] การจัดการอารมณ์และความเครียด</div>
-                <div>[<span data-field="E_Complication"></span>] การป้องกันภาวะแทรกซ้อนและการดูแลตนเอง</div>
-              </div>
-              <div class="font-bold mt-2 mb-1">- ผู้ป่วยจำเป็นที่จะต้องได้รับการดูแลช่วยเหลือในเรื่อง</div>
-              <div class="grid grid-cols-1 gap-1 ml-2">
-                <div>[<span data-field="E_Support"></span>] การสนับสนุนการมีส่วนร่วมของครอบครัวในการดูแลผู้ป่วย</div>
-                <div>[<span data-field="E_Economic"></span>] การช่วยเหลือด้านสภาวะเศรษฐกิจ ปัญหาด้านสิทธิ์การรักษา</div>
-              </div>
-            </td>
-            <td class="border border-gray-400 p-2 text-center" data-field="E_Date"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="E_Giver"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="E_Receiver"></td>
-          </tr>
-          <tr>
-            <td class="border border-gray-400 p-2 font-bold">T=Treatment แนวทางการรักษาพยาบาล</td>
-            <td class="border border-gray-400 p-2">
-               <div class="font-bold mb-1">- แนวทางการรักษาพยาบาล</div>
-               <div class="flex flex-wrap gap-2 ml-2 mb-2">
-                 <span>[<span data-field="T_MedTreatment"></span>] การรักษาด้วยยา</span>
-                 <span>[<span data-field="T_IV"></span>] การให้สารน้ำ</span>
-                 <span>[<span data-field="T_Blood"></span>] ให้เลือด</span>
-                 <span>[<span data-field="T_Surgery"></span>] การผ่าตัด/หัตถการ ระบุ: <span data-field="T_Surgery_Text" class="text-blue-700"></span></span>
-                 <span>[<span data-field="T_Other"></span>] อื่นๆ ระบุ: <span data-field="T_Other_Text" class="text-blue-700"></span></span>
-               </div>
-               <div class="font-bold mb-1">- สาธิตวิธีการดูแลตนเองในเรื่อง</div>
-               <div class="flex flex-wrap gap-2 ml-2 mb-2">
-                 <span>[<span data-field="T_TubeFeeding"></span>] การให้อาหารทางสายยาง</span>
-                 <span>[<span data-field="T_WoundCare"></span>] การดูแลแผล</span>
-                 <span>[<span data-field="T_SelfCare_Other"></span>] อื่นๆ ระบุ: <span data-field="T_SelfCare_Other_Text" class="text-blue-700"></span></span>
-               </div>
-               <div class="font-bold mb-1">- ความสำคัญในการดูแลสุขภาพและการปฏิบัติตัวที่ถูกต้อง</div>
-               <div class="grid grid-cols-1 gap-1 ml-2">
-                 <div>[<span data-field="T_CorrectMeds"></span>] รับประทานยาให้ถูกขนาด ถูกเวลา และต่อเนื่อง</div>
-                 <div>[<span data-field="T_ControlDiet"></span>] ควบคุมและเลือกทานอาหารตามคำแนะนำเฉพาะโรค</div>
-                 <div>[<span data-field="T_ExerciseRegular"></span>] ออกกำลังกายอย่างสม่ำเสมอและเหมาะสมกับสภาพร่างกาย</div>
-                 <div>[<span data-field="T_Monitor"></span>] ตรวจวัด น้ำตาล ความดัน และ สังเกตอาการผิดปกติ</div>
-                 <div>[<span data-field="T_NoSmoke"></span>] งด การสูบบุหรี่ และเครื่องดื่มแอลกอฮอล์ทุกชนิด</div>
-                 <div>[<span data-field="T_ObserveWound"></span>] สังเกตและ ดูแลบาดแผลหรืออาการผิดปกติ</div>
-               </div>
-            </td>
-            <td class="border border-gray-400 p-2 text-center" data-field="T_Date"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="T_Giver"></td>
-            <td class="border border-gray-400 p-2 text-center" data-field="T_Receiver"></td>
-          </tr>
-          <tr>
-             <td class="border border-gray-400 p-2 font-bold">H=Health ภาวะสุขภาพ โรคที่เจ็บป่วย การส่งเสริมสุขภาพด้านร่างกาย จิตใจ</td>
-             <td class="border border-gray-400 p-2">
-                <div class="font-bold mb-1">- ความรู้เรื่องการลดปัจจัยเสี่ยงต่อการเกิดโรคของผู้ป่วย</div>
-                <div class="grid grid-cols-1 gap-1 ml-2 mb-2">
-                   <div>[<span data-field="H_DietControl"></span>] ควบคุมอาหารตามหลักโภชนาการ</div>
-                   <div>[<span data-field="H_Exercise"></span>] ออกกำลังกายสม่ำเสมอ</div>
-                   <div>[<span data-field="H_NoSmoke"></span>] งด การสูบบุหรี่ และเครื่องดื่มแอลกอฮอล์ทุกชนิด</div>
-                   <div>[<span data-field="H_Stress"></span>] จัดการความเครียด/พักผ่อนให้เพียงพอ</div>
-                   <div>[<span data-field="H_MedsPlan"></span>] ใช้ยาตามแผนการรักษา อย่างเคร่งครัด</div>
-                   <div>[<span data-field="H_Infection"></span>] หลีกเลี่ยงความเสี่ยงต่อการติดเชื้อ</div>
-                </div>
-                <div class="font-bold mb-1">- Empowerment การดูแลสุขภาพที่เหมาะสม เรื่อง</div>
-                <div class="flex flex-wrap gap-2 ml-2">
-                   <span>[<span data-field="H_Emp_Knowledge"></span>] ความรู้ที่ถูกต้องเกี่ยวกับโรค</span>
-                   <span>[<span data-field="H_Emp_Skill"></span>] ทักษะในการจัดการตนเอง</span>
-                   <span>[<span data-field="H_Emp_Goal"></span>] การตั้งเป้าหมายการดูแลสุขภาพ</span>
-                </div>
-             </td>
-             <td class="border border-gray-400 p-2 text-center" data-field="H_Date"></td>
-             <td class="border border-gray-400 p-2 text-center" data-field="H_Giver"></td>
-             <td class="border border-gray-400 p-2 text-center" data-field="H_Receiver"></td>
-          </tr>
-          <tr>
-             <td class="border border-gray-400 p-2 font-bold">O=Out Patient การดูแลต่อเนื่อง</td>
-             <td class="border border-gray-400 p-2">
-                <div>- การมาตรวจตามนัด วันที่ <span class="text-blue-700" data-field="O_AppointDate"></span> สถานที่ <span class="text-blue-700" data-field="O_AppointPlace"></span></div>
-                <div>- การเตรียมตัว <span class="text-blue-700" data-field="O_Prep"></span></div>
-                <div class="font-bold mt-1">- แหล่งข้อมูลเครือข่ายหรือแหล่งสนับสนุนทางสังคมที่ผู้ป่วยสามารถเข้าถึงบริการ</div>
-                <div class="flex flex-wrap gap-2 ml-2">
-                   <span>[<span data-field="O_CommunityLeader"></span>] ผู้นำชุมชน</span>
-                   <span>[<span data-field="O_Volunteer"></span>] อสม</span>
-                   <span>[<span data-field="O_HealthCenter"></span>] รพ.สต.</span>
-                   <span>[<span data-field="O_SupportOther"></span>] อื่นๆ <span class="text-blue-700" data-field="O_SupportOther_Text"></span></span>
-                </div>
-                <div class="mt-1">- การขอความช่วยเหลือ 1669</div>
-             </td>
-             <td class="border border-gray-400 p-2 text-center" data-field="O_Date"></td>
-             <td class="border border-gray-400 p-2 text-center" data-field="O_Giver"></td>
-             <td class="border border-gray-400 p-2 text-center" data-field="O_Receiver"></td>
-          </tr>
-          <tr>
-             <td class="border border-gray-400 p-2 font-bold">D=Diet การเลือกรับประทานอาหาร</td>
-             <td class="border border-gray-400 p-2">
-                <div class="mb-1">ความรู้ความเข้าใจด้านอาหารที่เหมาะสม กับสภาวะของโรคและสร้างเสริมสุขภาพ</div>
-                <div>- อาหารเฉพาะโรค ระบุ <span class="text-blue-700" data-field="D_Diet_Specific"></span></div>
-                <div>- อาหารที่ควรหลีกเลี่ยง <span class="text-blue-700" data-field="D_Diet_Avoid"></span></div>
-                <div>- อื่นๆ <span class="text-blue-700" data-field="D_Diet_Other"></span></div>
-             </td>
-             <td class="border border-gray-400 p-2 text-center" data-field="D_Diet_Date"></td>
-             <td class="border border-gray-400 p-2 text-center" data-field="D_Diet_Giver"></td>
-             <td class="border border-gray-400 p-2 text-center" data-field="D_Diet_Receiver"></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</template>
-    
     <!-- (Template 005) -->
     <template id="preview-template-005">
       <div class="overflow-x-auto">
