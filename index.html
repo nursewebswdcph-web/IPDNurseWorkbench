@@ -1011,7 +1011,20 @@
             <label class="block font-bold">ประวัติการเจ็บป่วย</label>
             <textarea id="assess-pi" name="PresentIllness" rows="1" class="w-full p-2 border rounded bg-gray-100" readonly></textarea>
           </div>
-          
+          <div class="col-span-12">
+            <label class="block text-sm font-bold text-blue-700">อาการและอาการแสดงแรกรับ</label>
+            <textarea name="AdmitSymptoms" rows="2" class="w-full p-2 border rounded"></textarea>
+          </div>
+          <div class="col-span-12 md:col-span-6">
+            <label class="block text-sm font-bold text-red-700">สัญญาณชีพแรกรับ</label>
+            <div class="grid grid-cols-4 gap-2 mt-1">
+              <input type="text" name="Admit_BT" placeholder="BT ํC" class="p-2 border rounded text-center">
+              <input type="text" name="Admit_PR" placeholder="PR /min" class="p-2 border rounded text-center">
+              <input type="text" name="Admit_RR" placeholder="RR /min" class="p-2 border rounded text-center">
+              <input type="text" name="Admit_BP" placeholder="BP mmHg" class="p-2 border rounded text-center">
+            </div>
+          </div>
+                
           <div class="col-span-12 md:col-span-6 border-t pt-4">
              <span class="font-bold block mb-1">การรักษาตัวในโรงพยาบาล:</span>
              <div class="flex gap-4">
