@@ -1457,8 +1457,8 @@ function closeAssessmentModal() {
 function populateAssessmentForm(data, targetForm) {
   targetForm.reset();
   if (targetForm.id === 'assessment-form') { 
-    targetForm.querySelector('#assess-an-display').textContent = data.AN;
-    targetForm.querySelector('#assess-name-display').textContent = data.Name;
+    targetForm.querySelector('#assess-an-display').textContent = data.AN || '';
+    targetForm.querySelector('#assess-name-display').textContent = data.Name || '';
   }
   
   const fieldsToSync = {
@@ -1471,7 +1471,6 @@ function populateAssessmentForm(data, targetForm) {
       if (el) el.value = data[key] || '';
   }
   
-  // Radio/Checkbox population logic
   for (const key in data) {
     if (data.hasOwnProperty(key)) {
       if (fieldsToSync.hasOwnProperty(key)) continue;
@@ -1488,7 +1487,6 @@ function populateAssessmentForm(data, targetForm) {
     }
   }
   
-  // Trigger toggles
   targetForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
     if ((el.tagName === 'SELECT') || (el.type === 'radio' && el.checked)) {
       el.dispatchEvent(new Event('change', { 'bubbles': true }));
@@ -1497,21 +1495,17 @@ function populateAssessmentForm(data, targetForm) {
   
   calculateBradenScore(targetForm); 
   
-  // Assessor logic
+  // แก้ไขจุดที่ทำให้ Crash: ตรวจสอบว่าเป็น SELECT หรือไม่ก่อนเช็ค options
   const assessorNameEl = targetForm.querySelector("#assessor-name");
   const assessorPosEl = targetForm.querySelector("#assessor-position");
   if (assessorNameEl && assessorPosEl) {
-    if(assessorNameEl.options.length <= 1 && globalStaffList.length > 0) {
+    // ถ้าเป็น Select ให้เติมข้อมูลพยาบาล
+    if(assessorNameEl.tagName === 'SELECT' && assessorNameEl.options.length <= 1 && globalStaffList.length > 0) {
         populateSelect(assessorNameEl.id, globalStaffList.map(s => s.fullName));
     }
-    const assessor = globalStaffList.find(s => s.fullName === data.Assessor_Name);
-    if(assessor) {
-      assessorNameEl.value = assessor.fullName;
-      assessorPosEl.value = assessor.position;
-    } else {
-      assessorNameEl.value = data.Assessor_Name || "";
-      assessorPosEl.value = data.Assessor_Position || "";
-    }
+    // ใส่ค่าชื่อและตำแหน่ง
+    assessorNameEl.value = data.Assessor_Name || "";
+    assessorPosEl.value = data.Assessor_Position || "";
   }
 }
 
