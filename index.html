@@ -970,8 +970,8 @@
               </div>
               <div class="col-span-1">
                 <label for="admit-doctor" class="block text-sm font-medium text-gray-700">แพทย์เจ้าของไข้</label>
-                <select id="admit-doctor" name="Doctor" class="mt-1 p-2 block w-full border rounded-md" required>
-                  </select>
+                <input type="text" id="admit-doctor" name="Doctor" list="doctor-list" class="mt-1 p-2 block w-full border rounded-md" placeholder="พิมพ์ชื่อเพื่อค้นหา..." required>
+                <datalist id="doctor-list"></datalist> 
               </div>
 
             </div>
@@ -1077,8 +1077,7 @@
               </div>
               <div class="col-span-1">
                 <label class="block text-sm font-medium text-gray-700">แพทย์เจ้าของไข้</label>
-                <select id="details-doctor" name="Doctor" class="mt-1 p-2 block w-full border rounded-md">
-                  </select>
+                <input type="text" id="details-doctor" name="Doctor" list="doctor-list" class="mt-1 p-2 block w-full border rounded-md">
               </div>
 
             </div>
