@@ -5263,12 +5263,14 @@ function renderForm004Page1(container, options = {}) {
 }
 
 // =================================================================
-// PAGE 2 RENDERER (Updated Braden Scale & Risk Criteria)
+// PAGE 2 RENDERER (Fixed: getBScore error & Full Layout)
 // =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = options.data || {};
     
-    // Helper Checkbox
+    // --- Helper Functions ---
+    
+    // 1. Checkbox Helper
     const boxCheck = (val, target) => {
         let isChecked = false;
         if (val) {
@@ -5282,30 +5284,31 @@ function renderForm004Page2(container, options = {}) {
         return `<span class="inline-block font-sarabun font-bold mr-1" style="font-family: 'Sarabun'; font-size: 14px;">[ ${isChecked ? '/' : '&nbsp;'} ]</span>`;
     };
     const chk = (val, target, label) => `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${boxCheck(val, target)} ${label}</span>`;
+    const dot = (val, w) => `<span class="border-b border-black border-dotted inline-block text-center whitespace-nowrap overflow-hidden text-blue-900 font-bold px-1" style="min-width: ${w};">${val || '&nbsp;'}</span>`;
 
-    // Helper Braden Logic
-    const getBradenScore = (val) => parseInt(val) || 0;
-    const totalBraden = getBradenScore(d.Braden_Sensory) + getBradenScore(d.Braden_Moisture) + 
-                        getBradenScore(d.Braden_Activity) + getBradenScore(d.Braden_Mobility) + 
-                        getBradenScore(d.Braden_Nutrition) + getBradenScore(d.Braden_Friction);
+    // 2. Braden Score Helper (** แก้ไขจุดที่ Error **)
+    const getBScore = (val) => parseInt(val, 10) || 0;
+
+    // คำนวณคะแนนรวม Braden
+    const totalBraden = getBScore(d.Braden_Sensory) + getBScore(d.Braden_Moisture) + 
+                        getBScore(d.Braden_Activity) + getBScore(d.Braden_Mobility) + 
+                        getBScore(d.Braden_Nutrition) + getBScore(d.Braden_Friction);
     
-    // Check Risk Level
-    const checkRisk = (score, min, max) => {
-        if (score === 0) return boxCheck(false, ''); // ถ้าไม่มีคะแนน ไม่ติ๊ก
-        if (max === null) return boxCheck(score >= min, true); // กรณี >= 15
-        return boxCheck(score >= min && score <= max, true);
+    // 3. Risk Check Helper
+    const isRisk = (score, min, max) => {
+        if (score === 0) return false;
+        if (max === null) return score >= min;
+        return score >= min && score <= max;
     };
+    const chkRisk = (condition) => `[ <span class="font-bold">${condition ? '/' : '&nbsp;'}</span> ]`;
 
     let html = `
     <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
-       
        <div class="w-[15%]"></div>
-
        <div class="text-center w-[70%]">
           <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน (ต่อ)</h2>
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
-
        <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
           <div class="font-bold text-[12px]">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
@@ -5439,13 +5442,12 @@ function renderForm004Page2(container, options = {}) {
                     ['โภชนาการ', 'แย่มาก<br>(กินน้อยกว่า 1/3)', 'ไม่เพียงพอ<br>(กินประมาณ 1/2)', 'เพียงพอ<br>(กินมากกว่า 1/2)', 'ดีเยี่ยม<br>(กินได้หมด)', d.Braden_Nutrition],
                     ['แรงเสียดทาน', 'มีปัญหา<br>(ต้องการคนช่วยดึง)', 'เสี่ยง<br>(ขยับตัวได้บ้าง)', 'ไม่มีปัญหา<br>(ขยับตัวอิสระ)', '', d.Braden_Friction]
                 ].map((row, idx) => {
-                    const score = getBScore(row[5]); // แปลงค่าคะแนนของแถวนั้นๆ
+                    const score = getBScore(row[5]); // ใช้ getBScore ที่ประกาศไว้แล้ว
                     const b1 = score == 1 ? 'font-bold bg-gray-200' : '';
                     const b2 = score == 2 ? 'font-bold bg-gray-200' : '';
                     const b3 = score == 3 ? 'font-bold bg-gray-200' : '';
                     const b4 = score == 4 ? 'font-bold bg-gray-200' : '';
                     
-                    // กรณีข้อ 6 (แรงเสียดทาน) ไม่มีคะแนน 4
                     const td4 = idx === 5 ? '<td class="border border-black p-1 bg-gray-100"></td>' 
                                           : `<td class="border border-black p-1 align-middle ${b4}">${row[4]}</td>`;
 
@@ -5465,14 +5467,14 @@ function renderForm004Page2(container, options = {}) {
             <div class="flex justify-end mt-2 items-center gap-4 text-[12px]">
                 <div class="flex items-center">
                     <span class="font-bold text-[14px] mr-2">Total Score:</span> 
-                    <span class="border border-black px-2 py-1 w-12 text-center font-bold bg-white text-[16px]">${bradenTotalCalc || 0}</span>
+                    <span class="border border-black px-2 py-1 w-12 text-center font-bold bg-white text-[16px]">${totalBraden || 0}</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="font-bold">การแปลผล:</span>
-                    ${chkRisk(isRisk(bradenTotalCalc, 0, 9))} ≤ 9 Very high
-                    ${chkRisk(isRisk(bradenTotalCalc, 10, 12))} 10-12 High
-                    ${chkRisk(isRisk(bradenTotalCalc, 13, 14))} 13-14 Moderate
-                    ${chkRisk(isRisk(bradenTotalCalc, 15, null))} ≥ 15 Low
+                    ${chkRisk(isRisk(totalBraden, 0, 9))} ≤ 9 Very high
+                    ${chkRisk(isRisk(totalBraden, 10, 12))} 10-12 High
+                    ${chkRisk(isRisk(totalBraden, 13, 14))} 13-14 Moderate
+                    ${chkRisk(isRisk(totalBraden, 15, null))} ≥ 15 Low
                 </div>
             </div>
         </div>
