@@ -3424,9 +3424,9 @@ async function renderClassifyPrintMode(an) {
   }
 }
 
-// ฟังก์ชันจัดการการพิมพ์ (แก้ไข: Pop-up ทำงานถูกต้อง, แก้หน้าขาว, ล้าง ID ซ้ำ)
+// ฟังก์ชันจัดการการพิมพ์ (แก้ไข: ค้นหาตำแหน่งมาต่อท้ายชื่อ)
 async function handleClassifyPrint() {
-    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง ถ้าไม่มีให้โหลด
+    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง
     if (globalStaffList.length === 0) {
         await refreshStaffDatalists();
     }
@@ -3463,6 +3463,7 @@ async function handleClassifyPrint() {
                     <datalist id="print_staff_list">
                         ${staffOptions}
                     </datalist>
+                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติเมื่อสั่งพิมพ์</div>
                 </div>
             </div>
         `,
@@ -3471,7 +3472,6 @@ async function handleClassifyPrint() {
         confirmButtonText: 'พิมพ์เอกสาร',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#2563EB',
-        // ใช้ didOpen เพื่อผูก Event Listener แทน onchange ใน HTML
         didOpen: () => {
             const popup = Swal.getPopup();
             const dateInput = popup.querySelector('#print_discharge_date');
@@ -3483,7 +3483,7 @@ async function handleClassifyPrint() {
                         dateInput.classList.remove('hidden');
                     } else {
                         dateInput.classList.add('hidden');
-                        dateInput.value = ''; // ล้างค่าเมื่อเลือกไม่ลงวันที่
+                        dateInput.value = ''; 
                     }
                 });
             });
@@ -3502,9 +3502,14 @@ async function handleClassifyPrint() {
                 return false;
             }
 
+            // [ค้นหาตำแหน่ง] จาก globalStaffList
+            const staffData = globalStaffList.find(s => s.fullName === assessor);
+            const position = staffData ? staffData.position : ""; 
+
             return {
                 dischargeDate: opt === 'yes' ? dateVal : null,
-                assessorName: assessor
+                assessorName: assessor,
+                assessorPosition: position // ส่งตำแหน่งไปด้วย
             };
         }
     });
@@ -3512,18 +3517,14 @@ async function handleClassifyPrint() {
     if (isDismissed || !formValues) return;
 
     // --- เริ่มกระบวนการพิมพ์ ---
-    
-    // [แก้ไขหน้าขาว] ล้าง Element เก่าทิ้งก่อนสร้างใหม่ เพื่อกัน ID ซ้ำซ้อน
     const oldPrintArea = document.getElementById("classify-print-area");
     if (oldPrintArea) oldPrintArea.remove();
 
-    // สร้างพื้นที่สำหรับ Print ใหม่
     const printArea = document.createElement('div');
     printArea.id = "classify-print-area";
     printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
     document.body.appendChild(printArea);
 
-    // คำนวณจำนวนหน้า
     let maxPage = 1;
     if (allClassifyDataCache.length > 0) {
         const dates = allClassifyDataCache.map(d => new Date(d.Date));
@@ -3534,7 +3535,6 @@ async function handleClassifyPrint() {
         maxPage = Math.max(1, Math.ceil(diffDays / 5));
     }
 
-    // วนลูปสร้างหน้า
     for (let p = 1; p <= maxPage; p++) {
         const pageContainer = document.createElement('div');
         pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
@@ -3545,22 +3545,19 @@ async function handleClassifyPrint() {
         
         printArea.appendChild(pageContainer);
         
-        // Render ข้อมูลลงกระดาษ
         renderClassifySheetA4(p, pageContainer, { 
             customDischargeDate: formValues.dischargeDate,
-            customAssessor: formValues.assessorName
+            customAssessor: formValues.assessorName,
+            customAssessorPosition: formValues.assessorPosition // ส่งตำแหน่งไป Render
         });
     }
 
-    // [แก้ไขหน้าขาว] หน่วงเวลาเล็กน้อยเพื่อให้ DOM Render เสร็จก่อนสั่งพิมพ์
     setTimeout(() => {
         window.print();
-        // ล้างพื้นที่พิมพ์หลังพิมพ์เสร็จ (Optional)
-        // setTimeout(() => printArea.remove(), 1000); 
     }, 500);
 }
 
-// ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: Map ชื่อผู้พิมพ์ให้ตรงกับผู้ประเมิน)
+// ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: แสดงตำแหน่งท้ายชื่อ)
 function renderClassifySheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("classify-sheet-content");
   const pageNumSpan = document.getElementById("print-classify-page-num");
@@ -3582,14 +3579,21 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
       dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
   }
 
-  // จัดการชื่อผู้ประเมิน
+  // จัดการชื่อและตำแหน่งผู้ประเมิน
   const assessorNameVal = options.customAssessor || "";
-  const assessorDisplay = assessorNameVal ? `(${assessorNameVal})` : "(..................................................)";
+  const assessorPosVal = options.customAssessorPosition || "";
+  
+  // สร้าง String ชื่อ+ตำแหน่ง สำหรับท้ายกระดาษ (ขวา)
+  const assessorDisplay = assessorNameVal 
+      ? `(${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''})` 
+      : "(..................................................)";
+
+  // สร้าง String ชื่อ+ตำแหน่ง สำหรับผู้พิมพ์ (ซ้าย)
+  const currentUser = assessorNameVal 
+      ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` 
+      : "(เจ้าหน้าที่)";
 
   const wardName = currentPatientData.Ward || "........................"; 
-  
-  // [แก้ไข] ใช้ชื่อผู้ประเมินเป็น "ผู้พิมพ์" ด้วย (ตามที่ร้องขอ)
-  const currentUser = assessorNameVal || "(เจ้าหน้าที่)"; 
   
   const now = new Date();
   const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
