@@ -4909,17 +4909,22 @@ function renderForm004Page1(container, options = {}) {
     };
 
     let html = `
-    <div class="flex justify-between items-start mb-1 border-b border-black pb-1 font-sarabun text-black">
+    <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
        
-       <div class="text-center w-[70%] pt-1">
+       <div class="w-[15%]"></div>
+
+       <div class="text-center w-[70%]">
           <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
+
        <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
           <div class="font-bold text-[12px]">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
        </div>
     </div>
+    
+    `;
 
     <div class="font-bold text-[12px]">
         <span>ชื่อ-สกุล: ${p.Name || '-'}</span>
@@ -5014,28 +5019,48 @@ function renderForm004Page1(container, options = {}) {
             <div class="flex items-end pt-1 border-t border-black"><span class="font-bold w-32">ยาที่ใช้ประจำ :</span> ${chk(d.Meds_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Meds_Status, 'มี', 'มี(ระบุ)')} ${dot(d.Meds_Details, "100%")}</div>
         </div>
 
-        <div class="grid grid-cols-3 border border-black mt-1 divide-x divide-black h-40 text-[12px]">
-            <div class="p-1">
-                <div class="font-bold underline mb-1">1) การรับรู้เกี่ยวกับสุขภาพและการดูแล</div>
-                <div class="space-y-1">
-                    <div class="flex flex-wrap items-end">ก่อนการเจ็บป่วยครั้งนี้: ${chk(d.HP_Before, 'ดี', 'ดี')} ${chk(d.HP_Before, 'ไม่ดี', 'ไม่ดี:')} ${dot(d.HP_Before_Detail, "30px")}</div>
-                    <div class="flex flex-wrap items-end">เจ็บป่วยครั้งนี้: ${chk(d.HP_Current, 'รุนแรง', 'รุนแรง')} ${chk(d.HP_Current, 'ไม่รุนแรง', 'ไม่รุนแรง')}</div>
-                    <div>การดูแล: ${chk(d.HP_Care, 'ไปรพ./คลินิก', 'ไปรพ./คลินิก')} ${chk(d.HP_Care, 'ซื้อยารับประทาน', 'ซื้อยารับประทาน')}</div>
-                    <div>${chk(d.HP_Care, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.HP_Care_Other, "60px")}</div>
-                    <div class="flex flex-wrap items-end">ความคาดหวังในการรักษา: ${chk(d.HP_Expect, 'หาย', 'หาย')} ${chk(d.HP_Expect, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.HP_Expect, 'ไม่หาย', 'ไม่หาย')}</div>
+        <div class="grid grid-cols-3 border border-black mt-1 divide-x divide-black text-[12px] h-auto">
+            <div class="p-1 flex flex-col justify-between">
+                <div>
+                    <div class="font-bold underline mb-1">1) การรับรู้เกี่ยวกับสุขภาพและการดูแล</div>
+                    <div class="space-y-0.5">
+                        <div class="flex flex-wrap items-end whitespace-nowrap">ก่อนเจ็บป่วยครั้งนี้: ${chk(d.HP_Before, 'ดี', 'ดี')} ${chk(d.HP_Before, 'ไม่ดี', 'ไม่ดี:')} ${dot(d.HP_Before_Detail, "30px")}</div>
+                        <div class="flex flex-wrap items-end whitespace-nowrap">เจ็บป่วยครั้งนี้: ${chk(d.HP_Current, 'รุนแรง', 'รุนแรง')} ${chk(d.HP_Current, 'ไม่รุนแรง', 'ไม่รุนแรง')}</div>
+                        <div class="flex flex-wrap whitespace-nowrap">การดูแล: ${chk(d.HP_Care, 'ไปรพ./คลินิก', 'ไปรพ./คลินิก')}</div>
+                        <div class="flex flex-wrap whitespace-nowrap pl-10">${chk(d.HP_Care, 'ซื้อยารับประทาน', 'ซื้อยา')}</div>
+                        <div class="whitespace-nowrap">${chk(d.HP_Care, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.HP_Care_Other, "60px")}</div>
+                    </div>
                 </div>
+                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ความคาดหวังในการรักษา: ${chk(d.HP_Expect, 'หาย', 'หาย')} ${chk(d.HP_Expect, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.HP_Expect, 'ไม่หาย', 'ไม่หาย')}</div>
             </div>
 
-            <div class="p-1">
-                <div class="font-bold underline mb-1">2) โภชนาการและการเผาผลาญ</div>
-                <div class="space-y-1">
-                    <div class="flex items-end">รับประทานอาหาร ${dot(d.Nutri_Meals, "20px")} มื้อ/วัน</div>
-                    <div class="flex flex-wrap">${chk(d.Nutri_Type, 'อาหารธรรมดา', 'อาหารธรรมดา')} ${chk(d.Nutri_Type, 'อาหารอ่อน', 'อาหารอ่อน')}</div>
-                    <div class="flex flex-wrap">${chk(d.Nutri_Type, 'อาหารทางสายยาง', 'อาหารทางสายยาง')} ${chk(d.Nutri_Type, 'อาหารเฉพาะโรค', 'อาหารเฉพาะโรค:')} ${dot(d.Nutri_Type_Detail, "40px")}</div>
-                    <div class="flex flex-wrap items-end">ปัญหาในการรับประทานอาหาร: ${chk(d.Nutri_Problem, 'ไม่มี', 'ไม่มี')} ${chk(d.Nutri_Problem, 'มี', 'มี:')} ${dot(d.Nutri_Problem_Detail, "30px")}</div>
-                    <div class="flex flex-wrap items-end">ผิวหนัง: ${chk(d.Nutri_Skin, 'ปกติ', 'ปกติ')} ${chk(d.Nutri_Skin, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Nutri_Skin_Detail, "30px")}</div>
+            <div class="p-1 flex flex-col justify-between">
+                <div>
+                    <div class="font-bold underline mb-1">2) โภชนาการและการเผาผลาญ</div>
+                    <div class="space-y-0.5">
+                        <div class="flex items-end whitespace-nowrap">รับประทานอาหาร ${dot(d.Nutri_Meals, "20px")} มื้อ/วัน</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารธรรมดา', 'ธรรมดา')} ${chk(d.Nutri_Type, 'อาหารอ่อน', 'อ่อน')}</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารทางสายยาง', 'สายยาง')}</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารเฉพาะโรค', 'เฉพาะโรค:')} ${dot(d.Nutri_Type_Detail, "30px")}</div>
+                        <div class="flex flex-wrap items-end whitespace-nowrap">ปัญหาการกิน: ${chk(d.Nutri_Problem, 'ไม่มี', 'ไม่มี')} ${chk(d.Nutri_Problem, 'มี', 'มี:')} ${dot(d.Nutri_Problem_Detail, "30px")}</div>
+                    </div>
                 </div>
+                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ผิวหนัง: ${chk(d.Nutri_Skin, 'ปกติ', 'ปกติ')} ${chk(d.Nutri_Skin, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Nutri_Skin_Detail, "30px")}</div>
             </div>
+
+            <div class="p-1 flex flex-col justify-between">
+                <div>
+                    <div class="font-bold underline mb-1">3) การขับถ่าย</div>
+                    <div class="space-y-0.5">
+                        <div class="flex items-end whitespace-nowrap">ปัสสาวะ ${dot(d.Elim_Urine_Freq, "20px")} ครั้ง/วัน</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Elim_Urine_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Urine_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Urine_Detail, "30px")}</div>
+                        <div class="flex items-end mt-2 whitespace-nowrap">อุจจาระ ${dot(d.Elim_Bowel_Freq, "20px")} ครั้ง/วัน</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Elim_Bowel_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Bowel_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Bowel_Detail, "30px")}</div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ขับถ่ายทางหน้าท้อง: ${chk(d.Elim_Stoma, 'ไม่มี', 'ไม่มี')} ${chk(d.Elim_Stoma, 'มี', 'มี')}</div>
+            </div>
+        </div>
 
             <div class="p-1">
                 <div class="font-bold underline mb-1">3) การขับถ่าย</div>
