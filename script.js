@@ -1201,61 +1201,17 @@ async function showFormPreview(formType) {
      await showDischargePreview(currentPatientAN);
   }
   
-  // --- กรณี Braden Scale Monitoring ---
+  // --- กรณี Braden Scale (Print View) ---
   else if (formType === 'braden') {
-    chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale)";
+    chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale) - Print View";
+    // แสดงปุ่มแก้ไข เพื่อให้ User กดเข้าไปกรอกข้อมูลได้
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "braden"; 
     chartAddNewBtn.classList.add("hidden");
 
-    chartPreviewContent.innerHTML = document.getElementById("preview-template-braden").innerHTML;
-    const listContainer = document.getElementById("braden-summary-list");
-    const emptyState = document.getElementById("braden-empty-state");
-    const statusSpan = document.getElementById("last-updated-braden");
-
-    showLoading("กำลังโหลดประวัติ...");
-    try {
-        const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${currentPatientAN}`);
-        const result = await response.json();
-        if (!result.success) throw new Error(result.message);
-        const entries = result.data;
-        Swal.close();
-
-        if (entries.length > 0) {
-            emptyState.classList.add("hidden");
-            const lastEntry = entries[entries.length - 1];
-            let lastDateStr = lastEntry.last_assess_date ? new Date(lastEntry.last_assess_date).toLocaleDateString('th-TH', {day:'2-digit', month:'short'}) : "-";
-            statusSpan.textContent = `ล่าสุด: ${lastDateStr} (ชุดที่ ${lastEntry.page})`;
-            statusSpan.classList.add("text-green-600");
-
-            let html = "";
-            entries.forEach(item => {
-                const updatedDate = new Date(item.timestamp).toLocaleString('th-TH', {dateStyle:'short', timeStyle:'short'});
-                html += `
-                <div class="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center" 
-                     onclick="openBradenModal(${item.page})">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-red-100 text-red-700 font-bold rounded-full w-10 h-10 flex items-center justify-center">${item.page}</div>
-                        <div>
-                            <div class="font-bold text-gray-800">แบบประเมินชุดที่ ${item.page}</div>
-                            <div class="text-xs text-gray-500">ประเมินไปแล้ว ${item.count} วัน</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-xs text-gray-400">แก้ไขล่าสุด: ${updatedDate}</div>
-                        <div class="text-blue-600 text-sm font-semibold mt-1">เปิดดู ></div>
-                    </div>
-                </div>`;
-            });
-            listContainer.innerHTML = html;
-        } else {
-            statusSpan.textContent = "ยังไม่เคยบันทึก";
-            emptyState.classList.remove("hidden");
-        }
-    } catch (error) { Swal.close(); showError("โหลดข้อมูลไม่สำเร็จ", error.message); }
+    // เรียกฟังก์ชันเรนเดอร์แบบ Print Mode
+    await renderBradenPrintMode(currentPatientAN);
   }
-
-  // --- กรณี Morse Fall Scale / MAAS ---
   // --- กรณี Morse Fall Scale / MAAS (Print View) ---
   else if (formType === 'morse_maas') {
     chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
@@ -4218,6 +4174,435 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
           document.getElementById("btn-prev-morse-sheet").disabled = (page <= 1);
       }
   }
+}
+// =================================================================
+// (New) Braden Scale Print Preview Logic (1 Set = 2 Pages)
+// =================================================================
+let currentBradenPrintSet = 1;
+let allBradenDataCache = []; // เก็บข้อมูลราย "ชุด" (Pages) ที่โหลดมา
+
+async function renderBradenPrintMode(an) {
+  chartPreviewContent.innerHTML = "";
+  
+  // 1. สร้าง Controls
+  const controlDiv = document.createElement('div');
+  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+  controlDiv.innerHTML = `
+      <div class="font-bold text-gray-700 flex items-center gap-2">
+        <span>มุมมองแบบพิมพ์ (ชุดละ 2 หน้า) - ชุดที่ <span id="print-braden-set-num">1</span></span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-prev-braden-set" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ชุดก่อนหน้า</button>
+        <button id="btn-next-braden-set" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ชุดถัดไป &gt;</button>
+        <button id="btn-print-braden-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
+        </button>
+      </div>
+  `;
+  chartPreviewContent.appendChild(controlDiv);
+
+  // 2. สร้าง Container สำหรับแสดงผล (Scrollable)
+  const previewContainer = document.createElement('div');
+  previewContainer.id = "braden-preview-container";
+  previewContainer.className = "overflow-y-auto bg-gray-200 p-4 print:p-0";
+  previewContainer.style.maxHeight = "calc(100vh - 200px)";
+  chartPreviewContent.appendChild(previewContainer);
+
+  // 3. โหลดข้อมูล (List รายการชุดที่มี)
+  showLoading('กำลังโหลดข้อมูล...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success) throw new Error(result.message);
+    
+    // เก็บรายการชุดข้อมูล (เช่น Page 1, Page 2...)
+    allBradenDataCache = result.data || []; 
+    
+    if (allBradenDataCache.length === 0) {
+        previewContainer.innerHTML = `<div class="text-center text-gray-500 py-10">ยังไม่มีข้อมูลการประเมิน<br>กรุณากดปุ่ม "แก้ไข" เพื่อเริ่มประเมิน</div>`;
+        Swal.close();
+        return;
+    }
+
+    // เริ่มต้นแสดงชุดล่าสุด (หรือชุดที่ 1 ตามต้องการ)
+    currentBradenPrintSet = allBradenDataCache.length > 0 ? allBradenDataCache[allBradenDataCache.length - 1].page : 1;
+    
+    await fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
+    
+    // Event Listeners
+    document.getElementById("btn-prev-braden-set").addEventListener("click", () => {
+       // หาชุดก่อนหน้า
+       const currIdx = allBradenDataCache.findIndex(d => d.page == currentBradenPrintSet);
+       if(currIdx > 0) {
+           currentBradenPrintSet = allBradenDataCache[currIdx - 1].page;
+           fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
+       }
+    });
+    
+    document.getElementById("btn-next-braden-set").addEventListener("click", () => {
+         const currIdx = allBradenDataCache.findIndex(d => d.page == currentBradenPrintSet);
+         if(currIdx < allBradenDataCache.length - 1) {
+             currentBradenPrintSet = allBradenDataCache[currIdx + 1].page;
+             fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
+         }
+    });
+
+    document.getElementById("btn-print-braden-action").addEventListener("click", handleBradenPrint);
+
+    Swal.close();
+  } catch (e) {
+    Swal.close();
+    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
+  }
+}
+
+// ฟังก์ชันโหลดข้อมูลและเรนเดอร์ 1 ชุด (2 หน้า) ลงใน Container
+async function fetchAndRenderBradenSet(an, pageNum, container) {
+    document.getElementById("print-braden-set-num").textContent = pageNum;
+    container.innerHTML = `<div class="text-center py-4">กำลังโหลดเนื้อหาชุดที่ ${pageNum}...</div>`;
+    
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${an}&page=${pageNum}`);
+        const result = await response.json();
+        const data = result.data || {};
+        
+        container.innerHTML = ""; // Clear loader
+        
+        // Render หน้า 1
+        const page1 = document.createElement('div');
+        page1.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative mb-4 print:mb-0 print:break-after-page";
+        page1.style.width = "210mm";
+        page1.style.minHeight = "297mm";
+        page1.style.padding = "10mm 15mm 25mm 15mm";
+        renderBradenPage1(page1, data);
+        container.appendChild(page1);
+
+        // Render หน้า 2
+        const page2 = document.createElement('div');
+        page2.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative";
+        page2.style.width = "210mm";
+        page2.style.minHeight = "297mm";
+        page2.style.padding = "10mm 15mm 25mm 15mm";
+        renderBradenPage2(page2, data);
+        container.appendChild(page2);
+
+    } catch (e) {
+        container.innerHTML = `<div class="text-red-500 text-center">เกิดข้อผิดพลาด: ${e.message}</div>`;
+    }
+}
+
+// --- ฟังก์ชันจัดการการพิมพ์ (Loop ทุกชุด) ---
+async function handleBradenPrint() {
+    // Pop-up ตั้งค่าก่อนพิมพ์
+    const { value: formValues, isDismissed } = await Swal.fire({
+        title: 'ตั้งค่าการพิมพ์เอกสาร',
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้พิมพ์ (Footer)</label>
+                    <input type="text" id="print_user_name" class="w-full p-2 border rounded" placeholder="ระบุชื่อเจ้าหน้าที่..." value="(เจ้าหน้าที่)">
+                </div>
+            </div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'พิมพ์เอกสาร',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: () => {
+            return { user: document.getElementById('print_user_name').value };
+        }
+    });
+
+    if (isDismissed) return;
+
+    // เตรียมพื้นที่พิมพ์
+    const oldPrintArea = document.getElementById("braden-print-area");
+    if (oldPrintArea) oldPrintArea.remove();
+
+    const printArea = document.createElement('div');
+    printArea.id = "braden-print-area";
+    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+    document.body.appendChild(printArea);
+
+    showLoading("กำลังเตรียมเอกสาร...");
+
+    // Loop สร้างทุกชุดที่มี
+    for (const setItem of allBradenDataCache) {
+        try {
+            const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${currentPatientAN}&page=${setItem.page}`);
+            const result = await response.json();
+            const data = result.data || {};
+
+            // สร้าง Page 1
+            const p1 = document.createElement('div');
+            p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+            p1.style.width = "210mm";
+            p1.style.height = "297mm";
+            p1.style.padding = "10mm 15mm 25mm 15mm";
+            renderBradenPage1(p1, data, { customUser: formValues.user });
+            printArea.appendChild(p1);
+
+            // สร้าง Page 2
+            const p2 = document.createElement('div');
+            p2.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+            p2.style.width = "210mm";
+            p2.style.height = "297mm";
+            p2.style.padding = "10mm 15mm 25mm 15mm";
+            renderBradenPage2(p2, data, { customUser: formValues.user });
+            printArea.appendChild(p2);
+
+        } catch (e) { console.error(e); }
+    }
+
+    Swal.close();
+    setTimeout(() => { window.print(); }, 500);
+}
+
+// --- Helper Functions สำหรับ Render เนื้อหาแต่ละหน้า ---
+
+function getSystemFooter(currentUser) {
+    const now = new Date();
+    const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+    const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+    return `
+    <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
+        <div class="flex justify-between items-end">
+            <div class="text-left leading-tight">
+                <div>ผู้พิมพ์ : ${currentUser || '(เจ้าหน้าที่)'}</div>
+                <div>วันที่พิมพ์ : ${printDate} เวลา ${printTime} น.</div>
+            </div>
+            <div class="text-right leading-tight">
+                <div class="font-bold">โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// === PAGE 1: Admission & Part 1 ===
+function renderBradenPage1(container, data, options = {}) {
+    const wardName = currentPatientData.Ward || "........................";
+    const admitDate = data.AdmitDate_Braden ? new Date(data.AdmitDate_Braden).toLocaleDateString('th-TH') : "-";
+    const firstAssessDate = data.FirstAssessDate ? new Date(data.FirstAssessDate).toLocaleDateString('th-TH') : "-";
+    const transferDate = data.TransferDate ? new Date(data.TransferDate).toLocaleDateString('th-TH') : "-";
+    
+    let html = `
+    <div class="text-center mb-4">
+        <div class="font-bold text-lg">แบบบันทึกการพยาบาลเพื่อป้องกันและการดูแลผู้ป่วยที่มีแผลกดทับ</div>
+        <div class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</div>
+    </div>
+
+    <div class="text-[11px] leading-relaxed mb-4 border-b pb-2">
+        <div class="flex justify-between">
+            <div>จาก Ward: <b>${data.FromWard || '-'}</b></div>
+            <div>วันที่ประเมินครั้งแรก: <b>${firstAssessDate}</b></div>
+        </div>
+        <div class="flex gap-4 mt-1">
+            <div>แผลกดทับแรกรับ: 
+                <span class="inline-block w-4 h-4 border border-black text-center leading-none text-xs mr-1">${data.PressureUlcer_Adm_Status === 'ไม่มี' ? '✓' : ''}</span>ไม่มี 
+                <span class="inline-block w-4 h-4 border border-black text-center leading-none text-xs mr-1 ml-2">${data.PressureUlcer_Adm_Status === 'มี' ? '✓' : ''}</span>มี
+            </div>
+            <div>ตำแหน่ง/ลักษณะ/ขนาด: <b>${data.PressureUlcer_Adm_Detail || '-'}</b></div>
+        </div>
+        <div class="flex justify-between mt-1">
+            <div>Serum Albumin: <b>${data.Albumin || '-'}</b> mg/dL</div>
+            <div>Hb: <b>${data.Hb || '-'}</b> mg%</div>
+            <div>Hct: <b>${data.Hct || '-'}</b> Vol%</div>
+            <div>BMI: <b>${data.BMI || '-'}</b></div>
+        </div>
+        <div class="flex justify-between mt-1">
+            <div>วันที่ Admit: <b>${admitDate}</b></div>
+            <div>วันที่รับย้าย: <b>${transferDate}</b></div>
+        </div>
+        <div class="mt-1">Diagnosis/Operation: <b>${data.Dx_Op || currentPatientData.AdmittingDx || '-'}</b></div>
+        <div class="mt-1 font-bold">ชื่อ-สกุล: ${currentPatientData.Name}  AN: ${currentPatientData.AN}</div>
+    </div>
+
+    <div class="mb-2 font-bold text-sm">ส่วนที่ 1 การประเมินความเสี่ยงต่อการเกิดแผลกดทับ</div>
+    <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
+        <thead>
+            <tr class="bg-gray-100">
+                <th rowspan="2" class="border border-black p-1 w-[200px] text-left align-middle">ปัจจัยส่งเสริมการเกิดแผลกดทับ</th>
+                <th rowspan="2" class="border border-black p-1 w-[30px] text-center align-middle">ค่า<br>คะแนน</th>
+                <th colspan="10" class="border border-black p-1">วันที่ประเมิน</th>
+            </tr>
+            <tr>`;
+            
+            // Loop Date Headers
+            for(let i=1; i<=10; i++) {
+                let d = data[`Date_${i}`] ? new Date(data[`Date_${i}`]).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit'}) : "";
+                html += `<th class="border border-black p-1 w-[25px] h-10 align-bottom"><div class="transform -rotate-90 origin-bottom-left translate-x-2">${d}</div></th>`;
+            }
+    html += `</tr></thead><tbody>`;
+
+    // Criteria Rows
+    const criteria = [
+        { name: "1. การรับความรู้สึก", items: ["1.1 ไม่ตอบสนอง (1)", "1.2 มี Pain Stimuli (2)", "1.3 สับสน สื่อไม่ได้ทุกครั้ง (3)", "1.4 ไม่มีความบกพร่อง ปกติ (4)"], id: "Sensory" },
+        { name: "2. การเปียกชื้นของผิวหนัง", items: ["2.1 เปียกชุ่มตลอดเวลา (1)", "2.2 ปัสสาวะ/อุจจาระราดบ่อย (2)", "2.3 ราดบางครั้ง (3)", "2.4 ไม่เปียก/Retain Cath (4)"], id: "Moisture" },
+        { name: "3. การทำกิจกรรม", items: ["3.1 อยู่บนเตียงตลอด (1)", "3.2 นั่งรถเข็น (2)", "3.3 เดินได้ระยะสั้น (3)", "3.4 เดินได้เอง (4)"], id: "Activity" },
+        { name: "4. การเคลื่อนไหว", items: ["4.1 เคลื่อนไหวเองไม่ได้ (1)", "4.2 เคลื่อนไหวได้น้อย (2)", "4.3 เคลื่อนไหวได้บ้าง (3)", "4.4 ปกติ (4)"], id: "Mobility" },
+        { name: "5. การรับอาหาร", items: ["5.1 NPO / <1/3 ถาด (1)", "5.2 ได้บ้าง / 1/2 ถาด (2)", "5.3 พอควร / >1/2 ถาด (3)", "5.4 ปกติ (4)"], id: "Nutrition" },
+        { name: "6. การเสียดสี", items: ["6.1 มีปัญหา (1)", "6.2 เสี่ยง (2)", "6.3 ไม่มีปัญหา (3)"], id: "Friction" }
+    ];
+
+    criteria.forEach(c => {
+        let rows = c.items.length;
+        html += `<tr><td class="border border-black p-1 text-left font-bold bg-gray-50" colspan="12">${c.name}</td></tr>`;
+        
+        c.items.forEach(item => {
+            const score = item.match(/\((\d)\)$/)[1]; // Extract score (1)
+            const text = item.replace(/\(\d\)$/, "");
+            
+            html += `<tr>
+                <td class="border border-black p-0.5 text-left pl-2">${text}</td>
+                <td class="border border-black p-0.5 font-bold">${score}</td>`;
+            
+            // Data Columns
+            for(let i=1; i<=10; i++) {
+                let val = data[`${c.id}_${i}`];
+                let mark = (String(val) === score) ? "/" : "";
+                html += `<td class="border border-black p-0.5">${mark}</td>`;
+            }
+            html += `</tr>`;
+        });
+    });
+
+    // Total & Assessor
+    html += `<tr><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนรวม</td>`;
+    for(let i=1; i<=10; i++) html += `<td class="border border-black p-0.5 font-bold text-xs">${data[`Total_${i}`] || ''}</td>`;
+    html += `</tr>`;
+
+    html += `<tr><td class="border border-black p-1 text-right font-bold" colspan="2">พยาบาลผู้ประเมิน</td>`;
+    for(let i=1; i<=10; i++) {
+        let name = data[`Assessor_${i}`] || "";
+        // ตัดชื่อให้สั้น
+        name = name.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.)\s*/, '').split(' ')[0];
+        html += `<td class="border border-black p-0.5 text-[6px] whitespace-nowrap overflow-hidden">${name}</td>`;
+    }
+    html += `</tr></tbody></table>`;
+
+    // Footer Notes (Risk Groups)
+    html += `
+    <div class="mt-2 text-[9px] text-gray-700">
+        <div class="mb-1"><b>หมายเหตุ:</b> คะแนน ≤ 16 ถือเป็นกลุ่มเสี่ยงสูง, คะแนน > 16 ถือเป็นกลุ่มเสี่ยงต่ำ (กรณีคะแนนน้อยกว่า 16 ให้ประเมินใหม่ทุก 3-5 วัน)</div>
+        <div class="font-bold underline">ผู้ป่วยกลุ่มเสี่ยง:</div>
+        <div class="grid grid-cols-2 gap-x-4">
+            <div>1) ถูกจำกัดการเคลื่อนไหว (Tractions, Cast, Respirator)</div>
+            <div>2) ไม่รู้สึกตัว / อัมพาต</div>
+            <div>3) บาดเจ็บระบบประสาท/ไขสันหลัง</div>
+            <div>4) ภาวะทุพโภชนาการ (Albumin < 3.0)</div>
+            <div>5) ผู้สูงอายุ > 60 ปี</div>
+            <div>6) ขับถ่ายเลอะเทอะ/กลั้นไม่ได้</div>
+            <div>7) ภาวะซีด</div>
+            <div>8) อ้วน/ผอมมาก</div>
+            <div>9) ได้รับยาระงับความรู้สึกหลังผ่าตัดใน 72 ชม.</div>
+            <div>10) ผู้ป่วยเรื้อรังนอนติดเตียง</div>
+        </div>
+    </div>
+    <div class="text-right text-[10px] mt-2 font-bold">- 1 -</div>
+    ${getSystemFooter(options.customUser)}`;
+
+    container.innerHTML = html;
+}
+
+// === PAGE 2: Part 2, 3, 4 ===
+function renderBradenPage2(container, data, options = {}) {
+    let html = `
+    <div class="text-center mb-2">
+        <div class="font-bold text-lg">ส่วนที่ 2 การปฏิบัติเพื่อป้องกัน / ดูแลการเกิดแผลกดทับ</div>
+        <div class="text-xs">(โดยเฉพาะผู้ป่วยที่มีความเสี่ยงสูง Braden Score ≤ 16)</div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 text-[10px] border border-black p-2 mb-4">
+        <div class="border-r border-black pr-2">
+            <div class="font-bold underline mb-1 text-center">การป้องกัน</div>
+            <ul class="list-decimal pl-4 space-y-1">
+                <li>พลิกตะแคงตัวทุก 2 ชั่วโมง ตรงตามเวลาที่กำหนด</li>
+                <li>ใช้ที่นอนลม</li>
+                <li>จับคู่ช่วยกันพลิกตะแคงตัว / ไม่ดึงลากเวลาพลิกตะแคงตัว / ดึงผ้าปูที่นอนให้เรียบตึง</li>
+                <li>ประเมินผิวหนังปุ่มกระดูกบริเวณกดทับทุกเวร</li>
+                <li>บันทึกการเกิดแผลกดทับทุกครั้งที่พบแผลใหม่</li>
+                <li>บันทึกเมื่อมีการเปลี่ยนแปลงของแผล (ตั้งแต่รอยแดง / ใหญ่ขึ้น / ลึกลง / แผลหาย)</li>
+                <li>ส่งต่อข้อมูลการเกิดแผลกดทับในการส่งเวรแต่ละครั้ง</li>
+            </ul>
+        </div>
+        <div class="pl-2">
+            <div class="font-bold underline mb-1 text-center">การดูแลแผล</div>
+            <ul class="list-decimal pl-4 space-y-1">
+                <li>ทำความสะอาดแผลด้วย NSS หลังจากนั้นทาด้วย Zinc Paste</li>
+                <li>แผลที่มีเนื้อตาย รายงานแพทย์ทราบตัดเนื้อตายออก และ Wet Dressing ด้วย NSS</li>
+                <li>ดูแลให้ผู้ป่วยมีภาวะโภชนาการที่เหมาะสม</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="mb-2 font-bold text-sm">ส่วนที่ 3 บันทึกแผลกดทับ</div>
+    <div class="text-[9px] mb-1">(ระดับ 1 ผิวหนังแดง, ระดับ 2 มี Bleb แตก, ระดับ 3 ลึกถึง Subcutaneous, ระดับ 4 ลึกถึงกล้ามเนื้อ กระดูก)</div>
+    
+    <table class="w-full border-collapse border border-black text-center text-[10px] mb-4">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="border border-black p-1 w-[15%]">ว/ด/ป</th>
+                <th class="border border-black p-1 w-[30%]">ตำแหน่งแผล</th>
+                <th class="border border-black p-1 w-[10%]">ระดับ</th>
+                <th class="border border-black p-1 w-[30%]">ลักษณะแผล</th>
+                <th class="border border-black p-1 w-[15%]">ชื่อผู้บันทึก</th>
+            </tr>
+        </thead>
+        <tbody>`;
+        
+        let woundRecords = [];
+        if (data.Wound_Record_JSON) {
+            try { woundRecords = JSON.parse(data.Wound_Record_JSON); } catch(e){}
+        }
+        // เติมบรรทัดว่างให้เต็มหน้า (ประมาณ 15 บรรทัด)
+        for(let i=0; i<15; i++) {
+            let rec = woundRecords[i] || {};
+            let dateStr = rec.date ? new Date(rec.date).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "";
+            html += `<tr class="h-6">
+                <td class="border border-black p-1">${dateStr}</td>
+                <td class="border border-black p-1 text-left">${rec.pos || ""}</td>
+                <td class="border border-black p-1">${rec.stage || ""}</td>
+                <td class="border border-black p-1 text-left">${rec.char || ""}</td>
+                <td class="border border-black p-1">${rec.user || ""}</td>
+            </tr>`;
+        }
+    html += `</tbody></table>`;
+
+    // Part 4: Discharge Summary
+    let dDate = data.Discharge_Date ? new Date(data.Discharge_Date).toLocaleDateString('th-TH') : ".....................";
+    let isNoPU = (data.Discharge_Status === 'ไม่เกิดแผลกดทับ') ? '✓' : '&nbsp;';
+    let isHasPU = (data.Discharge_Status === 'เกิดแผลกดทับ') ? '✓' : '&nbsp;';
+
+    html += `
+    <div class="border border-black p-3 text-[11px]">
+        <div class="font-bold text-sm mb-2 border-b border-gray-300 pb-1">ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย / ย้าย)</div>
+        
+        <div class="flex items-center gap-2 mb-2">
+            <div class="border border-black w-4 h-4 text-center leading-none font-bold">${isNoPU}</div> 
+            <div>ไม่เกิดแผลกดทับ</div>
+        </div>
+        
+        <div class="flex items-start gap-2">
+            <div class="border border-black w-4 h-4 text-center leading-none font-bold mt-1">${isHasPU}</div> 
+            <div class="w-full">
+                <div class="font-bold mb-1">เกิดแผลกดทับ</div>
+                <div class="grid grid-cols-2 gap-y-2 gap-x-8 pl-2">
+                    <div>วันที่เกิด: <span class="border-b border-black border-dotted px-2 inline-block min-w-[100px]">${dDate}</span></div>
+                    <div>ตำแหน่งที่เป็น: <span class="border-b border-black border-dotted px-2 inline-block min-w-[100px]">${data.Discharge_Position || ''}</span></div>
+                    <div>ระดับของแผล: <span class="border-b border-black border-dotted px-2 inline-block min-w-[50px]">${data.Discharge_Stage || ''}</span></div>
+                    <div>ขนาด: <span class="border-b border-black border-dotted px-2 inline-block min-w-[100px]">${data.Discharge_Size || ''}</span></div>
+                    <div class="col-span-2">ลักษณะแผล: <span class="border-b border-black border-dotted px-2 inline-block min-w-[200px]">${data.Discharge_Char || ''}</span></div>
+                    <div>จำนวนแผล: <span class="border-b border-black border-dotted px-2 inline-block min-w-[50px] text-center">${data.Discharge_Count || ''}</span> แผล</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-right text-[10px] mt-4 font-bold">- 2 -</div>
+    ${getSystemFooter(options.customUser)}`;
+
+    container.innerHTML = html;
 }
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
