@@ -5425,22 +5425,22 @@ function renderForm004Page2(container, options = {}) {
             <table class="w-full border-collapse border border-black text-center text-[10px]">
                 <thead>
                     <tr class="bg-gray-100">
-                        <th class="border border-black p-1 text-left w-[18%]">Parameter</th>
-                        <th class="border border-black p-1 w-[18%]">1</th>
-                        <th class="border border-black p-1 w-[18%]">2</th>
-                        <th class="border border-black p-1 w-[18%]">3</th>
-                        <th class="border border-black p-1 w-[18%]">4</th>
-                        <th class="border border-black p-1 w-[10%] bg-blue-50">Score</th>
+                        <th class="border border-black p-1 text-left w-[13%]">Parameter</th>
+                        <th class="border border-black p-1 w-[13%]">1</th>
+                        <th class="border border-black p-1 w-[13%]">2</th>
+                        <th class="border border-black p-1 w-[13%]">3</th>
+                        <th class="border border-black p-1 w-[13%]">4</th>
+                        <th class="border border-black p-1 w-[13%] bg-blue-50">Score</th>
                     </tr>
                 </thead>
                 <tbody>
                 ${[
-                    ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด<br>(ไม่ตอบสนอง)', 'จำกัดมาก<br>(ตอบเฉพาะเจ็บ)', 'จำกัดเล็กน้อย<br>(ตอบเสียงเรียก)', 'ไม่บกพร่อง<br>(ปกติ)', d.Braden_Sensory],
-                    ['ความเปียกชื้น', 'ตลอดเวลา<br>(เปียกชื้นตลอด)', 'บ่อยมาก<br>(เปลี่ยนผ้าปูบ่อย)', 'บางครั้ง<br>(วันละ 1 ครั้ง)', 'น้อยมาก<br>(แห้งปกติ)', d.Braden_Moisture],
-                    ['กิจกรรม', 'นอนติดเตียง<br>(Bedfast)', 'นั่งรถเข็น<br>(Chairfast)', 'เดินบ้าง<br>(Walks Occasionally)', 'เดินบ่อย<br>(Walks Frequently)', d.Braden_Activity],
-                    ['การเคลื่อนไหว', 'ไม่ได้เลย<br>(Immobile)', 'จำกัดมาก<br>(Very Limited)', 'จำกัดเล็กน้อย<br>(Slightly Limited)', 'ไม่จำกัด<br>(No Limitation)', d.Braden_Mobility],
-                    ['โภชนาการ', 'แย่มาก<br>(กินน้อยกว่า 1/3)', 'ไม่เพียงพอ<br>(กินประมาณ 1/2)', 'เพียงพอ<br>(กินมากกว่า 1/2)', 'ดีเยี่ยม<br>(กินได้หมด)', d.Braden_Nutrition],
-                    ['แรงเสียดทาน', 'มีปัญหา<br>(ต้องการคนช่วยดึง)', 'เสี่ยง<br>(ขยับตัวได้บ้าง)', 'ไม่มีปัญหา<br>(ขยับตัวอิสระ)', '', d.Braden_Friction]
+                    ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด', 'มีความจำกัดมาก', 'มีความจำกัดเล็กน้อย', 'ไม่บกพร่อง', d.Braden_Sensory],
+                    ['ความเปียกชื้น', 'เปียกชื้นตลอดเวลา', 'เปียกชื้นมาก', 'เปียกชื้นบางคาั้ง', 'เปียกชื้นน้อยมาก', d.Braden_Moisture],
+                    ['กิจกรรม', 'นอนอยู่กับที่ตลอดเวลา', 'เดินไม่ได้/นั่งรถเข็น', 'เดินได้เป็นบาง', 'เดินปกติ<br>(Walks Frequently)', d.Braden_Activity],
+                    ['การเคลื่อนไหว', 'เคลื่อนไหวเองไม่ได้', 'เคลื่อนไหวเองได้น้อย', 'เคลื่อนไหวเองได้บ้าง', 'เคลื่อนไหวเองได้ปกติ', d.Braden_Mobility],
+                    ['โภชนาการ', 'ไม่เพียงพอ', 'อาจไม่เพียงพอเกือบทุกมื้อ', 'เพียงพอ', 'ดีเยี่ยม)', d.Braden_Nutrition],
+                    ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยงต่อการเกิดปัญหา<br>(ขยับตัวได้บ้าง)', 'ไม่มีปัญหา, '', d.Braden_Friction]
                 ].map((row, idx) => {
                     const score = getBScore(row[5]); // ใช้ getBScore ที่ประกาศไว้แล้ว
                     const b1 = score == 1 ? 'font-bold bg-gray-200' : '';
