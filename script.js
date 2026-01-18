@@ -4869,7 +4869,6 @@ function renderForm004Page1(container, options = {}) {
             <div class="font-bold">FR-IPD-004</div>
             <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
         </div>
-        <div class="absolute top-0 left-0 border border-black p-2 w-16 text-center text-sm font-bold">แบบ 004</div>
     </div>
 
     <div class="border border-black p-1 mb-2 text-[12px] font-bold flex justify-between bg-gray-50">
