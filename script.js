@@ -3416,7 +3416,6 @@ async function renderClassifyPrintMode(an) {
     showError("โหลดข้อมูลไม่สำเร็จ", e.message);
   }
 }
-
 function renderClassifySheetA4(page) {
   const container = document.getElementById("classify-sheet-content");
   const pageNumSpan = document.getElementById("print-classify-page-num");
@@ -3424,12 +3423,13 @@ function renderClassifySheetA4(page) {
   
   if(!container) return;
 
-  // คำนวณวันที่เริ่มต้นของหน้านี้ (5 วันต่อหน้า)
+  // 1. คำนวณวันที่เริ่มต้นของหน้านี้ (5 วันต่อหน้า)
   const admitDate = new Date(currentPatientData.AdmitDate); 
   const startDayOffset = (page - 1) * 5;
   
-  // เตรียมข้อมูลวันที่รับใหม่ / จำหน่าย
+  // 2. เตรียมข้อความวันที่
   const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  
   let dischargeDateStr = "........................";
   if (currentPatientData.DischargeDate) {
       dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
@@ -3437,28 +3437,38 @@ function renderClassifySheetA4(page) {
      dischargeDateStr = "........................";
   }
 
-  // ดึงชื่อตึก (Ward) ของผู้ป่วย
+  // 3. ดึงชื่อตึก (Ward)
   const wardName = currentPatientData.Ward || "........................"; 
 
-  // --- สร้าง HTML Header (แก้ไขตรงนี้) ---
+  // =========================================================
+  // [ส่วนที่แก้ไข] ปรับ Layout ส่วนหัวให้สวยงามตามที่ขอ
+  // =========================================================
   let html = `
-    <div class="flex flex-col items-center mb-4 relative">
-        <h2 class="font-bold text-lg">แบบบันทึกการจำแนกผู้ป่วย ${wardName}</h2>
-        <h3 class="font-bold text-md">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
-        <h4 class="font-bold text-md"รับใหม่ ${admitDateStr} จำหน่าย ${dischargeDateStr}</h4>
-    </div>
+    <div class="mb-4 text-black font-sarabun">
+        <div class="text-center flex flex-col gap-1">
+            <h2 class="font-bold text-xl">แบบบันทึกการจำแนกผู้ป่วย ${wardName}</h2>
+            <h3 class="font-bold text-lg">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+            
+            <div class="flex justify-center items-center gap-16 mt-1 text-sm font-bold">
+                <div>รับใหม่  ${admitDateStr}</div>
+                <div>จำหน่าย  ${dischargeDateStr}</div>
+            </div>
+        </div>
 
-    <div class="mb-2 text-[11px] font-bold">
-       ชื่อ-สกุล: ${currentPatientData.Name} <span class="ml-4">AN: ${currentPatientData.AN}</span>
+        <div class="flex justify-between items-end mt-4 px-1 text-[12px] font-bold border-b border-transparent">
+           <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
+           <div>AN: <span class="text-sm ml-1">${currentPatientData.AN}</span></div>
+           <div>HN: <span class="text-sm ml-1">${currentPatientData.HN}</span></div>
+        </div>
     </div>
   `;
 
-  // --- สร้าง Table ---
+  // --- สร้างตาราง (Code ส่วนนี้คงเดิมเพื่อให้แสดงผลถูกต้องตาม Logic) ---
   html += `
     <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
       <thead>
         <tr class="bg-gray-100">
-          <th rowspan="2" class="border border-black p-1 w-[160px] text-left align-middle">ว/ด/ป</th>
+          <th rowspan="2" class="border border-black p-1 w-[160px] text-left align-middle font-bold">ว/ด/ป</th>
   `;
 
   // Loop Header วันที่ (5 วัน)
@@ -3466,7 +3476,7 @@ function renderClassifySheetA4(page) {
      const currDate = new Date(admitDate);
      currDate.setDate(admitDate.getDate() + startDayOffset + i);
      const dateStr = currDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
-     html += `<th colspan="3" class="border border-black p-1">${dateStr}</th>`;
+     html += `<th colspan="3" class="border border-black p-1 font-bold">${dateStr}</th>`;
   }
   html += `</tr><tr class="bg-gray-50">`;
   
@@ -3485,11 +3495,11 @@ function renderClassifySheetA4(page) {
     { type: 'header', text: 'I. สภาวะสุขภาพ' },
     { type: 'row', label: '1. สัญญาณชีพ', key: 'Score_1' },
     { type: 'row', label: '2. อาการแสดงทางระบบประสาท', key: 'Score_2' },
-    { type: 'row', label: '3. การได้รับการตรวจรักษา/การผ่าตัดหรือหัตถการ', key: 'Score_3' },
+    { type: 'row', label: '3. การตรวจรักษา/ผ่าตัดหรือหัตถการ', key: 'Score_3' },
     { type: 'row', label: '4. พฤติกรรมที่ผิดปกติ/อารมณ์/จิตสังคม', key: 'Score_4' },
     { type: 'header', text: 'II. ความต้องการการดูแลขั้นต่ำ' },
     { type: 'row', label: '5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน', key: 'Score_5' },
-    { type: 'row', label: '6. ความต้องการด้านอารมณ์และจิตใจของผู้ป่วย', key: 'Score_6' },
+    { type: 'row', label: '6. ความต้องการด้านอารมณ์และจิตใจ', key: 'Score_6' },
     { type: 'row', label: '7. ความต้องการยา/หัตถการ/ฟื้นฟู', key: 'Score_7' },
     { type: 'row', label: '8. ความต้องการบรรเทาอาการรบกวน', key: 'Score_8' },
     { type: 'summary', label: 'รวมคะแนน', key: 'Total_Score' },
@@ -3499,7 +3509,7 @@ function renderClassifySheetA4(page) {
 
   tableStructure.forEach(item => {
      if (item.type === 'header') {
-         // แถวหัวข้อใหญ่ (Merged Cells)
+         // แถวหัวข้อใหญ่ (Bold & Background Color)
          html += `
             <tr class="bg-indigo-50/50">
                 <td class="border border-black p-1 text-left font-bold" colspan="16">${item.text}</td>
@@ -3537,7 +3547,7 @@ function renderClassifySheetA4(page) {
                
                if (item.type === 'text' && val) {
                   // ตัดชื่อให้สั้นลงถ้าเป็นช่องผู้ประเมิน
-                  val = `<span class="text-[7px] block leading-none transform -rotate-0 whitespace-nowrap overflow-hidden text-ellipsis max-w-[30px]" title="${val}">${val.split(' ')[0]}</span>`;
+                  val = `<span class="text-[7px] block leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[35px]" title="${val}">${val.split(' ')[0]}</span>`;
                } else if ((item.type === 'row' || item.type === 'summary') && val == 0) {
                   val = ""; 
                }
@@ -3551,20 +3561,20 @@ function renderClassifySheetA4(page) {
 
   html += `</tbody></table>`;
 
-  // --- Footer Criteria (เกณฑ์การแบ่งประเภท) ---
+  // --- Footer Criteria (เกณฑ์การแบ่งประเภท - คงเดิมตามไฟล์ PDF) ---
   html += `
     <div class="mt-4 text-[10px] text-gray-700">
-       <div class="mb-1">นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8</div>
+       <div class="mb-1 font-bold underline">เกณฑ์การแบ่งประเภท: (นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8)</div>
        <div class="grid grid-cols-2 gap-x-8">
-          <div>
+          <div class="space-y-0.5">
             <div><b>ประเภทที่ 1:</b> ผู้ป่วยพักฟื้นดูแลตัวเองได้ (คะแนน ≤ 8)</div>
             <div><b>ประเภทที่ 2:</b> ผู้ป่วยเจ็บป่วยเล็กน้อย (คะแนน 9-14)</div>
             <div><b>ประเภทที่ 3:</b> ผู้ป่วยเจ็บป่วยปานกลาง (คะแนน 15-20)</div>
             <div><b>ประเภทที่ 4:</b> ผู้ป่วยหนัก (คะแนน 21-26)</div>
             <div><b>ประเภทที่ 5:</b> ผู้ป่วยหนักมาก/วิกฤต (คะแนน 27-32)</div>
           </div>
-          <div>
-            <div><b>ชื่อผู้ประเมิน (..................................)</div>
+          <div class="space-y-0.5"
+            <div class="mt-2 text-right"><b>ชื่อผู้ประเมิน</b> (..................................................)</div>
           </div>
        </div>
     </div>
