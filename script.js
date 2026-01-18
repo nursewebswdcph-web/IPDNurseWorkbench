@@ -4605,105 +4605,140 @@ function renderBradenPage2(container, data, options = {}) {
 // =================================================================
 // FR-IPD-004 PRINT SYSTEM (FIXED MAPPING & LAYOUT)
 // =================================================================
-// --- 1. ตัวแปลงข้อมูล (Map ตามคอลัมน์ Assessment_FR_IPD_004 เป๊ะๆ) ---
+// --- 1. ตัวแปลงข้อมูล (Map ครบทั้งหน้า 1 และ 2) ---
 function normalizeData004(raw) {
     if (!raw) return {};
     const d = {};
 
-    // 1. Header
-    d.AdmitDate = raw.AdmitDate;
-    d.AdmitTime = raw.AdmitTime;
-    d.AdmittedFrom = raw.AdmittedFrom;
-    d.Refer = raw.Refer;
-    d.ArriveBy = raw.ArriveBy; 
-    d.InfoSource = raw.InfoSource;
-    d.MainCaregiver_Name = raw.MainCaregiver_Name;
-    d.MainCaregiver_Rel = raw.MainCaregiver_Rel;
-
-    // 2. Clinical
-    d.ChiefComplaint = raw.ChiefComplaint;
-    d.PresentIllness = raw.PresentIllness;
+    // --- Page 1 Data ---
+    d.AdmitDate = raw.AdmitDate; d.AdmitTime = raw.AdmitTime;
+    d.AdmittedFrom = raw.AdmittedFrom; d.Refer = raw.Refer;
+    d.ArriveBy = raw.ArriveBy; d.InfoSource = raw.InfoSource;
+    d.MainCaregiver_Name = raw.MainCaregiver_Name; d.MainCaregiver_Rel = raw.MainCaregiver_Rel;
+    d.ChiefComplaint = raw.ChiefComplaint; d.PresentIllness = raw.PresentIllness;
     d.AdmitSymptoms = raw.AdmitSymptoms;
-    d.BT = raw.Admit_BT;
-    d.PR = raw.Admit_PR;
-    d.RR = raw.Admit_RR;
-    d.BP = raw.Admit_BP;
+    d.BT = raw.Admit_BT; d.PR = raw.Admit_PR; d.RR = raw.Admit_RR; d.BP = raw.Admit_BP;
 
-    // 3. History (Hx) - แปลงค่า TRUE/FALSE ของแต่ละโรคเป็น List เดียว
-    d.Hx_Status = raw.Hx_Status; 
-    d.Hx_List = [];
-    const pushHx = (key, label) => { 
-        // เช็คทุกความเป็นไปได้ (TRUE, true, "TRUE", "มี", "Yes")
-        const val = String(raw[key]).toLowerCase();
-        if (val === 'true' || val === 'yes' || val === 'มี') d.Hx_List.push(label);
-    };
-    
-    pushHx('Hx_HT', 'ความดันโลหิตสูง'); 
-    pushHx('Hx_Heart', 'โรคหัวใจ'); 
-    pushHx('Hx_Liver', 'โรคตับ');
-    pushHx('Hx_Kidney', 'โรคไต'); 
-    pushHx('Hx_DM', 'เบาหวาน'); 
-    pushHx('Hx_Asthma', 'หอบหืด');
-    pushHx('Hx_Epilepsy', 'ลมชัก'); 
-    pushHx('Hx_TB', 'วัณโรค'); 
-    pushHx('Hx_Cancer', 'มะเร็ง');
-    
+    d.Hx_Status = raw.Hx_Status; d.Hx_List = [];
+    const pushHx = (key, val) => { if(String(raw[key]).toLowerCase() === 'true' || raw[key] === true || raw[key] === 'มี') d.Hx_List.push(val); };
+    pushHx('Hx_HT', 'ความดันโลหิตสูง'); pushHx('Hx_Heart', 'โรคหัวใจ'); pushHx('Hx_Liver', 'โรคตับ');
+    pushHx('Hx_Kidney', 'โรคไต'); pushHx('Hx_DM', 'เบาหวาน'); pushHx('Hx_Asthma', 'หอบหืด');
+    pushHx('Hx_Epilepsy', 'ลมชัก'); pushHx('Hx_TB', 'วัณโรค'); pushHx('Hx_Cancer', 'มะเร็ง');
     d.Hx_Other = raw.Hx_Other || "";
 
-    // 4. Past History
     d.Allergy_Status = raw.Allergy_Status; d.Allergy_Details = raw.Allergy_Details;
     d.AdmitHx_Status = raw.AdmitHx_Status; d.AdmitHx_Disease = raw.AdmitHx_Disease; d.AdmitHx_Date = raw.AdmitHx_Date;
     d.Sx_Status = raw.Sx_Status; d.Sx_Details = raw.Sx_Details; d.Sx_Date = raw.Sx_Date;
     d.FamilyHx_Status = raw.FamilyHx_Status; d.FamilyHx_Details = raw.FamilyHx_Details;
-
-    // 5. Substance
     d.Substance_Alcohol = raw.Substance_Alcohol; d.Substance_Alcohol_Vol = raw.Substance_Alcohol_Vol;
     d.Substance_Smoke = raw.Substance_Smoke; d.Substance_Smoke_Vol = raw.Substance_Smoke_Vol;
     d.Meds_Status = raw.Meds_Status; d.Meds_Details = raw.Meds_Details;
 
-    // 6. Assessment 1 (HP)
     d.HP_Before = raw.HP_Before; d.HP_Before_Detail = raw.HP_Before_Detail;
-    d.HP_Current = raw.HP_Current;
-    d.HP_Care = raw.HP_Care; d.HP_Care_Other = raw.HP_Care_Other;
-    d.HP_Expect = raw.HP_Expect;
-
-    // 7. Assessment 2 (Nutri)
-    d.Nutri_Meals = raw.Nutri_Meals;
-    d.Nutri_Type = raw.Nutri_Type; d.Nutri_Type_Detail = raw.Nutri_Type_Detail;
+    d.HP_Current = raw.HP_Current; d.HP_Care = raw.HP_Care; d.HP_Care_Other = raw.HP_Care_Other; d.HP_Expect = raw.HP_Expect;
+    d.Nutri_Meals = raw.Nutri_Meals; d.Nutri_Type = raw.Nutri_Type; d.Nutri_Type_Detail = raw.Nutri_Type_Detail;
     d.Nutri_Problem = raw.Nutri_Problem; d.Nutri_Problem_Detail = raw.Nutri_Problem_Detail;
     d.Nutri_Skin = raw.Nutri_Skin; d.Nutri_Skin_Detail = raw.Nutri_Skin_Detail;
-
-    // 8. Assessment 3 (Elim)
     d.Elim_Urine_Freq = raw.Elim_Urine_Freq; d.Elim_Urine_Status = raw.Elim_Urine_Status; d.Elim_Urine_Detail = raw.Elim_Urine_Detail;
     d.Elim_Bowel_Freq = raw.Elim_Bowel_Freq; d.Elim_Bowel_Status = raw.Elim_Bowel_Status; d.Elim_Bowel_Detail = raw.Elim_Bowel_Detail;
     d.Elim_Stoma = raw.Elim_Stoma;
 
-    // 9. Assessment 4 (ADL)
     d.ADL = {};
-    // Map ชื่อคอลัมน์: ADL_Eat_Before -> Eat_Before
-    const adlTasks = ['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'];
-    adlTasks.forEach(task => {
-        d.ADL[`${task}_Before`] = raw[`ADL_${task}_Before`];
-        d.ADL[`${task}_Current`] = raw[`ADL_${task}_Current`];
+    ['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'].forEach(i => {
+        d.ADL[`${i}_Before`] = raw[`ADL_${i}_Before`]; d.ADL[`${i}_Current`] = raw[`ADL_${i}_Current`];
     });
 
-    // 10. Assessment 5 (Sleep)
     d.Sleep_Hours = raw.Sleep_Hours; d.Sleep_Adequacy = raw.Sleep_Adequacy;
     d.Sleep_Problem = raw.Sleep_Problem; d.Sleep_Problem_Detail = raw.Sleep_Problem_Detail;
-
-    // 11. Assessment 6 (Cogn)
-    d.Cogn_LOC = raw.Cogn_LOC;
-    d.Cogn_Vision = raw.Cogn_Vision; d.Cogn_Vision_Other = raw.Cogn_Vision_Other;
+    d.Cogn_LOC = raw.Cogn_LOC; d.Cogn_Vision = raw.Cogn_Vision; d.Cogn_Vision_Other = raw.Cogn_Vision_Other;
+    d.Cogn_Hearing = raw.Cogn_Hearing; d.Cogn_Hearing_Other = raw.Cogn_Hearing_Other;
     d.Cogn_Speech = raw.Cogn_Speech; d.Cogn_Speech_Detail = raw.Cogn_Speech_Detail; d.Cogn_Speech_Other = raw.Cogn_Speech_Other;
     d.Cogn_Movement = raw.Cogn_Movement; d.Cogn_Movement_Other = raw.Cogn_Movement_Other;
 
-  // ** เพิ่มการได้ยิน **
-    d.Cogn_Hearing = raw.Cogn_Hearing; 
-    d.Cogn_Hearing_Other = raw.Cogn_Hearing_Other;
+    // --- Page 2 Data (7-15) ---
+    // 7. Self
+    d.Self_Image = raw.Self_Image; d.Self_Image_Detail = raw.Self_Image_Detail;
+    d.Self_Mood = raw.Self_Mood; d.Self_Mood_Detail = raw.Self_Mood_Detail;
+    d.Self_Ability = raw.Self_Ability; d.Self_Ability_Detail = raw.Self_Ability_Detail;
 
-    d.Cogn_Speech = raw.Cogn_Speech; d.Cogn_Speech_Detail = raw.Cogn_Speech_Detail; d.Cogn_Speech_Other = raw.Cogn_Speech_Other;
-    d.Cogn_Movement = raw.Cogn_Movement; d.Cogn_Movement_Other = raw.Cogn_Movement_Other;
-  
+    // 8. Stress
+    d.Stress_Status = raw.Stress_Status; // ไม่มี/มี
+    d.Stress_Causes = [];
+    if(raw.Cope_Stress_Fear == true) d.Stress_Causes.push('กลัวไม่หาย');
+    if(raw.Cope_Stress_Cost == true) d.Stress_Causes.push('ค่ารักษาพยาบาล');
+    if(raw.Cope_Stress_Work == true) d.Stress_Causes.push('ขาดงาน/รายได้');
+    if(raw.Cope_Stress_Family == true) d.Stress_Causes.push('ครอบครัว');
+    d.Stress_Cause_Other = raw.Cope_Stress_Other;
+
+    d.Stress_Express = raw.Stress_Express; // สีหน้าเรียบเฉย, วิตก, ฯลฯ
+    d.Stress_Express_Other = raw.Stress_Express_Other;
+    d.Cope_Method = raw.Cope_Method; // ปรึกษา, แยกตัว, ยา
+    d.Cope_Method_Other = raw.Cope_Method_Other;
+
+    // 9. Roles
+    d.Roles = [];
+    if(raw.Role_Effect_Family == true) d.Roles.push('ครอบครัว');
+    if(raw.Role_Effect_Career == true) d.Roles.push('อาชีพ');
+    if(raw.Role_Effect_Education == true) d.Roles.push('การศึกษา');
+    if(raw.Role_Effect_Relationship == true) d.Roles.push('สัมพันธภาพในครอบครัวและผู้อื่น');
+
+    // 10. Sex
+    d.Sex_Menses = raw.Sex_Menses; d.Sex_Menses_Status = raw.Sex_Menses_Status;
+    d.Sex_Breast = raw.Sex_Breast;
+    d.Sex_Genitals = raw.Sex_Genitals; d.Sex_Genitals_Detail = raw.Sex_Genitals_Detail;
+
+    // 11. Beliefs
+    d.Belief_Cause = raw.Belief_Cause; d.Belief_Cause_Detail = raw.Belief_Cause_Detail;
+    d.Religion_Practice = raw.Religion_Practice; d.Religion_Practice_Detail = raw.Religion_Practice_Detail;
+    d.Belief_Anchor_Status = raw.Belief_Anchor_Status; d.Belief_Anchor_Detail = raw.Belief_Anchor_Detail;
+
+    // 12. Participation
+    d.Partic_Status = raw.Partic_Status; // ไม่ต้องการ, ต้องการ
+    d.Partic_Needs = [];
+    if(raw.Partic_Info == true) d.Partic_Needs.push('Info');
+    if(raw.Partic_Skill == true) d.Partic_Needs.push('Skill');
+    if(raw.Partic_Team == true) d.Partic_Needs.push('Team');
+    d.Partic_Other = raw.Partic_Other;
+
+    // 13. Pain
+    d.Pain_Status = raw.Pain_Status; d.Pain_Location = raw.Pain_Location; d.Pain_Cause = raw.Pain_Cause;
+    d.Pain_Pattern = raw.Pain_Pattern; d.Pain_Scale_Score = raw.Pain_Scale_Score;
+    d.Pain_Effects = [];
+    if(raw.Pain_Effect_Eat == true) d.Pain_Effects.push('Eat');
+    if(raw.Pain_Effect_Sleep == true) d.Pain_Effects.push('Sleep');
+    if(raw.Pain_Effect_Activity == true) d.Pain_Effects.push('Activity');
+    if(raw.Pain_Effect_Mood == true) d.Pain_Effects.push('Mood');
+    if(raw.Pain_Effect_Elim == true) d.Pain_Effects.push('Elim');
+    if(raw.Pain_Effect_Sex == true) d.Pain_Effects.push('Sex');
+    
+    d.Pain_Relief = [];
+    if(raw.Pain_Relief_Cold == true) d.Pain_Relief.push('Cold');
+    if(raw.Pain_Relief_Hot == true) d.Pain_Relief.push('Hot');
+    if(raw.Pain_Relief_Massage == true) d.Pain_Relief.push('Massage');
+    if(raw.Pain_Relief_Relax == true) d.Pain_Relief.push('Relax');
+    if(raw.Pain_Relief_Repo == true) d.Pain_Relief.push('Repo');
+    if(raw.Pain_Relief_Rest == true) d.Pain_Relief.push('Rest');
+    if(raw.Pain_Relief_Meds == true) d.Pain_Relief.push('Meds');
+
+    // 14. Braden
+    d.Braden_Sensory = raw.Braden_Sensory; d.Braden_Moisture = raw.Braden_Moisture;
+    d.Braden_Activity = raw.Braden_Activity; d.Braden_Mobility = raw.Braden_Mobility;
+    d.Braden_Nutrition = raw.Braden_Nutrition; d.Braden_Friction = raw.Braden_Friction;
+    d.Braden_Total = raw.Braden_Total;
+    // แปลผล
+    const bScore = parseInt(raw.Braden_Total) || 0;
+    d.Braden_Result = (bScore > 0 && bScore <= 16) ? 'High' : (bScore > 16 ? 'Low' : '');
+
+    // 15. Fall
+    d.Fall_Age_Child = raw.Fall_Age_Child; d.Fall_Age_Elder = raw.Fall_Age_Elder;
+    d.Fall_Mental = raw.Fall_Mental; d.Fall_History = raw.Fall_History;
+    d.Fall_Meds = raw.Fall_Meds; d.Fall_Vision = raw.Fall_Vision;
+    d.Fall_Gait = raw.Fall_Gait;
+    d.Fall_Prevention = raw.Fall_Prevention; // จำเป็น / ไม่จำเป็น
+
+    // Signature
+    d.Assessor_Name = raw.Assessor_Name;
+    d.Assessor_Position = raw.Assessor_Position;
 
     return d;
 }
@@ -5160,420 +5195,210 @@ function renderForm004Page1(container, options = {}) {
 }
 
 // =================================================================
-// PAGE 2 RENDERER (ข้อ 7-15 + Footer)
+// PAGE 2 RENDERER (Sections 7-15)
 // =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = options.data || {};
-    const currentUser = options.customUser || "(เจ้าหน้าที่)";
-    const printDate = formatDateThai(new Date().toISOString());
-    const printTime = formatTime(new Date().toISOString());
+    
+    // Helper Checkbox
+    const boxCheck = (val, target) => {
+        let isChecked = false;
+        if (val) {
+            if (Array.isArray(val)) {
+                isChecked = val.includes(target);
+            } else {
+                const parts = String(val).split(',').map(s=>s.trim());
+                isChecked = parts.includes(target);
+            }
+        }
+        return `<span class="inline-block font-sarabun font-bold mr-1" style="font-family: 'Sarabun'; font-size: 14px;">[ ${isChecked ? '/' : '&nbsp;'} ]</span>`;
+    };
+    const chk = (val, target, label) => `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${boxCheck(val, target)} ${label}</span>`;
 
     let html = `
-    <div class="text-[12px] leading-snug border border-black font-sarabun text-black h-full flex flex-col">
+    <div class="flex justify-between items-start mb-2 font-sarabun text-black">
+       <div class="w-[15%] text-[12px] text-center border border-black p-1">
+          <div class="font-bold text-[16px]">แบบ 004</div>
+       </div>
+       <div class="text-center w-[70%]">
+          <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
+          <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+       </div>
+       <div class="w-[15%] text-right text-[10px]">
+          <div class="font-bold text-[12px]">FR-IPD-004</div>
+          <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
+       </div>
+    </div>
+
+    <div class="font-sarabun text-black text-[12px] leading-tight border border-black">
         
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">7. การเคลื่อนไหวและความเสี่ยงต่อการพลัดตกหกล้ม</div>
-            <div class="pl-2 space-y-1">
-                <div class="flex flex-wrap items-end">
-                    <span class="font-bold mr-2">การเดิน:</span>
-                    ${chkGroup(d.Gait, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Gait, 'Unsteady', 'เซ')}
-                    ${chkGroup(d.Gait, 'Aid', 'ใช้อุปกรณ์ช่วย')}
-                    <span>( ${chkGroup(d.Aid, 'Cane', 'ไม้เท้า')} ${chkGroup(d.Aid, 'Walker', 'Walker')} ${chkGroup(d.Gait, 'Wheelchair', 'รถเข็น')} )</span>
-                </div>
-                <div class="flex flex-wrap">
-                    <span class="font-bold mr-2">ประวัติหกล้ม (ใน 6 เดือน):</span>
-                    ${chkGroup(d.FallHx, 'No', 'ไม่มี')}
-                    ${chkGroup(d.FallHx, 'Yes', 'มี')}
-                </div>
-                <div class="flex flex-wrap">
-                    <span class="font-bold mr-2">ความเสี่ยงต่อการพลัดตกหกล้ม:</span>
-                    ${chkGroup(d.FallRisk, 'Low', 'ต่ำ')}
-                    ${chkGroup(d.FallRisk, 'High', 'สูง (ต้องประเมิน Morse Fall Scale)')}
+        <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
+            <div class="p-1">
+                <div class="font-bold underline mb-1">7) การรับรู้ตนเองและอัตมโนทัศน์: การเจ็บป่วยมีผลกระทบต่อ</div>
+                <div class="space-y-1">
+                    <div class="flex flex-wrap items-end">ภาพลักษณ์: ${chk(d.Self_Image, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Image, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Image, 'มี', 'มี:')} ${dot(d.Self_Image_Detail, "50px")}</div>
+                    <div class="flex flex-wrap items-end">อารมณ์และจิตใจ: ${chk(d.Self_Mood, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Mood, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Mood, 'มี', 'มี:')} ${dot(d.Self_Mood_Detail, "50px")}</div>
+                    <div class="flex flex-wrap items-end">ความสามารถดูแลตนเอง: ${chk(d.Self_Ability, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Ability, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Ability, 'มี', 'มี:')} ${dot(d.Self_Ability_Detail, "50px")}</div>
                 </div>
             </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">8. การพักผ่อนนอนหลับ</div>
-            <div class="pl-2 flex flex-wrap items-end">
-                ${chkGroup(d.Sleep, 'Normal', 'ปกติ (6-8 ชม.)')}
-                ${chkGroup(d.Sleep, 'Insomnia', 'นอนไม่หลับ')}
-                ${chkGroup(d.Sleep, 'Wake', 'ตื่นบ่อย')}
-                <span class="font-bold ml-6 mr-2">ยานอนหลับ:</span>
-                ${chkGroup(d.SleepMed, 'No', 'ไม่ใช้')}
-                ${chkGroup(d.SleepMed, 'Yes', 'ใช้')}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">9. เศรษฐกิจ สังคม และจิตวิญญาณ</div>
-            <div class="pl-2 space-y-1">
-                <div class="flex flex-wrap items-end">
-                    <span class="font-bold mr-2">สถานภาพ:</span>
-                    ${chkGroup(d.Status, 'Single', 'โสด')}
-                    ${chkGroup(d.Status, 'Married', 'คู่')}
-                    ${chkGroup(d.Status, 'Widowed', 'หม้าย')}
-                    ${chkGroup(d.Status, 'Divorced', 'หย่า')}
-                    ${chkGroup(d.Status, 'Monk', 'สมณะ')}
-                    
-                    <span class="font-bold ml-6 mr-2">อาชีพ:</span> ${dot(d.Occupation, "120px")}
-                    <span class="font-bold ml-4 mr-2">ศาสนา:</span> ${dot(d.Religion, "80px")}
-                </div>
-                <div class="flex flex-wrap items-end">
-                    <span class="font-bold mr-2">ความเชื่อ/ข้อห้ามทางการแพทย์:</span>
-                    ${chkGroup(d.Belief, 'No', 'ไม่มี')}
-                    ${chkGroup(d.Belief, 'Yes', 'มี (ระบุ)')} ${dot(d.BeliefDetail, "200px")}
-                </div>
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">10. ความต้องการเรียนรู้/สุขศึกษา</div>
-            <div class="pl-2 flex flex-wrap items-end">
-                ${chkGroup(d.EduNeed, 'Disease', 'เรื่องโรค/การรักษา')}
-                ${chkGroup(d.EduNeed, 'Med', 'การใช้ยา')}
-                ${chkGroup(d.EduNeed, 'Diet', 'อาหาร')}
-                ${chkGroup(d.EduNeed, 'Rehab', 'การกายภาพ')}
-                ${chkGroup(d.EduNeed, 'Wound', 'การทำแผล')}
-                ${chkGroup(d.EduNeed, 'Other', 'อื่น ๆ')} ${dot(d.EduOther, "80px")}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">11. การวางแผนจำหน่าย (Discharge Planning)</div>
-            <div class="pl-2 flex flex-wrap items-end">
-                <span class="font-bold mr-2">ความพร้อมของผู้ป่วย/ญาติ:</span>
-                ${chkGroup(d.DCReady, 'Ready', 'พร้อม')}
-                ${chkGroup(d.DCReady, 'NotReady', 'ไม่พร้อม เนื่องจาก')} ${dot(d.DCProblem, "200px")}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">12. การรับทราบสิทธิผู้ป่วย</div>
-            <div class="pl-2 flex flex-wrap">
-                ${chkGroup(d.Rights, 'Ack', 'รับทราบ')}
-                ${chkGroup(d.Rights, 'Wait', 'รอญาติ')}
-                ${chkGroup(d.Rights, 'Unconscious', 'ไม่รู้สึกตัว')}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">13. การประเมินความปวด (Pain Assessment)</div>
-            
-            <div class="flex items-start gap-4">
-                <div class="w-[55%]">
-                    <div class="flex items-center mb-2">
-                        <span class="font-bold mr-2">Pain Score:</span>
-                        <div class="border border-black px-4 py-1 text-xl font-bold bg-white">${d.PainScore || '0'}</div>
-                        <span class="ml-2 text-[10px]">(0-10)</span>
+            <div class="p-1">
+                <div class="font-bold underline mb-1">8) การเผชิญความเครียด / การปรับตัว</div>
+                <div class="space-y-1">
+                    <div class="flex flex-wrap">สิ่งที่ทำให้ไม่สบายใจ: ${chk(d.Stress_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Stress_Status, 'มี', 'มี')}</div>
+                    <div class="pl-4 flex flex-wrap gap-y-0.5">
+                        ${chk(d.Stress_Causes, 'กลัวไม่หาย', 'กลัวไม่หาย')} ${chk(d.Stress_Causes, 'ค่ารักษาพยาบาล', 'ค่ารักษาพยาบาล')}
+                        ${chk(d.Stress_Causes, 'ขาดงาน/รายได้', 'ขาดงาน/รายได้')} ${chk(d.Stress_Causes, 'ครอบครัว', 'ครอบครัว')}
+                        ${chk(d.Stress_Causes, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Stress_Cause_Other, "50px")}
                     </div>
-                    <div class="space-y-1 text-[11px]">
-                        <div class="flex items-end"><span class="w-16 font-bold">ตำแหน่ง:</span> ${dot(d.PainLoc, "150px")}</div>
-                        <div class="flex items-end"><span class="w-16 font-bold">ลักษณะ:</span> ${dot(d.PainChar, "150px")}</div>
-                        <div class="flex items-end"><span class="w-16 font-bold">ระยะเวลา:</span> ${dot(d.PainDur, "150px")}</div>
-                        
-                        <div class="mt-2">
-                            <div class="font-bold">ผลกระทบ:</div>
-                            <div class="flex flex-wrap ml-2">
-                                ${chkGroup(d.PainEffect, 'Sleep', 'การนอน')}
-                                ${chkGroup(d.PainEffect, 'Activity', 'กิจกรรม')}
-                                ${chkGroup(d.PainEffect, 'Emotion', 'อารมณ์')}
-                                ${chkGroup(d.PainEffect, 'Eat', 'การกิน')}
-                            </div>
-                        </div>
-                        <div class="mt-1">
-                            <div class="font-bold">บรรเทาโดย:</div>
-                            <div class="flex flex-wrap ml-2">
-                                ${chkGroup(d.PainRelief, 'Med', 'ยา')}
-                                ${chkGroup(d.PainRelief, 'Massage', 'นวด')}
-                                ${chkGroup(d.PainRelief, 'Rest', 'พัก')}
-                                ${chkGroup(d.PainRelief, 'Cold', 'เย็น/ร้อน')}
-                            </div>
-                        </div>
+                    <div class="flex flex-wrap items-end">การแสดงออก: ${chk(d.Stress_Express, 'สีหน้าเรียบเฉย', 'สีหน้าเรียบเฉย')} ${chk(d.Stress_Express, 'วิตกกังวล', 'วิตกกังวล')} ${chk(d.Stress_Express, 'กลัว', 'กลัว')} ${chk(d.Stress_Express, 'ซึมเศร้า', 'ซึมเศร้า')}</div>
+                    <div class="pl-4 flex flex-wrap items-end">${chk(d.Stress_Express, 'เอะอะโวยวาย', 'เอะอะโวยวาย')} ${chk(d.Stress_Express, 'หงุดหงิด', 'หงุดหงิด')} ${chk(d.Stress_Express, 'อื่นๆ', 'อื่น:')} ${dot(d.Stress_Express_Other, "50px")}</div>
+                    <div class="flex flex-wrap items-end">วิธีแก้ไข: ${chk(d.Cope_Method, 'ปรึกษาผู้อื่น', 'ปรึกษาผู้อื่น')} ${chk(d.Cope_Method, 'แยกตัวเอง', 'แยกตัวเอง')} ${chk(d.Cope_Method, 'ใช้ยา', 'ใช้ยา')} ${chk(d.Cope_Method, 'อื่นๆ', 'อื่นๆ')} ${dot(d.Cope_Method_Other, "30px")}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
+            <div class="p-1">
+                <div class="font-bold underline mb-1">9) บทบาทและสัมพันธภาพ: <span class="font-normal">การเจ็บป่วยครั้งนี้กระทบต่อบทบาท</span></div>
+                <div class="flex flex-wrap gap-2">
+                    ${chk(d.Roles, 'ครอบครัว', 'ครอบครัว')} ${chk(d.Roles, 'อาชีพ', 'อาชีพ')} ${chk(d.Roles, 'การศึกษา', 'การศึกษา')}
+                </div>
+                <div class="flex flex-wrap mt-1">
+                    ${chk(d.Roles, 'สัมพันธภาพในครอบครัวและผู้อื่น', 'สัมพันธภาพในครอบครัวและผู้อื่น')}
+                </div>
+            </div>
+            <div class="p-1">
+                <div class="font-bold underline mb-1">10) เพศและการเจริญพันธุ์</div>
+                <div class="flex flex-wrap items-end">ประจำเดือน: ${chk(d.Sex_Menses, 'ปกติ', 'ปกติ')} ${chk(d.Sex_Menses, 'ไม่ปกติ', 'ไม่ปกติ')} ${dot(d.Sex_Menses_Status, "80px")}</div>
+                <div class="flex flex-wrap items-end">เต้านม: ${chk(d.Sex_Breast, 'ปกติ', 'ปกติ')} ${chk(d.Sex_Breast, 'ไม่ปกติ', 'ไม่ปกติ')}</div>
+                <div class="flex flex-wrap items-end">อวัยวะสืบพันธุ์: ${chk(d.Sex_Genitals, 'ปกติ', 'ปกติ')} ${chk(d.Sex_Genitals, 'ไม่ปกติ', 'ไม่ปกติ')} ${dot(d.Sex_Genitals_Detail, "80px")}</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
+            <div class="p-1">
+                <div class="font-bold underline mb-1">11) คุณค่าและความเชื่อ</div>
+                <div class="space-y-1">
+                    <div class="flex flex-wrap items-end">การเจ็บป่วยครั้งนี้เชื่อว่า: ${chk(d.Belief_Cause, 'การปฏิบัติตัวไม่ถูกต้อง', 'การปฏิบัติตัวไม่ถูกต้อง')} ${chk(d.Belief_Cause, 'เคราะห์กรรม', 'เคราะห์กรรม')}</div>
+                    <div class="pl-4 flex flex-wrap items-end">${chk(d.Belief_Cause, 'ตามวัย', 'ตามวัย')} ${chk(d.Belief_Cause, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Belief_Cause_Detail, "50px")}</div>
+                    <div class="flex flex-wrap items-end">ต้องการปฏิบัติศาสนกิจ: ${chk(d.Religion_Practice, 'ไม่มี', 'ไม่มี')} ${chk(d.Religion_Practice, 'ต้องการ', 'ต้องการ:')} ${dot(d.Religion_Practice_Detail, "80px")}</div>
+                    <div class="flex flex-wrap items-end">สิ่งยึดเหนี่ยวทางจิตใจ: ${chk(d.Belief_Anchor_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Belief_Anchor_Status, 'มี', 'มี:')} ${dot(d.Belief_Anchor_Detail, "80px")}</div>
+                </div>
+            </div>
+            <div class="p-1">
+                <div class="font-bold underline mb-1">12) การมีส่วนร่วมของผู้ป่วยและญาติในการรักษาพยาบาล</div>
+                <div>${chk(d.Partic_Status, 'ไม่ต้องการ', 'ไม่ต้องการ')}</div>
+                <div class="flex flex-wrap items-start">
+                    ${chk(d.Partic_Status, 'ต้องการ', 'ต้องการ:')} 
+                    <div class="flex flex-col ml-1">
+                        ${chk(d.Partic_Needs, 'Info', 'ทราบข้อมูลเรื่องโรคและแนวทางรักษาพยาบาล')}
+                        ${chk(d.Partic_Needs, 'Skill', 'เรียนรู้ทักษะดูแลตนเอง/ผู้ป่วย')}
+                        ${chk(d.Partic_Needs, 'Team', 'ร่วมกับทีมสุขภาพในการดูแลผู้ป่วยระหว่างอยู่ใน รพ.')}
+                        <div class="flex items-end">${chk(d.Partic_Other, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Partic_Other, "80px")}</div>
                     </div>
                 </div>
-
-                <div class="w-[45%] flex flex-col items-center justify-center p-2">
-                    <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" 
-                         alt="Pain Scale" 
-                         style="width: 100%; border: 1px solid #ccc; max-height: 120px; object-fit: contain;">
-                </div>
             </div>
         </div>
 
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">14. Braden Scale for Predicting Pressure Sore Risk</div>
+        <div class="p-1 border-b border-black">
+            <div class="font-bold text-[14px]">13. PAIN MANAGEMENT</div>
+            <div class="flex flex-wrap items-end gap-4">
+                <div>Pain: ${chk(d.Pain_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Pain_Status, 'มี', 'มี')}</div>
+                <div>บริเวณที่ปวด ${dot(d.Pain_Location, "150px")}</div>
+                <div>สาเหตุ ${dot(d.Pain_Cause, "150px")}</div>
+            </div>
+            <div class="flex flex-wrap items-end gap-4 mt-1">
+                <div>ลักษณะ: ${chk(d.Pain_Pattern, 'ครั้งคราว', 'ครั้งคราว')} ${chk(d.Pain_Pattern, 'ตลอดเวลา', 'ตลอดเวลา')}</div>
+                <div class="flex items-center">
+                    <span class="mr-2">Pain Scale:</span>
+                    ${[0,1,2,3,4,5,6,7,8,9,10].map(n => chk(String(d.Pain_Scale_Score), String(n), n)).join(' ')}
+                </div>
+            </div>
             
-            <table class="w-full border-collapse border border-black text-center text-[10px] mb-2">
+            <div class="my-1 flex justify-center">
+                <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" style="height: 60px; max-width: 100%;">
+            </div>
+
+            <div class="flex flex-wrap mt-1 gap-2">
+                <span class="font-bold">การปวดกระทบต่อ:</span>
+                ${chk(d.Pain_Effects, 'Eat', 'การกิน')} ${chk(d.Pain_Effects, 'Sleep', 'การนอน')}
+                ${chk(d.Pain_Effects, 'Activity', 'การทำกิจกรรม')} ${chk(d.Pain_Effects, 'Mood', 'อารมณ์/สังคม')}
+                ${chk(d.Pain_Effects, 'Elim', 'การขับถ่าย')} ${chk(d.Pain_Effects, 'Sex', 'เพศสัมพันธุ์')}
+            </div>
+            <div class="flex flex-wrap mt-1 gap-2">
+                <span class="font-bold">สิ่งที่บรรเทาปวด:</span>
+                ${chk(d.Pain_Relief, 'Cold', 'Cold compress')} ${chk(d.Pain_Relief, 'Hot', 'Hot compress')}
+                ${chk(d.Pain_Relief, 'Massage', 'Massage')} ${chk(d.Pain_Relief, 'Relax', 'Relaxation')}
+                ${chk(d.Pain_Relief, 'Repo', 'Reposition')} ${chk(d.Pain_Relief, 'Rest', 'Rest/Sleep')}
+                ${chk(d.Pain_Relief, 'Meds', 'Medication')}
+            </div>
+        </div>
+
+        <div class="p-1 border-b border-black">
+            <div class="font-bold text-[14px]">14. Braden Scale (Predicting Pressure Sore Risk)</div>
+            <table class="w-full border-collapse border border-black text-center text-[10px] mt-1">
                 <tr class="bg-gray-100">
-                    <th class="border border-black p-1 w-[20%]">Parameter</th>
+                    <th class="border border-black p-1 text-left w-[20%]">Parameter</th>
                     <th class="border border-black p-1 w-[20%]">1</th>
                     <th class="border border-black p-1 w-[20%]">2</th>
                     <th class="border border-black p-1 w-[20%]">3</th>
                     <th class="border border-black p-1 w-[20%]">4</th>
                 </tr>
+                ${[
+                    ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด', 'จำกัดมาก', 'จำกัดเล็กน้อย', 'ไม่บกพร่อง', d.Braden_Sensory],
+                    ['ความเปียกชื้น', 'ตลอดเวลา', 'บ่อยมาก', 'บางครั้ง', 'น้อยมาก', d.Braden_Moisture],
+                    ['กิจกรรม', 'นอนติดเตียง', 'นั่งรถเข็น', 'เดินบ้าง', 'เดินบ่อย', d.Braden_Activity],
+                    ['การเคลื่อนไหว', 'ไม่ได้เลย', 'จำกัดมาก', 'จำกัดเล็กน้อย', 'ไม่จำกัด', d.Braden_Mobility],
+                    ['โภชนาการ', 'แย่มาก', 'ไม่เพียงพอ', 'เพียงพอ', 'ดีมาก', d.Braden_Nutrition],
+                    ['แรงเสียดทาน', 'มีปัญหา', 'อาจมีปัญหา', 'ไม่มีปัญหา', '', d.Braden_Friction]
+                ].map(row => `
                 <tr>
-                    <td class="border border-black p-1 text-left">การรับรู้/ความรู้สึก</td>
-                    <td class="border border-black p-1">จำกัดทั้งหมด</td>
-                    <td class="border border-black p-1">จำกัดมาก</td>
-                    <td class="border border-black p-1">จำกัดเล็กน้อย</td>
-                    <td class="border border-black p-1">ไม่บกพร่อง</td>
-                </tr>
-                <tr>
-                    <td class="border border-black p-1 text-left">ความเปียกชื้น</td>
-                    <td class="border border-black p-1">ตลอดเวลา</td>
-                    <td class="border border-black p-1">บ่อยมาก</td>
-                    <td class="border border-black p-1">บางครั้ง</td>
-                    <td class="border border-black p-1">น้อยมาก</td>
-                </tr>
+                    <td class="border border-black text-left pl-2">${row[0]}</td>
+                    <td class="border border-black font-bold">${row[5] == 1 ? '/' : ''}</td>
+                    <td class="border border-black font-bold">${row[5] == 2 ? '/' : ''}</td>
+                    <td class="border border-black font-bold">${row[5] == 3 ? '/' : ''}</td>
+                    <td class="border border-black font-bold bg-gray-100">${row[4] === '' ? '' : (row[5] == 4 ? '/' : '')}</td>
+                </tr>`).join('')}
             </table>
-
-            <div class="pl-2 flex flex-wrap items-end">
-                <span class="font-bold mr-2">คะแนนรวม:</span> 
-                <span class="border border-black px-2 font-bold w-16 text-center mr-2 bg-white">${d.BradenScore || ''}</span>
-                <span class="font-bold mr-2">การแปลผล:</span>
-                ${chkGroup(d.BradenRisk, 'High', 'เสี่ยงสูง (≤ 16)')}
-                ${chkGroup(d.BradenRisk, 'Low', 'เสี่ยงต่ำ (> 16)')}
+            <div class="flex justify-end mt-1 items-center gap-4">
+                <span class="font-bold">Total Score:</span> <span class="border border-black px-2 w-10 text-center font-bold">${d.Braden_Total || ''}</span>
+                <span class="font-bold">การแปลผล:</span>
+                ${chk(d.Braden_Result, 'High', 'เสี่ยงสูง (≤ 16)')}
+                ${chk(d.Braden_Result, 'Low', 'เสี่ยงต่ำ (> 16)')}
             </div>
         </div>
 
-        <div class="flex-grow p-2">
-            <div class="font-bold mb-1 text-sm underline">15. ปัญหาทางการพยาบาลเบื้องต้น (Preliminary Nursing Diagnosis)</div>
-            <div class="w-full h-full p-2 text-sm leading-8 border border-gray-300" style="background-image: repeating-linear-gradient(transparent, transparent 31px, #ccc 32px); min-height: 150px;">
-                ${(d.NursingDx || '').replace(/\n/g, '<br>')}
+        <div class="p-1">
+            <div class="font-bold text-[14px]">15. Fall risk assessment</div>
+            <div class="flex flex-wrap gap-4">
+                ${chk(d.Fall_Age_Child, 'TRUE', 'วัยเด็ก')} ${chk(d.Fall_Age_Elder, 'TRUE', 'ผู้สูงอายุมากกว่า 65 ปี')}
             </div>
-        </div>
-
-        <div class="mt-2 flex justify-end px-10 pb-4">
-            <div class="text-center w-[300px]">
-                <div class="mb-4 flex items-end justify-center">
-                    <span>ลงชื่อ</span>
-                    <span class="border-b border-black border-dotted w-40 inline-block mx-2"></span>
-                    <span>พยาบาลผู้ประเมิน</span>
-                </div>
-                <div class="font-bold mb-1 text-sm">${currentUser}</div>
-                <div class="flex items-end justify-center">
-                    <span>วันที่</span> ${dot(printDate, "100px")}
-                    <span>เวลา</span> ${dot(printTime, "60px")} <span>น.</span>
-                </div>
+            <div class="grid grid-cols-2 gap-x-4 mt-1">
+                <div class="flex justify-between"><span>สภาวะทางสมอง/ทางจิตผิดปกติ</span> <div>${chk(d.Fall_Mental, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Mental, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>มีปัญหาในการมองเห็น</span> <div>${chk(d.Fall_Vision, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Vision, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>มีประวัติการพลัดตกหกล้ม</span> <div>${chk(d.Fall_History, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_History, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>มีปัญหาในการเดิน/ทรงตัว</span> <div>${chk(d.Fall_Gait, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Gait, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>ใช้ยานอนหลับ / Psychotropics</span> <div>${chk(d.Fall_Meds, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Meds, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between font-bold"><span>จำเป็นต้องได้รับการป้องกัน</span> <div>${chk(d.Fall_Prevention, 'จำเป็น', 'จำเป็น')} ${chk(d.Fall_Prevention, 'ไม่จำเป็น', 'ไม่จำเป็น')}</div></div>
             </div>
         </div>
 
     </div>
-    <div class="text-right text-[10px] mt-1 font-sarabun text-black font-bold">- 2 -</div>
+
+    <div class="mt-4 flex justify-end px-10">
+        <div class="text-center w-[250px]">
+            <div class="mb-4">ลงชื่อผู้ประเมิน...........................................</div>
+            <div>(${d.Assessor_Name || '...........................................'})</div>
+            <div>ตำแหน่ง ${d.Assessor_Position || '...........................................'}</div>
+        </div>
+    </div>
+    
+    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 2 -</div>
     `;
 
     container.innerHTML = html;
 }
 
-// =================================================================
-// PAGE 2 RENDERER (ข้อ 7-15 + Footer)
-// =================================================================
-function renderForm004Page2(container, options = {}) {
-    const d = options.data || {};
-    const currentUser = options.customUser || "(เจ้าหน้าที่)";
-    const printDate = formatDateThai(new Date().toISOString());
-    const printTime = formatTime(new Date().toISOString());
-
-    let html = `
-    <div class="text-[12px] leading-snug border border-black font-sarabun text-black h-full flex flex-col">
-        
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">7. การเคลื่อนไหวและความเสี่ยงต่อการพลัดตกหกล้ม</div>
-            <div class="pl-2 space-y-1">
-                <div class="flex flex-wrap items-end">
-                    <span class="font-bold mr-2">การเดิน:</span>
-                    ${chkGroup(d.Gait, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Gait, 'Unsteady', 'เซ')}
-                    ${chkGroup(d.Gait, 'Aid', 'ใช้อุปกรณ์ช่วย')}
-                    <span>( ${chkGroup(d.Aid, 'Cane', 'ไม้เท้า')} ${chkGroup(d.Aid, 'Walker', 'Walker')} ${chkGroup(d.Gait, 'Wheelchair', 'รถเข็น')} )</span>
-                </div>
-                <div class="flex flex-wrap">
-                    <span class="font-bold mr-2">ประวัติหกล้ม (ใน 6 เดือน):</span>
-                    ${chkGroup(d.FallHx, 'No', 'ไม่มี')}
-                    ${chkGroup(d.FallHx, 'Yes', 'มี')}
-                </div>
-                <div class="flex flex-wrap">
-                    <span class="font-bold mr-2">ความเสี่ยงต่อการพลัดตกหกล้ม:</span>
-                    ${chkGroup(d.FallRisk, 'Low', 'ต่ำ')}
-                    ${chkGroup(d.FallRisk, 'High', 'สูง (ต้องประเมิน Morse Fall Scale)')}
-                </div>
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">8. การพักผ่อนนอนหลับ</div>
-            <div class="pl-2 flex flex-wrap items-end">
-                ${chkGroup(d.Sleep, 'Normal', 'ปกติ (6-8 ชม.)')}
-                ${chkGroup(d.Sleep, 'Insomnia', 'นอนไม่หลับ')}
-                ${chkGroup(d.Sleep, 'Wake', 'ตื่นบ่อย')}
-                <span class="font-bold ml-6 mr-2">ยานอนหลับ:</span>
-                ${chkGroup(d.SleepMed, 'No', 'ไม่ใช้')}
-                ${chkGroup(d.SleepMed, 'Yes', 'ใช้')}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">9. เศรษฐกิจ สังคม และจิตวิญญาณ</div>
-            <div class="pl-2 space-y-1">
-                <div class="flex flex-wrap items-end">
-                    <span class="font-bold mr-2">สถานภาพ:</span>
-                    ${chkGroup(d.Status, 'Single', 'โสด')}
-                    ${chkGroup(d.Status, 'Married', 'คู่')}
-                    ${chkGroup(d.Status, 'Widowed', 'หม้าย')}
-                    ${chkGroup(d.Status, 'Divorced', 'หย่า')}
-                    ${chkGroup(d.Status, 'Monk', 'สมณะ')}
-                    
-                    <span class="font-bold ml-6 mr-2">อาชีพ:</span> ${dot(d.Occupation, "120px")}
-                    <span class="font-bold ml-4 mr-2">ศาสนา:</span> ${dot(d.Religion, "80px")}
-                </div>
-                <div class="flex flex-wrap items-end">
-                    <span class="font-bold mr-2">ความเชื่อ/ข้อห้ามทางการแพทย์:</span>
-                    ${chkGroup(d.Belief, 'No', 'ไม่มี')}
-                    ${chkGroup(d.Belief, 'Yes', 'มี (ระบุ)')} ${dot(d.BeliefDetail, "200px")}
-                </div>
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">10. ความต้องการเรียนรู้/สุขศึกษา</div>
-            <div class="pl-2 flex flex-wrap items-end">
-                ${chkGroup(d.EduNeed, 'Disease', 'เรื่องโรค/การรักษา')}
-                ${chkGroup(d.EduNeed, 'Med', 'การใช้ยา')}
-                ${chkGroup(d.EduNeed, 'Diet', 'อาหาร')}
-                ${chkGroup(d.EduNeed, 'Rehab', 'การกายภาพ')}
-                ${chkGroup(d.EduNeed, 'Wound', 'การทำแผล')}
-                ${chkGroup(d.EduNeed, 'Other', 'อื่น ๆ')} ${dot(d.EduOther, "80px")}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">11. การวางแผนจำหน่าย (Discharge Planning)</div>
-            <div class="pl-2 flex flex-wrap items-end">
-                <span class="font-bold mr-2">ความพร้อมของผู้ป่วย/ญาติ:</span>
-                ${chkGroup(d.DCReady, 'Ready', 'พร้อม')}
-                ${chkGroup(d.DCReady, 'NotReady', 'ไม่พร้อม เนื่องจาก')} ${dot(d.DCProblem, "200px")}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">12. การรับทราบสิทธิผู้ป่วย</div>
-            <div class="pl-2 flex flex-wrap">
-                ${chkGroup(d.Rights, 'Ack', 'รับทราบ')}
-                ${chkGroup(d.Rights, 'Wait', 'รอญาติ')}
-                ${chkGroup(d.Rights, 'Unconscious', 'ไม่รู้สึกตัว')}
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">13. การประเมินความปวด (Pain Assessment)</div>
-            
-            <div class="flex items-start gap-4">
-                <div class="w-[55%]">
-                    <div class="flex items-center mb-2">
-                        <span class="font-bold mr-2">Pain Score:</span>
-                        <div class="border border-black px-4 py-1 text-xl font-bold bg-white">${d.PainScore || '0'}</div>
-                        <span class="ml-2 text-[10px]">(0-10)</span>
-                    </div>
-                    <div class="space-y-1 text-[11px]">
-                        <div class="flex items-end"><span class="w-16 font-bold">ตำแหน่ง:</span> ${dot(d.PainLoc, "150px")}</div>
-                        <div class="flex items-end"><span class="w-16 font-bold">ลักษณะ:</span> ${dot(d.PainChar, "150px")}</div>
-                        <div class="flex items-end"><span class="w-16 font-bold">ระยะเวลา:</span> ${dot(d.PainDur, "150px")}</div>
-                        
-                        <div class="mt-2">
-                            <div class="font-bold">ผลกระทบ:</div>
-                            <div class="flex flex-wrap ml-2">
-                                ${chkGroup(d.PainEffect, 'Sleep', 'การนอน')}
-                                ${chkGroup(d.PainEffect, 'Activity', 'กิจกรรม')}
-                                ${chkGroup(d.PainEffect, 'Emotion', 'อารมณ์')}
-                                ${chkGroup(d.PainEffect, 'Eat', 'การกิน')}
-                            </div>
-                        </div>
-                        <div class="mt-1">
-                            <div class="font-bold">บรรเทาโดย:</div>
-                            <div class="flex flex-wrap ml-2">
-                                ${chkGroup(d.PainRelief, 'Med', 'ยา')}
-                                ${chkGroup(d.PainRelief, 'Massage', 'นวด')}
-                                ${chkGroup(d.PainRelief, 'Rest', 'พัก')}
-                                ${chkGroup(d.PainRelief, 'Cold', 'เย็น/ร้อน')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-[45%] flex flex-col items-center justify-center p-2">
-                    <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" 
-                         alt="Pain Scale" 
-                         style="width: 100%; border: 1px solid #ccc; max-height: 120px; object-fit: contain;">
-                </div>
-            </div>
-        </div>
-
-        <div class="border-b border-black p-2">
-            <div class="font-bold mb-1">14. Braden Scale for Predicting Pressure Sore Risk</div>
-            
-            <table class="w-full border-collapse border border-black text-center text-[10px] mb-2">
-                <tr class="bg-gray-100">
-                    <th class="border border-black p-1 w-[20%]">Parameter</th>
-                    <th class="border border-black p-1 w-[20%]">1</th>
-                    <th class="border border-black p-1 w-[20%]">2</th>
-                    <th class="border border-black p-1 w-[20%]">3</th>
-                    <th class="border border-black p-1 w-[20%]">4</th>
-                </tr>
-                <tr>
-                    <td class="border border-black p-1 text-left">การรับรู้/ความรู้สึก</td>
-                    <td class="border border-black p-1">จำกัดทั้งหมด</td>
-                    <td class="border border-black p-1">จำกัดมาก</td>
-                    <td class="border border-black p-1">จำกัดเล็กน้อย</td>
-                    <td class="border border-black p-1">ไม่บกพร่อง</td>
-                </tr>
-                <tr>
-                    <td class="border border-black p-1 text-left">ความเปียกชื้น</td>
-                    <td class="border border-black p-1">ตลอดเวลา</td>
-                    <td class="border border-black p-1">บ่อยมาก</td>
-                    <td class="border border-black p-1">บางครั้ง</td>
-                    <td class="border border-black p-1">น้อยมาก</td>
-                </tr>
-            </table>
-
-            <div class="pl-2 flex flex-wrap items-end">
-                <span class="font-bold mr-2">คะแนนรวม:</span> 
-                <span class="border border-black px-2 font-bold w-16 text-center mr-2 bg-white">${d.BradenScore || ''}</span>
-                <span class="font-bold mr-2">การแปลผล:</span>
-                ${chkGroup(d.BradenRisk, 'High', 'เสี่ยงสูง (≤ 16)')}
-                ${chkGroup(d.BradenRisk, 'Low', 'เสี่ยงต่ำ (> 16)')}
-            </div>
-        </div>
-
-        <div class="flex-grow p-2">
-            <div class="font-bold mb-1 text-sm underline">15. ปัญหาทางการพยาบาลเบื้องต้น (Preliminary Nursing Diagnosis)</div>
-            <div class="w-full h-full p-2 text-sm leading-8 border border-gray-300" style="background-image: repeating-linear-gradient(transparent, transparent 31px, #ccc 32px); min-height: 150px;">
-                ${(d.NursingDx || '').replace(/\n/g, '<br>')}
-            </div>
-        </div>
-
-        <div class="mt-2 flex justify-end px-10 pb-4">
-            <div class="text-center w-[300px]">
-                <div class="mb-4 flex items-end justify-center">
-                    <span>ลงชื่อ</span>
-                    <span class="border-b border-black border-dotted w-40 inline-block mx-2"></span>
-                    <span>พยาบาลผู้ประเมิน</span>
-                </div>
-                <div class="font-bold mb-1 text-sm">${currentUser}</div>
-                <div class="flex items-end justify-center">
-                    <span>วันที่</span> ${dot(printDate, "100px")}
-                    <span>เวลา</span> ${dot(printTime, "60px")} <span>น.</span>
-                </div>
-            </div>
-        </div>
-
-    </div>
-    <div class="text-right text-[10px] mt-1 font-bold font-sarabun text-black">- 2 -</div>
-    `;
-
-    container.innerHTML = html;
-}
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
