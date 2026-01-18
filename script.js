@@ -331,6 +331,58 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
+// ฟังก์ชันคำนวณ Braden Scale (Updated: Match User's HTML ID)
+function calcBraden() {
+    // ฟังก์ชันย่อยดึงค่า (ป้องกัน NaN)
+    const getVal = (name) => {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? parseInt(el.value) : 0;
+    };
+
+    // ดึงคะแนนแต่ละข้อ
+    const s1 = getVal("Braden_Sensory");
+    const s2 = getVal("Braden_Moisture");
+    const s3 = getVal("Braden_Activity");
+    const s4 = getVal("Braden_Mobility");
+    const s5 = getVal("Braden_Nutrition");
+    const s6 = getVal("Braden_Friction");
+
+    // คำนวณผลรวม
+    const total = s1 + s2 + s3 + s4 + s5 + s6;
+
+    // แปลผล
+    let resultText = "";
+    let colorClass = "text-gray-800"; // สีเริ่มต้น
+
+    if (total > 0) { // คำนวณเมื่อมีการเลือกอย่างน้อย 1 ข้อ
+        if (total <= 9) {
+            resultText = "Very high risk";
+            colorClass = "text-red-700";
+        } else if (total <= 12) {
+            resultText = "High risk";
+            colorClass = "text-red-500";
+        } else if (total <= 14) {
+            resultText = "Moderate risk";
+            colorClass = "text-orange-500";
+        } else {
+            resultText = "Low risk";
+            colorClass = "text-green-600";
+        }
+    }
+
+    // แสดงผลลงใน Input
+    const totalEl = document.getElementById("braden-total-score");
+    const resultEl = document.getElementById("braden-result");
+
+    if (totalEl) totalEl.value = total;
+    
+    if (resultEl) {
+        resultEl.value = resultText;
+        // ล้าง class สีเก่าออกแล้วใส่สีใหม่
+        resultEl.className = `w-full text-right text-xl font-black italic border-none bg-transparent focus:outline-none ${colorClass}`;
+    }
+}
+
 // ฟังก์ชันกลางสำหรับปิด Modal ทุกตัวในระบบ
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
