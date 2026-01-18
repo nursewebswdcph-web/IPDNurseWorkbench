@@ -3926,6 +3926,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   // 2. MORSE TABLE (กู้คืนรูปแบบตาม PDF 100%)
   // =========================================================
   html += `
+    <div class="font-bold text-[10px] mb-1 mt-2">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม (Morse)</div>
     <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight mb-2">
       <thead>
         <tr class="bg-gray-100">
@@ -4189,7 +4190,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
        <div class="border-t border-black p-1 bg-gray-50 flex gap-4 items-center">
           <div class="font-bold underline">เกณฑ์ MAAS:</div>
           <div>0-3: ไม่ต้องผูกยึด</div>
-          <div class="text-red-600 font-bold">4-6: ต้องผูกยึดผู้ป่วยและเฝ้าระวังใกล้ชิด (แจ้งญาติก่อนผูกยึดทุกครั้ง)</div>
+          <div class="text-red-600 font-bold">4-6: ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด (ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง หากกรณีไม่มีญาติให้ผูกยึดได้เลย)</div>
        </div>
     </div>
 
