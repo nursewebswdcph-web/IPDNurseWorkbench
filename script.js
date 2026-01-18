@@ -4745,201 +4745,298 @@ async function handleForm004Print() {
 }
 
 // =================================================================
-// HTML GENERATORS FOR FORM 004
+// FR-IPD-004 PRINT PREVIEW (REVISED: 100% MATCH PDF LAYOUT)
 // =================================================================
 
-// Helper Functions
-const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden" style="width:${w}; min-width: 30px; line-height: 1.1;">${val || "&nbsp;"}</span>`;
-const chk = (val, target) => `<span class="inline-block w-3 h-3 border border-black text-[9px] text-center leading-none mr-1 bg-white font-bold">${val === target || (val && val.includes(target)) ? '✓' : ''}</span>`;
-const underline = (text) => `<span class="font-bold underline">${text}</span>`;
-const radio = (val, target, label) => `<span class="inline-flex items-center mr-2">${chk(val, target)} ${label}</span>`;
+// Helper Functions สำหรับสร้าง Checkbox และขีดเส้นประ
+const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.2em; line-height: 1.3;">${val || "&nbsp;"}</span>`;
+const box = (isChecked) => `<span class="inline-block w-3 h-3 border border-black text-[10px] text-center leading-none mr-1 bg-white align-text-bottom font-bold" style="margin-bottom: 1px;">${isChecked ? '/' : '&nbsp;'}</span>`;
+const chkGroup = (val, target, label) => `<span class="inline-flex items-end mr-3">${box(val === target || (val && val.includes(target)))} ${label}</span>`;
 
-// --- PAGE 1: ข้อมูลรับเข้า & ข้อ 1-6 ---
+// --- PAGE 1: หน้าแรก (ข้อมูลทั่วไป + ข้อ 1-6) ---
 function renderForm004Page1(container, options = {}) {
-    const d = currentPatientData; // ย่อให้สั้น
-    const admitDate = d.AdmitDate ? new Date(d.AdmitDate) : new Date();
-    const dateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
-    const timeStr = admitDate.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+    const d = currentPatientData; // ข้อมูลผู้ป่วย
+    const admitDate = d.AdmitDate ? new Date(d.AdmitDate) : null;
+    const dateStr = admitDate ? admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'}) : "";
+    const timeStr = admitDate ? admitDate.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}) : "";
+
+    // แปลงข้อมูล Vital Signs
+    const vs = { T: d.T || '', P: d.P || '', R: d.R || '', BP: d.BP || '' };
 
     let html = `
-    <div class="flex justify-between items-start mb-2 border-b-2 border-black pb-1">
-       <div class="w-20 text-[10px] text-center border border-black p-1">
-          <div class="font-bold">แบบ 004</div>
+    <div class="flex justify-between items-start mb-2 border-b-2 border-black pb-2 font-sarabun text-black">
+       <div class="w-[15%] text-[10px] text-center border border-black p-2 flex flex-col justify-center">
+          <div class="font-bold text-lg">แบบ 004</div>
        </div>
-       <div class="text-center flex-grow">
+       <div class="text-center w-[70%] pt-1">
           <h2 class="font-bold text-xl">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วยใน</h2>
           <h3 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
-       <div class="text-[10px] text-right">
-          <div>FR-IPD-004</div>
+       <div class="w-[15%] text-[9px] text-right flex flex-col justify-end">
+          <div class="font-bold text-sm">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
        </div>
     </div>
 
-    <div class="text-[11px] leading-snug">
-        <div class="flex flex-wrap gap-2 mb-1">
-            <span>วันที่ ${dot(dateStr, "80px")}</span>
-            <span>เวลา ${dot(timeStr, "50px")} น.</span>
-            <span>รับจาก ${dot(d.AdmitFrom, "100px")}</span>
-            <span>รับ REFER จาก ${dot(d.ReferFrom, "100px")}</span>
-        </div>
-        <div class="flex flex-wrap gap-4 mb-1">
-            <span>มาโดย: ${radio(d.ArrivalMethod, 'เดินมา', 'เดินมา')} ${radio(d.ArrivalMethod, 'รถนั่ง', 'รถนั่ง')} ${radio(d.ArrivalMethod, 'เปลนอน', 'เปลนอน')}</span>
-            <span>ผู้ให้ข้อมูล: ${radio(d.Informant, 'ผู้ป่วย', 'ผู้ป่วย')} ${radio(d.Informant, 'ญาติ', 'ญาติ')} ${radio(d.Informant, 'ผู้นำส่ง', 'ผู้นำส่ง')}</span>
-            <span>ผู้ดูแลหลักชื่อ ${dot(d.MainCaregiver, "100px")}</span>
-            <span>ความสัมพันธ์ ${dot(d.CaregiverRelation, "80px")}</span>
+    <div class="text-[11px] leading-relaxed font-sarabun text-black">
+        
+        <div class="flex flex-wrap items-end gap-1 mb-1">
+            <span>วันที่</span> ${dot(dateStr, "70px")}
+            <span>เวลา</span> ${dot(timeStr, "40px")} <span>น.</span>
+            <span class="ml-2">รับจาก</span> ${dot(d.AdmitFrom, "120px")}
+            <span class="ml-2">รับ REFER จาก</span> ${dot(d.ReferFrom, "120px")}
         </div>
 
-        <div class="grid grid-cols-1 gap-1 mb-2 border-t border-black pt-1">
-            <div class="flex">
-                <span class="font-bold w-24">อาการสำคัญ:</span> 
-                <div class="flex-grow border-b border-black border-dotted text-blue-900 font-bold">${d.ChiefComplaint || ''}</div>
-            </div>
-            <div class="flex">
-                <span class="font-bold w-24">ประวัติการเจ็บป่วย:</span> 
-                <div class="flex-grow border-b border-black border-dotted text-blue-900 font-bold">${d.PresentIllness || ''}</div>
-            </div>
-            <div class="flex gap-2">
-                <span class="font-bold">สัญญาณชีพแรกรับ:</span>
-                T ${dot(d.T, "30px")} °C, P ${dot(d.P, "30px")} /min, R ${dot(d.R, "30px")} /min, BP ${dot(d.BP, "60px")} mmHg
-            </div>
+        <div class="flex flex-wrap items-end gap-1 mb-1">
+            <span class="font-bold mr-2">มาโดย :</span> 
+            ${chkGroup(d.ArrivalMethod, 'เดินมา', 'เดินมา')}
+            ${chkGroup(d.ArrivalMethod, 'รถนั่ง', 'รถนั่ง')}
+            ${chkGroup(d.ArrivalMethod, 'เปลนอน', 'เปลนอน')}
             
-            <div class="flex flex-wrap gap-2">
-                <span class="font-bold">โรคประจำตัว:</span>
-                ${radio(d.UD, 'ไม่มี', 'ไม่มี')} ${radio(d.UD, 'ไม่ทราบ', 'ไม่ทราบ')} ${radio(d.UD, 'ไม่เคยตรวจ', 'ไม่เคยตรวจ')}
-                <span class="ml-2">${chk(d.UD, 'มี')} มี ได้แก่</span>
-                ${radio(d.UD_List, 'HT', 'ความดันฯ')} ${radio(d.UD_List, 'DM', 'เบาหวาน')} ${radio(d.UD_List, 'Heart', 'หัวใจ')} 
-                ${radio(d.UD_List, 'Kidney', 'ไต')} ${radio(d.UD_List, 'Asthma', 'หอบหืด')} ${radio(d.UD_List, 'TB', 'วัณโรค')} 
-                ${radio(d.UD_List, 'Cancer', 'มะเร็ง')}
-                <span>อื่น ๆ ${dot(d.UD_Other, "100px")}</span>
+            <span class="font-bold ml-4 mr-2">ผู้ให้ข้อมูล :</span>
+            ${chkGroup(d.Informant, 'ผู้ป่วย', 'ผู้ป่วย')}
+            ${chkGroup(d.Informant, 'ญาติ', 'ญาติ')}
+            ${chkGroup(d.Informant, 'ผู้นำส่ง', 'ผู้นำส่ง')}
+        </div>
+
+        <div class="flex flex-wrap items-end gap-1 mb-1">
+            <span class="font-bold mr-2">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver, "150px")}
+            <span class="font-bold ml-2">ความสัมพันธ์กับผู้ป่วย</span>
+            ${chkGroup(d.CaregiverRelation, 'บิดา-มารดา', 'บิดา-มารดา')}
+            ${chkGroup(d.CaregiverRelation, 'คู่สมรส', 'สามี,ภรรยา,บุตร')}
+            ${chkGroup(d.CaregiverRelation, 'ญาติ', 'ญาติ')}
+            <span>อื่น ๆ (ระบุ) ${dot(d.CaregiverOther, "80px")}</span>
+        </div>
+
+        <div class="border border-black p-2 mt-2 space-y-1">
+            <div class="flex items-end">
+                <span class="font-bold w-24 flex-shrink-0">อาการสำคัญ</span>
+                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.ChiefComplaint || ''}</div>
+            </div>
+            <div class="flex items-end">
+                <span class="font-bold w-24 flex-shrink-0">ประวัติการเจ็บป่วย</span>
+                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.PresentIllness || ''}</div>
+            </div>
+            <div class="flex items-end mt-1">
+                <span class="font-bold mr-2">สัญญาณชีพแรกรับ</span>
+                T ${dot(vs.T, "30px")} °C 
+                <span class="ml-2">P</span> ${dot(vs.P, "30px")} ครั้ง/min
+                <span class="ml-2">R</span> ${dot(vs.R, "30px")} ครั้ง/min
+                <span class="ml-2">BP</span> ${dot(vs.BP, "50px")} mmHg
             </div>
 
-            <div class="flex gap-4">
-                <div class="flex-1 border border-black p-1">
-                    <span class="font-bold">การแพ้ยา/สาร:</span> ${radio(d.Allergy, 'ไม่เคย', 'ไม่เคย')} 
-                    <span>${chk(d.Allergy, 'เคย')} เคย (ระบุ) ${dot(d.AllergyDetail, "100%")}</span>
-                </div>
-                <div class="flex-1 border border-black p-1">
-                    <span class="font-bold">การผ่าตัด:</span> ${radio(d.Surgery, 'ไม่เคย', 'ไม่เคย')} 
-                    <span>${chk(d.Surgery, 'เคย')} เคย ${dot(d.SurgeryDetail, "60%")} เมื่อ ${dot(d.SurgeryYear, "30px")}</span>
-                </div>
-            </div>
-            <div class="flex gap-4">
-                <div class="flex-1 border border-black p-1">
-                    <span class="font-bold">ประวัติ Admit:</span> ${radio(d.PrevAdmit, 'ไม่เคย', 'ไม่เคย')} 
-                    <span>${chk(d.PrevAdmit, 'เคย')} เคย โรค ${dot(d.PrevAdmitDx, "60%")} เมื่อ ${dot(d.PrevAdmitYear, "30px")}</span>
-                </div>
-                <div class="flex-1 border border-black p-1">
-                    <span class="font-bold">ประวัติครอบครัว:</span> ${radio(d.FamilyHx, 'ไม่มี', 'ไม่มี')} 
-                    <span>${chk(d.FamilyHx, 'มี')} มี (ระบุ) ${dot(d.FamilyHxDetail, "100%")}</span>
+            <div class="flex flex-wrap items-start mt-2">
+                <span class="font-bold mr-2">โรคประจำตัว</span>
+                <div class="flex flex-col">
+                    <div class="flex gap-4 mb-1">
+                        ${chkGroup(d.UD, 'ไม่มี', 'ไม่มี')}
+                        ${chkGroup(d.UD, 'ไม่ทราบ', 'ไม่ทราบ')}
+                        ${chkGroup(d.UD, 'ไม่เคยตรวจ', 'ไม่เคยตรวจ')}
+                    </div>
+                    <div class="flex flex-wrap gap-y-1 items-end">
+                        ${chkGroup(d.UD, 'มี', 'มี ได้แก่')}
+                        ${chkGroup(d.UD_List, 'HT', 'ความดันโลหิตสูง')}
+                        ${chkGroup(d.UD_List, 'Heart', 'โรคหัวใจ')}
+                        ${chkGroup(d.UD_List, 'Liver', 'โรคตับ')}
+                        ${chkGroup(d.UD_List, 'Kidney', 'โรคไต')}
+                        ${chkGroup(d.UD_List, 'DM', 'เบาหวาน')}
+                        ${chkGroup(d.UD_List, 'Asthma', 'หอบหืด')}
+                        ${chkGroup(d.UD_List, 'Epilepsy', 'ลมชัก')}
+                        ${chkGroup(d.UD_List, 'TB', 'วัณโรค')}
+                        ${chkGroup(d.UD_List, 'Cancer', 'มะเร็ง')}
+                        <span>อื่น ๆ (ระบุ) ${dot(d.UD_Other, "80px")}</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="border border-black p-1 flex flex-wrap gap-4">
-                <div>
-                    <span class="font-bold">สุรา:</span> ${radio(d.Alcohol, 'ไม่ดื่ม', 'ไม่ดื่ม')} 
-                    <span>${chk(d.Alcohol, 'ดื่ม')} ดื่ม นาน ${dot(d.AlcoholYear, "30px")} ปี หยุดเมื่อ ${dot(d.AlcoholStop, "30px")}</span>
+            <div class="grid grid-cols-1 gap-1 mt-1">
+                <div class="flex items-end">
+                    <span class="font-bold w-28">การแพ้ยา/สารต่าง ๆ</span>
+                    ${chkGroup(d.Allergy, 'ไม่เคย', 'ไม่เคย')}
+                    ${chkGroup(d.Allergy, 'เคย', 'เคย (ระบุชนิด, อาการ, การแก้ไข)')} ${dot(d.AllergyDetail, "100%")}
                 </div>
-                <div>
-                    <span class="font-bold">บุหรี่:</span> ${radio(d.Smoking, 'ไม่สูบ', 'ไม่สูบ')} 
-                    <span>${chk(d.Smoking, 'สูบ')} สูบ ${dot(d.SmokingAmount, "30px")} มวน/วัน นาน ${dot(d.SmokingYear, "30px")} ปี หยุดเมื่อ ${dot(d.SmokingStop, "30px")}</span>
+                <div class="flex items-end">
+                    <span class="font-bold w-28">การผ่าตัด</span>
+                    ${chkGroup(d.Surgery, 'ไม่เคย', 'ไม่เคย')}
+                    ${chkGroup(d.Surgery, 'เคย', 'เคย ผ่าตัด')} ${dot(d.SurgeryDetail, "100px")}
+                    <span class="ml-2">เมื่อ</span> ${dot(d.SurgeryYear, "50px")}
                 </div>
-                <div>
-                    <span class="font-bold">สารเสพติด:</span> ${radio(d.Drugs, 'ไม่เคย', 'ไม่เคย')} 
-                    <span>${chk(d.Drugs, 'เคย')} เคย (ระบุ) ${dot(d.DrugsDetail, "80px")}</span>
+                <div class="flex items-end">
+                    <span class="font-bold w-28">การรักษาตัวในรพ.</span>
+                    ${chkGroup(d.PrevAdmit, 'ไม่เคย', 'ไม่เคย')}
+                    ${chkGroup(d.PrevAdmit, 'เคย', 'เคย ด้วยโรค')} ${dot(d.PrevAdmitDx, "100px")}
+                    <span class="ml-2">เมื่อ</span> ${dot(d.PrevAdmitYear, "50px")}
+                </div>
+                <div class="flex items-end">
+                    <span class="font-bold w-28">ประวัติเจ็บป่วยในครอบครัว</span>
+                    ${chkGroup(d.FamilyHx, 'ไม่มี', 'ไม่มี')}
+                    ${chkGroup(d.FamilyHx, 'มี', 'มี ระบุ')} ${dot(d.FamilyHxDetail, "100%")}
                 </div>
             </div>
-            
-            <div class="flex">
-                <span class="font-bold w-32">ยาที่รับประทานปัจจุบัน:</span> 
-                <div class="flex-grow border-b border-black border-dotted text-blue-900">${d.CurrentMeds || ''}</div>
+
+            <div class="flex items-end mt-1 gap-4">
+                <span class="font-bold">สิ่งเสพติด</span>
+                <div>
+                    <span class="font-bold mr-1">สุรา :</span>
+                    ${chkGroup(d.Alcohol, 'ไม่ดื่ม', 'ไม่ดื่ม')}
+                    ${chkGroup(d.Alcohol, 'ดื่ม', 'ดื่ม')}
+                    <span>นาน ${dot(d.AlcoholYear, "30px")} ปี</span>
+                </div>
+                <div>
+                    <span class="font-bold mr-1">บุหรี่ :</span>
+                    ${chkGroup(d.Smoking, 'ไม่สูบ', 'ไม่สูบ')}
+                    ${chkGroup(d.Smoking, 'สูบ', 'สูบ')}
+                    <span>นาน ${dot(d.SmokingYear, "30px")} ปี</span>
+                </div>
+                <div>
+                    <span class="font-bold mr-1">ยาเสพติด/อื่น ๆ :</span>
+                    ${chkGroup(d.Drugs, 'ไม่เคย', 'ไม่เคย')}
+                    ${chkGroup(d.Drugs, 'เคย', 'เคย (ระบุ)')} ${dot(d.DrugsDetail, "80px")}
+                </div>
+            </div>
+
+            <div class="flex items-end mt-1">
+                <span class="font-bold mr-2">ยาที่รับประทานปัจจุบัน (นำมา/ไม่ได้นำมา) :</span>
+                ${dot(d.CurrentMeds, "100%")}
             </div>
         </div>
 
-        <div class="font-bold text-center bg-gray-200 border border-black py-0.5 mt-2">การประเมินสภาพผู้ป่วยแรกรับ (Assessment)</div>
-        <div class="border border-black p-2 grid grid-cols-2 gap-x-4 gap-y-2">
+        <div class="bg-gray-300 text-center font-bold border-x border-b border-black py-1 mt-2 text-sm">
+            การประเมินสภาพผู้ป่วยแรกรับ (Assessment)
+        </div>
+
+        <div class="border-x border-b border-black grid grid-cols-2 text-[10px]">
             
-            <div class="border-b border-gray-300 pb-1">
-                <div class="font-bold">1. สภาวะทางจิตใจและอารมณ์</div>
-                <div class="ml-2">
-                    <span class="font-bold">ระดับความรู้สึกตัว:</span> ${radio(d.Conscious, 'Alert', 'รู้สึกตัวดี')} ${radio(d.Conscious, 'Drowsy', 'ซึม')} ${radio(d.Conscious, 'Stupor', 'สับสน')} ${radio(d.Conscious, 'Coma', 'ไม่รู้สึกตัว')}
-                </div>
-                <div class="ml-2">
-                    <span class="font-bold">ภาวะจิตใจ:</span> ${radio(d.Mental, 'Normal', 'ปกติ')} ${radio(d.Mental, 'Anxious', 'วิตกกังวล')} ${radio(d.Mental, 'Fear', 'กลัว')} ${radio(d.Mental, 'Sad', 'ซึมเศร้า')} ${radio(d.Mental, 'Agitated', 'ก้าวร้าว')}
-                </div>
-            </div>
-
-            <div class="border-b border-gray-300 pb-1">
-                <div class="font-bold">2. การสื่อสาร/ภาษา</div>
-                <div class="ml-2">
-                    ${radio(d.Comm, 'Normal', 'ปกติ')} 
-                    <span>${chk(d.Comm, 'Abnormal')} ผิดปกติ: ${radio(d.CommDetail, 'Aphasia', 'พูดไม่ชัด')} ${radio(d.CommDetail, 'Mute', 'เป็นใบ้')}</span>
-                </div>
-                <div class="ml-2">
-                    <span class="font-bold">ภาษา:</span> ${radio(d.Lang, 'Thai', 'ไทย')} ${radio(d.Lang, 'Esan', 'อีสาน')} 
-                    <span>${chk(d.Lang, 'Other')} อื่นๆ ${dot(d.LangOther, "50px")}</span>
-                </div>
-            </div>
-
-            <div class="border-b border-gray-300 pb-1">
-                <div class="font-bold">3. การมองเห็น/การได้ยิน</div>
-                <div class="ml-2">
-                    <span class="font-bold">ตา:</span> ${radio(d.Vision, 'Normal', 'ปกติ')} ${radio(d.Vision, 'Blur', 'ตามัว')} 
-                    <span>${chk(d.Vision, 'Abnormal')} ผิดปกติ (ระบุ) ${dot(d.VisionDetail, "50px")}</span>
-                </div>
-                <div class="ml-2">
-                    <span class="font-bold">หู:</span> ${radio(d.Hearing, 'Normal', 'ปกติ')} ${radio(d.Hearing, 'Deaf', 'ตึง/หนวก')} 
-                    <span>${chk(d.Hearing, 'Aid')} เครื่องช่วยฟัง (${radio(d.HearingSide, 'L', 'ซ้าย')} ${radio(d.HearingSide, 'R', 'ขวา')})</span>
-                </div>
-            </div>
-
-            <div class="border-b border-gray-300 pb-1">
-                <div class="font-bold">4. ระบบหายใจ</div>
-                <div class="ml-2">
-                    ${radio(d.Resp, 'Normal', 'ปกติ')} 
-                    <span>${chk(d.Resp, 'Abnormal')} ผิดปกติ: ${radio(d.RespDetail, 'Dyspnea', 'หอบเหนื่อย')} ${radio(d.RespDetail, 'Cough', 'ไอ')} ${radio(d.RespDetail, 'Sputum', 'มีเสมหะ')}</span>
-                </div>
-                <div class="ml-2">
-                    สูบบุหรี่: ${radio(d.SmokingStatus, 'Never', 'ไม่สูบ')} ${radio(d.SmokingStatus, 'Ex', 'เลิกแล้ว')} ${radio(d.SmokingStatus, 'Current', 'สูบ')}
-                </div>
-            </div>
-
-            <div class="border-b border-gray-300 pb-1 col-span-2">
-                <div class="font-bold">5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน (ADL)</div>
-                <div class="ml-2 flex gap-4">
-                    ${radio(d.ADL, 'Independent', 'ทำได้เอง')} 
-                    ${radio(d.ADL, 'Partial', 'ช่วยเหลือบ้าง')} 
-                    ${radio(d.ADL, 'Dependent', 'ทำไม่ได้เลย')}
-                </div>
-                <div class="ml-2 text-[10px] text-gray-500">* ประเมิน Barthel Index หากมีข้อจำกัด</div>
-            </div>
-
-            <div class="col-span-2">
-                <div class="font-bold">6. ภาวะโภชนาการและการขับถ่าย</div>
-                <div class="grid grid-cols-2 gap-4 ml-2">
-                    <div>
-                        <span class="font-bold">การกิน:</span> ${radio(d.Diet, 'Normal', 'ปกติ')} 
-                        <span>${chk(d.Diet, 'Abnormal')} ผิดปกติ: ${radio(d.DietDetail, 'Nausea', 'คลื่นไส้')} ${radio(d.DietDetail, 'Vomit', 'อาเจียน')} ${radio(d.DietDetail, 'Anorexia', 'เบื่ออาหาร')}</span>
+            <div class="border-r border-b border-black p-2">
+                <div class="font-bold mb-1">1. สภาวะทางจิตใจและอารมณ์</div>
+                <div class="pl-2 space-y-1">
+                    <div class="flex flex-wrap">
+                        <span class="font-bold mr-2">ระดับความรู้สึกตัว:</span>
+                        ${chkGroup(d.Conscious, 'Alert', 'รู้สึกตัวดี')}
+                        ${chkGroup(d.Conscious, 'Drowsy', 'ซึม')}
+                        ${chkGroup(d.Conscious, 'Stupor', 'สับสน')}
+                        ${chkGroup(d.Conscious, 'Coma', 'ไม่รู้สึกตัว')}
                     </div>
-                    <div>
-                        <span class="font-bold">ฟัน/ปาก:</span> ${radio(d.Oral, 'Normal', 'ปกติ')} 
-                        <span>${chk(d.Oral, 'Denture')} ฟันปลอม (${radio(d.Denture, 'Upper', 'บน')} ${radio(d.Denture, 'Lower', 'ล่าง')})</span>
-                        ${radio(d.Oral, 'Sore', 'แผลในปาก')}
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">สภาวะจิตใจ:</span>
+                        ${chkGroup(d.Mental, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Mental, 'Anxious', 'วิตกกังวล')}
+                        ${chkGroup(d.Mental, 'Fear', 'กลัว')}
+                        ${chkGroup(d.Mental, 'Sad', 'ซึมเศร้า')}
+                        ${chkGroup(d.Mental, 'Agitated', 'ก้าวร้าว')}
+                        <span>อื่น ๆ ${dot(d.MentalOther, "30px")}</span>
                     </div>
-                    <div>
-                        <span class="font-bold">การขับถ่าย:</span> ${radio(d.Stool, 'Normal', 'ปกติ')} 
-                        <span>${chk(d.Stool, 'Constipation')} ท้องผูก ${chk(d.Stool, 'Diarrhea')} ท้องเสีย</span>
+                </div>
+            </div>
+
+            <div class="border-b border-black p-2">
+                <div class="font-bold mb-1">2. การสื่อสาร/ภาษา</div>
+                <div class="pl-2 space-y-1">
+                    <div class="flex flex-wrap">
+                        ${chkGroup(d.Comm, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Comm, 'Aphasia', 'พูดไม่ชัด')}
+                        ${chkGroup(d.Comm, 'Mute', 'เป็นใบ้')}
+                        ${chkGroup(d.Comm, 'Tube', 'ใส่ท่อช่วยหายใจ')}
                     </div>
-                    <div>
-                        <span class="font-bold">ปัสสาวะ:</span> ${radio(d.Urine, 'Normal', 'ปกติ')} 
-                        <span>${chk(d.Urine, 'Dysuria')} แสบขัด ${chk(d.Urine, 'Retention')} ไม่ออก ${chk(d.Urine, 'Incontinence')} กลั้นไม่ได้</span>
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">ภาษาที่ใช้:</span>
+                        ${chkGroup(d.Lang, 'Thai', 'ไทย')}
+                        ${chkGroup(d.Lang, 'Esan', 'อีสาน')}
+                        ${chkGroup(d.Lang, 'Other', 'อื่น ๆ')} ${dot(d.LangOther, "40px")}
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-r border-b border-black p-2">
+                <div class="font-bold mb-1">3. การมองเห็น/การได้ยิน</div>
+                <div class="pl-2 space-y-1">
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">ตา:</span>
+                        ${chkGroup(d.Vision, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Vision, 'Blur', 'ตามัว')}
+                        ${chkGroup(d.Vision, 'Blind', 'บอด')}
+                        <span>( ${chkGroup(d.VisionSide, 'L', 'ซ้าย')} ${chkGroup(d.VisionSide, 'R', 'ขวา')} )</span>
+                        ${chkGroup(d.Vision, 'Cataract', 'ต้อกระจก')}
+                        ${chkGroup(d.Vision, 'Glasses', 'แว่นตา')}
+                    </div>
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">หู:</span>
+                        ${chkGroup(d.Hearing, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Hearing, 'Deaf', 'ตึง/หนวก')}
+                        ${chkGroup(d.Hearing, 'Aid', 'เครื่องช่วยฟัง')}
+                        <span>( ${chkGroup(d.HearingSide, 'L', 'ซ้าย')} ${chkGroup(d.HearingSide, 'R', 'ขวา')} )</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-black p-2">
+                <div class="font-bold mb-1">4. ระบบหายใจ</div>
+                <div class="pl-2 space-y-1">
+                    <div class="flex flex-wrap">
+                        ${chkGroup(d.Resp, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Resp, 'Dyspnea', 'หอบเหนื่อย')}
+                        ${chkGroup(d.Resp, 'Cough', 'ไอ')}
+                        ${chkGroup(d.Resp, 'Sputum', 'มีเสมหะ')}
+                    </div>
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">สูบบุหรี่:</span>
+                        ${chkGroup(d.SmokingStatus, 'Never', 'ไม่สูบ')}
+                        ${chkGroup(d.SmokingStatus, 'Ex', 'เลิกแล้ว')}
+                        ${chkGroup(d.SmokingStatus, 'Current', 'สูบ')}
+                        <span>จำนวน ${dot(d.SmokingAmount, "30px")} มวน/วัน</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-r border-black p-2 col-span-2">
+                <div class="font-bold mb-1">5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน (ADL)</div>
+                <div class="pl-2 flex gap-8">
+                    ${chkGroup(d.ADL, 'Independent', 'ทำได้เอง')}
+                    ${chkGroup(d.ADL, 'Partial', 'ช่วยเหลือบ้าง')}
+                    ${chkGroup(d.ADL, 'Dependent', 'ทำไม่ได้เลย (พึ่งพาผู้อื่น)')}
+                </div>
+                <div class="pl-2 text-gray-500 italic mt-1">* หากช่วยเหลือบ้างหรือทำไม่ได้เลย ให้ประเมิน Barthel Index เพิ่มเติม</div>
+            </div>
+
+            <div class="border-black p-2 col-span-2">
+                <div class="font-bold mb-1">6. ภาวะโภชนาการและการขับถ่าย</div>
+                <div class="pl-2 grid grid-cols-2 gap-2">
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">การกิน:</span>
+                        ${chkGroup(d.Diet, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Diet, 'Nausea', 'คลื่นไส้')}
+                        ${chkGroup(d.Diet, 'Vomit', 'อาเจียน')}
+                        ${chkGroup(d.Diet, 'Anorexia', 'เบื่ออาหาร')}
+                        ${chkGroup(d.Diet, 'Tube', 'สายยาง')}
+                    </div>
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">ช่องปาก:</span>
+                        ${chkGroup(d.Oral, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Oral, 'Sore', 'มีแผล')}
+                        ${chkGroup(d.Oral, 'Denture', 'ฟันปลอม')}
+                        <span>( ${chkGroup(d.Denture, 'Upper', 'บน')} ${chkGroup(d.Denture, 'Lower', 'ล่าง')} )</span>
+                    </div>
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">การขับถ่าย:</span>
+                        ${chkGroup(d.Stool, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Stool, 'Constipation', 'ท้องผูก')}
+                        ${chkGroup(d.Stool, 'Diarrhea', 'ท้องเสีย')}
+                        ${chkGroup(d.Stool, 'Incontinence', 'กลั้นไม่ได้')}
+                    </div>
+                    <div class="flex flex-wrap items-end">
+                        <span class="font-bold mr-2">ปัสสาวะ:</span>
+                        ${chkGroup(d.Urine, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Urine, 'Dysuria', 'แสบขัด')}
+                        ${chkGroup(d.Urine, 'Retention', 'ไม่ออก')}
+                        ${chkGroup(d.Urine, 'Catheter', 'ใส่สายสวน')}
                     </div>
                 </div>
             </div>
 
         </div>
     </div>
-    <div class="text-right text-[10px] mt-2 font-bold">- 1 -</div>
+    
+    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 1 -</div>
     `;
 
     container.innerHTML = html;
@@ -4951,104 +5048,167 @@ function renderForm004Page2(container, options = {}) {
     const currentUser = options.customUser || "(เจ้าหน้าที่)";
 
     let html = `
-    <div class="text-[11px] leading-snug border border-black p-2 font-sarabun text-black h-full relative">
+    <div class="text-[11px] leading-snug border border-black font-sarabun text-black h-full flex flex-col">
         
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">7. การเคลื่อนไหวและความเสี่ยงต่อการพลัดตกหกล้ม</div>
-            <div class="ml-2">
-                <span class="font-bold">การเดิน:</span> ${radio(d.Gait, 'Normal', 'ปกติ')} ${radio(d.Gait, 'Unsteady', 'เซ')} 
-                <span>${chk(d.Gait, 'Aid')} ใช้อุปกรณ์ช่วย: ${radio(d.Aid, 'Cane', 'ไม้เท้า')} ${radio(d.Aid, 'Walker', 'Walker')}</span>
-            </div>
-            <div class="ml-2">
-                <span class="font-bold">ประวัติหกล้ม (6 เดือน):</span> ${radio(d.FallHx, 'No', 'ไม่มี')} ${radio(d.FallHx, 'Yes', 'มี')}
-            </div>
-            <div class="ml-2">
-                <span class="font-bold">ความเสี่ยง:</span> ${radio(d.FallRisk, 'Low', 'ต่ำ')} ${radio(d.FallRisk, 'High', 'สูง (ประเมิน Morse Fall Scale)')}
-            </div>
-        </div>
-
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">8. การพักผ่อนนอนหลับ</div>
-            <div class="ml-2">
-                ${radio(d.Sleep, 'Normal', 'ปกติ (6-8 ชม.)')} 
-                <span>${chk(d.Sleep, 'Problem')} มีปัญหา: ${radio(d.SleepDetail, 'Insomnia', 'นอนไม่หลับ')} ${radio(d.SleepDetail, 'Wake', 'ตื่นบ่อย')}</span>
-                <span>การใช้ยานอนหลับ: ${radio(d.SleepMed, 'No', 'ไม่ใช้')} ${radio(d.SleepMed, 'Yes', 'ใช้')}</span>
-            </div>
-        </div>
-
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">9. เศรษฐกิจ สังคม และจิตวิญญาณ</div>
-            <div class="ml-2">
-                <span class="font-bold">สถานภาพ:</span> ${radio(d.Status, 'Single', 'โสด')} ${radio(d.Status, 'Married', 'คู่')} ${radio(d.Status, 'Widowed', 'หม้าย/หย่า')}
-            </div>
-            <div class="ml-2">
-                <span class="font-bold">อาชีพ:</span> ${dot(d.Occupation, "100px")} <span class="font-bold ml-2">ศาสนา:</span> ${dot(d.Religion, "60px")}
-            </div>
-            <div class="ml-2">
-                <span class="font-bold">ความเชื่อ/ข้อห้ามทางการแพทย์:</span> ${radio(d.Belief, 'No', 'ไม่มี')} 
-                <span>${chk(d.Belief, 'Yes')} มี (ระบุ) ${dot(d.BeliefDetail, "150px")}</span>
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">7. การเคลื่อนไหวและความเสี่ยงต่อการพลัดตกหกล้ม</div>
+            <div class="pl-2 space-y-1">
+                <div class="flex flex-wrap items-end">
+                    <span class="font-bold mr-2">การเดิน:</span>
+                    ${chkGroup(d.Gait, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Gait, 'Unsteady', 'เซ')}
+                    ${chkGroup(d.Gait, 'Aid', 'ใช้อุปกรณ์ช่วย')}
+                    <span>( ${chkGroup(d.Aid, 'Cane', 'ไม้เท้า')} ${chkGroup(d.Aid, 'Walker', 'Walker')} )</span>
+                    ${chkGroup(d.Gait, 'Wheelchair', 'รถเข็น')}
+                </div>
+                <div class="flex flex-wrap">
+                    <span class="font-bold mr-2">ประวัติหกล้ม (ใน 6 เดือน):</span>
+                    ${chkGroup(d.FallHx, 'No', 'ไม่มี')}
+                    ${chkGroup(d.FallHx, 'Yes', 'มี')}
+                </div>
+                <div class="flex flex-wrap">
+                    <span class="font-bold mr-2">ความเสี่ยงต่อการพลัดตกหกล้ม:</span>
+                    ${chkGroup(d.FallRisk, 'Low', 'ต่ำ')}
+                    ${chkGroup(d.FallRisk, 'High', 'สูง (ต้องประเมิน Morse Fall Scale)')}
+                </div>
             </div>
         </div>
 
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">10. ความต้องการเรียนรู้/สุขศึกษา</div>
-            <div class="ml-2">
-                ${radio(d.EduNeed, 'Disease', 'เรื่องโรค/การรักษา')} ${radio(d.EduNeed, 'Med', 'การใช้ยา')} ${radio(d.EduNeed, 'Diet', 'อาหาร')} 
-                ${radio(d.EduNeed, 'Rehab', 'การกายภาพ')} ${radio(d.EduNeed, 'Wound', 'การทำแผล')}
-                <span>อื่นๆ ${dot(d.EduOther, "80px")}</span>
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">8. การพักผ่อนนอนหลับ</div>
+            <div class="pl-2 flex flex-wrap items-end">
+                ${chkGroup(d.Sleep, 'Normal', 'ปกติ (6-8 ชม.)')}
+                ${chkGroup(d.Sleep, 'Insomnia', 'นอนไม่หลับ')}
+                ${chkGroup(d.Sleep, 'Wake', 'ตื่นบ่อย')}
+                <span class="font-bold ml-4 mr-2">ยานอนหลับ:</span>
+                ${chkGroup(d.SleepMed, 'No', 'ไม่ใช้')}
+                ${chkGroup(d.SleepMed, 'Yes', 'ใช้')}
             </div>
         </div>
 
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">11. การวางแผนจำหน่าย (Discharge Planning)</div>
-            <div class="ml-2">
-                <span class="font-bold">ความพร้อมของผู้ป่วย/ญาติ:</span> ${radio(d.DCReady, 'Ready', 'พร้อม')} 
-                <span>${chk(d.DCReady, 'NotReady')} ไม่พร้อม (ระบุปัญหา) ${dot(d.DCProblem, "150px")}</span>
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">9. เศรษฐกิจ สังคม และจิตวิญญาณ</div>
+            <div class="pl-2 space-y-1">
+                <div class="flex flex-wrap items-end">
+                    <span class="font-bold mr-2">สถานภาพ:</span>
+                    ${chkGroup(d.Status, 'Single', 'โสด')}
+                    ${chkGroup(d.Status, 'Married', 'คู่')}
+                    ${chkGroup(d.Status, 'Widowed', 'หม้าย')}
+                    ${chkGroup(d.Status, 'Divorced', 'หย่า')}
+                    ${chkGroup(d.Status, 'Monk', 'สมณะ')}
+                    
+                    <span class="font-bold ml-4 mr-2">อาชีพ:</span> ${dot(d.Occupation, "100px")}
+                    <span class="font-bold ml-4 mr-2">ศาสนา:</span> ${dot(d.Religion, "80px")}
+                </div>
+                <div class="flex flex-wrap items-end">
+                    <span class="font-bold mr-2">ความเชื่อ/ข้อห้ามทางการแพทย์:</span>
+                    ${chkGroup(d.Belief, 'No', 'ไม่มี')}
+                    ${chkGroup(d.Belief, 'Yes', 'มี (ระบุ)')} ${dot(d.BeliefDetail, "200px")}
+                </div>
             </div>
         </div>
 
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">12. การรับทราบสิทธิผู้ป่วย</div>
-            <div class="ml-2">
-                ${radio(d.Rights, 'Ack', 'รับทราบ')} ${radio(d.Rights, 'Wait', 'รอญาติ')}
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">10. ความต้องการเรียนรู้/สุขศึกษา</div>
+            <div class="pl-2 flex flex-wrap items-end">
+                ${chkGroup(d.EduNeed, 'Disease', 'เรื่องโรค/การรักษา')}
+                ${chkGroup(d.EduNeed, 'Med', 'การใช้ยา')}
+                ${chkGroup(d.EduNeed, 'Diet', 'อาหาร')}
+                ${chkGroup(d.EduNeed, 'Rehab', 'การกายภาพ')}
+                ${chkGroup(d.EduNeed, 'Wound', 'การทำแผล')}
+                ${chkGroup(d.EduNeed, 'Other', 'อื่น ๆ')} ${dot(d.EduOther, "80px")}
             </div>
         </div>
 
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">13. การประเมินความปวด (Pain Assessment)</div>
-            <div class="ml-2 flex items-center">
-                <span class="font-bold mr-2">Pain Score (0-10):</span> 
-                <div class="border border-black px-2 py-0.5 font-bold">${d.PainScore || '0'}</div>
-                <span class="ml-4 font-bold">ตำแหน่ง:</span> ${dot(d.PainLoc, "100px")}
-                <span class="ml-4 font-bold">ลักษณะ:</span> ${dot(d.PainChar, "100px")}
-            </div>
-            <div class="ml-2 mt-1">
-                <span class="font-bold">ผลกระทบ:</span> ${radio(d.PainEffect, 'Sleep', 'การนอน')} ${radio(d.PainEffect, 'Activity', 'กิจกรรม')} ${radio(d.PainEffect, 'Emotion', 'อารมณ์')}
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">11. การวางแผนจำหน่าย (Discharge Planning)</div>
+            <div class="pl-2 flex flex-wrap items-end">
+                <span class="font-bold mr-2">ความพร้อมของผู้ป่วย/ญาติ:</span>
+                ${chkGroup(d.DCReady, 'Ready', 'พร้อม')}
+                ${chkGroup(d.DCReady, 'NotReady', 'ไม่พร้อม เนื่องจาก')} ${dot(d.DCProblem, "200px")}
             </div>
         </div>
 
-        <div class="border-b border-black pb-1 mb-1">
-            <div class="font-bold">14. Braden Scale for Predicting Pressure Sore Risk</div>
-            <div class="ml-2">
-                <span class="font-bold">คะแนนรวม:</span> <span class="border-b border-black font-bold px-2">${d.BradenScore || '-'}</span> คะแนน 
-                <span class="ml-2">(${radio(d.BradenRisk, 'High', 'เสี่ยงสูง ≤16')} ${radio(d.BradenRisk, 'Low', 'เสี่ยงต่ำ >16')})</span>
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">12. การรับทราบสิทธิผู้ป่วย</div>
+            <div class="pl-2 flex flex-wrap">
+                ${chkGroup(d.Rights, 'Ack', 'รับทราบ')}
+                ${chkGroup(d.Rights, 'Wait', 'รอญาติ')}
+                ${chkGroup(d.Rights, 'Unconscious', 'ไม่รู้สึกตัว')}
             </div>
-            <div class="ml-2 text-xs text-gray-500">* ดูรายละเอียดในแบบประเมิน Braden Scale</div>
         </div>
 
-        <div class="flex-grow border border-black p-1 mt-2 mb-20">
-            <div class="font-bold mb-1">15. ปัญหาทางการพยาบาลเบื้องต้น (Preliminary Nursing Diagnosis)</div>
-            <div class="w-full h-[200px] border-none resize-none bg-transparent" style="white-space: pre-wrap;">${d.NursingDx || ''}</div>
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">13. การประเมินความปวด (Pain Assessment)</div>
+            <div class="flex gap-4 pl-2 items-center mb-1">
+                <div class="flex items-center border border-black px-2 py-1">
+                    <span class="font-bold mr-2">Pain Score</span>
+                    <span class="text-xl font-bold">${d.PainScore || '0'}</span>
+                </div>
+                <div class="text-[9px]">
+                    (0=ไม่ปวด, 1-3=ปวดน้อย, 4-6=ปวดปานกลาง, 7-10=ปวดมากที่สุด)
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 pl-2 text-[10px]">
+                <div class="space-y-1">
+                    <div class="flex items-end"><span class="w-16 font-bold">ตำแหน่ง:</span> ${dot(d.PainLoc, "150px")}</div>
+                    <div class="flex items-end"><span class="w-16 font-bold">ลักษณะ:</span> ${dot(d.PainChar, "150px")}</div>
+                    <div class="flex items-end"><span class="w-16 font-bold">ระยะเวลา:</span> ${dot(d.PainDur, "150px")}</div>
+                </div>
+                <div>
+                    <div class="flex flex-wrap mb-1">
+                        <span class="font-bold mr-2">ผลกระทบ:</span>
+                        ${chkGroup(d.PainEffect, 'Sleep', 'การนอน')}
+                        ${chkGroup(d.PainEffect, 'Activity', 'กิจกรรม')}
+                        ${chkGroup(d.PainEffect, 'Emotion', 'อารมณ์')}
+                    </div>
+                    <div class="flex flex-wrap">
+                        <span class="font-bold mr-2">บรรเทาโดย:</span>
+                        ${chkGroup(d.PainRelief, 'Med', 'ยา')}
+                        ${chkGroup(d.PainRelief, 'Massage', 'นวด')}
+                        ${chkGroup(d.PainRelief, 'Rest', 'พัก')}
+                        ${chkGroup(d.PainRelief, 'Cold', 'เย็น/ร้อน')}
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="absolute bottom-10 right-10 text-center">
-            <div class="mb-4">ลงชื่อ ............................................................ พยาบาลผู้ประเมิน</div>
-            <div class="font-bold">(${currentUser})</div>
-            <div class="mt-1">วันที่ ${dot(new Date().toLocaleDateString('th-TH'), "80px")} เวลา ${dot(new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}), "50px")} น.</div>
+        <div class="border-b border-black p-2">
+            <div class="font-bold mb-1">14. Braden Scale for Predicting Pressure Sore Risk</div>
+            <div class="pl-2 flex flex-wrap items-end">
+                <span class="font-bold mr-2">คะแนนรวม:</span> 
+                <span class="border border-black px-2 font-bold w-12 text-center mr-2">${d.BradenScore || ''}</span>
+                <span class="font-bold mr-2">การแปลผล:</span>
+                ${chkGroup(d.BradenRisk, 'High', 'เสี่ยงสูง (≤ 16)')}
+                ${chkGroup(d.BradenRisk, 'Low', 'เสี่ยงต่ำ (> 16)')}
+            </div>
         </div>
-        
+
+        <div class="flex-grow p-2">
+            <div class="font-bold mb-1 text-sm underline">15. ปัญหาทางการพยาบาลเบื้องต้น (Preliminary Nursing Diagnosis)</div>
+            <div class="w-full h-full p-2" style="background-image: repeating-linear-gradient(transparent, transparent 23px, #ccc 24px); line-height: 24px; min-height: 200px;">
+                ${(d.NursingDx || '').replace(/\n/g, '<br>')}
+            </div>
+        </div>
+
+        <div class="mt-4 flex justify-end px-10 pb-4">
+            <div class="text-center w-[250px]">
+                <div class="mb-4 flex items-end justify-center">
+                    <span>ลงชื่อ</span>
+                    <span class="border-b border-black border-dotted w-32 inline-block mx-2"></span>
+                    <span>พยาบาลผู้ประเมิน</span>
+                </div>
+                <div class="font-bold mb-1">(${currentUser})</div>
+                <div class="flex items-end justify-center">
+                    <span>วันที่</span> ${dot(new Date().toLocaleDateString('th-TH'), "80px")}
+                    <span>เวลา</span> ${dot(new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}), "50px")} <span>น.</span>
+                </div>
+            </div>
+        </div>
+
     </div>
-    <div class="text-right text-[10px] mt-2 font-bold">- 2 -</div>
+    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 2 -</div>
     `;
 
     container.innerHTML = html;
