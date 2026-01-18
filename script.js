@@ -4603,16 +4603,142 @@ function renderBradenPage2(container, data, options = {}) {
     container.innerHTML = html;
 }
 // =================================================================
-// FR-IPD-004 PRINT SYSTEM (FINAL CORRECTED: PDF 100% MATCH)
+// FR-IPD-004 PRINT SYSTEM (FIXED MAPPING & LAYOUT)
 // =================================================================
+
+// --- 1. ตัวแปลงข้อมูล (Data Normalizer) ---
+// ฟังก์ชันนี้จะจับคู่ชื่อคอลัมน์จาก Sheet (ตาม PDF) ให้ตรงกับตัวแปรที่ใช้แสดงผล
+function normalizeData004(raw) {
+    if (!raw) return {};
+    
+    const d = {};
+
+    // 1. ข้อมูลทั่วไป
+    d.AdmitDate = raw.AdmitDate; // วันที่
+    d.AdmitTime = raw.AdmitTime; // เวลา
+    d.AdmitFrom = raw.AdmittedFrom; // รับจาก
+    d.ReferFrom = raw.Refer; // Refer
+    d.ArrivalMethod = raw.ArriveBy; // มาโดย
+    d.Informant = raw.InfoSource; // ผู้ให้ข้อมูล
+    d.MainCaregiver = raw.MainCaregiver_Name; // ชื่อผู้ดูแล
+    d.CaregiverRelation = raw.MainCaregiver_Rel; // ความสัมพันธ์
+
+    // 2. อาการและสัญญาณชีพ
+    d.ChiefComplaint = raw.ChiefComplaint; // อาการสำคัญ
+    d.PresentIllness = raw.Presentiliness || raw.PresentIllness; // ประวัติปัจจุบัน (แก้คำผิดจาก Sheet)
+    d.InitialSymptoms = raw.AdmitSymptoms; // อาการแรกรับ
+    d.T = raw.Admit_BT;
+    d.P = raw.Admit_PR;
+    d.R = raw.Admit_RR;
+    d.BP = raw.Admit_BP;
+
+    // 3. ประวัติเจ็บป่วย (แปลงจาก TRUE/FALSE คอลัมน์แยก เป็น Array)
+    d.UD = raw.Hx_Status; // มี/ไม่มี
+    d.UD_List = [];
+    if (raw.Hx_HT === true || raw.Hx_HT === "TRUE") d.UD_List.push('HT');
+    if (raw.Hx_Heart === true || raw.Hx_Heart === "TRUE") d.UD_List.push('Heart');
+    if (raw.Hx_Liver === true || raw.Hx_Liver === "TRUE") d.UD_List.push('Liver');
+    if (raw.Hx_Kidney === true || raw.Hx_Kidney === "TRUE") d.UD_List.push('Kidney');
+    if (raw.Hx_DM === true || raw.Hx_DM === "TRUE") d.UD_List.push('DM');
+    if (raw.Hx_Asthma === true || raw.Hx_Asthma === "TRUE") d.UD_List.push('Asthma');
+    if (raw.Hx_Epilepsy === true || raw.Hx_Epilepsy === "TRUE") d.UD_List.push('Epilepsy');
+    if (raw.Hx_TB === true || raw.Hx_TB === "TRUE") d.UD_List.push('TB');
+    if (raw.Hx_Cancer === true || raw.Hx_Cancer === "TRUE") d.UD_List.push('Cancer');
+    
+    d.UD_Cancer_Detail = raw.UD_Cancer_Detail || ""; // รายละเอียดมะเร็ง (ถ้ามี)
+    d.UD_Other = raw.Hx_Other || ""; // โรคอื่นๆ
+
+    // 4. ประวัติอื่นๆ
+    d.Allergy = raw.Allergy_Status; // แพ้ยา
+    d.AllergyDetail = raw.Allergy_Detail;
+    d.Surgery = raw.Sx_Status; // ผ่าตัด
+    d.SurgeryDetail = raw.Sx_Detail;
+    d.SurgeryYear = raw.Sx_Year;
+    d.PrevAdmit = raw.OldAdmit_Status; // รักษาตัวใน รพ.
+    d.PrevAdmitDx = raw.OldAdmit_Dx;
+    d.PrevAdmitYear = raw.OldAdmit_Year;
+    d.FamilyHx = raw.FamHx_Status; // ประวัติครอบครัว
+    d.FamilyHxDetail = raw.FamHx_Detail;
+
+    // 5. สารเสพติด
+    d.Alcohol = raw.Habit_Alcohol;
+    d.AlcoholAmount = raw.Habit_Alcohol_Amount;
+    d.Smoking = raw.Habit_Smoke;
+    d.SmokingAmount = raw.Habit_Smoke_Amount;
+    d.Drugs = raw.Habit_Drugs;
+    d.DrugsDetail = raw.Habit_Drugs_Detail;
+    d.CurrentMeds = raw.HomeMed_Text;
+
+    // 6. การประเมิน (Assessment)
+    d.Conscious = raw.Neuro_Conscious;
+    d.Mental = raw.Neuro_Mental;
+    d.Comm = raw.Comm_Speech;
+    d.Lang = raw.Comm_Lang;
+    d.Vision = raw.Sensory_Vision;
+    d.Hearing = raw.Sensory_Hearing;
+    d.Resp = raw.Resp_Status;
+    d.ADL = raw.ADL_Status;
+    d.Diet = raw.Nutri_Eat;
+    d.Oral = raw.Nutri_Oral;
+    d.Denture = raw.Nutri_Denture;
+    d.Stool = raw.Elim_Bowel;
+    d.Urine = raw.Elim_Urine;
+
+    // 7. หน้า 2 (การเคลื่อนไหว, การนอน, อื่นๆ)
+    d.Gait = raw.Move_Gait;
+    d.Aid = raw.Move_Aid;
+    d.FallHx = raw.Move_FallHx;
+    d.FallRisk = raw.Move_FallRisk;
+    d.Sleep = raw.Sleep_Status;
+    d.SleepMed = raw.Sleep_Med;
+    d.Status = raw.Social_Status;
+    d.Occupation = raw.Social_Job;
+    d.Religion = raw.Social_Religion;
+    d.Belief = raw.Belief_Cause; // ความเชื่อ
+    d.EduNeed = raw.Edu_Topic;
+    d.DCReady = raw.DCPlan_Ready;
+    d.Rights = raw.Rights_Ack;
+
+    // 8. ความปวด (Pain)
+    d.PainScore = raw.Pain_Scale_Score;
+    d.PainLoc = raw.Pain_Location;
+    d.PainChar = raw.Pain_Pattern; // หรือ Pain_Cause แล้วแต่ชีต
+    d.PainDur = ""; // ในชีตอาจไม่มีคอลัมน์นี้ ให้เว้นไว้
+    d.PainEffect = [];
+    if(raw.Pain_Effect_Eat === true) d.PainEffect.push('Eat');
+    if(raw.Pain_Effect_Sleep === true) d.PainEffect.push('Sleep');
+    if(raw.Pain_Effect_Activity === true) d.PainEffect.push('Activity');
+    if(raw.Pain_Effect_Mood === true) d.PainEffect.push('Emotion');
+    
+    d.PainRelief = [];
+    if(raw.Pain_Relief_Meds === true) d.PainRelief.push('Med');
+    if(raw.Pain_Relief_Massage === true) d.PainRelief.push('Massage');
+    if(raw.Pain_Relief_Rest === true) d.PainRelief.push('Rest');
+    if(raw.Pain_Relief_Cold === true) d.PainRelief.push('Cold');
+
+    // 9. Braden Scale (รวมคะแนน)
+    const b1 = parseInt(raw.Braden_Sensory) || 0;
+    const b2 = parseInt(raw.Braden_Moisture) || 0;
+    const b3 = parseInt(raw.Braden_Activity) || 0;
+    const b4 = parseInt(raw.Braden_Mobility) || 0;
+    const b5 = parseInt(raw.Braden_Nutrition) || 0;
+    const b6 = parseInt(raw.Braden_Friction) || 0;
+    d.BradenScore = b1 + b2 + b3 + b4 + b5 + b6;
+    
+    // คำนวณความเสี่ยง Braden
+    if (d.BradenScore > 0) {
+        d.BradenRisk = (d.BradenScore <= 16) ? 'High' : 'Low';
+    }
+
+    d.NursingDx = raw.Nursing_Diagnosis;
+
+    return d;
+}
 
 // --- Helper Functions ---
 const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.4em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
-
-// Checkbox แบบ [ / ]
 const box = (isChecked) => `<span class="inline-block font-sarabun text-[12px] font-bold mr-1" style="font-family: 'Sarabun', sans-serif;">[ ${isChecked ? '/' : '&nbsp;'} ]</span>`;
 
-// ฟังก์ชันเช็คค่า (รองรับ Array และ String "A,B,C")
 const chkGroup = (dataVal, targetVal, label) => {
     let isChecked = false;
     if (dataVal) {
@@ -4626,30 +4752,38 @@ const chkGroup = (dataVal, targetVal, label) => {
     return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${box(isChecked)} ${label}</span>`;
 };
 
-// วันที่ไทย พ.ศ. 4 หลัก
 const formatDateThai = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "";
-    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    let year = d.getFullYear();
+    if (year < 2400) year += 543;
+    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }) + "/" + year;
 };
 
 const formatTime = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "";
+    if (isNaN(d.getTime())) {
+        // กรณีชีตเก็บเป็น Text "18:40"
+        if(typeof dateStr === 'string' && dateStr.includes(':')) return dateStr;
+        return "";
+    }
     return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 };
 
-// --- 1. Main Entry (Preview) ---
+// --- Main Entry Point ---
 async function renderForm004PrintMode(an) {
     chartPreviewContent.innerHTML = "";
-    showLoading("กำลังดึงข้อมูลล่าสุดจาก Server..."); // โหลดใหม่ทุกครั้งเพื่อความชัวร์
+    showLoading("กำลังดึงข้อมูลล่าสุด...");
 
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
         const result = await response.json();
-        const freshData = result.success ? (result.data || {}) : {};
+        
+        // **หัวใจสำคัญ: แปลงข้อมูลดิบจาก Sheet ให้เป็น Format ที่พร้อมแสดงผล**
+        const rawData = result.success ? (result.data || {}) : {};
+        const freshData = normalizeData004(rawData);
         
         Swal.close();
 
@@ -4657,13 +4791,13 @@ async function renderForm004PrintMode(an) {
         const controlDiv = document.createElement('div');
         controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
         controlDiv.innerHTML = `
-            <div class="font-bold text-gray-700">ตัวอย่างก่อนพิมพ์ (FR-IPD-004)</div>
+            <div class="font-bold text-gray-700">แบบประเมินผู้ป่วยใน (FR-IPD-004)</div>
             <button id="btn-print-004-action" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
                 <i class="fas fa-print"></i> พิมพ์เอกสาร
             </button>`;
         chartPreviewContent.appendChild(controlDiv);
 
-        // Preview Container
+        // Container
         const previewContainer = document.createElement('div');
         previewContainer.className = "overflow-y-auto bg-gray-300 p-4 print:p-0 flex flex-col items-center gap-4";
         previewContainer.style.maxHeight = "calc(100vh - 200px)";
@@ -4686,7 +4820,6 @@ async function renderForm004PrintMode(an) {
         renderForm004Page2(p2, { data: freshData });
         previewContainer.appendChild(p2);
 
-        // Print Action
         document.getElementById("btn-print-004-action").addEventListener("click", () => handleForm004Print(an, freshData));
 
     } catch (e) {
@@ -4695,11 +4828,11 @@ async function renderForm004PrintMode(an) {
     }
 }
 
-// --- 2. Print Handler ---
+// --- Print Handler ---
 async function handleForm004Print(an, preloadedData) {
-    const dataToPrint = preloadedData || currentPatientData;
+    // ถ้าไม่มีข้อมูล ให้ใช้ current (แต่ปกติจะมีส่งมาจากปุ่มพรีวิว)
+    const dataToPrint = preloadedData || normalizeData004(currentPatientData);
 
-    // Load Staff List
     if (globalStaffList.length === 0) await refreshStaffDatalists();
     let staffOptions = '';
     globalStaffList.forEach(s => { staffOptions += `<option value="${s.fullName}">`; });
@@ -4709,8 +4842,8 @@ async function handleForm004Print(an, preloadedData) {
         html: `
             <div class="text-left text-sm space-y-4">
                 <div class="bg-gray-50 p-3 rounded border">
-                    <label class="block font-bold text-gray-700 mb-1">พยาบาลผู้บันทึก / ผู้พิมพ์</label>
-                    <input type="text" id="print_user_004" list="print_staff_list_004" class="w-full p-2 border rounded" placeholder="ค้นหาชื่อ..." value="(เจ้าหน้าที่)">
+                    <label class="block font-bold text-gray-700 mb-1">พยาบาลผู้ประเมิน</label>
+                    <input type="text" id="print_user_004" list="print_staff_list_004" class="w-full p-2 border rounded" placeholder="ระบุชื่อ..." value="(เจ้าหน้าที่)">
                     <datalist id="print_staff_list_004">${staffOptions}</datalist>
                 </div>
             </div>`,
@@ -4726,7 +4859,6 @@ async function handleForm004Print(an, preloadedData) {
 
     if (isDismissed) return;
 
-    // Create Print Area
     const oldPrintArea = document.getElementById("form004-print-area");
     if (oldPrintArea) oldPrintArea.remove();
 
@@ -4737,7 +4869,6 @@ async function handleForm004Print(an, preloadedData) {
 
     showLoading("กำลังเตรียมเอกสาร...");
 
-    // Render Real Pages
     const p1 = document.createElement('div');
     p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
     p1.style.width = "210mm";
@@ -4759,13 +4890,12 @@ async function handleForm004Print(an, preloadedData) {
 }
 
 // =================================================================
-// PAGE 1 RENDERER (PDF LAYOUT MATCHED)
+// PAGE 1 RENDERER (LAYOUT EXACTLY AS PDF)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
     const d = options.data || {};
-    const admitDateStr = d.AdmitDate_Braden || d.AdmitDate; 
-    const dateText = formatDateThai(admitDateStr);
-    const timeText = formatTime(admitDateStr);
+    const dateText = formatDateThai(d.AdmitDate);
+    const timeText = formatTime(d.AdmitTime);
 
     let html = `
     <div class="flex justify-between items-start mb-2 border-b-2 border-black pb-2 font-sarabun text-black">
@@ -4785,10 +4915,10 @@ function renderForm004Page1(container, options = {}) {
     <div class="text-[12px] leading-snug font-sarabun text-black">
         
         <div class="flex flex-wrap items-end gap-1 mb-1">
-            <span>วันที่</span> ${dot(dateText, "90px")}
-            <span>เวลา</span> ${dot(timeText, "50px")} <span>น.</span>
-            <span class="ml-2">รับจาก</span> ${dot(d.AdmitFrom, "160px")}
-            <span class="ml-2">รับ REFER จาก</span> ${dot(d.ReferFrom, "160px")}
+            <span>วันที่</span> ${dot(dateText, "100px")}
+            <span>เวลา</span> ${dot(timeText, "60px")} <span>น.</span>
+            <span class="ml-2">รับจาก</span> ${dot(d.AdmitFrom, "180px")}
+            <span class="ml-2">รับ REFER จาก</span> ${dot(d.ReferFrom, "180px")}
         </div>
 
         <div class="flex flex-wrap items-end gap-1 mb-1">
@@ -4921,7 +5051,6 @@ function renderForm004Page1(container, options = {}) {
         </div>
 
         <div class="border border-black grid grid-cols-2 text-[11px] mt-0">
-            
             <div class="border-r border-b border-black p-2">
                 <div class="font-bold mb-1">1. สภาวะทางจิตใจและอารมณ์</div>
                 <div class="pl-2 space-y-1">
@@ -4939,7 +5068,7 @@ function renderForm004Page1(container, options = {}) {
                         ${chkGroup(d.Mental, 'Fear', 'กลัว')}
                         ${chkGroup(d.Mental, 'Sad', 'ซึมเศร้า')}
                         ${chkGroup(d.Mental, 'Agitated', 'ก้าวร้าว')}
-                        <span>อื่น ๆ ${dot(d.MentalOther, "50px")}</span>
+                        <span>อื่น ๆ ${dot(d.MentalOther, "30px")}</span>
                     </div>
                 </div>
             </div>
