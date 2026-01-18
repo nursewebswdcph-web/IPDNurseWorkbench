@@ -1135,6 +1135,7 @@ async function showFormPreview(formType) {
   chartPreviewPlaceholder.classList.add("hidden");
   chartPreviewContent.innerHTML = "";
   
+  // --- กรณีแบบประเมินแรกรับ FR-IPD-004 (เวอร์ชันเสมือนพิมพ์) ---
   if (formType === '004') {
     chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
     const template = document.getElementById("preview-template-004");
@@ -1144,194 +1145,83 @@ async function showFormPreview(formType) {
     }
     const preview = template.content.cloneNode(true);
     
-    for (const key in currentPatientData) {
-      if (currentPatientData.hasOwnProperty(key)) {
-        let value = currentPatientData[key];
-        const el = preview.querySelector(`[data-field="${key}"]`);
-        if (el) {
-          if (value === true || value === 'true' || value === 'on') {
-            el.textContent = "✓";
-          } else if (value === false || value === 'false' || !value) {
-            el.textContent = "-";
-          } else if (key === 'LastUpdatedTime') {
-            el.textContent = new Date(value).toLocaleString('th-TH');
-          } else {
-            el.textContent = value;
-          }
+    // 1. เติมข้อมูล Text และวันที่ (data-field)
+    preview.querySelectorAll('[data-field]').forEach(el => {
+        const field = el.dataset.field;
+        let val = currentPatientData[field];
+        
+        // จัดรูปแบบวันที่ถ้ามีคำว่า Date
+        if (field.includes('Date') && val && val !== '-') {
+            try { val = new Date(val).toLocaleDateString('th-TH'); } catch(e){}
         }
-      }
-    }
-    
-    // Handle combined checkboxes
-    const hxDetailEl = preview.getElementById('preview-hx-details');
-    if (hxDetailEl) {
-      const hxValues = [
-        {key: 'Hx_HT', label: 'ความดันฯ'}, {key: 'Hx_Heart', label: 'โรคหัวใจ'},
-        {key: 'Hx_Liver', label: 'โรคตับ'}, {key: 'Hx_Kidney', label: 'โรคไต'},
-        {key: 'Hx_DM', label: 'เบาหวาน'}, {key: 'Hx_Asthma', label: 'หอบหืด'},
-        {key: 'Hx_Epilepsy', label: 'ลมชัก'}, {key: 'Hx_TB', label: 'วัณโรค'},
-        {key: 'Hx_Cancer', label: `มะเร็ง (${currentPatientData['Hx_Cancer_Detail'] || ''})`},
-        {key: 'Hx_Other', label: `อื่นๆ (${currentPatientData['Hx_Other'] || ''})`}
-      ];
-      const hxText = hxValues
-        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
-        .map(k => k.label).join(', ');
-      hxDetailEl.textContent = hxText || '-';
-    }
-    
-    // --- (1) ประวัติการผ่าตัด (Sx Details) ---
-    const sxDetailEl = preview.getElementById('preview-sx-details');
-    if (sxDetailEl) {
-        if (currentPatientData['Sx_Status'] === 'เคย') {
-            sxDetailEl.textContent = `${currentPatientData['Sx_Details'] || ''} (เมื่อ: ${currentPatientData['Sx_Date'] || 'N/A'})`;
-        } else {
-            sxDetailEl.textContent = '-';
-        }
-    }
+        el.textContent = (val === true || val === 'true') ? '' : (val || '');
+    });
 
-    // --- (2) ประวัตินอนโรงพยาบาล (Admit Hx Details) ---
-    const admitHxEl = preview.getElementById('preview-admit-hx-details');
-    if (admitHxEl) {
-        if (currentPatientData['AdmitHx_Status'] === 'เคย') {
-            admitHxEl.textContent = `${currentPatientData['AdmitHx_Disease'] || ''} (เมื่อ: ${currentPatientData['AdmitHx_Date'] || 'N/A'})`;
-        } else {
-            admitHxEl.textContent = '-';
-        }
-    }
-
-    // --- (3) การเผชิญภาวะเครียด (Cope Stress Details) ---
-    const copeEl = preview.getElementById('preview-cope-stress-details');
-    if (copeEl) {
-      const copeValues = [
-        {key: 'Cope_Stress_Fear', label: 'กลัวไม่หาย'}, {key: 'Cope_Stress_Cost', label: 'ค่ารักษา'},
-        {key: 'Cope_Stress_Work', label: 'ขาดงาน'}, {key: 'Cope_Stress_Family', label: 'ครอบครัว'}
-      ];
-      const copeText = copeValues
-        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
-        .map(k => k.label)
-        .join(', ');
-      copeEl.textContent = copeText || '-';
-    }
-
-    // --- (4) การมีส่วนร่วม (Participation Details) ---
-    const particEl = preview.getElementById('preview-partic-details');
-    if (particEl) {
-      const particValues = [
-        {key: 'Partic_Want_Info', label: 'ทราบข้อมูล'}, {key: 'Partic_Want_Skill', label: 'เรียนรู้ทักษะ'},
-        {key: 'Partic_Want_Join', label: 'ร่วมกับทีม'}
-      ];
-      const particText = particValues
-        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
-        .map(k => k.label)
-        .join(', ');
-      particEl.textContent = particText || '-';
-    }
-
-    // --- (5) ผลกระทบความปวด (Pain Effect) ---
-    const painEffectEl = preview.getElementById('preview-pain-effect');
-    if (painEffectEl) {
-      const painValues = [
-        {key: 'Pain_Effect_Eat', label: 'การกิน'}, {key: 'Pain_Effect_Sleep', label: 'การนอน'},
-        {key: 'Pain_Effect_Activity', label: 'การทำกิจกรรม'}, {key: 'Pain_Effect_Mood', label: 'อารมณ์/สังคม'},
-        {key: 'Pain_Effect_Elim', label: 'การขับถ่าย'}, {key: 'Pain_Effect_Sex', label: 'เพศสัมพันธ์'}
-      ];
-      const painText = painValues
-        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
-        .map(k => k.label)
-        .join(', ');
-      painEffectEl.textContent = painText || '-';
-    }
-
-    // --- (6) การบรรเทาความปวด (Pain Relief) ---
-    const painReliefEl = preview.getElementById('preview-pain-relief');
-    if (painReliefEl) {
-      const reliefValues = [
-        {key: 'Pain_Relief_Cold', label: 'Cold compress'}, {key: 'Pain_Relief_Hot', label: 'Hot compress'},
-        {key: 'Pain_Relief_Massage', label: 'Massage'}, {key: 'Pain_Relief_Relax', label: 'Relaxation'},
-        {key: 'Pain_Relief_Repo', label: 'Reposition'}, {key: 'Pain_Relief_Rest', label: 'Rest/Sleep'},
-        {key: 'Pain_Relief_Meds', label: 'Medication'}
-      ];
-      const reliefText = reliefValues
-        .filter(k => currentPatientData[k.key] === true || currentPatientData[k.key] === 'true')
-        .map(k => k.label)
-        .join(', ');
-      painReliefEl.textContent = reliefText || '-';
-    }
+    // 2. เรียกฟังก์ชันจัดการเครื่องหมาย ✓ (Tick Logic)
+    updateCheckmarkPreview(currentPatientData, preview);
 
     chartPreviewContent.appendChild(preview);
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "004";
     chartAddNewBtn.classList.add("hidden");
-    
   }
-    else if (formType === 'advice') {
-    chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัวระหว่างเข้ารับการรักษาในโรงพยาบาลและเมื่อผู้ป่วยกลับบ้าน";
+
+  // --- กรณีคำแนะนำการปฏิบัติตัว (Advice) ---
+  else if (formType === 'advice') {
+    chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัว";
     await showAdvicePreview(currentPatientAN);
   }
 
-    else if (formType === '006') {
+  // --- กรณีบันทึกทางการพยาบาล (Focus Note 006) ---
+  else if (formType === '006') {
     chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล (Nursing Progress Note)";
     chartEditBtn.classList.add("hidden");
     chartAddNewBtn.classList.remove("hidden");
-    chartAddNewBtn.dataset.form = "006"; // ผูกปุ่มให้เป็น 006
-    
-    // เรียกฟังก์ชันโหลดรายการ (ที่จะสร้างในขั้นตอนที่ 3)
+    chartAddNewBtn.dataset.form = "006";
     await showProgressNotePreview(currentPatientAN);
   }
 
+  // --- กรณีใบบันทึกจำหน่าย (Discharge 007) ---
   else if (formType === '007') {
      chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)";
-     // เรียกฟังก์ชันแสดง Preview
      await showDischargePreview(currentPatientAN);
   }
   
+  // --- กรณี Braden Scale Monitoring ---
   else if (formType === 'braden') {
     chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale)";
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "braden"; 
     chartAddNewBtn.classList.add("hidden");
 
-    // 1. โหลด Template
     chartPreviewContent.innerHTML = document.getElementById("preview-template-braden").innerHTML;
     const listContainer = document.getElementById("braden-summary-list");
     const emptyState = document.getElementById("braden-empty-state");
     const statusSpan = document.getElementById("last-updated-braden");
 
-    // 2. ดึงข้อมูล
     showLoading("กำลังโหลดประวัติ...");
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${currentPatientAN}`);
         const result = await response.json();
-        
         if (!result.success) throw new Error(result.message);
         const entries = result.data;
         Swal.close();
 
         if (entries.length > 0) {
             emptyState.classList.add("hidden");
-            
-            // อัปเดตสถานะ Sidebar
             const lastEntry = entries[entries.length - 1];
-            let lastDateStr = "-";
-            if(lastEntry.last_assess_date) {
-                const d = new Date(lastEntry.last_assess_date);
-                lastDateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'short'});
-            }
+            let lastDateStr = lastEntry.last_assess_date ? new Date(lastEntry.last_assess_date).toLocaleDateString('th-TH', {day:'2-digit', month:'short'}) : "-";
             statusSpan.textContent = `ล่าสุด: ${lastDateStr} (ชุดที่ ${lastEntry.page})`;
             statusSpan.classList.add("text-green-600");
 
-            // สร้างรายการ (Cards)
             let html = "";
             entries.forEach(item => {
-                const updatedDate = new Date(item.timestamp).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
-                
+                const updatedDate = new Date(item.timestamp).toLocaleString('th-TH', {dateStyle:'short', timeStyle:'short'});
                 html += `
                 <div class="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center" 
                      onclick="openBradenModal(${item.page})">
                     <div class="flex items-center gap-4">
-                        <div class="bg-red-100 text-red-700 font-bold rounded-full w-10 h-10 flex items-center justify-center">
-                            ${item.page}
-                        </div>
+                        <div class="bg-red-100 text-red-700 font-bold rounded-full w-10 h-10 flex items-center justify-center">${item.page}</div>
                         <div>
                             <div class="font-bold text-gray-800">แบบประเมินชุดที่ ${item.page}</div>
                             <div class="text-xs text-gray-500">ประเมินไปแล้ว ${item.count} วัน</div>
@@ -1344,25 +1234,20 @@ async function showFormPreview(formType) {
                 </div>`;
             });
             listContainer.innerHTML = html;
-
         } else {
             statusSpan.textContent = "ยังไม่เคยบันทึก";
-            listContainer.innerHTML = "";
             emptyState.classList.remove("hidden");
         }
+    } catch (error) { Swal.close(); showError("โหลดข้อมูลไม่สำเร็จ", error.message); }
+  }
 
-    } catch (error) {
-        Swal.close();
-        showError("โหลดข้อมูลไม่สำเร็จ", error.message);
-    }
-}
+  // --- กรณี Morse Fall Scale / MAAS ---
   else if (formType === 'morse_maas') {
     chartPreviewTitle.textContent = "ประวัติการประเมินความเสี่ยง Morse / MAAS";
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "morse_maas";
     chartAddNewBtn.classList.add("hidden");
 
-    // โหลด Template พื้นฐานมารอก่อน
     chartPreviewContent.innerHTML = document.getElementById("preview-template-morse").innerHTML;
     const listContainer = document.getElementById("morse-summary-list");
     const emptyState = document.getElementById("morse-empty-state");
@@ -1372,40 +1257,22 @@ async function showFormPreview(formType) {
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getMorseMAASSummary&an=${currentPatientAN}`);
         const result = await response.json();
-        
         if (!result.success) throw new Error(result.message);
         const entries = result.data;
         Swal.close();
 
-        // อัปเดตสถานะที่เมนูซ้าย
         if (entries.length > 0) {
             const last = entries[0];
-            const d = new Date(last.date);
-            const dateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
-            statusSpan.textContent = `ล่าสุด: ${dateStr} เวร${last.shift}`;
+            statusSpan.textContent = `ล่าสุด: ${new Date(last.date).toLocaleDateString('th-TH')} เวร${last.shift}`;
             statusSpan.classList.add("text-green-600");
-            
             emptyState.classList.add("hidden");
             
-            // สร้างรายการแสดงผล
             let html = "";
             entries.forEach(item => {
-                const d = new Date(item.date);
-                const dateStr = d.toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'});
+                const dateStr = new Date(item.date).toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'});
                 const shiftText = item.shift === 'N' ? 'ดึก' : (item.shift === 'D' ? 'เช้า' : 'บ่าย');
                 const shiftColor = item.shift === 'N' ? 'bg-indigo-100 text-indigo-800' : (item.shift === 'D' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800');
-                
-                // สีความเสี่ยง Morse
-                let riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-800">No Risk</span>`;
-                if(item.morse_total >= 51) riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-800">High Risk (${item.morse_total})</span>`;
-                else if(item.morse_total >= 25) riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold bg-orange-100 text-orange-800">Low Risk (${item.morse_total})</span>`;
-
-                // ข้อมูล MAAS
-                let maasInfo = `<span class="text-gray-400">-</span>`;
-                if(item.maas_score !== "" && item.maas_score !== null) {
-                     maasInfo = `<span class="font-bold text-blue-600">MAAS: ${item.maas_score}</span>`;
-                     if(item.maas_score >= 4) maasInfo += ` <span class="text-xs text-red-600">(ผูกยึด)</span>`;
-                }
+                let riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold ${item.morse_total >= 51 ? 'bg-red-100 text-red-800' : (item.morse_total >= 25 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800')}">${item.morse_total >= 51 ? 'High' : (item.morse_total >= 25 ? 'Low' : 'No')} Risk (${item.morse_total})</span>`;
 
                 html += `
                 <div class="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center" onclick="openMorseModal()">
@@ -1414,30 +1281,23 @@ async function showFormPreview(formType) {
                             <div class="text-sm font-bold text-gray-700">${dateStr}</div>
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold ${shiftColor}">${shiftText}</span>
                         </div>
-                        <div class="border-l pl-3 space-y-1">
+                        <div class="border-l pl-3">
                             <div>${riskBadge}</div>
-                            <div class="text-xs">${maasInfo}</div>
+                            <div class="text-xs mt-1">${item.maas_score !== "" ? `<span class="font-bold text-blue-600">MAAS: ${item.maas_score}</span>` : '-'}</div>
                         </div>
                     </div>
-                    <div class="text-right text-xs text-gray-500">
-                        <div>${item.assessor || '-'}</div>
-                    </div>
+                    <div class="text-right text-xs text-gray-500">${item.assessor || '-'}</div>
                 </div>`;
             });
             listContainer.innerHTML = html;
-
         } else {
             statusSpan.textContent = "ยังไม่เคยบันทึก";
-            listContainer.innerHTML = "";
             emptyState.classList.remove("hidden");
         }
-
-    } catch (error) {
-        Swal.close();
-        showError("โหลดข้อมูลไม่สำเร็จ", error.message);
-    }
+    } catch (error) { Swal.close(); showError("โหลดข้อมูลไม่สำเร็จ", error.message); }
   }
-      
+
+  // --- กรณีอื่นๆ (Classify หรืออื่นๆ ที่แสดงเป็นรายการ) ---
   else {
     const formTitle = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
     chartPreviewTitle.textContent = formTitle;
@@ -1447,7 +1307,6 @@ async function showFormPreview(formType) {
     chartAddNewBtn.dataset.form = formType;
   }
 }
-
 async function showEntryList(formType, formTitle) { 
   const template = document.getElementById("template-entry-list");
   if (!template) return;
@@ -1884,17 +1743,28 @@ function updateClassifyColumnTotals(dayIndex, shift) {
   return { Total_Score: total > 0 ? total : '', Category: categoryInput.value };
 }
 
-// แก้ไขการบันทึกและรวมคะแนน Classification
+// แก้ไขการบันทึกและรวมคะแนน Classification (ชุดอัปเดต v2.8)
 async function saveClassificationShiftData(dayIndex, shift) {
     const dateInput = classifyTable.querySelector(`input.classify-date-input[data-day-index="${dayIndex}"]`);
     if (!dateInput) return;
     const date = dateInput.value;
     
-    const entryData = { AN: currentPatientAN, Page: currentClassifyPage, Date: date, Shift: shift };
+    if (!currentPatientAN) {
+        showError('ไม่พบข้อมูล AN', 'กรุณาเปิด Chart ใหม่อีกครั้ง');
+        return;
+    }
+
+    const entryData = { 
+        AN: currentPatientAN, 
+        Page: currentClassifyPage, 
+        Date: date, 
+        Shift: shift 
+    };
+
     let hasData = false;
     let total = 0;
     
-    // วนลูปเก็บคะแนน 8 ข้อ และรวมคะแนนทันที
+    // วนลูปเก็บคะแนน 8 ข้อ และรวมคะแนนฝั่ง Client
     for (let i = 1; i <= 8; i++) {
         const sel = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
         const val = parseInt(sel.value) || 0;
@@ -1912,7 +1782,7 @@ async function saveClassificationShiftData(dayIndex, shift) {
         return;
     }
 
-    // คำนวณประเภทผู้ป่วย (Category)
+    // คำนวณประเภทผู้ป่วย (Category) อัตโนมัติก่อนส่ง
     let category = 0;
     if (total > 0 && total <= 8) category = 1;
     else if (total >= 9 && total <= 14) category = 2;
@@ -1931,15 +1801,43 @@ async function saveClassificationShiftData(dayIndex, shift) {
         });
         const result = await response.json();
         if (result.success) {
-            // อัปเดตช่องคะแนนรวมและประเภทในตารางทันที
+            // อัปเดตช่องคะแนนรวมและประเภทในตารางให้เห็นทันที
             classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = total;
             classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = category;
             
             showSuccess('บันทึกสำเร็จ!', `เวร ${shift} วันที่ ${date} เรียบร้อย`);
         } else throw new Error(result.message);
-    } catch (error) { showError('บันทึกไม่สำเร็จ', error.message); }
+    } catch (error) { 
+        console.error("Save Classify Error:", error);
+        showError('บันทึกไม่สำเร็จ', error.message); 
+    }
 }
+// ฟังก์ชันจัดการเครื่องหมายถูก ☑ ในหน้า Preview (เสมือนพิมพ์)
+function updateCheckmarkPreview(data, container) {
+  // 1. จัดการช่อง ☑/☐ ทั่วไป
+  container.querySelectorAll('.chk').forEach(span => {
+    const chkKey = span.dataset.chk;
+    if (!chkKey) return;
+    const [field, targetVal] = chkKey.split(':');
+    const actualVal = String(data[field]);
+    const isMatched = (actualVal === targetVal) || (targetVal === 'true' && (actualVal === 'true' || actualVal === true));
+    span.innerHTML = `<span class="chk-box">${isMatched ? '✓' : '&nbsp;'}</span>`;
+  });
 
+  // 2. จัดการตาราง Braden (ติ๊กในเซลล์)
+  container.querySelectorAll('.chk-cell').forEach(td => {
+    const chkKey = td.dataset.chk;
+    if (!chkKey) return;
+    const [field, score] = chkKey.split(':');
+    if (String(data[field]) === score) {
+      td.innerHTML = '<span class="font-bold">✓</span>';
+      td.classList.add('bg-blue-50');
+    } else {
+      td.innerHTML = '';
+      td.classList.remove('bg-blue-50');
+    }
+  });
+}
 function changeClassifyPage(direction) {
   const newPage = currentClassifyPage + direction;
   if (newPage < 1) return;
