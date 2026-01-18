@@ -331,6 +331,104 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
+// --- Global Staff Data ---
+let staffListCache = [];
+
+// 1. โหลดรายชื่อเมื่อเปิดเว็บ
+function loadStaffData() {
+    google.script.run.withSuccessHandler(data => {
+        staffListCache = data;
+    }).getStaffList();
+}
+// เรียกใช้ตอนโหลดหน้าเว็บ
+window.addEventListener('load', loadStaffData);
+
+// 2. เปิด Modal
+function openPrintSettings004() {
+    document.getElementById('printSettingsModal').classList.remove('hidden');
+    document.getElementById('printerSearch').value = '';
+    document.getElementById('staffDropdown').innerHTML = '';
+}
+
+// 3. ปิด Modal
+function closePrintModal() {
+    document.getElementById('printSettingsModal').classList.add('hidden');
+}
+
+// 4. ค้นหารายชื่อ
+function filterStaffList(keyword) {
+    const dropdown = document.getElementById('staffDropdown');
+    dropdown.innerHTML = '';
+    
+    if (!keyword) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+
+    const filtered = staffListCache.filter(s => s.name.includes(keyword));
+    
+    if (filtered.length > 0) {
+        dropdown.classList.remove('hidden');
+        filtered.forEach(staff => {
+            const div = document.createElement('div');
+            div.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm';
+            div.innerText = `${staff.name} (${staff.position})`;
+            div.onclick = () => selectStaff(staff);
+            dropdown.appendChild(div);
+        });
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+// 5. เลือกรายชื่อ
+function selectStaff(staff) {
+    document.getElementById('printerSearch').value = staff.name;
+    document.getElementById('selectedPrinterName').value = staff.name;
+    document.getElementById('selectedPrinterPosition').value = staff.position;
+    document.getElementById('staffDropdown').classList.add('hidden');
+}
+
+// 6. สั่งพิมพ์จริง (Render + Footer)
+function executePrint004() {
+    const printerName = document.getElementById('selectedPrinterName').value || '-';
+    const printerPos = document.getElementById('selectedPrinterPosition').value || '-';
+    
+    // สร้างวันที่ไทย
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }); // 19/01/2569
+    const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    const printDate = `${dateStr} เวลา ${timeStr} น.`;
+
+    // เตรียมข้อมูล Footer
+    const footerData = {
+        name: printerName,
+        position: printerPos,
+        date: printDate
+    };
+
+    // Render หน้า 1 และ 2 ใหม่โดยส่ง Footer Data ไปด้วย
+    // สมมติว่ามี div id="printArea" สำหรับพิมพ์
+    const printArea = document.getElementById('printArea'); // หรือ ID ที่ท่านใช้แสดงผลตอนพิมพ์
+    if(!printArea) return;
+
+    printArea.innerHTML = ''; // เคลียร์ของเก่า
+    
+    // สร้าง Container หน้า 1
+    const page1 = document.createElement('div');
+    page1.className = 'page-break'; // class สำหรับขึ้นหน้าใหม่ตอนพิมพ์
+    renderForm004Page1(page1, { data: currentFormData, footer: footerData }); // *ส่ง footer ไปด้วย*
+    printArea.appendChild(page1);
+
+    // สร้าง Container หน้า 2
+    const page2 = document.createElement('div');
+    page2.className = 'page-break';
+    renderForm004Page2(page2, { data: currentFormData, footer: footerData }); // *ส่ง footer ไปด้วย*
+    printArea.appendChild(page2);
+
+    closePrintModal();
+    window.print();
+}
 // =================================================================
 // 1. ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
 // =================================================================
@@ -4966,14 +5064,23 @@ async function handleForm004Print(an, preloadedData) {
 }
 
 // =================================================================
-// PAGE 1 RENDERER (Font 16/12px, Add Hearing, Full Layout)
+// PAGE 1 RENDERER (Font 16/12px, Add Hearing, Full Layout with Flexbox Footer)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
     const d = options.data || {};
-    const p = currentPatientData || {}; 
+    const p = currentPatientData || {};
+    const f = options.footer; // รับค่า Footer สำหรับการพิมพ์
 
-    const dateText = formatDateThai(d.AdmitDate);
-    const timeText = formatTime(d.AdmitTime);
+    // --- Helpers ---
+    // ตรวจสอบว่าฟังก์ชัน Global มีหรือไม่ ถ้าไม่มีให้ใช้ fallback
+    const formatDate = (date) => (typeof formatDateThai === 'function') ? formatDateThai(date) : (date || '');
+    const formatT = (time) => (typeof formatTime === 'function') ? formatTime(time) : (time || '');
+
+    const dateText = formatDate(d.AdmitDate);
+    const timeText = formatT(d.AdmitTime);
+
+    // Helper: สร้างจุดไข่ปลา (dot)
+    const dot = (val, w) => `<span class="border-b border-black border-dotted inline-block text-center whitespace-nowrap overflow-hidden text-blue-900 font-bold px-1" style="min-width: ${w};">${val || '&nbsp;'}</span>`;
 
     const formatDateFull = (dateStr) => {
         if (!dateStr) return ".........................";
@@ -4993,7 +5100,6 @@ function renderForm004Page1(container, options = {}) {
         return '';
     };
 
-    // Helper Checkbox
     const boxCheck = (val, target) => {
         let isChecked = false;
         if (val) {
@@ -5011,16 +5117,30 @@ function renderForm004Page1(container, options = {}) {
         return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${boxCheck(val, target)} ${label}</span>`;
     };
 
-    let html = `
-    <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
-       
-       <div class="w-[15%]"></div>
+    // --- Footer HTML ---
+    let footerHtml = '';
+    if (f) {
+        footerHtml = `
+        <div class="mt-auto pt-2 border-t border-gray-400 text-[10px] flex justify-between font-sarabun text-gray-600">
+            <div>
+                <div>ผู้พิมพ์ : ${f.name} ${f.position}</div>
+                <div>วันที่พิมพ์ : ${f.date}</div>
+            </div>
+            <div class="text-right">
+                <div>โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>`;
+    }
 
+    // --- Main Content HTML ---
+    let contentHtml = `
+    <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
+       <div class="w-[15%]"></div>
        <div class="text-center w-[70%]">
           <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
-
        <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
           <div class="font-bold text-[12px]">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
@@ -5180,10 +5300,8 @@ function renderForm004Page1(container, options = {}) {
                 </tr>
                 ${['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'].map((act, i) => {
                     const label = ['รับประทานอาหาร', 'ทำความสะอาดปาก/ฟัน', 'การแต่งตัว', 'การเดิน', 'การขับถ่าย', 'การอาบน้ำ'][i];
-                    
                     const b = d.ADL?.[`${act}_Before`];
                     const c = d.ADL?.[`${act}_Current`];
-
                     return `
                     <tr>
                         <td class="border border-black text-left pl-2">${label}</td>
@@ -5255,22 +5373,28 @@ function renderForm004Page1(container, options = {}) {
         </div>
 
     </div>
-    
-    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 1 -</div>
     `;
 
-    container.innerHTML = html;
+    // Final Assembly with Flexbox for Footer
+    container.innerHTML = `
+        <div class="flex flex-col justify-between h-full">
+            <div>${contentHtml}</div>
+            <div>
+                ${footerHtml}
+                <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 1 -</div>
+            </div>
+        </div>
+    `;
 }
 
 // =================================================================
-// PAGE 2 RENDERER (Fixed: getBScore error & Full Layout)
+// PAGE 2 RENDERER (Fixed: getBScore error & Full Layout with Flexbox Footer)
 // =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = options.data || {};
-    
+    const f = options.footer; // รับค่า Footer
+
     // --- Helper Functions ---
-    
-    // 1. Checkbox Helper
     const boxCheck = (val, target) => {
         let isChecked = false;
         if (val) {
@@ -5286,15 +5410,12 @@ function renderForm004Page2(container, options = {}) {
     const chk = (val, target, label) => `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${boxCheck(val, target)} ${label}</span>`;
     const dot = (val, w) => `<span class="border-b border-black border-dotted inline-block text-center whitespace-nowrap overflow-hidden text-blue-900 font-bold px-1" style="min-width: ${w};">${val || '&nbsp;'}</span>`;
 
-    // 2. Braden Score Helper (** แก้ไขจุดที่ Error **)
     const getBScore = (val) => parseInt(val, 10) || 0;
 
-    // คำนวณคะแนนรวม Braden
     const totalBraden = getBScore(d.Braden_Sensory) + getBScore(d.Braden_Moisture) + 
                         getBScore(d.Braden_Activity) + getBScore(d.Braden_Mobility) + 
                         getBScore(d.Braden_Nutrition) + getBScore(d.Braden_Friction);
     
-    // 3. Risk Check Helper
     const isRisk = (score, min, max) => {
         if (score === 0) return false;
         if (max === null) return score >= min;
@@ -5302,7 +5423,24 @@ function renderForm004Page2(container, options = {}) {
     };
     const chkRisk = (condition) => `[ <span class="font-bold">${condition ? '/' : '&nbsp;'}</span> ]`;
 
-    let html = `
+    // --- Footer HTML ---
+    let footerHtml = '';
+    if (f) {
+        footerHtml = `
+        <div class="mt-4 pt-2 border-t border-gray-400 text-[10px] flex justify-between font-sarabun text-gray-600">
+            <div>
+                <div>ผู้พิมพ์ : ${f.name} ${f.position}</div>
+                <div>วันที่พิมพ์ : ${f.date}</div>
+            </div>
+            <div class="text-right">
+                <div>โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>`;
+    }
+
+    // --- Main Content HTML ---
+    let contentHtml = `
     <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
        <div class="w-[15%]"></div>
        <div class="text-center w-[70%]">
@@ -5505,13 +5643,19 @@ function renderForm004Page2(container, options = {}) {
             <span class="mx-2 border-b border-black border-dotted min-w-[150px] text-center">${d.Assessor_Position || '&nbsp;'}</span>
         </div>
     </div>
-    
-    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 2 -</div>
     `;
 
-    container.innerHTML = html;
+    // Final Assembly with Flexbox for Footer
+    container.innerHTML = `
+        <div class="flex flex-col justify-between h-full">
+            <div>${contentHtml}</div>
+            <div>
+                ${footerHtml}
+                <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 2 -</div>
+            </div>
+        </div>
+    `;
 }
-
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
