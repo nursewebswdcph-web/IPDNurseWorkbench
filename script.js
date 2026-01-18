@@ -5059,19 +5059,6 @@ function renderForm004Page1(container, options = {}) {
                 <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ขับถ่ายทางหน้าท้อง: ${chk(d.Elim_Stoma, 'ไม่มี', 'ไม่มี')} ${chk(d.Elim_Stoma, 'มี', 'มี')}</div>
             </div>
         </div>
-
-            <div class="p-1">
-                <div class="font-bold underline mb-1">3) การขับถ่าย</div>
-                <div class="space-y-1">
-                    <div class="flex items-end">ปัสสาวะ ${dot(d.Elim_Urine_Freq, "20px")} ครั้ง/วัน</div>
-                    <div class="flex flex-wrap">${chk(d.Elim_Urine_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Urine_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Urine_Detail, "30px")}</div>
-                    <div class="flex items-end mt-2">อุจจาระ ${dot(d.Elim_Bowel_Freq, "20px")} ครั้ง/วัน</div>
-                    <div class="flex flex-wrap">${chk(d.Elim_Bowel_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Bowel_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Bowel_Detail, "30px")}</div>
-                    <div class="flex flex-wrap items-end mt-2">การขับถ่ายทางหน้าท้อง: ${chk(d.Elim_Stoma, 'ไม่มี', 'ไม่มี')} ${chk(d.Elim_Stoma, 'มี', 'มี')}</div>
-                </div>
-            </div>
-        </div>
-
         <div class="border border-black border-t-0 p-1">
             <div class="font-bold mb-0.5">4) กิจวัตรประจำวัน</div>
             <table class="w-full border-collapse border border-black text-center text-[11px]">
