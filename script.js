@@ -4348,19 +4348,26 @@ function getSystemFooter(currentUser) {
     </div>`;
 }
 
-// === PAGE 1: Admission & Part 1 (แก้ไขส่วนหัวตามที่ระบุล่าสุด) ===
+// === PAGE 1: Admission & Part 1 (แก้ไข: วันที่เต็ม, เส้นประไม่ล้น, วันที่ตารางแนวนอน, คงข้อความเดิม) ===
 function renderBradenPage1(container, data, options = {}) {
     const wardName = currentPatientData.Ward || "........................";
-    const admitDate = data.AdmitDate_Braden ? new Date(data.AdmitDate_Braden).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "..................";
-    const firstAssessDate = data.FirstAssessDate ? new Date(data.FirstAssessDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "..................";
-    const transferDate = data.TransferDate ? new Date(data.TransferDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "..................";
+    
+    // Helper แปลงวันที่เป็น พ.ศ. เต็ม (4 หลัก)
+    const formatDateFull = (dateStr) => {
+        if (!dateStr) return "";
+        return new Date(dateStr).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+    };
+
+    const admitDate = formatDateFull(data.AdmitDate_Braden);
+    const firstAssessDate = formatDateFull(data.FirstAssessDate);
+    const transferDate = formatDateFull(data.TransferDate);
     
     // Checkbox Logic
     const isNoPU = (data.PressureUlcer_Adm_Status === 'ไม่มี') ? '✓' : '&nbsp;';
     const isHasPU = (data.PressureUlcer_Adm_Status === 'มี') ? '✓' : '&nbsp;';
 
-    // Helper สำหรับสร้างเส้นประรองรับข้อมูล
-    const dotted = (text, minW = "50px") => `<span class="border-b border-black border-dotted px-2 inline-block text-center font-bold text-blue-900" style="min-width:${minW}; width: auto; flex-grow: 1;">${text || "&nbsp;"}</span>`;
+    // Helper สำหรับสร้างเส้นประ (ปรับปรุงไม่ให้ล้นกรอบ)
+    const dotted = (text, minW = "50px") => `<span class="border-b border-black border-dotted px-1 inline-block text-center font-bold text-blue-900 whitespace-nowrap overflow-hidden" style="min-width:${minW}; flex-grow: 1;">${text || "&nbsp;"}</span>`;
 
     let html = `
     <div class="text-center mb-2">
@@ -4378,19 +4385,19 @@ function renderBradenPage1(container, data, options = {}) {
 
     <div class="text-[11px] leading-loose mb-4 border border-black p-2 font-sarabun text-black">
         
-        <div class="flex justify-between items-end whitespace-nowrap gap-2">
-            <div class="flex items-end">วันที่ Admit: ${dotted(admitDate, "80px")}</div>
-            <div class="flex items-end">วันที่รับย้าย: ${dotted(transferDate, "80px")}</div>
-            <div class="flex items-end flex-grow">จาก Ward: ${dotted(data.FromWard, "100px")}</div>
-            <div class="flex items-end">วันที่ประเมินครั้งแรก: ${dotted(firstAssessDate, "80px")}</div>
+        <div class="flex items-end gap-2 w-full">
+            <div class="flex items-end whitespace-nowrap">วันที่ Admit: ${dotted(admitDate, "70px")}</div>
+            <div class="flex items-end whitespace-nowrap">วันที่รับย้าย: ${dotted(transferDate, "70px")}</div>
+            <div class="flex items-end flex-grow min-w-0 whitespace-nowrap">จาก Ward: ${dotted(data.FromWard, "50px")}</div>
+            <div class="flex items-end whitespace-nowrap">วันที่ประเมินครั้งแรก: ${dotted(firstAssessDate, "70px")}</div>
         </div>
 
         <div class="flex mt-1 items-end w-full">
             <span class="whitespace-nowrap mr-1">Diagnosis/Operation:</span>
-            <div class="border-b border-black border-dotted px-2 w-full text-blue-900 font-bold relative top-1">${data.Dx_Op || currentPatientData.AdmittingDx || "&nbsp;"}</div>
+            <div class="border-b border-black border-dotted px-2 w-full text-blue-900 font-bold relative top-1 whitespace-nowrap overflow-hidden">${data.Dx_Op || currentPatientData.AdmittingDx || "&nbsp;"}</div>
         </div>
 
-        <div class="flex items-center gap-2 mt-1 whitespace-nowrap">
+        <div class="flex items-center gap-2 mt-1 whitespace-nowrap w-full">
             <span class="font-bold">แผลกดทับแรกรับ:</span>
             
             <div class="flex items-center gap-1 border border-black px-1" style="height: 18px;">
@@ -4401,17 +4408,17 @@ function renderBradenPage1(container, data, options = {}) {
                 <div class="w-3 h-3 border border-black text-[8px] flex items-center justify-center leading-none">${isHasPU}</div> มี
             </div>
 
-            <div class="flex items-end flex-grow ml-2">
+            <div class="flex items-end flex-grow min-w-0 ml-2">
                 <span class="mr-1">ตำแหน่ง/ลักษณะ/ขนาด:</span>
-                ${dotted(data.PressureUlcer_Adm_Detail, "100%")}
+                ${dotted(data.PressureUlcer_Adm_Detail, "10px")}
             </div>
         </div>
 
-        <div class="flex justify-between mt-1 items-end whitespace-nowrap gap-4">
-            <div class="flex items-end">Serum Albumin ${dotted(data.Albumin, "40px")} mg/dL (3.5-5.4)</div>
-            <div class="flex items-end">Hb = ${dotted(data.Hb, "40px")} mg%</div>
-            <div class="flex items-end">Hct = ${dotted(data.Hct, "40px")} Vol%</div>
-            <div class="flex items-end">BMI = ${dotted(data.BMI, "40px")}</div>
+        <div class="flex justify-between mt-1 items-end whitespace-nowrap gap-2">
+            <div class="flex items-end">Serum Albumin ${dotted(data.Albumin, "30px")} mg/dL (3.5-5.4)</div>
+            <div class="flex items-end">Hb = ${dotted(data.Hb, "30px")} mg%</div>
+            <div class="flex items-end">Hct = ${dotted(data.Hct, "30px")} Vol%</div>
+            <div class="flex items-end">BMI = ${dotted(data.BMI, "30px")}</div>
         </div>
 
     </div>
@@ -4426,21 +4433,22 @@ function renderBradenPage1(container, data, options = {}) {
             </tr>
             <tr>`;
             
-            // Loop Date Headers
+            // Loop Date Headers (แก้ไข: แนวนอน)
             for(let i=1; i<=10; i++) {
+                // แสดงเฉพาะ วัน/เดือน เพื่อประหยัดพื้นที่ในช่องเล็กๆ
                 let d = data[`Date_${i}`] ? new Date(data[`Date_${i}`]).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit'}) : "";
-                html += `<th class="border border-black p-1 w-[25px] h-10 align-bottom"><div class="transform -rotate-90 origin-bottom-left translate-x-2">${d}</div></th>`;
+                html += `<th class="border border-black p-0.5 w-[25px] align-bottom text-[8px] font-bold">${d}</th>`;
             }
     html += `</tr></thead><tbody>`;
 
     // Criteria Rows
     const criteria = [
         { name: "1. การรับความรู้สึก", items: ["1.1 ไม่ตอบสนอง (1)", "1.2 มี Pain Stimuli (2)", "1.3 สับสน สื่อไม่ได้ทุกครั้ง (3)", "1.4 ไม่มีความบกพร่อง ปกติ (4)"], id: "Sensory" },
-        { name: "2. การเปียกชื้นของผิวหนัง", items: ["2.1 เปียกชุ่มตลอดเวลา (1)", "2.2 ปัสสาวะ/อุจจาระราดบ่อย (2)", "2.3 ราดบางครั้ง (3)", "2.4 ไม่เปียก/Retain Cath (4)"], id: "Moisture" },
-        { name: "3. การทำกิจกรรม", items: ["3.1 อยู่บนเตียงตลอด (1)", "3.2 นั่งรถเข็น (2)", "3.3 เดินได้ระยะสั้น (3)", "3.4 เดินได้เอง (4)"], id: "Activity" },
-        { name: "4. การเคลื่อนไหว", items: ["4.1 เคลื่อนไหวเองไม่ได้ (1)", "4.2 เคลื่อนไหวได้น้อย (2)", "4.3 เคลื่อนไหวได้บ้าง (3)", "4.4 ปกติ (4)"], id: "Mobility" },
-        { name: "5. การรับอาหาร", items: ["5.1 NPO / <1/3 ถาด (1)", "5.2 ได้บ้าง / 1/2 ถาด (2)", "5.3 พอควร / >1/2 ถาด (3)", "5.4 ปกติ (4)"], id: "Nutrition" },
-        { name: "6. การเสียดสี", items: ["6.1 มีปัญหา (1)", "6.2 เสี่ยง (2)", "6.3 ไม่มีปัญหา (3)"], id: "Friction" }
+        { name: "2. การเปียกชื้นของผิวหนัง", items: ["2.1 เปียกชุ่มตลอดเวลา (1)", "2.2 ปัสสาวะ/อุจจาระราดบ่อยครั้ง (2)", "2.3 ปัสสาวะราด / อุจจาระราดบางครั้ง (3)", "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้/Retain Cath (4)"], id: "Moisture" },
+        { name: "3. การทำกิจกรรม", items: ["3.1 ต้องอยู่บนเตียงตลอดเวลา (1)", "3.2 ทรงตัวไม่อยู่ / ต้องนั่งรถเข็น  (2)", "3.3 เดินได้ระยะสั้น ต้องช่วยพยุง  (3)", "3.4 เดินได้เอง / ทำกิจกรรมเองได้ (4)"], id: "Activity" },
+        { name: "4. การเคลื่อนไหว", items: ["4.1 เคลื่อนไหวเองไม่ได้ (1)", "4.2 เคลื่อนไหวเองได้น้อย / มีข้อติด / ต้องมีผู้ช่วยเหลือ (2)", "4.3  เคลื่อนไหวเองได้ มีผู้ช่วยเหลือบางครั้ง (3)", "4.4 คลื่อนไหวเองได้ปกติ (4)"], id: "Mobility" },
+        { name: "5. การรับอาหาร", items: ["5.1 NPO / กินได้ 1/3 ถาด (1)", "5.2 รับประทานอาหารได้บ้างเล็กน้อย / กินได้ 1/2 ถาด (2)", "5.3 รับประทานอาหารได้พอควร / กินได้>1/2 ถาด (3)", "5.4 รับประทานอาหารได้ปกติ/ Feed รับได้หมด (4)"], id: "Nutrition" },
+        { name: "6. การเสียดสี", items: ["6.1 มีกล้ามเนื้อหดเกร็ง ต้องมีผู้ช่วยหลายคนในการเคลื่อนย้าย (1)", "6.2 เวลานั่งลื่นไถลได้ / ใช้ผู้ช่วยน้อยคนในการเคลื่อนย้าย (2)", "6.3 เคลื่อนย้ายบนตียงได้อย่างอิสระ ไม่มีปัญหาการเสียดสี (3)"], id: "Friction" }
     ];
 
     criteria.forEach(c => {
@@ -4487,7 +4495,7 @@ function renderBradenPage1(container, data, options = {}) {
     }
     html += `</tr></tbody></table>`;
 
-    // Footer Notes
+    // Footer Notes (คงข้อความเดิมตามที่ระบุ)
     html += `
     <div class="mt-2 text-[9px] text-gray-700">
         <div class="mb-1"><b>หมายเหตุ:</b> คะแนน ≤ 16 ถือเป็นกลุ่มเสี่ยงต่อการเกิดแผลกดทับสูง , คะแนน ≥ 16 ถือเป็นกลุ่มเสี่ยงต่อการเกิดแผลกดทับต่ำ, กรณีคะแนนน้อยกว่า 16 ให้ประเมินใหม่ทุก 3-5 วัน </div>
