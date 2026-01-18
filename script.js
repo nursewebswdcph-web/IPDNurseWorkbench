@@ -4944,12 +4944,12 @@ function renderForm004Page1(container, options = {}) {
             ${chk(d.ArriveBy, 'เดินมา', 'เดินมา')}
             ${chk(d.ArriveBy, 'รถนั่ง', 'รถนั่ง')}
             ${chk(d.ArriveBy, 'เปลนอน', 'เปลนอน')}
-        </div>
-        
-        <div class="flex flex-wrap items-end gap-3 mb-1">
             <span class="font-bold">ผู้ให้ข้อมูล :</span>
             ${chk(d.InfoSource, 'ผู้ป่วย', 'ผู้ป่วย')}
             ${chk(d.InfoSource, 'ผู้นำส่ง/ญาติ', 'ผู้นำส่ง/ญาติ')}
+        </div>
+        
+        <div class="flex flex-wrap items-end gap-3 mb-1">
             <span class="font-bold ml-6 mr-1">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver_Name, "200px")}
             <span class="font-bold ml-2 mr-1">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.MainCaregiver_Rel, "120px")}
         </div>
