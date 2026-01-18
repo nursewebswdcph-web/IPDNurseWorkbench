@@ -4741,14 +4741,16 @@ async function handleForm004Print() {
 }
 
 // =================================================================
-// PAGE 1 RENDERER (ข้อมูลแรกรับ + ข้อ 1-6)
+// PAGE 1 RENDERER (แก้ไข: แก้ชื่อตัวแปรเวลาให้ถูกต้อง)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
     const d = currentPatientData;
     // วันที่ Admit: ถ้าไม่มีใน assessment ให้ใช้จาก profile
     const admitDateStr = d.AdmitDate || d.AdmitDate_Braden; 
+    
+    // แปลงวันและเวลา
     const dateText = formatDateThai(admitDateStr);
-    const timeText = formatTime(admitDateStr);
+    const timeText = formatTime(admitDateStr); // ประกาศตัวแปรชื่อ timeText
 
     let html = `
     <div class="flex justify-between items-start mb-2 border-b-2 border-black pb-2 font-sarabun text-black">
@@ -4769,7 +4771,7 @@ function renderForm004Page1(container, options = {}) {
         
         <div class="flex flex-wrap items-end gap-1 mb-1">
             <span>วันที่</span> ${dot(dateText, "100px")}
-            <span>เวลา</span> ${dot(timeStr, "60px")} <span>น.</span>
+            <span>เวลา</span> ${dot(timeText, "60px")} <span>น.</span>
             <span class="ml-2">รับจาก</span> ${dot(d.AdmitFrom, "180px")}
             <span class="ml-2">รับ REFER จาก</span> ${dot(d.ReferFrom, "180px")}
         </div>
