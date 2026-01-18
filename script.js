@@ -4603,23 +4603,30 @@ function renderBradenPage2(container, data, options = {}) {
     container.innerHTML = html;
 }
 // =================================================================
-// FR-IPD-004 PRINT SYSTEM (REVISED: 100% PDF MATCH & REAL DATA)
+// FR-IPD-004 PRINT SYSTEM (FIXED: FETCH FRESH DATA & CHECKBOX LOGIC)
 // =================================================================
 
 // --- Helper Functions ---
 const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.4em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
 
-// Checkbox แบบ [ / ] ตามแบบฟอร์ม
 const box = (isChecked) => `<span class="inline-block font-sarabun text-[12px] font-bold mr-1">[ ${isChecked ? '/' : '&nbsp;'} ]</span>`;
 
-const chkGroup = (valArray, target, label) => {
+// (แก้ไข) ปรับปรุงฟังก์ชันตรวจสอบค่า Checkbox ให้รองรับข้อมูล String ที่มาจาก Sheet (เช่น "A,B,C")
+const chkGroup = (val, target, label) => {
     let isChecked = false;
-    if (Array.isArray(valArray)) isChecked = valArray.includes(target);
-    else if (typeof valArray === 'string') isChecked = valArray === target;
+    if (val) {
+        if (Array.isArray(val)) {
+            // กรณีเป็น Array (ข้อมูลยังไม่ถูกแปลง)
+            isChecked = val.includes(target);
+        } else if (typeof val === 'string') {
+            // กรณีเป็น String (ข้อมูลจาก Sheet) ให้แยกด้วย comma
+            const values = val.split(',').map(s => s.trim());
+            isChecked = values.includes(target);
+        }
+    }
     return `<span class="inline-flex items-center mr-2">${box(isChecked)} ${label}</span>`;
 };
 
-// แปลงวันที่เป็น พ.ศ. 4 หลัก (เช่น 2569)
 const formatDateThai = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
@@ -4634,52 +4641,76 @@ const formatTime = (dateStr) => {
     return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 };
 
-// --- 1. Main Entry Point ---
+// --- 1. Main Entry Point (แก้ไข: โหลดข้อมูลใหม่ก่อนแสดงผล) ---
 async function renderForm004PrintMode(an) {
     chartPreviewContent.innerHTML = "";
     
-    // Controls
-    const controlDiv = document.createElement('div');
-    controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
-    controlDiv.innerHTML = `
-        <div class="font-bold text-gray-700">มุมมองแบบพิมพ์ (FR-IPD-004)</div>
-        <div class="flex gap-2">
-            <button id="btn-print-004-action" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
-            <i class="fas fa-print"></i> พิมพ์เอกสาร
-            </button>
-        </div>`;
-    chartPreviewContent.appendChild(controlDiv);
+    // แสดง Loading ระหว่างรอข้อมูล
+    showLoading("กำลังโหลดข้อมูลล่าสุด...");
 
-    // Scrollable Preview Container
-    const previewContainer = document.createElement('div');
-    previewContainer.className = "overflow-y-auto bg-gray-300 p-4 print:p-0 flex flex-col items-center gap-4";
-    previewContainer.style.maxHeight = "calc(100vh - 200px)";
-    chartPreviewContent.appendChild(previewContainer);
+    try {
+        // 1. ดึงข้อมูลล่าสุดจาก Server (Assessment + Patient Info)
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
+        const result = await response.json();
+        
+        if (!result.success) throw new Error("โหลดข้อมูลไม่สำเร็จ");
+        
+        const freshData = result.data || {}; // ข้อมูลสดใหม่
+        
+        Swal.close(); // ปิด Loading
 
-    // Render Preview Pages
-    const p1 = document.createElement('div');
-    p1.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
-    p1.style.width = "210mm";
-    p1.style.minHeight = "297mm";
-    p1.style.padding = "10mm 10mm";
-    renderForm004Page1(p1, { isPreview: true });
-    previewContainer.appendChild(p1);
+        // 2. สร้าง Controls
+        const controlDiv = document.createElement('div');
+        controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+        controlDiv.innerHTML = `
+            <div class="font-bold text-gray-700">มุมมองแบบพิมพ์ (FR-IPD-004)</div>
+            <div class="flex gap-2">
+                <button id="btn-print-004-action" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+                <i class="fas fa-print"></i> พิมพ์เอกสาร
+                </button>
+            </div>`;
+        chartPreviewContent.appendChild(controlDiv);
 
-    const p2 = document.createElement('div');
-    p2.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
-    p2.style.width = "210mm";
-    p2.style.minHeight = "297mm";
-    p2.style.padding = "10mm 10mm";
-    renderForm004Page2(p2, { isPreview: true });
-    previewContainer.appendChild(p2);
+        // 3. Container
+        const previewContainer = document.createElement('div');
+        previewContainer.className = "overflow-y-auto bg-gray-300 p-4 print:p-0 flex flex-col items-center gap-4";
+        previewContainer.style.maxHeight = "calc(100vh - 200px)";
+        chartPreviewContent.appendChild(previewContainer);
 
-    // Bind Print Button
-    document.getElementById("btn-print-004-action").addEventListener("click", handleForm004Print);
-    Swal.close();
+        // 4. Render Pages โดยส่ง freshData เข้าไป
+        const p1 = document.createElement('div');
+        p1.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
+        p1.style.width = "210mm";
+        p1.style.minHeight = "297mm";
+        p1.style.padding = "10mm 10mm";
+        renderForm004Page1(p1, { data: freshData, isPreview: true });
+        previewContainer.appendChild(p1);
+
+        const p2 = document.createElement('div');
+        p2.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
+        p2.style.width = "210mm";
+        p2.style.minHeight = "297mm";
+        p2.style.padding = "10mm 10mm";
+        renderForm004Page2(p2, { data: freshData, isPreview: true });
+        previewContainer.appendChild(p2);
+
+        // Bind Print Button
+        // ใช้ Arrow function เพื่อส่ง freshData ต่อไปยังฟังก์ชัน print
+        document.getElementById("btn-print-004-action").addEventListener("click", () => handleForm004Print(an, freshData));
+
+    } catch (error) {
+        Swal.close();
+        showError("เกิดข้อผิดพลาด", error.message);
+    }
 }
 
-// --- 2. Print Handler ---
-async function handleForm004Print() {
+// --- 2. Print Handler (แก้ไข: รับ Data มาพิมพ์) ---
+async function handleForm004Print(an, dataToPrint) {
+    // ถ้าไม่มี data ส่งมา (กรณีเรียกใช้ที่อื่น) ให้โหลดใหม่
+    if (!dataToPrint) {
+        // ... logic โหลดซ้ำถ้าจำเป็น ...
+    }
+
     if (globalStaffList.length === 0) await refreshStaffDatalists();
     let staffOptions = '';
     globalStaffList.forEach(s => { staffOptions += `<option value="${s.fullName}">`; });
@@ -4719,13 +4750,13 @@ async function handleForm004Print() {
 
     showLoading("กำลังเตรียมเอกสาร...");
 
-    // Render Real Print Pages
+    // Render Real Print Pages Using dataToPrint
     const p1 = document.createElement('div');
     p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
     p1.style.width = "210mm";
     p1.style.height = "297mm";
     p1.style.padding = "10mm 10mm";
-    renderForm004Page1(p1, { customUser: formValues.user });
+    renderForm004Page1(p1, { data: dataToPrint, customUser: formValues.user });
     printArea.appendChild(p1);
 
     const p2 = document.createElement('div');
@@ -4733,7 +4764,7 @@ async function handleForm004Print() {
     p2.style.width = "210mm";
     p2.style.height = "297mm";
     p2.style.padding = "10mm 10mm";
-    renderForm004Page2(p2, { customUser: formValues.user });
+    renderForm004Page2(p2, { data: dataToPrint, customUser: formValues.user });
     printArea.appendChild(p2);
 
     Swal.close();
@@ -4741,16 +4772,14 @@ async function handleForm004Print() {
 }
 
 // =================================================================
-// PAGE 1 RENDERER (แก้ไข: แก้ชื่อตัวแปรเวลาให้ถูกต้อง)
+// PAGE 1 RENDERER (แก้ไข: ใช้ data จาก options)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
-    const d = currentPatientData;
-    // วันที่ Admit: ถ้าไม่มีใน assessment ให้ใช้จาก profile
-    const admitDateStr = d.AdmitDate || d.AdmitDate_Braden; 
+    const d = options.data || {}; // ใช้ข้อมูลที่ส่งเข้ามา (ถ้าไม่มีให้ว่างไว้)
     
-    // แปลงวันและเวลา
+    const admitDateStr = d.AdmitDate || d.AdmitDate_Braden; 
     const dateText = formatDateThai(admitDateStr);
-    const timeText = formatTime(admitDateStr); // ประกาศตัวแปรชื่อ timeText
+    const timeText = formatTime(admitDateStr);
 
     let html = `
     <div class="flex justify-between items-start mb-2 border-b-2 border-black pb-2 font-sarabun text-black">
@@ -5027,17 +5056,17 @@ function renderForm004Page1(container, options = {}) {
 
         </div>
     </div>
-    <div class="text-right text-[10px] mt-1 font-sarabun text-black font-bold">- 1 -</div>
+    <div class="text-right text-[10px] mt-1 font-bold font-sarabun text-black">- 1 -</div>
     `;
 
     container.innerHTML = html;
 }
 
 // =================================================================
-// PAGE 2 RENDERER (ข้อ 7-15 + Footer)
+// PAGE 2 RENDERER (แก้ไข: ใช้ data จาก options)
 // =================================================================
 function renderForm004Page2(container, options = {}) {
-    const d = currentPatientData;
+    const d = options.data || {};
     const currentUser = options.customUser || "(เจ้าหน้าที่)";
     const printDate = formatDateThai(new Date().toISOString());
     const printTime = formatTime(new Date().toISOString());
