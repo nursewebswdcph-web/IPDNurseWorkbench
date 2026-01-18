@@ -4914,8 +4914,8 @@ function renderForm004Page1(container, options = {}) {
             <span class="font-bold">ผู้ให้ข้อมูล :</span>
             ${chkGroup(d.InfoSource, 'Patient', 'ผู้ป่วย')}
             ${chkGroup(d.InfoSource, 'Relative', 'ผู้นำส่ง/ญาติ')}
-            <span class="font-bold ml-6 mr-1">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver_Name, "200px")}
-            <span class="font-bold ml-2 mr-1">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.MainCaregiver_Rel, "120px")}
+            <span class="font-bold ml-6 mr-1">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver_Name, "100px")}
+            <span class="font-bold ml-2 mr-1">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.MainCaregiver_Rel, "90px")}
         </div>
 
         <div class="border border-black p-1.5 mb-1 space-y-1">
