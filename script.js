@@ -3424,77 +3424,165 @@ async function renderClassifyPrintMode(an) {
   }
 }
 
-// ฟังก์ชันจัดการการพิมพ์ (สร้างทุกหน้าที่มีข้อมูล)
-function handleClassifyPrint() {
+// ฟังก์ชันจัดการการพิมพ์ (พร้อม Pop-up ตั้งค่าก่อนพิมพ์)
+async function handleClassifyPrint() {
+    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง ถ้าไม่มีให้โหลด
+    if (globalStaffList.length === 0) {
+        await refreshStaffDatalists();
+    }
+
+    // 2. สร้างตัวเลือกสำหรับ Datalist ใน HTML string
+    let staffOptions = '';
+    globalStaffList.forEach(s => {
+        staffOptions += `<option value="${s.fullName}">`;
+    });
+
+    // 3. แสดง Pop-up ตั้งค่าการพิมพ์
+    const { value: formValues, isDismissed } = await Swal.fire({
+        title: 'ตั้งค่าการพิมพ์เอกสาร',
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-2">ต้องการลงวันที่จำหน่ายหรือไม่?</label>
+                    <div class="flex items-center gap-4 mb-2">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="print_discharge_opt" value="no" class="mr-2" checked onchange="toggleDischargeDate(false)">
+                            ไม่ลงวันที่ (เว้นว่างไว้เขียนเอง)
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="print_discharge_opt" value="yes" class="mr-2" onchange="toggleDischargeDate(true)">
+                            ลงวันที่จำหน่าย
+                        </label>
+                    </div>
+                    <input type="date" id="print_discharge_date" class="w-full p-2 border rounded hidden focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้ประเมิน (ที่จะปรากฏท้ายกระดาษ)</label>
+                    <input type="text" id="print_assessor_name" list="print_staff_list" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+                    <datalist id="print_staff_list">
+                        ${staffOptions}
+                    </datalist>
+                </div>
+            </div>
+            
+            <script>
+                // ฟังก์ชันเล็กๆ สำหรับซ่อน/แสดง Date Input ใน Swal
+                function toggleDischargeDate(show) {
+                    const el = document.getElementById('print_discharge_date');
+                    if(show) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+            <\/script>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'พิมพ์เอกสาร',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563EB', // สีฟ้า
+        preConfirm: () => {
+            const opt = document.querySelector('input[name="print_discharge_opt"]:checked').value;
+            const dateVal = document.getElementById('print_discharge_date').value;
+            const assessor = document.getElementById('print_assessor_name').value;
+
+            if (opt === 'yes' && !dateVal) {
+                Swal.showValidationMessage('กรุณาเลือกวันที่จำหน่าย');
+                return false;
+            }
+            if (!assessor) {
+                Swal.showValidationMessage('กรุณาระบุชื่อผู้ประเมิน');
+                return false;
+            }
+
+            return {
+                dischargeDate: opt === 'yes' ? dateVal : null, // ส่ง null ถ้าไม่เลือก
+                assessorName: assessor
+            };
+        }
+    });
+
+    if (isDismissed || !formValues) return; // กดยกเลิก
+
+    // --- เริ่มกระบวนการพิมพ์ ---
+    
     const printArea = document.getElementById("classify-print-area");
     if (!printArea) return;
     
     printArea.innerHTML = ""; // เคลียร์ของเก่า
 
-    // คำนวณจำนวนหน้าทั้งหมดที่ต้องพิมพ์
-    // หา Date ล่าสุดที่มีข้อมูล
+    // คำนวณจำนวนหน้า
     let maxPage = 1;
     if (allClassifyDataCache.length > 0) {
-        // แปลงวันที่ใน cache เป็น Date Object
         const dates = allClassifyDataCache.map(d => new Date(d.Date));
         const maxDate = new Date(Math.max.apply(null, dates));
         const admitDate = new Date(currentPatientData.AdmitDate);
-        
-        // คำนวณระยะห่างวัน
         const diffTime = Math.abs(maxDate - admitDate);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-        
-        // ทุก 5 วัน = 1 หน้า
         maxPage = Math.max(1, Math.ceil(diffDays / 5));
     }
 
-    // วนลูปสร้างหน้าทุกหน้า
+    // วนลูปสร้างหน้าทุกหน้า โดยส่งค่าที่รับจาก Pop-up ไปด้วย
     for (let p = 1; p <= maxPage; p++) {
         const pageContainer = document.createElement('div');
-        // กำหนด Style ให้เหมือนกระดาษ A4 และบังคับ Page Break
         pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
         pageContainer.style.width = "210mm";
-        pageContainer.style.height = "297mm"; // Fix Height ตอนพิมพ์
+        pageContainer.style.height = "297mm";
         pageContainer.style.padding = "10mm 15mm 25mm 15mm";
         pageContainer.style.pageBreakAfter = "always";
         
         printArea.appendChild(pageContainer);
         
-        // เรียกฟังก์ชัน Render ลงใน Container นี้
-        renderClassifySheetA4(p, pageContainer);
+        // เรียกฟังก์ชัน Render พร้อมส่ง option พิเศษ (วันที่กำหนดเอง, ชื่อผู้ประเมิน)
+        renderClassifySheetA4(p, pageContainer, { 
+            customDischargeDate: formValues.dischargeDate,
+            customAssessor: formValues.assessorName
+        });
     }
 
     // สั่งพิมพ์
     window.print();
-    
-    // ล้างข้อมูลหลังพิมพ์ (Optional) หรือปล่อยไว้ก็ได้เพราะ user มองไม่เห็น
-    // printArea.innerHTML = ""; 
 }
 
-// ฟังก์ชัน Render หน้ากระดาษ (ปรับปรุงให้รับ targetContainer ได้)
-function renderClassifySheetA4(page, targetContainer = null) {
-  // ถ้าไม่มี targetContainer ให้ใช้ตัว Default (หน้า Preview)
+// ฟังก์ชัน Render หน้ากระดาษ (ปรับปรุงให้รับ options เพิ่มเติม)
+function renderClassifySheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("classify-sheet-content");
   const pageNumSpan = document.getElementById("print-classify-page-num");
   const btnPrev = document.getElementById("btn-prev-classify-sheet");
   
   if(!container) return;
 
-  // 1. คำนวณวันที่เริ่มต้นของหน้านี้ (5 วันต่อหน้า)
+  // 1. คำนวณวันที่
   const admitDate = new Date(currentPatientData.AdmitDate); 
   const startDayOffset = (page - 1) * 5;
-  
-  // 2. เตรียมข้อความวันที่
   const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  
+  // --- [จุดแก้ไขที่ 1] จัดการวันที่จำหน่าย ---
   let dischargeDateStr = "........................";
-  if (currentPatientData.DischargeDate) {
+  
+  if (options.customDischargeDate) {
+      // กรณี 1: User เลือกวันที่จาก Pop-up Print
+      const d = new Date(options.customDischargeDate);
+      dischargeDateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  } else if (currentPatientData.DischargeDate) {
+      // กรณี 2: มีข้อมูลเดิมในระบบ
       dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
-  } else if (currentPatientData.Status === 'Discharged') {
-     dischargeDateStr = "........................";
   }
+  // กรณี 3: เป็นค่า default จุดไข่ปลา
 
-  // 3. ดึงชื่อตึก (Ward)
+  // --- [จุดแก้ไขที่ 2] จัดการชื่อผู้ประเมิน ---
+  // ถ้ามีค่าจาก Pop-up ให้ใช้ค่านั้น ถ้าไม่มีให้ใช้จุดไข่ปลา
+  const assessorDisplay = options.customAssessor 
+      ? `(${options.customAssessor})` 
+      : "(..................................................)";
+
   const wardName = currentPatientData.Ward || "........................"; 
+  
+  // เตรียมข้อมูล Footer
+  // *เมื่อมีระบบล็อกอิน แก้ไข currentUser ตรงนี้*
+  const currentUser = "(เจ้าหน้าที่)"; 
+  const now = new Date();
+  const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
 
   // =========================================================
   // ส่วนหัวกระดาษ (Header)
@@ -3520,7 +3608,7 @@ function renderClassifySheetA4(page, targetContainer = null) {
   `;
 
   // =========================================================
-  // ส่วนตาราง (Table Body)
+  // ส่วนตาราง (เหมือนเดิม)
   // =========================================================
   html += `
     <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
@@ -3529,7 +3617,6 @@ function renderClassifySheetA4(page, targetContainer = null) {
           <th rowspan="2" class="border border-black p-1 w-[160px] text-left align-middle font-bold">รายการประเมิน</th>
   `;
 
-  // Loop Header วันที่ (5 วัน)
   for (let i = 0; i < 5; i++) {
      const currDate = new Date(admitDate);
      currDate.setDate(admitDate.getDate() + startDayOffset + i);
@@ -3538,7 +3625,6 @@ function renderClassifySheetA4(page, targetContainer = null) {
   }
   html += `</tr><tr class="bg-gray-50">`;
   
-  // Loop Header เวร (ด/ช/บ)
   for (let i = 0; i < 5; i++) {
      html += `
        <th class="border border-black p-0.5 w-[20px]">ด</th>
@@ -3548,7 +3634,6 @@ function renderClassifySheetA4(page, targetContainer = null) {
   }
   html += `</tr></thead><tbody>`;
 
-  // กำหนดโครงสร้างแถว
   const tableStructure = [
     { type: 'header', text: 'I. สภาวะสุขภาพ' },
     { type: 'row', label: '1. สัญญาณชีพ', key: 'Score_1' },
@@ -3617,12 +3702,6 @@ function renderClassifySheetA4(page, targetContainer = null) {
   // =========================================================
   // ส่วนท้าย (Criteria & Footer)
   // =========================================================
-  
-  // เตรียมข้อมูลวันที่เวลาปัจจุบันสำหรับ Footer
-  const now = new Date();
-  const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
-  const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
-
   html += `
     <div class="mt-4 text-[10px] text-gray-700">
        <div class="mb-1 font-bold underline">เกณฑ์การแบ่งประเภท: (นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8)</div>
@@ -3635,7 +3714,7 @@ function renderClassifySheetA4(page, targetContainer = null) {
             <div><b>ประเภทที่ 5:</b> ผู้ป่วยหนักมาก/วิกฤต (คะแนน 27-32)</div>
           </div>
           <div class="space-y-0.5">
-             <div class="mt-2 text-right"><b>ชื่อผู้ประเมิน</b> (..................................................)</div>
+             <div class="mt-2 text-right"><b>ชื่อผู้ประเมิน</b> ${assessorDisplay}</div>
           </div>
        </div>
     </div>
@@ -3643,8 +3722,8 @@ function renderClassifySheetA4(page, targetContainer = null) {
     <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
         <div class="flex justify-between items-end">
             <div class="text-left leading-tight">
-                <div>ผู้พิมพ์ : (เจ้าหน้าที่)</div>
-                <div>พิมพ์จากเครื่อง : (ชื่อเครื่องคอมพิวเตอร์ที่ใช้งาน) วันที่ ${printDate} เวลา ${printTime} น.</div>
+                <div>ผู้พิมพ์ : ${currentUser}</div>
+                <div>วันที่พิมพ์ : ${printDate} เวลา ${printTime} น.</div>
             </div>
             <div class="text-right leading-tight">
                 <div class="font-bold">โปรแกรม IPD Nurse Workbench</div>
@@ -3656,7 +3735,6 @@ function renderClassifySheetA4(page, targetContainer = null) {
 
   container.innerHTML = html;
   
-  // Update เฉพาะถ้าเป็นหน้า Preview หลัก (ไม่ใช่หน้า Print จำลอง)
   if(!targetContainer) {
       if(pageNumSpan) pageNumSpan.textContent = page;
       if(btnPrev) btnPrev.disabled = (page <= 1);
