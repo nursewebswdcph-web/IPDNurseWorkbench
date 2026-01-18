@@ -4909,6 +4909,8 @@ function renderForm004Page1(container, options = {}) {
     };
 
     let html = `
+    <div class="flex justify-between items-start mb-1 border-b border-black pb-1 font-sarabun text-black">
+       
        <div class="text-center w-[70%] pt-1">
           <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
@@ -4919,7 +4921,7 @@ function renderForm004Page1(container, options = {}) {
        </div>
     </div>
 
-    <div class="text-black text-[12px]">
+    <div class="font-bold text-[12px]">
         <span>ชื่อ-สกุล: ${p.Name || '-'}</span>
         <span>HN: ${p.HN || '-'}</span>
         <span>AN: ${p.AN || d.AN || '-'}</span>
@@ -4983,13 +4985,13 @@ function renderForm004Page1(container, options = {}) {
             </div>
 
             <div class="grid grid-cols-1 gap-1 mt-1 border-t border-black pt-1">
-                <div class="flex items-end"><span class="font-bold w-32">การแพ้ยา/สารต่าง ๆ :</span> ${chk(d.Allergy_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Allergy_Status, 'เคย', 'เคย(ระบุ)')} ${dot(d.Allergy_Details, "80%")}</div>
+                <div class="flex items-end"><span class="font-bold w-32">การแพ้ยา/สารต่าง ๆ :</span> ${chk(d.Allergy_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Allergy_Status, 'เคย', 'เคย(ระบุ)')} ${dot(d.Allergy_Details, "70%")}</div>
                 
                 <div class="flex items-end"><span class="font-bold w-40">การรักษาตัวในโรงพยาบาล:</span> ${chk(d.AdmitHx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.AdmitHx_Status, 'เคย', 'เคย ด้วยโรค')} ${dot(d.AdmitHx_Disease, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.AdmitHx_Date), "80px")}</div>
                 
                 <div class="flex items-end"><span class="font-bold w-32">การผ่าตัด :</span> ${chk(d.Sx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Sx_Status, 'เคย', 'เคย ผ่าตัด')} ${dot(d.Sx_Details, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.Sx_Date), "80px")}</div>
                 
-                <div class="flex items-end"><span class="font-bold w-48">ประวัติการเจ็บป่วยในครอบครัว:</span> ${chk(d.FamilyHx_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.FamilyHx_Status, 'มี', 'มี(ระบุ)')} ${dot(d.FamilyHx_Details, "80%")}</div>
+                <div class="flex items-end"><span class="font-bold w-48">ประวัติการเจ็บป่วยในครอบครัว:</span> ${chk(d.FamilyHx_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.FamilyHx_Status, 'มี', 'มี(ระบุ)')} ${dot(d.FamilyHx_Details, "50%")}</div>
             </div>
 
             <div class="flex items-start mt-1 border-t border-black pt-1">
