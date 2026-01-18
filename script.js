@@ -331,15 +331,18 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
-// ฟังก์ชันคำนวณ Braden Scale (Fixed: Calculation & Display)
+// =================================================================
+// 1. ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
+// =================================================================
 function calcBraden() {
-    // 1. ฟังก์ชันย่อยดึงค่า (ป้องกัน error ถ้ายังไม่เลือก)
+    // Helper: แปลงค่าเป็นตัวเลข (Base 10) ป้องกันการต่อ String
     const getVal = (name) => {
         const el = document.querySelector(`input[name="${name}"]:checked`);
-        return el ? parseInt(el.value, 10) : 0; // parseInt ฐาน 10 เพื่อความชัวร์
+        // ใช้ parseInt(..., 10) เพื่อบังคับให้เป็นตัวเลข
+        return el ? parseInt(el.value, 10) : 0;
     };
 
-    // 2. ดึงคะแนน
+    // 1. ดึงค่าคะแนน (จะเป็นตัวเลขแน่นอน)
     const s1 = getVal("Braden_Sensory");
     const s2 = getVal("Braden_Moisture");
     const s3 = getVal("Braden_Activity");
@@ -347,21 +350,26 @@ function calcBraden() {
     const s5 = getVal("Braden_Nutrition");
     const s6 = getVal("Braden_Friction");
 
-    // 3. แสดงคะแนนรายข้อในช่องขวาสุด
-    document.getElementById("score_Braden_Sensory").innerText = s1 || '-';
-    document.getElementById("score_Braden_Moisture").innerText = s2 || '-';
-    document.getElementById("score_Braden_Activity").innerText = s3 || '-';
-    document.getElementById("score_Braden_Mobility").innerText = s4 || '-';
-    document.getElementById("score_Braden_Nutrition").innerText = s5 || '-';
-    document.getElementById("score_Braden_Friction").innerText = s6 || '-';
+    // 2. แสดงคะแนนรายข้อ (ถ้ามี Element รองรับ)
+    const setScoreText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val > 0 ? val : '-';
+    };
+    setScoreText("score_Braden_Sensory", s1);
+    setScoreText("score_Braden_Moisture", s2);
+    setScoreText("score_Braden_Activity", s3);
+    setScoreText("score_Braden_Mobility", s4);
+    setScoreText("score_Braden_Nutrition", s5);
+    setScoreText("score_Braden_Friction", s6);
 
-    // 4. คำนวณผลรวม
+    // 3. คำนวณผลรวม (บวกเลขทางคณิตศาสตร์)
     const total = s1 + s2 + s3 + s4 + s5 + s6;
 
-    // 5. แปลผลตามเกณฑ์ใหม่
+    // 4. แปลผล
     let resultText = "";
     let colorClass = "text-gray-500";
 
+    // คำนวณเมื่อมีการเลือกอย่างน้อย 1 ข้อ หรือคะแนน > 0
     if (total > 0) {
         if (total <= 9) {
             resultText = "Very high risk (เสี่ยงสูงมาก)";
@@ -372,21 +380,22 @@ function calcBraden() {
         } else if (total >= 13 && total <= 14) {
             resultText = "Moderate risk (เสี่ยงปานกลาง)";
             colorClass = "text-orange-500";
-        } else if (total >= 15) {
+        } else {
             resultText = "Low risk (เสี่ยงต่ำ)";
             colorClass = "text-green-600";
         }
     }
 
-    // 6. อัปเดต UI (Input Value เพื่อให้บันทึกได้)
-    const totalEl = document.getElementById("braden-total-score");
+    // 5. อัปเดต UI หน้าบันทึก
+    const totalEl = document.getElementById("braden-total-score"); // ตรวจสอบ ID ใน HTML ให้ตรงกัน
     const resultEl = document.getElementById("braden-result");
 
-    if (totalEl) totalEl.value = total;
+    if (totalEl) totalEl.value = total; // ใส่ค่าตัวเลขลงไป
     
     if (resultEl) {
         resultEl.value = resultText;
-        resultEl.className = `w-64 text-right text-lg font-black italic border-none bg-transparent focus:outline-none ${colorClass}`;
+        // ล้าง class สีเก่าออกแล้วใส่สีใหม่
+        resultEl.className = `w-full text-right text-lg font-black italic border-none bg-transparent focus:outline-none ${colorClass}`;
     }
 }
 
@@ -5410,61 +5419,60 @@ function renderForm004Page2(container, options = {}) {
         <div class="p-1 border-b border-black">
             <div class="font-bold text-[14px] mb-1">14. Braden Scale (Predicting Pressure Sore Risk)</div>
             
-            <table class="w-full border-collapse border border-black text-center text-[11px]">
+            <table class="w-full border-collapse border border-black text-center text-[10px]">
                 <thead>
                     <tr class="bg-gray-100">
-                        <th class="border border-black p-1 text-left w-[25%] pl-2">Parameter</th>
+                        <th class="border border-black p-1 text-left w-[18%]">Parameter</th>
                         <th class="border border-black p-1 w-[18%]">1</th>
                         <th class="border border-black p-1 w-[18%]">2</th>
                         <th class="border border-black p-1 w-[18%]">3</th>
                         <th class="border border-black p-1 w-[18%]">4</th>
+                        <th class="border border-black p-1 w-[10%] bg-blue-50">Score</th>
                     </tr>
                 </thead>
                 <tbody>
                 ${[
-                    ['การรับรู้/ความรู้สึก', d.Braden_Sensory],
-                    ['ความเปียกชื้น', d.Braden_Moisture],
-                    ['กิจกรรม', d.Braden_Activity],
-                    ['การเคลื่อนไหว', d.Braden_Mobility],
-                    ['โภชนาการ', d.Braden_Nutrition],
-                    ['แรงเสียดทาน', d.Braden_Friction] // ข้อนี้ไม่มีคะแนน 4
-                ].map((row, index) => {
-                    const label = row[0];
-                    const score = parseInt(row[1]) || 0;
-                    const isFriction = index === 5; // ข้อสุดท้าย (แรงเสียดทาน)
+                    ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด<br>(ไม่ตอบสนอง)', 'จำกัดมาก<br>(ตอบเฉพาะเจ็บ)', 'จำกัดเล็กน้อย<br>(ตอบเสียงเรียก)', 'ไม่บกพร่อง<br>(ปกติ)', d.Braden_Sensory],
+                    ['ความเปียกชื้น', 'ตลอดเวลา<br>(เปียกชื้นตลอด)', 'บ่อยมาก<br>(เปลี่ยนผ้าปูบ่อย)', 'บางครั้ง<br>(วันละ 1 ครั้ง)', 'น้อยมาก<br>(แห้งปกติ)', d.Braden_Moisture],
+                    ['กิจกรรม', 'นอนติดเตียง<br>(Bedfast)', 'นั่งรถเข็น<br>(Chairfast)', 'เดินบ้าง<br>(Walks Occasionally)', 'เดินบ่อย<br>(Walks Frequently)', d.Braden_Activity],
+                    ['การเคลื่อนไหว', 'ไม่ได้เลย<br>(Immobile)', 'จำกัดมาก<br>(Very Limited)', 'จำกัดเล็กน้อย<br>(Slightly Limited)', 'ไม่จำกัด<br>(No Limitation)', d.Braden_Mobility],
+                    ['โภชนาการ', 'แย่มาก<br>(กินน้อยกว่า 1/3)', 'ไม่เพียงพอ<br>(กินประมาณ 1/2)', 'เพียงพอ<br>(กินมากกว่า 1/2)', 'ดีเยี่ยม<br>(กินได้หมด)', d.Braden_Nutrition],
+                    ['แรงเสียดทาน', 'มีปัญหา<br>(ต้องการคนช่วยดึง)', 'เสี่ยง<br>(ขยับตัวได้บ้าง)', 'ไม่มีปัญหา<br>(ขยับตัวอิสระ)', '', d.Braden_Friction]
+                ].map((row, idx) => {
+                    const score = getBScore(row[5]); // แปลงค่าคะแนนของแถวนั้นๆ
+                    const b1 = score == 1 ? 'font-bold bg-gray-200' : '';
+                    const b2 = score == 2 ? 'font-bold bg-gray-200' : '';
+                    const b3 = score == 3 ? 'font-bold bg-gray-200' : '';
+                    const b4 = score == 4 ? 'font-bold bg-gray-200' : '';
                     
-                    // ฟังก์ชันเช็คเครื่องหมาย /
-                    const chk1 = score === 1 ? '/' : '';
-                    const chk2 = score === 2 ? '/' : '';
-                    const chk3 = score === 3 ? '/' : '';
-                    const chk4 = score === 4 ? '/' : '';
+                    // กรณีข้อ 6 (แรงเสียดทาน) ไม่มีคะแนน 4
+                    const td4 = idx === 5 ? '<td class="border border-black p-1 bg-gray-100"></td>' 
+                                          : `<td class="border border-black p-1 align-middle ${b4}">${row[4]}</td>`;
 
                     return `
                     <tr>
-                        <td class="border border-black text-left pl-2 py-1">${label}</td>
-                        <td class="border border-black font-bold">${chk1}</td>
-                        <td class="border border-black font-bold">${chk2}</td>
-                        <td class="border border-black font-bold">${chk3}</td>
-                        <td class="border border-black font-bold ${isFriction ? 'bg-gray-200' : ''}">${isFriction ? '' : chk4}</td>
+                        <td class="border border-black text-left pl-2 align-middle">${row[0]}</td>
+                        <td class="border border-black p-1 align-middle ${b1}">${row[1]}</td>
+                        <td class="border border-black p-1 align-middle ${b2}">${row[2]}</td>
+                        <td class="border border-black p-1 align-middle ${b3}">${row[3]}</td>
+                        ${td4}
+                        <td class="border border-black font-bold align-middle text-[12px] text-blue-800">${score || '-'}</td>
                     </tr>`;
                 }).join('')}
                 </tbody>
             </table>
             
-            <div class="flex items-center justify-center gap-6 mt-2 text-[12px] font-sarabun">
+            <div class="flex justify-end mt-2 items-center gap-4 text-[12px]">
                 <div class="flex items-center">
-                    <span class="font-bold mr-2 text-[14px]">Total Score:</span> 
-                    <div class="border border-black px-4 py-1 font-bold text-[16px] min-w-[50px] text-center bg-white">
-                        ${parseInt(d.Braden_Total) || ''}
-                    </div>
+                    <span class="font-bold text-[14px] mr-2">Total Score:</span> 
+                    <span class="border border-black px-2 py-1 w-12 text-center font-bold bg-white text-[16px]">${bradenTotalCalc || 0}</span>
                 </div>
-
-                <div class="flex items-center gap-3">
-                    <span class="font-bold text-[14px]">การแปลผล:</span>
-                    <span class="whitespace-nowrap">${chkGroup((parseInt(d.Braden_Total) <= 9 && parseInt(d.Braden_Total) > 0) ? 'Yes' : 'No', 'Yes', 'เสี่ยงสูงมาก (≤ 9)')}</span>
-                    <span class="whitespace-nowrap">${chkGroup((parseInt(d.Braden_Total) >= 10 && parseInt(d.Braden_Total) <= 12) ? 'Yes' : 'No', 'Yes', 'เสี่ยงสูง (10-12)')}</span>
-                    <span class="whitespace-nowrap">${chkGroup((parseInt(d.Braden_Total) >= 13 && parseInt(d.Braden_Total) <= 14) ? 'Yes' : 'No', 'Yes', 'เสี่ยงปานกลาง (13-14)')}</span>
-                    <span class="whitespace-nowrap">${chkGroup(parseInt(d.Braden_Total) >= 15 ? 'Yes' : 'No', 'Yes', 'เสี่ยงต่ำ (≥ 15)')}</span>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold">การแปลผล:</span>
+                    ${chkRisk(isRisk(bradenTotalCalc, 0, 9))} ≤ 9 Very high
+                    ${chkRisk(isRisk(bradenTotalCalc, 10, 12))} 10-12 High
+                    ${chkRisk(isRisk(bradenTotalCalc, 13, 14))} 13-14 Moderate
+                    ${chkRisk(isRisk(bradenTotalCalc, 15, null))} ≥ 15 Low
                 </div>
             </div>
         </div>
