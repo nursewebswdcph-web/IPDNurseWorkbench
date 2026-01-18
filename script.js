@@ -4909,10 +4909,6 @@ function renderForm004Page1(container, options = {}) {
     };
 
     let html = `
-    <div class="flex justify-between items-start mb-1 border-b border-black pb-1 font-sarabun text-black">
-       <div class="w-[15%] text-center border border-black p-1 flex flex-col justify-center h-14 text-[12px]">
-          <div class="font-bold text-[16px]">แบบ 004</div>
-       </div>
        <div class="text-center w-[70%] pt-1">
           <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
@@ -4923,7 +4919,7 @@ function renderForm004Page1(container, options = {}) {
        </div>
     </div>
 
-    <div class="border border-black px-2 py-1 mb-1 font-bold bg-gray-50 flex justify-between font-sarabun text-black text-[12px]">
+    <div class="text-black text-[12px]">
         <span>ชื่อ-สกุล: ${p.Name || '-'}</span>
         <span>HN: ${p.HN || '-'}</span>
         <span>AN: ${p.AN || d.AN || '-'}</span>
