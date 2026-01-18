@@ -3877,7 +3877,7 @@ async function handleMorsePrint() {
     setTimeout(() => { window.print(); }, 500);
 }
 
-// ฟังก์ชัน Render หน้ากระดาษ Morse A4 (แก้ไข: ตรงตาม PDF 100%)
+// ฟังก์ชัน Render หน้ากระดาษ Morse A4 (แก้ไข: ส่วนหัวคลีน + แนวปฏิบัติแยกคอลัมน์ชัดเจน)
 function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("morse-sheet-content");
   if(!container) return;
@@ -3905,13 +3905,13 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   const wardName = currentPatientData.Ward || "........................"; 
 
   // =========================================================
-  // 1. HEADER (ปรับแก้: ตัดกลุ่มการพยาบาล/รับใหม่/จำหน่าย ออก)
+  // 1. HEADER (ลบกลุ่มการพยาบาล และ รับใหม่/จำหน่าย ออกตามขอ)
   // =========================================================
   let html = `
     <div class="mb-2 text-black font-sarabun">
-        <div class="text-center flex flex-col gap-1 mb-2">
-            <h2 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h2>
-            <h3 class="font-bold text-base">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / การดึงอุปกรณ์ที่สอดใส่ในร่างกาบผู้ป่วย (MAAS)</h3>
+        <div class="text-center flex flex-col gap-1 mb-4">
+            <h2 class="font-bold text-xl">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h2>
+            <h3 class="font-bold text-lg">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / การดึงอุปกรณ์ที่สอดใส่ในร่างกาบผู้ป่วย (MAAS)</h3>
         </div>
         <div class="flex justify-between items-end px-1 text-[12px] font-bold border-b border-transparent">
            <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
@@ -3923,7 +3923,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   `;
 
   // =========================================================
-  // 2. MORSE TABLE
+  // 2. MORSE TABLE (ข้อมูลคะแนน)
   // =========================================================
   html += `
     <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight mb-2">
@@ -3951,59 +3951,52 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   }
   html += `</tr></thead><tbody>`;
 
-  // --- ข้อมูล Morse (ตาม PDF 100%) ---
+  // --- ข้อมูล Morse (Rows) ---
   const morseRows = [
       {
           label: "1. มีการหกล้มกะทันหัน หรือหกล้มช่วง 3 เดือนก่อนมา รพ.",
           sub: ["ไม่ใช่ = 0", "ใช่ = 25"],
-          scores: [0, 25],
           key: "Morse_1"
       },
       {
           label: "2. มีการวินิจฉัยโรคมากกว่า 1 รายการ",
           sub: ["ไม่ใช่ = 0", "ใช่ = 15"],
-          scores: [0, 15],
           key: "Morse_2"
       },
       {
           label: "3. การช่วยในการเคลื่อนย้าย",
           sub: [
-              "- เดินได้เองใช้/รถเข็นนั่ง/นอนพักบนเตียงหรือทำกิจกรรมบนเตียง (ใช่ = 0)",
-              "- ไม้ค้ำยัน/ไม้เท้า (ใช่ = 15)",
-              "เดิน- โดยการยึดเกาะไปตามเตียง / โต๊ะ / เก้าอี้ (ใช่ = 30)"
+              "- เดินได้เอง/รถเข็นนั่ง/นอนพักบนเตียง (0)",
+              "- ไม้ค้ำยัน/ไม้เท้า (15)",
+              "- เดินโดยการยึดเกาะเครื่องเรือน (30)"
           ],
-          scores: [0, 15, 30],
           key: "Morse_3"
       },
       {
           label: "4. ให้สารละลายทางหลอดเลือด/คา Heparin lock",
           sub: ["ไม่ใช่ = 0", "ใช่ = 20"],
-          scores: [0, 20],
           key: "Morse_4"
       },
       {
           label: "5. การเดิน / การเคลื่อนย้าย",
           sub: [
-              "- ปกติ / นอนพักบนเตียงโดยไม่ให้ลุกจากเตียงไม่เคลื่อนไหว (ใช่ = 0)",
-              "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (ใช่ = 10)",
-              "- มีความบกพร่อง เช่น ลุกจากเก้าอี้ด้วยความลำบาก / ไม่สามารถเดินได้โดยปราศจากการช่วยเหลือ (ใช่ = 20)"
+              "- ปกติ / นอนพักบนเตียงไม่เคลื่อนไหว (0)",
+              "- อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (10)",
+              "- บกพร่อง/ลุกนั่งลำบาก/ต้องช่วยพยุง (20)"
           ],
-          scores: [0, 10, 20],
           key: "Morse_5"
       },
       {
           label: "6. สภาพจิตใจ",
           sub: [
-              "- รับรู้บุคคล เวลา สถานที่ (ใช่ = 0)",
-              "ตอบสนองไม่ตรงกับความเป็นจริง ไม่รับรู้ข้อจำกัดของตนเอง (ใช่ = 15)"
+              "- รับรู้บุคคล เวลา สถานที่ (0)",
+              "- ไม่รับรู้ข้อจำกัดของตนเอง/ประเมินเกินจริง (15)"
           ],
-          scores: [0, 15],
           key: "Morse_6"
       }
   ];
 
-  morseRows.forEach((row, idx) => {
-      // ส่วน Label ด้านซ้าย
+  morseRows.forEach((row) => {
       let labelHtml = `<div class="font-bold border-b border-gray-300 pb-1 mb-1">${row.label}</div>`;
       row.sub.forEach(txt => {
           labelHtml += `<div class="pl-2 mb-0.5 text-[8px] leading-tight text-gray-700">- ${txt}</div>`;
@@ -4011,13 +4004,11 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
 
       html += `<tr><td class="border border-black p-1 text-left align-top bg-white">${labelHtml}</td>`;
       
-      // ส่วน Data 5 วัน x 3 เวร
       for (let i = 0; i < 5; i++) {
           const currDate = new Date(admitDate);
           currDate.setDate(admitDate.getDate() + startDayOffset + i);
           const dateKey = getISODate(currDate); 
           ['N', 'D', 'E'].forEach(shift => {
-              // หาข้อมูล
               const entry = allMorseDataCache.find(d => {
                   let dStr = d.Date;
                   if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
@@ -4025,9 +4016,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
                   }
                   return dStr === dateKey && d.Shift === shift;
               });
-              
               let val = entry ? entry[row.key] : "";
-              // แสดงค่าคะแนน (ถ้ามี)
               html += `<td class="border border-black p-0.5 text-center align-middle font-medium">${val !== "" ? val : ""}</td>`;
           });
       }
@@ -4050,7 +4039,6 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
           let color = "";
           if(val >= 51) color = "text-red-600 font-bold";
           else if(val >= 25) color = "text-orange-600 font-bold";
-          
           html += `<td class="border border-black p-0.5 text-center ${color}">${val}</td>`;
       });
   }
@@ -4075,138 +4063,117 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   html += `</tr></tbody></table>`;
 
   // =========================================================
-  // 3. MAAS TABLE (แยกตารางตาม PDF)
+  // 3. MAAS TABLE (ย่อส่วนนี้เล็กน้อย เพื่อให้พื้นที่ Footer พอ)
   // =========================================================
-  
   html += `
-    <div class="font-bold text-[10px] mb-1 mt-2">แบบประเมินความเสี่ยงต่อ การดึงอุปกรณ์ที่สอดใส่ในร่างกาบผู้ป่วย (MAAS)</div>
-    <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight mb-2">
+    <div class="flex gap-2 mb-1 mt-2">
+      <div class="font-bold text-[10px] w-1/2">แบบประเมินความเสี่ยงต่อ การดึงอุปกรณ์ (MAAS)</div>
+    </div>
+    <table class="w-full border-collapse border border-black text-center text-[8px] leading-tight mb-2">
       <thead>
         <tr class="bg-gray-100">
-          <th class="border border-black p-1 w-[200px] text-left">ประเด็น</th>
-          <th class="border border-black p-1 w-[30px]">คะแนน</th>
+          <th class="border border-black p-1 text-left">ประเด็น MAAS</th>
+          <th class="border border-black p-1 w-[20px]">คะแนน</th>
   `;
-  // MAAS Header (5 Days x 3 Shifts)
   for (let i = 0; i < 5; i++) {
-     html += `
-       <th class="border border-black p-0.5 w-[20px]">ด</th>
-       <th class="border border-black p-0.5 w-[20px]">ช</th>
-       <th class="border border-black p-0.5 w-[20px]">บ</th>
-     `;
+     html += `<th colspan="3" class="border border-black p-0.5 text-[7px]">วันที่ ${i+1}</th>`;
   }
   html += `</tr></thead><tbody>`;
 
-  // MAAS Rows 0-6
   const maasItems = [
-      { t: "ไม่ตอบสนอง", s: 0 },
-      { t: "ตอบสนองต่อการกระตุ้นแรง ๆ", s: 1 },
-      { t: "ตอบสนองต่อการสัมผัสและการเรียกชื่อ", s: 2 },
-      { t: "สงบและให้ความร่วมมือ", s: 3 },
-      { t: "พักได้น้อยและไม่ให้ความร่วมมือ", s: 4 },
-      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา", s: 5 },
-      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น", s: 6 },
+      { t: "0-ไม่ตอบสนอง / 1-ตอบสนองต่อการกระตุ้นแรง ๆ", s: "0/1" },
+      { t: "2-ตอบสนองสัมผัส/เรียกชื่อ / 3-สงบและร่วมมือ", s: "2/3" },
+      { t: "4-พักได้น้อย/ไม่ร่วมมือ / 5-ต่อต้านการรักษา", s: "4/5" },
+      { t: "6-ต่อต้านการรักษา/อันตรายต่อผู้อื่น", s: "6" },
   ];
 
   maasItems.forEach(item => {
       html += `<tr>
-        <td class="border border-black p-1 text-left">${item.t}</td>
-        <td class="border border-black p-1 font-bold">${item.s}</td>`;
-      
-      // Loop Check Data (ถ้าคะแนนตรง ให้ใส่เครื่องหมาย / หรือใส่ตัวเลข)
+        <td class="border border-black p-0.5 text-left">${item.t}</td>
+        <td class="border border-black p-0.5 font-bold">${item.s}</td>`;
       for (let i = 0; i < 5; i++) {
           const currDate = new Date(admitDate);
           currDate.setDate(admitDate.getDate() + startDayOffset + i);
           const dateKey = getISODate(currDate); 
           ['N', 'D', 'E'].forEach(shift => {
-              const entry = allMorseDataCache.find(d => {
+             const entry = allMorseDataCache.find(d => {
                   let dStr = d.Date;
                   if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
                   return dStr === dateKey && d.Shift === shift;
               });
               let val = entry ? entry.MAAS_Score : "";
-              // ถ้าคะแนนตรงกับบรรทัดนี้ ให้ใส่ ✓
-              let mark = (val !== "" && parseInt(val) === item.s) ? "/" : "";
-              html += `<td class="border border-black p-0.5">${mark}</td>`;
+              // เช็คว่าคะแนนอยู่ในช่วงของแถวนี้ไหม
+              let match = false;
+              if (val !== "") {
+                  if (item.s.includes("/")) {
+                      const parts = item.s.split("/");
+                      if (parts.includes(String(val))) match = true;
+                  } else {
+                      if (String(val) === item.s) match = true;
+                  }
+              }
+              html += `<td class="border border-black p-0.5 w-[12px]">${match ? val : ""}</td>`;
           });
       }
       html += `</tr>`;
   });
-
-  // Row: คะแนนที่ได้ (สรุป)
-  html += `<tr class="bg-gray-50"><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนที่ได้</td>`;
-  for (let i = 0; i < 5; i++) {
-      const currDate = new Date(admitDate);
-      currDate.setDate(admitDate.getDate() + startDayOffset + i);
-      const dateKey = getISODate(currDate); 
-      ['N', 'D', 'E'].forEach(shift => {
-          const entry = allMorseDataCache.find(d => {
-              let dStr = d.Date;
-              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
-              return dStr === dateKey && d.Shift === shift;
-          });
-          let val = entry ? entry.MAAS_Score : "";
-          let color = (val >= 4) ? "text-red-600 font-bold" : "";
-          html += `<td class="border border-black p-0.5 text-center ${color}">${val}</td>`;
-      });
-  }
-  html += `</tr>`;
   html += `</tbody></table>`;
 
   // =========================================================
-  // 4. FOOTER (Guidelines & System Info)
+  // 4. FOOTER (แนวปฏิบัติแยก 3 คอลัมน์ ตามต้นฉบับ)
   // =========================================================
   html += `
-    <div class="mt-2 text-[8px] text-black border-t border-black pt-1">
+    <div class="mt-2 border border-black p-0 text-[8px] text-black">
+       <div class="grid grid-cols-3 border-b border-black font-bold text-center bg-gray-100">
+           <div class="border-r border-black p-1">No Risk (0-24)</div>
+           <div class="border-r border-black p-1">Low Risk (25-50)</div>
+           <div class="p-1 text-red-700">High Risk (≥ 51)</div>
+       </div>
        
-       <div class="grid grid-cols-3 gap-2">
-          
-          <div class="border border-black p-1">
-             <div class="font-bold underline mb-1">เกณฑ์ความเสี่ยง (Morse)</div>
-             <div>No Risk: 0-24</div>
-             <div>Low Risk: 25-50</div>
-             <div>High Risk: ≥ 51</div>
-          </div>
+       <div class="grid grid-cols-3 text-left leading-snug">
+           <div class="border-r border-black p-1 space-y-1">
+               <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
+               <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
+               <div>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</div>
+               <div>4. จัดสิ่งแวดล้อมให้ปลอดภัย</div>
+               <div>5. ให้ญาติเฝ้า</div>
+               <div>6. ยกเหล็กกั้นเตียง</div>
+               <div class="font-bold">7. ตรวจเยี่ยมผู้ป่วย (เวรละ 1 ครั้ง)</div>
+           </div>
 
-          <div class="col-span-2 border border-black p-1">
-             <div class="grid grid-cols-2 gap-x-2">
-                <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
-                <div>5. ให้ญาติเฝ้า</div>
-                <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
-                <div>6. ยกเหล็กกั้นเตียง</div>
-                <div>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</div>
-                <div>7. ตรวจเยี่ยมผู้ป่วย (เวรละ 1 ครั้ง / ทุก 4 ชม. / ทุก 2 ชม.)</div>
-                <div>4. จัดสิ่งแวดล้อมให้ปลอดภัย</div>
-             </div>
-          </div>
+           <div class="border-r border-black p-1 space-y-1">
+               <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
+               <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
+               <div>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</div>
+               <div>4. จัดสิ่งแวดล้อมให้ปลอดภัย</div>
+               <div>5. ให้ญาติเฝ้า</div>
+               <div>6. ยกเหล็กกั้นเตียง</div>
+               <div class="font-bold">7. ตรวจเยี่ยมผู้ป่วย (ทุก 4 ชม.)</div>
+               <div>8. ติดสัญลักษณ์ความเสี่ยง (สีเหลือง)</div>
+               <div>9. ผูกมัดผู้ป่วยตามสภาพ</div>
+               <div>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</div>
+           </div>
+
+           <div class="p-1 space-y-1">
+               <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
+               <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
+               <div>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</div>
+               <div>4. จัดสิ่งแวดล้อมให้ปลอดภัย</div>
+               <div>5. ให้ญาติเฝ้า</div>
+               <div>6. ยกเหล็กกั้นเตียง</div>
+               <div class="font-bold text-red-600">7. ตรวจเยี่ยมผู้ป่วย (ทุก 2 ชม.)</div>
+               <div class="text-red-600">8. ติดสัญลักษณ์ความเสี่ยง (สีแดง)</div>
+               <div>9. ผูกมัดผู้ป่วยตามสภาพ</div>
+               <div>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</div>
+               <div>11. ปรึกษาสหวิชาชีพ</div>
+           </div>
        </div>
 
-       <div class="grid grid-cols-3 gap-2 mt-1">
-          <div class="border border-black p-1">
-             <div class="font-bold underline mb-1">แนวทางปฏิบัติ (เพิ่มเติม)</div>
-             <div>8. ติดสัญลักษณ์ความเสี่ยงการพลัดตกหกล้ม</div>
-             <div>9. ผูกมัดผู้ป่วยตามสภาพ</div>
-             <div>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</div>
-             <div>11. ปรึกษาสหวิชาชีพ</div>
-          </div>
-
-          <div class="col-span-2 border border-black p-1">
-             <div class="font-bold underline mb-1">แนวทางปฏิบัติการป้องกันการดึงอุปกรณ์ (MAAS)</div>
-             <table class="w-full text-left">
-                <tr>
-                   <td class="align-top w-10 font-bold">0-3</td>
-                   <td>ไม่ต้องผูกยึด</td>
-                </tr>
-                <tr>
-                   <td class="align-top w-10 font-bold">4-6</td>
-                   <td>ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด<br>
-                       ***ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง***<br>
-                       ***กรณีไม่มีญาติให้ผู้ยึดได้เลย***
-                   </td>
-                </tr>
-             </table>
-          </div>
+       <div class="border-t border-black p-1 bg-gray-50 flex gap-4 items-center">
+          <div class="font-bold underline">เกณฑ์ MAAS:</div>
+          <div>0-3: ไม่ต้องผูกยึด</div>
+          <div class="text-red-600 font-bold">4-6: ต้องผูกยึดผู้ป่วยและเฝ้าระวังใกล้ชิด (แจ้งญาติก่อนผูกยึดทุกครั้ง)</div>
        </div>
-
     </div>
 
     <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
