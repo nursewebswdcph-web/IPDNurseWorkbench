@@ -352,7 +352,11 @@
       <span class="chk" data-chk="Hx_Heart:true"></span> Heart &nbsp;
       <span class="chk" data-chk="Hx_DM:true"></span> DM &nbsp;
       <span class="chk" data-chk="Hx_Kidney:true"></span> Kidney &nbsp;
-      <span class="chk" data-chk="Hx_Cancer:true"></span> มะเร็ง &nbsp;
+      <div class="flex items-center gap-1">
+          <input type="checkbox" name="UD_List" value="Cancer" id="ud_cancer" class="accent-blue-600">
+          <label for="ud_cancer">มะเร็ง</label>
+          <input type="text" name="UD_Cancer_Detail" class="border-b border-gray-400 bg-transparent w-32 text-xs focus:outline-none placeholder-gray-400" placeholder="ระบุชนิด...">
+      </div>
       อื่น <span class="underline-dots" data-field="Hx_Other"></span>
     </div>
 
