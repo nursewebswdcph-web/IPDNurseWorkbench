@@ -1140,7 +1140,11 @@
         <label><input type="checkbox" name="Hx_Asthma" value="true"> หอบหืด</label>
         <label><input type="checkbox" name="Hx_Epilepsy" value="true"> ลมชัก</label>
         <label><input type="checkbox" name="Hx_TB" value="true"> วัณโรค</label>
-        <label><input type="checkbox" name="Hx_Cancer" value="true"> มะเร็ง</label>
+        <div class="flex items-center gap-1">
+            <input type="checkbox" name="UD_List" value="Cancer" id="ud_cancer" class="accent-blue-600">
+            <label for="ud_cancer">มะเร็ง</label>
+            <input type="text" name="UD_Cancer_Detail" class="border-b border-gray-400 bg-transparent w-32 text-xs focus:outline-none text-blue-800 placeholder-gray-400" placeholder="ระบุชนิด...">
+        </div>
         <div class="col-span-1 md:col-span-2 flex items-center gap-2">
           <span>อื่นๆ:</span> <input type="text" name="Hx_Other" class="flex-1 border-b border-gray-400 bg-transparent focus:outline-none">
         </div>
