@@ -5558,31 +5558,68 @@ function renderForm004Page2(container, options = {}) {
         </div>
     `;
 }
+// =================================================================
+// SYSTEM UTILITIES & PRINT SETTINGS (Fixed: Google Check & Footer Logic)
+// =================================================================
+
 // --- Global Staff Data ---
 let staffListCache = [];
 
-// 1. โหลดรายชื่อเมื่อเปิดเว็บ
+// 1. โหลดรายชื่อเมื่อเปิดเว็บ (แก้ไข: เพิ่มการตรวจสอบ google object เพื่อกัน Error)
 function loadStaffData() {
-    google.script.run.withSuccessHandler(data => {
-        staffListCache = data;
-    }).getStaffList();
+    // ตรวจสอบว่ามี object 'google' หรือไม่ (ถ้า Test บนเครื่องตัวเองจะไม่มี)
+    if (typeof google === 'undefined') {
+        console.warn("⚠️ Google Apps Script environment not found. Using Mock Data.");
+        // ใช้ข้อมูลจำลองเพื่อให้ระบบทำงานต่อได้ ไม่ Error
+        staffListCache = [
+            { name: "พยาบาล ทดสอบ1", position: "พยาบาลวิชาชีพ" },
+            { name: "นายแพทย์ ทดสอบ2", position: "นายแพทย์" },
+            { name: "นายนัทธ์นรินทร คำนาโฮม", position: "พยาบาลวิชาชีพปฏิบัติการ" }
+        ];
+        return;
+    }
+
+    // ถ้ารันบน Google Apps Script ให้ดึงข้อมูลจริง
+    google.script.run
+        .withSuccessHandler(data => {
+            staffListCache = data || [];
+            console.log("✅ Staff list loaded:", staffListCache.length);
+        })
+        .withFailureHandler(err => {
+            console.error("❌ Failed to load staff list:", err);
+        })
+        .getStaffList();
 }
+
 // เรียกใช้ตอนโหลดหน้าเว็บ
 window.addEventListener('load', loadStaffData);
 
-// 2. เปิด Modal
+// 2. เปิด Modal ตั้งค่าการพิมพ์
 function openPrintSettings004() {
-    document.getElementById('printSettingsModal').classList.remove('hidden');
-    document.getElementById('printerSearch').value = '';
-    document.getElementById('staffDropdown').innerHTML = '';
+    const modal = document.getElementById('printSettingsModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        // เคลียร์ค่าเก่า
+        const searchInput = document.getElementById('printerSearch');
+        if(searchInput) {
+            searchInput.value = '';
+            setTimeout(() => searchInput.focus(), 100);
+        }
+        document.getElementById('staffDropdown').innerHTML = '';
+        document.getElementById('staffDropdown').classList.add('hidden');
+    } else {
+        console.error("❌ Element #printSettingsModal not found in HTML");
+        alert("ไม่พบหน้าต่างตั้งค่าการพิมพ์ กรุณาตรวจสอบไฟล์ index.html");
+    }
 }
 
 // 3. ปิด Modal
 function closePrintModal() {
-    document.getElementById('printSettingsModal').classList.add('hidden');
+    const modal = document.getElementById('printSettingsModal');
+    if (modal) modal.classList.add('hidden');
 }
 
-// 4. ค้นหารายชื่อ
+// 4. ค้นหารายชื่อ (Filter List)
 function filterStaffList(keyword) {
     const dropdown = document.getElementById('staffDropdown');
     dropdown.innerHTML = '';
@@ -5598,8 +5635,8 @@ function filterStaffList(keyword) {
         dropdown.classList.remove('hidden');
         filtered.forEach(staff => {
             const div = document.createElement('div');
-            div.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm';
-            div.innerText = `${staff.name} (${staff.position})`;
+            div.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 text-left';
+            div.innerHTML = `<span class="font-bold text-gray-800">${staff.name}</span> <span class="text-gray-500 text-xs">(${staff.position})</span>`;
             div.onclick = () => selectStaff(staff);
             dropdown.appendChild(div);
         });
@@ -5608,7 +5645,7 @@ function filterStaffList(keyword) {
     }
 }
 
-// 5. เลือกรายชื่อ
+// 5. เลือกรายชื่อจาก Dropdown
 function selectStaff(staff) {
     document.getElementById('printerSearch').value = staff.name;
     document.getElementById('selectedPrinterName').value = staff.name;
@@ -5616,14 +5653,21 @@ function selectStaff(staff) {
     document.getElementById('staffDropdown').classList.add('hidden');
 }
 
-// 6. สั่งพิมพ์จริง (Render + Footer)
+// 6. สั่งพิมพ์จริง (แก้ไข: ส่ง Footer Data ไปยัง Render Functions)
 function executePrint004() {
-    const printerName = document.getElementById('selectedPrinterName').value || '-';
-    const printerPos = document.getElementById('selectedPrinterPosition').value || '-';
+    // ดึงค่าจาก Hidden Input หรือช่องค้นหาถ้าไม่ได้เลือกจาก List
+    let printerName = document.getElementById('selectedPrinterName').value;
+    let printerPos = document.getElementById('selectedPrinterPosition').value;
+    
+    // กรณีพิมพ์ชื่อเองโดยไม่เลือกจาก Dropdown
+    if (!printerName) {
+        printerName = document.getElementById('printerSearch').value || '-';
+        printerPos = ''; // ไม่ทราบตำแหน่ง
+    }
     
     // สร้างวันที่ไทย
     const now = new Date();
-    const dateStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }); // 19/01/2569
+    const dateStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
     const printDate = `${dateStr} เวลา ${timeStr} น.`;
 
@@ -5634,27 +5678,43 @@ function executePrint004() {
         date: printDate
     };
 
-    // Render หน้า 1 และ 2 ใหม่โดยส่ง Footer Data ไปด้วย
-    // สมมติว่ามี div id="printArea" สำหรับพิมพ์
-    const printArea = document.getElementById('printArea'); // หรือ ID ที่ท่านใช้แสดงผลตอนพิมพ์
-    if(!printArea) return;
+    // เตรียมพื้นที่พิมพ์
+    const printArea = document.getElementById('printArea'); // ต้องมี <div id="printArea"></div> ใน index.html
+    if(!printArea) {
+        console.error("❌ Element #printArea not found! Creating one...");
+        const newPrintArea = document.createElement('div');
+        newPrintArea.id = 'printArea';
+        document.body.appendChild(newPrintArea);
+        // เรียกตัวเองใหม่
+        setTimeout(executePrint004, 50);
+        return;
+    }
 
     printArea.innerHTML = ''; // เคลียร์ของเก่า
     
-    // สร้าง Container หน้า 1
+    // สร้างหน้า 1
     const page1 = document.createElement('div');
-    page1.className = 'page-break'; // class สำหรับขึ้นหน้าใหม่ตอนพิมพ์
-    renderForm004Page1(page1, { data: currentFormData, footer: footerData }); // *ส่ง footer ไปด้วย*
+    page1.className = 'page-break print-page'; // ใช้ class print-page เพื่อคุม CSS ตอนพิมพ์
+    // page1.style.height = "297mm"; // ใช้ CSS คุมดีกว่า
+    page1.style.position = "relative";
+    // *** ส่ง footerData ไปด้วย ***
+    renderForm004Page1(page1, { data: currentFormData, footer: footerData });
     printArea.appendChild(page1);
 
-    // สร้าง Container หน้า 2
+    // สร้างหน้า 2
     const page2 = document.createElement('div');
-    page2.className = 'page-break';
-    renderForm004Page2(page2, { data: currentFormData, footer: footerData }); // *ส่ง footer ไปด้วย*
+    page2.className = 'page-break print-page';
+    // page2.style.height = "297mm";
+    page2.style.position = "relative";
+    // *** ส่ง footerData ไปด้วย ***
+    renderForm004Page2(page2, { data: currentFormData, footer: footerData });
     printArea.appendChild(page2);
 
+    // ปิด Modal และสั่งพิมพ์
     closePrintModal();
-    window.print();
+    setTimeout(() => {
+        window.print();
+    }, 500); // รอ Render เสร็จนิดนึง
 }
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
