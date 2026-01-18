@@ -3338,8 +3338,8 @@ function calculateBradenDay(day) {
         }
     }
 }
-  // ----------------------------------------------------------------
-// (New) Classify Print Preview Logic
+// ----------------------------------------------------------------
+// (Updated) Classify Print Preview Logic (A4 Portrait)
 // ----------------------------------------------------------------
 let currentClassifyPrintPage = 1;
 let allClassifyDataCache = [];
@@ -3347,36 +3347,67 @@ let allClassifyDataCache = [];
 async function renderClassifyPrintMode(an) {
   // 1. เตรียม Template
   const template = document.getElementById("preview-template-classify-print");
-  const clone = template.content.cloneNode(true);
+  // ถ้ายังไม่มี Template นี้ใน HTML ให้สร้าง Placeholder รอไว้ก่อน (หรือใช้ div เปล่า)
+  // แต่ปกติเราจะ inject HTML ผ่าน JS ในฟังก์ชันนี้เลยจะง่ายกว่าสำหรับการจัด Layout A4
+  
   chartPreviewContent.innerHTML = "";
-  chartPreviewContent.appendChild(clone);
+  
+  // สร้าง Container สำหรับควบคุมการเปลี่ยนหน้า
+  const controlDiv = document.createElement('div');
+  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+  controlDiv.innerHTML = `
+      <div class="font-bold text-gray-700">
+        มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-classify-page-num">1</span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-prev-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
+          &lt; ก่อนหน้า
+        </button>
+        <button id="btn-next-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
+          ถัดไป &gt;
+        </button>
+      </div>
+  `;
+  chartPreviewContent.appendChild(controlDiv);
+
+  // สร้างพื้นที่กระดาษ A4
+  const sheetDiv = document.createElement('div');
+  sheetDiv.id = "classify-sheet-content";
+  // กำหนดขนาด A4 แนวตั้ง (210mm x 297mm)
+  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative";
+  sheetDiv.style.width = "210mm";
+  sheetDiv.style.minHeight = "297mm";
+  sheetDiv.style.padding = "10mm 15mm"; // ขอบซ้ายขวาเผื่อเจาะรู
+  chartPreviewContent.appendChild(sheetDiv);
   
   // 2. โหลดข้อมูล
   showLoading('กำลังโหลดข้อมูล...');
   try {
-    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllClassificationData&an=${an}`); // ต้องแก้ doGet ใน code.gs เพิ่ม action นี้นะครับ หรือใช้ action เดิมถ้าดึงมาหมดได้
-    // **หมายเหตุ:** ถ้ายังไม่ได้แก้ doGet ให้เพิ่ม case "getAllClassificationData": result.data = getAllClassificationData(contents.an); ใน doPost หรือ doGet ด้วย
-    // เพื่อความง่าย ผมสมมติว่าคุณเพิ่ม action getAllClassificationData ใน code.gs แล้วตามข้อ 2 ข้างบน
-    
+    // ดึงข้อมูลทั้งหมดของ AN นี้
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllClassificationData&an=${an}`);
     const result = await response.json();
-    if (!result.success) throw new Error(result.message);
     
-    allClassifyDataCache = result.data; // เก็บเข้าตัวแปร Global ไว้ใช้ตอนเปลี่ยนหน้า
+    // หมายเหตุ: หากยังไม่ได้แก้ Code.gs ให้รองรับ getAllClassificationData 
+    // โค้ดนี้จะ Error ดังนั้นต้องแน่ใจว่า Code.gs มี action นี้แล้ว
+    // ถ้ายังไม่มี ให้ใช้ array ว่างไปก่อนเพื่อทดสอบ UI
+    if (!result.success && result.message) console.warn(result.message);
+    
+    allClassifyDataCache = result.success ? result.data : []; 
     currentClassifyPrintPage = 1;
     
-    renderClassifySheet(currentClassifyPrintPage);
+    renderClassifySheetA4(currentClassifyPrintPage);
     
     // ผูก Event ปุ่ม
     document.getElementById("btn-prev-classify-sheet").addEventListener("click", () => {
        if(currentClassifyPrintPage > 1) {
          currentClassifyPrintPage--;
-         renderClassifySheet(currentClassifyPrintPage);
+         renderClassifySheetA4(currentClassifyPrintPage);
        }
     });
     
     document.getElementById("btn-next-classify-sheet").addEventListener("click", () => {
          currentClassifyPrintPage++;
-         renderClassifySheet(currentClassifyPrintPage);
+         renderClassifySheetA4(currentClassifyPrintPage);
     });
 
     Swal.close();
@@ -3386,7 +3417,7 @@ async function renderClassifyPrintMode(an) {
   }
 }
 
-function renderClassifySheet(page) {
+function renderClassifySheetA4(page) {
   const container = document.getElementById("classify-sheet-content");
   const pageNumSpan = document.getElementById("print-classify-page-num");
   const btnPrev = document.getElementById("btn-prev-classify-sheet");
@@ -3394,26 +3425,42 @@ function renderClassifySheet(page) {
   if(!container) return;
 
   // คำนวณวันที่เริ่มต้นของหน้านี้ (5 วันต่อหน้า)
-  // วันที่ 1 ของหน้า 1 คือ AdmitDate
   const admitDate = new Date(currentPatientData.AdmitDate); 
   const startDayOffset = (page - 1) * 5;
   
-  // สร้าง Header กระดาษ
+  // เตรียมข้อมูลวันที่รับใหม่ / จำหน่าย
+  const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  let dischargeDateStr = "........................";
+  if (currentPatientData.DischargeDate) {
+      dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  } else if (currentPatientData.Status === 'Discharged') {
+     // กรณี Check status แต่ไม่มีวันที่ (เผื่อไว้)
+     dischargeDateStr = "........................";
+  }
+
+  // --- สร้าง HTML Header ---
   let html = `
-    <div class="text-center font-bold text-base mb-2">แบบบันทึกการจำแนกผู้ป่วย หอสงฆ์อาพาธ</div>
-    <div class="text-center font-bold mb-4">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</div>
-    <div class="flex justify-between mb-2 text-[11px]">
-       <div><b>ชื่อ-สกุล:</b> ${currentPatientData.Name} <b>AN:</b> ${currentPatientData.AN}</div>
-       <div><b>วันที่รับใหม่:</b> ${new Date(currentPatientData.AdmitDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'})}</div>
+    <div class="flex flex-col items-center mb-4 relative">
+        <h2 class="font-bold text-lg">แบบบันทึกการจำแนกผู้ป่วย หอสงฆ์อาพาธ</h2>
+        <h3 class="font-bold text-md">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+        
+        <div class="absolute right-0 top-0 text-[10px] text-right mt-1">
+            <div>จำหน่าย ${dischargeDateStr}</div>
+            <div>รับใหม่ ${admitDateStr}</div>
+        </div>
+    </div>
+
+    <div class="mb-2 text-[11px] font-bold">
+       ชื่อ-สกุล: ${currentPatientData.Name} <span class="ml-4">AN: ${currentPatientData.AN}</span>
     </div>
   `;
 
-  // สร้างตาราง
+  // --- สร้าง Table ---
   html += `
-    <table class="w-full border-collapse border border-black text-center text-[10px]">
+    <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
       <thead>
         <tr class="bg-gray-100">
-          <th rowspan="2" class="border border-black p-1 w-48 text-left">ว/ด/ป</th>
+          <th rowspan="2" class="border border-black p-1 w-[160px] text-left align-middle">ว/ด/ป</th>
   `;
 
   // Loop Header วันที่ (5 วัน)
@@ -3428,89 +3475,105 @@ function renderClassifySheet(page) {
   // Loop Header เวร (ด/ช/บ)
   for (let i = 0; i < 5; i++) {
      html += `
-       <th class="border border-black p-0.5 w-6">ด</th>
-       <th class="border border-black p-0.5 w-6">ช</th>
-       <th class="border border-black p-0.5 w-6">บ</th>
+       <th class="border border-black p-0.5 w-[20px]">ด</th>
+       <th class="border border-black p-0.5 w-[20px]">ช</th>
+       <th class="border border-black p-0.5 w-[20px]">บ</th>
      `;
   }
   html += `</tr></thead><tbody>`;
 
-  // รายการประเมิน (Mapping ข้อมูล)
-  const rows = [
-    { label: "1. สัญญาณชีพ", key: "Score_1" },
-    { label: "2. อาการแสดงทางระบบประสาท", key: "Score_2" },
-    { label: "3. การตรวจรักษา/ผ่าตัด", key: "Score_3" },
-    { label: "4. พฤติกรรม/อารมณ์/สังคม", key: "Score_4" },
-    { label: "5. กิจวัตรประจำวัน", key: "Score_5" },
-    { label: "6. สนับสนุนจิตใจ/อารมณ์", key: "Score_6" },
-    { label: "7. ยา/หัตถการ/ฟื้นฟู", key: "Score_7" },
-    { label: "8. บรรเทาอาการรบกวน", key: "Score_8" },
-    { label: "รวมคะแนน", key: "Total_Score", bg: "bg-gray-100 font-bold" },
-    { label: "ประเภทผู้ป่วย", key: "Category", bg: "bg-gray-200 font-bold" },
-    { label: "ผู้ประเมิน", key: "Assessor_Name", isText: true }
+  // --- กำหนดโครงสร้างแถว (มีหัวข้อคั่น I, II) ---
+  const tableStructure = [
+    { type: 'header', text: 'I. สภาวะสุขภาพ' },
+    { type: 'row', label: '1. สัญญาณชีพ', key: 'Score_1' },
+    { type: 'row', label: '2. อาการแสดงทางระบบประสาท', key: 'Score_2' },
+    { type: 'row', label: '3. การตรวจรักษา/ผ่าตัด', key: 'Score_3' },
+    { type: 'row', label: '4. พฤติกรรม/อารมณ์/สังคม', key: 'Score_4' },
+    { type: 'header', text: 'II. ความต้องการการดูแลขั้นต่ำ' },
+    { type: 'row', label: '5. กิจวัตรประจำวัน', key: 'Score_5' },
+    { type: 'row', label: '6. สนับสนุนจิตใจ/อารมณ์', key: 'Score_6' },
+    { type: 'row', label: '7. ยา/หัตถการ/ฟื้นฟู', key: 'Score_7' },
+    { type: 'row', label: '8. บรรเทาอาการรบกวน', key: 'Score_8' },
+    { type: 'summary', label: 'รวมคะแนน', key: 'Total_Score' },
+    { type: 'summary', label: 'ประเภทผู้ป่วย', key: 'Category' },
+    { type: 'text', label: 'ผู้ประเมิน', key: 'Assessor_Name' }
   ];
 
-  rows.forEach(r => {
-     html += `<tr><td class="border border-black p-1 text-left ${r.bg || ''}">${r.label}</td>`;
-     
-     // Loop 5 วัน
-     for (let i = 0; i < 5; i++) {
-        const currDate = new Date(admitDate);
-        currDate.setDate(admitDate.getDate() + startDayOffset + i);
-        // แปลงวันที่เป็น YYYY-MM-DD เพื่อเทียบกับข้อมูล (ต้องตรงกับ Code.gs)
-        // หมายเหตุ: getISODate ใน script.js ต้องทำงานถูกต้อง
-        const dateKey = getISODate(currDate); 
-        
-        ['N', 'D', 'E'].forEach(shift => {
-           // ค้นหาข้อมูลที่ตรงกับ วันที่ + เวร
-           const entry = allClassifyDataCache.find(d => {
-              // แปลงวันที่ใน data เป็น String แบบเดียวกัน
-              let dStr = d.Date;
-              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
-                  dStr = getISODate(new Date(d.Date));
-              }
-              return dStr === dateKey && d.Shift === shift;
-           });
+  tableStructure.forEach(item => {
+     if (item.type === 'header') {
+         // แถวหัวข้อใหญ่ (Merged Cells)
+         html += `
+            <tr class="bg-indigo-50/50">
+                <td class="border border-black p-1 text-left font-bold" colspan="16">${item.text}</td>
+            </tr>
+         `;
+     } else {
+         // แถวข้อมูล
+         let labelClass = "text-left pl-1";
+         let rowBg = "";
+         if (item.type === 'summary') {
+             labelClass = "text-right pr-2 font-bold";
+             rowBg = item.key === 'Category' ? "bg-gray-200" : "bg-gray-100";
+         }
 
-           let val = entry ? entry[r.key] : "";
-           
-           // จัดการแสดงผล User (ชื่อย่อหรือชื่อเต็ม)
-           if (r.isText && val) {
-              // ถ้าชื่อยาวไปอาจตัดคำ
-              val = `<span class="text-[8px]">${val.split(' ')[0]}</span>`;
-           } else if (!r.isText && val == 0) {
-              val = ""; // คะแนน 0 ไม่ต้องโชว์
-           }
+         html += `<tr class="${rowBg}">
+            <td class="border border-black p-1 ${labelClass}">${item.label}</td>`;
 
-           html += `<td class="border border-black p-0.5 text-center align-middle h-6 ${r.bg || ''}">${val}</td>`;
-        });
+         // Loop 5 วัน
+         for (let i = 0; i < 5; i++) {
+            const currDate = new Date(admitDate);
+            currDate.setDate(admitDate.getDate() + startDayOffset + i);
+            const dateKey = getISODate(currDate); 
+            
+            ['N', 'D', 'E'].forEach(shift => {
+               // ค้นหาข้อมูล
+               const entry = allClassifyDataCache.find(d => {
+                  let dStr = d.Date;
+                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
+                      dStr = getISODate(new Date(d.Date));
+                  }
+                  return dStr === dateKey && d.Shift === shift;
+               });
+
+               let val = entry ? entry[item.key] : "";
+               
+               if (item.type === 'text' && val) {
+                  // ตัดชื่อให้สั้นลงถ้าเป็นช่องผู้ประเมิน
+                  val = `<span class="text-[7px] block leading-none transform -rotate-0 whitespace-nowrap overflow-hidden text-ellipsis max-w-[30px]" title="${val}">${val.split(' ')[0]}</span>`;
+               } else if ((item.type === 'row' || item.type === 'summary') && val == 0) {
+                  val = ""; 
+               }
+
+               html += `<td class="border border-black p-0.5 text-center align-middle h-5">${val}</td>`;
+            });
+         }
+         html += `</tr>`;
      }
-     html += `</tr>`;
   });
 
   html += `</tbody></table>`;
 
-  // Footer Criteria (เกณฑ์การแบ่งประเภท)
+  // --- Footer Criteria (เกณฑ์การแบ่งประเภท) ---
   html += `
-    <div class="mt-4 grid grid-cols-2 gap-4 text-[10px] text-gray-600 border-t border-gray-300 pt-2">
-      <div>
-        <div><b>ประเภทที่ 1:</b> ผู้ป่วยพักฟื้น (คะแนน ≤ 8)</div>
-        <div><b>ประเภทที่ 2:</b> เจ็บป่วยเล็กน้อย (คะแนน 9-14)</div>
-        <div><b>ประเภทที่ 3:</b> เจ็บป่วยปานกลาง (คะแนน 15-20)</div>
-      </div>
-      <div>
-        <div><b>ประเภทที่ 4:</b> ผู้ป่วยหนัก (คะแนน 21-26)</div>
-        <div><b>ประเภทที่ 5:</b> วิกฤต (คะแนน 27-32)</div>
-      </div>
+    <div class="mt-4 text-[10px] text-gray-700">
+       <div class="mb-1">นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8</div>
+       <div class="grid grid-cols-2 gap-x-8">
+          <div>
+            <div><b>ประเภทที่ 1:</b> ผู้ป่วยพักฟื้นดูแลตัวเองได้ (คะแนน ≤ 8)</div>
+            <div><b>ประเภทที่ 2:</b> ผู้ป่วยเจ็บป่วยเล็กน้อย (คะแนน 9-14)</div>
+            <div><b>ประเภทที่ 3:</b> ผู้ป่วยเจ็บป่วยปานกลาง (คะแนน 15-20)</div>
+          </div>
+          <div>
+            <div><b>ประเภทที่ 4:</b> ผู้ป่วยหนัก (คะแนน 21-26)</div>
+            <div><b>ประเภทที่ 5:</b> ผู้ป่วยหนักมาก/วิกฤต (คะแนน 27-32)</div>
+          </div>
+       </div>
     </div>
   `;
 
   container.innerHTML = html;
-  pageNumSpan.textContent = page;
-  
-  // Update Buttons state
-  btnPrev.disabled = (page <= 1);
-  // (Optional) ปิดปุ่ม Next ถ้าไม่มีข้อมูลในหน้าถัดไป แต่ในบริบทนี้เปิดไว้เผื่อดูอนาคตได้
+  if(pageNumSpan) pageNumSpan.textContent = page;
+  if(btnPrev) btnPrev.disabled = (page <= 1);
 }
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
