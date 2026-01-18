@@ -3558,37 +3558,44 @@ async function handleClassifyPrint() {
 }
 
 // ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: แสดงตำแหน่งท้ายชื่อ)
+// ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: ปี พ.ศ. เต็ม + ตัดคำนำหน้าชื่อในตาราง)
 function renderClassifySheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("classify-sheet-content");
-  const pageNumSpan = document.getElementById("print-classify-page-num");
-  const btnPrev = document.getElementById("btn-prev-classify-sheet");
   
   if(!container) return;
+
+  // --- Helper Function: ตัดคำนำหน้าและนามสกุล (เฉพาะในฟังก์ชันนี้) ---
+  const getShortName = (fullName) => {
+      if (!fullName) return "";
+      // 1. ลบคำนำหน้าชื่อออก (นาย, นาง, นางสาว, น.ส., ยศต่างๆ)
+      let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
+      // 2. ตัดเอาเฉพาะชื่อต้น (โดยการแบ่งช่องว่างแล้วเอาตัวแรก)
+      return cleaned.split(/\s+/)[0]; 
+  };
 
   // 1. คำนวณวันที่
   const admitDate = new Date(currentPatientData.AdmitDate); 
   const startDayOffset = (page - 1) * 5;
-  const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  // [แก้ไข] ใช้ year: 'numeric' เพื่อแสดง พ.ศ. เต็ม (เช่น 2569)
+  const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
   
   // จัดการวันที่จำหน่าย
   let dischargeDateStr = "........................";
   if (options.customDischargeDate) {
       const d = new Date(options.customDischargeDate);
-      dischargeDateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+      dischargeDateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
   } else if (currentPatientData.DischargeDate) {
-      dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+      dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
   }
 
-  // จัดการชื่อและตำแหน่งผู้ประเมิน
+  // จัดการชื่อและตำแหน่งผู้ประเมิน (สำหรับ Footer ใช้ชื่อเต็ม+ตำแหน่ง)
   const assessorNameVal = options.customAssessor || "";
   const assessorPosVal = options.customAssessorPosition || "";
   
-  // สร้าง String ชื่อ+ตำแหน่ง สำหรับท้ายกระดาษ (ขวา)
   const assessorDisplay = assessorNameVal 
       ? `(${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''})` 
       : "(..................................................)";
 
-  // สร้าง String ชื่อ+ตำแหน่ง สำหรับผู้พิมพ์ (ซ้าย)
   const currentUser = assessorNameVal 
       ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` 
       : "(เจ้าหน้าที่)";
@@ -3635,7 +3642,8 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
   for (let i = 0; i < 5; i++) {
      const currDate = new Date(admitDate);
      currDate.setDate(admitDate.getDate() + startDayOffset + i);
-     const dateStr = currDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
+     // [แก้ไข] ใช้ year: 'numeric' แสดงปีเต็ม (เช่น 13/01/2569)
+     const dateStr = currDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
      html += `<th colspan="3" class="border border-black p-1 font-bold">${dateStr}</th>`;
   }
   html += `</tr><tr class="bg-gray-50">`;
@@ -3699,8 +3707,10 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
 
                let val = entry ? entry[item.key] : "";
                
+               // [แก้ไข] ตัดคำนำหน้าและนามสกุลสำหรับช่องผู้ประเมิน
                if (item.type === 'text' && val) {
-                  val = `<span class="text-[7px] block leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[35px]" title="${val}">${val.split(' ')[0]}</span>`;
+                  const shortName = getShortName(val);
+                  val = `<span class="text-[8px] block leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[35px]" title="${val}">${shortName}</span>`;
                } else if ((item.type === 'row' || item.type === 'summary') && val == 0) {
                   val = ""; 
                }
@@ -3751,8 +3761,12 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
   container.innerHTML = html;
   
   if(!targetContainer) {
-      if(pageNumSpan) pageNumSpan.textContent = page;
-      if(btnPrev) btnPrev.disabled = (page <= 1);
+      if(document.getElementById("print-classify-page-num")) {
+          document.getElementById("print-classify-page-num").textContent = page;
+      }
+      if(document.getElementById("btn-prev-classify-sheet")) {
+          document.getElementById("btn-prev-classify-sheet").disabled = (page <= 1);
+      }
   }
 }
 // ----------------------------------------------------------------
