@@ -1132,21 +1132,25 @@ function renderADLTable() {
   });
 }
 async function showFormPreview(formType) {
+  // 1. ซ่อน Placeholder และเคลียร์เนื้อหาเก่า
   chartPreviewPlaceholder.classList.add("hidden");
   chartPreviewContent.innerHTML = "";
-  //--- กรณี Classify (เปลี่ยนจาก showEntryList เป็น renderClassifyPrintMode) ---
-  else if (formType === 'classify') {
+
+  // --- กรณี Classify (เปลี่ยนจาก showEntryList เป็น renderClassifyPrintMode) ---
+  if (formType === 'classify') {
     chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย (Print View)";
-    // ซ่อนปุ่ม Add เดิม (เราจะใช้ปุ่มใน Template แทน หรือใช้ปุ่ม Add หลักก็ได้)
+    // ซ่อนปุ่มแก้ไข (Edit) เพราะหน้า Print View เน้นดูภาพรวม
     chartEditBtn.classList.add("hidden"); 
+    // แสดงปุ่มเพิ่มใหม่ (Add New)
     chartAddNewBtn.classList.remove("hidden");
     chartAddNewBtn.dataset.form = "classify";
     
-    // เรียกฟังก์ชันเรนเดอร์แบบใหม่
+    // เรียกฟังก์ชันเรนเดอร์แบบใหม่ (เสมือนพิมพ์)
     await renderClassifyPrintMode(currentPatientAN);
-  
+  }
+
   // --- กรณีแบบประเมินแรกรับ FR-IPD-004 (เวอร์ชันเสมือนพิมพ์) ---
-  if (formType === '004') {
+  else if (formType === '004') {
     chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
     const template = document.getElementById("preview-template-004");
     if (!template) {
@@ -1307,11 +1311,14 @@ async function showFormPreview(formType) {
     } catch (error) { Swal.close(); showError("โหลดข้อมูลไม่สำเร็จ", error.message); }
   }
 
-  // --- กรณีอื่นๆ (Classify หรืออื่นๆ ที่แสดงเป็นรายการ) ---
+  // --- กรณีอื่นๆ (Generic) ---
   else {
-    const formTitle = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`).textContent;
+    const formTitleItem = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`);
+    const formTitle = formTitleItem ? formTitleItem.textContent : "รายละเอียด";
+    
     chartPreviewTitle.textContent = formTitle;
     await showEntryList(formType, formTitle);
+    
     chartEditBtn.classList.add("hidden");
     chartAddNewBtn.classList.remove("hidden");
     chartAddNewBtn.dataset.form = formType;
