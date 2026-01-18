@@ -4606,14 +4606,13 @@ function renderBradenPage2(container, data, options = {}) {
 // FR-IPD-004 PRINT SYSTEM (FIXED MAPPING & LAYOUT)
 // =================================================================
 
-// --- 1. ตัวแปลงข้อมูล (Data Normalizer) แก้ไขให้ตรงกับชื่อคอลัมน์ใน Sheet ---
+// --- 1. ตัวแปลงข้อมูล (Data Normalizer) ---
 function normalizeData004(raw) {
     if (!raw) return {};
     
     const d = {};
 
     // 1. ข้อมูลทั่วไป (Header)
-    // เช็คชื่อคอลัมน์จาก PDF: AdmittedFrom, Refer, ArriveBy, InfoSource
     d.AdmitDate = raw.AdmitDate; 
     d.AdmitTime = raw.AdmitTime; 
     d.AdmitFrom = raw.AdmittedFrom; // รับจาก
@@ -4626,17 +4625,16 @@ function normalizeData004(raw) {
 
     // 2. อาการและสัญญาณชีพ
     d.ChiefComplaint = raw.ChiefComplaint; 
-    d.PresentIllness = raw.Presentiliness; // **แก้ให้ตรงกับ Sheet (Presentiliness)**
+    d.PresentIllness = raw.Presentiliness; // ตรงตาม PDF
     d.InitialSymptoms = raw.AdmitSymptoms; 
     d.T = raw.Admit_BT;
     d.P = raw.Admit_PR;
     d.R = raw.Admit_RR;
     d.BP = raw.Admit_BP;
 
-    // 3. ประวัติเจ็บป่วย (Hx_)
-    d.UD = raw.Hx_Status; // มี/ไม่มี
+    // 3. ประวัติเจ็บป่วย
+    d.UD = raw.Hx_Status; 
     d.UD_List = [];
-    // แปลงค่า TRUE/FALSE จาก Sheet ให้เป็น Array
     const pushIfTrue = (key, val) => { if(raw[key] === true || raw[key] === "TRUE") d.UD_List.push(val); };
     
     pushIfTrue('Hx_HT', 'HT');
@@ -4664,35 +4662,64 @@ function normalizeData004(raw) {
     d.FamilyHx = raw.FamHx_Status;
     d.FamilyHxDetail = raw.FamHx_Detail;
 
-    // 5. สารเสพติด (Habit_)
+    // 5. สารเสพติด
     d.Alcohol = raw.Habit_Alcohol;
-    d.AlcoholAmount = raw.Habit_Alcohol_Amount; // *ชื่อสมมติ ถ้าใน sheet ไม่มีต้องเช็คอีกที
+    d.AlcoholAmount = raw.Habit_Alcohol_Amount; 
     d.Smoking = raw.Habit_Smoke;
     d.SmokingAmount = raw.Habit_Smoke_Amount;
     d.Drugs = raw.Habit_Drugs;
     d.DrugsDetail = raw.Habit_Drugs_Detail;
+    
+    // ยาที่ใช้ประจำ (ใช้ HomeMed_Text ตาม PDF)
     d.CurrentMeds = raw.HomeMed_Text;
 
-    // 6. การประเมิน (Neuro_, Comm_, Sensory_, Resp_, ADL_, Nutri_, Elim_)
-    d.Conscious = raw.Neuro_Conscious;
-    d.Mental = raw.Neuro_Mental;
-    d.MentalOther = raw.Neuro_Mental_Other_Text; // *ถ้ามี
-    d.Comm = raw.Comm_Speech;
-    d.Lang = raw.Comm_Lang;
-    d.LangOther = raw.Comm_Lang_Other_Text;
-    d.Vision = raw.Sensory_Vision;
-    d.VisionSide = raw.Sensory_Vision_Side; // *ถ้ามี
-    d.Hearing = raw.Sensory_Hearing;
-    d.HearingSide = raw.Sensory_Hearing_Side; // *ถ้ามี
-    d.Resp = raw.Resp_Status;
-    d.ADL = raw.ADL_Status;
-    d.Diet = raw.Nutri_Eat;
-    d.Oral = raw.Nutri_Oral;
-    d.Denture = raw.Nutri_Denture;
-    d.Stool = raw.Elim_Bowel;
-    d.Urine = raw.Elim_Urine;
+    // 6. การประเมิน (Assessment) - ข้อ 1: รับรู้สุขภาพ
+    d.Health_Before = raw.Health_Before;
+    d.Health_Before_Detail = raw.Health_Before_Detail;
+    d.Health_Current = raw.Health_Current;
+    d.Health_Care = raw.Health_Care;
+    d.Health_Care_Other = raw.Health_Care_Other;
+    d.Health_Expect = raw.Health_Expect;
 
-    // ส่งคืนข้อมูลที่ Clean แล้ว
+    // ข้อ 2: โภชนาการ
+    d.Diet_Meal_Per_Day = raw.Nutri_Meal_Per_Day;
+    d.Diet_Type = raw.Nutri_Type;
+    d.Diet_Specific = raw.Nutri_Specific;
+    d.Diet_Problem = raw.Nutri_Problem;
+    d.Diet_Problem_Detail = raw.Nutri_Problem_Detail;
+    d.Skin = raw.Skin_Status;
+    d.Skin_Detail = raw.Skin_Detail;
+
+    // ข้อ 3: ขับถ่าย
+    d.Urine_Freq = raw.Elim_Urine_Freq;
+    d.Urine_Status = raw.Elim_Urine_Status;
+    d.Urine_Detail = raw.Elim_Urine_Detail;
+    d.Stool_Freq = raw.Elim_Stool_Freq;
+    d.Stool_Status = raw.Elim_Stool_Status;
+    d.Stool_Detail = raw.Elim_Stool_Detail;
+    d.Abdom_Excrete = raw.Elim_Abdom; // การขับถ่ายทางหน้าท้อง
+
+    // ข้อ 4: ADL (Table)
+    for(let i=1; i<=6; i++) {
+        d[`ADL_${i}`] = raw[`ADL_Item_${i}`];
+    }
+
+    // ข้อ 5: การนอน
+    d.Sleep_Hours = raw.Sleep_Hours;
+    d.Sleep_Sufficiency = raw.Sleep_Sufficiency;
+    d.Sleep_Problem = raw.Sleep_Problem;
+    d.Sleep_Problem_Detail = raw.Sleep_Problem_Detail;
+
+    // ข้อ 6: รับรู้/ประสาทสัมผัส
+    d.Conscious = raw.Neuro_Conscious;
+    d.Vision = raw.Sensory_Vision;
+    d.Vision_Other = raw.Sensory_Vision_Other;
+    d.Comm = raw.Comm_Speech;
+    d.Comm_Problem = raw.Comm_Problem_Detail;
+    d.Comm_Lang = raw.Comm_Foreign_Lang;
+    d.Move = raw.Move_Status;
+    d.Move_Other = raw.Move_Other_Detail;
+
     return d;
 }
 
@@ -4941,7 +4968,7 @@ function renderForm004Page1(container, options = {}) {
                             ${chkGroup(d.UD_List, 'TB', 'วัณโรค')}
                             
                             <div class="col-span-2 flex items-end">
-                                ${chkGroup(d.UD_List, 'Cancer', 'มะเร็ง')} ${dot(d.UD_Cancer_Detail, "120px")}
+                                ${chkGroup(d.UD_List, 'Cancer', 'มะเร็ง')} ${dot(d.UD_Cancer_Detail, "100px")}
                             </div>
                             <div class="col-span-4 flex items-end">
                                 <span>อื่นๆ : ${dot(d.UD_Other, "300px")}</span>
