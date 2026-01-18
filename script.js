@@ -4606,119 +4606,121 @@ function renderBradenPage2(container, data, options = {}) {
 // FR-IPD-004 PRINT SYSTEM (FIXED MAPPING & LAYOUT)
 // =================================================================
 
-// --- 1. ตัวแปลงข้อมูล (Data Normalizer) ---
+// --- 1. ตัวแปลงข้อมูล (Data Normalizer) : Map ตามคอลัมน์ Sheet ล่าสุด ---
 function normalizeData004(raw) {
     if (!raw) return {};
     
     const d = {};
 
-    // 1. ข้อมูลทั่วไป (Header)
-    d.AdmitDate = raw.AdmitDate; 
-    d.AdmitTime = raw.AdmitTime; 
-    d.AdmitFrom = raw.AdmittedFrom; // รับจาก
-    d.ReferFrom = raw.Refer;        // รับ REFER จาก
-    d.ArrivalMethod = raw.ArriveBy; // มาโดย
-    d.Informant = raw.InfoSource;   // ผู้ให้ข้อมูล
-    d.MainCaregiver = raw.MainCaregiver_Name; 
-    d.CaregiverRelation = raw.MainCaregiver_Rel; 
-    d.CaregiverOther = raw.MainCaregiver_Rel_Other_Text;
+    // 1. Header
+    d.AdmitDate = raw.AdmitDate;
+    d.AdmitTime = raw.AdmitTime;
+    d.AdmittedFrom = raw.AdmittedFrom;
+    d.Refer = raw.Refer;
+    d.ArriveBy = raw.ArriveBy; // เดินมา, รถนั่ง, เปลนอน
+    d.InfoSource = raw.InfoSource; // ผู้ป่วย, ผู้นำส่ง/ญาติ
+    d.MainCaregiver_Name = raw.MainCaregiver_Name;
+    d.MainCaregiver_Rel = raw.MainCaregiver_Rel;
 
-    // 2. อาการและสัญญาณชีพ
-    d.ChiefComplaint = raw.ChiefComplaint; 
-    d.PresentIllness = raw.Presentiliness; // ตรงตาม PDF
-    d.InitialSymptoms = raw.AdmitSymptoms; 
-    d.T = raw.Admit_BT;
-    d.P = raw.Admit_PR;
-    d.R = raw.Admit_RR;
+    // 2. Clinical Data
+    d.ChiefComplaint = raw.ChiefComplaint;
+    d.PresentIllness = raw.PresentIllness;
+    d.AdmitSymptoms = raw.AdmitSymptoms;
+    d.BT = raw.Admit_BT;
+    d.PR = raw.Admit_PR;
+    d.RR = raw.Admit_RR;
     d.BP = raw.Admit_BP;
 
-    // 3. ประวัติเจ็บป่วย
-    d.UD = raw.Hx_Status; 
-    d.UD_List = [];
-    const pushIfTrue = (key, val) => { if(raw[key] === true || raw[key] === "TRUE") d.UD_List.push(val); };
+    // 3. History (Hx)
+    d.Hx_Status = raw.Hx_Status; // ไม่มี, ไม่ทราบ, ไม่เคยตรวจ, มี
+    d.Hx_List = [];
+    const pushHx = (key, val) => { if(raw[key] === true || raw[key] === "TRUE") d.Hx_List.push(val); };
     
-    pushIfTrue('Hx_HT', 'HT');
-    pushIfTrue('Hx_Heart', 'Heart');
-    pushIfTrue('Hx_Liver', 'Liver');
-    pushIfTrue('Hx_Kidney', 'Kidney');
-    pushIfTrue('Hx_DM', 'DM');
-    pushIfTrue('Hx_Asthma', 'Asthma');
-    pushIfTrue('Hx_Epilepsy', 'Epilepsy');
-    pushIfTrue('Hx_TB', 'TB');
-    pushIfTrue('Hx_Cancer', 'Cancer');
+    pushHx('Hx_HT', 'HT');
+    pushHx('Hx_Heart', 'Heart');
+    pushHx('Hx_Liver', 'Liver');
+    pushHx('Hx_Kidney', 'Kidney');
+    pushHx('Hx_DM', 'DM');
+    pushHx('Hx_Asthma', 'Asthma');
+    pushHx('Hx_Epilepsy', 'Epilepsy');
+    pushHx('Hx_TB', 'TB');
+    pushHx('Hx_Cancer', 'Cancer'); // มะเร็ง (ในชีตไม่มีช่องกรอกชนิด ใช้ Hx_Other ต่อท้าย)
     
-    d.UD_Cancer_Detail = raw.UD_Cancer_Detail || ""; 
-    d.UD_Other = raw.Hx_Other || "";
+    d.Hx_Other = raw.Hx_Other || "";
 
-    // 4. ประวัติอื่นๆ
-    d.Allergy = raw.Allergy_Status;
-    d.AllergyDetail = raw.Allergy_Detail;
-    d.Surgery = raw.Sx_Status;
-    d.SurgeryDetail = raw.Sx_Detail;
-    d.SurgeryYear = raw.Sx_Year;
-    d.PrevAdmit = raw.OldAdmit_Status;
-    d.PrevAdmitDx = raw.OldAdmit_Dx;
-    d.PrevAdmitYear = raw.OldAdmit_Year;
-    d.FamilyHx = raw.FamHx_Status;
-    d.FamilyHxDetail = raw.FamHx_Detail;
-
-    // 5. สารเสพติด
-    d.Alcohol = raw.Habit_Alcohol;
-    d.AlcoholAmount = raw.Habit_Alcohol_Amount; 
-    d.Smoking = raw.Habit_Smoke;
-    d.SmokingAmount = raw.Habit_Smoke_Amount;
-    d.Drugs = raw.Habit_Drugs;
-    d.DrugsDetail = raw.Habit_Drugs_Detail;
+    // 4. Allergies / Surgeries / Admit History
+    d.Allergy_Status = raw.Allergy_Status;
+    d.Allergy_Details = raw.Allergy_Details;
     
-    // ยาที่ใช้ประจำ (ใช้ HomeMed_Text ตาม PDF)
-    d.CurrentMeds = raw.HomeMed_Text;
+    d.AdmitHx_Status = raw.AdmitHx_Status;
+    d.AdmitHx_Disease = raw.AdmitHx_Disease;
+    d.AdmitHx_Date = raw.AdmitHx_Date;
 
-    // 6. การประเมิน (Assessment) - ข้อ 1: รับรู้สุขภาพ
-    d.Health_Before = raw.Health_Before;
-    d.Health_Before_Detail = raw.Health_Before_Detail;
-    d.Health_Current = raw.Health_Current;
-    d.Health_Care = raw.Health_Care;
-    d.Health_Care_Other = raw.Health_Care_Other;
-    d.Health_Expect = raw.Health_Expect;
+    d.Sx_Status = raw.Sx_Status;
+    d.Sx_Details = raw.Sx_Details;
+    d.Sx_Date = raw.Sx_Date;
 
-    // ข้อ 2: โภชนาการ
-    d.Diet_Meal_Per_Day = raw.Nutri_Meal_Per_Day;
-    d.Diet_Type = raw.Nutri_Type;
-    d.Diet_Specific = raw.Nutri_Specific;
-    d.Diet_Problem = raw.Nutri_Problem;
-    d.Diet_Problem_Detail = raw.Nutri_Problem_Detail;
-    d.Skin = raw.Skin_Status;
-    d.Skin_Detail = raw.Skin_Detail;
+    d.FamilyHx_Status = raw.FamilyHx_Status;
+    d.FamilyHx_Details = raw.FamilyHx_Details;
 
-    // ข้อ 3: ขับถ่าย
-    d.Urine_Freq = raw.Elim_Urine_Freq;
-    d.Urine_Status = raw.Elim_Urine_Status;
-    d.Urine_Detail = raw.Elim_Urine_Detail;
-    d.Stool_Freq = raw.Elim_Stool_Freq;
-    d.Stool_Status = raw.Elim_Stool_Status;
-    d.Stool_Detail = raw.Elim_Stool_Detail;
-    d.Abdom_Excrete = raw.Elim_Abdom; // การขับถ่ายทางหน้าท้อง
+    // 5. Substance & Meds
+    d.Substance_Alcohol = raw.Substance_Alcohol;
+    d.Substance_Alcohol_Vol = raw.Substance_Alcohol_Vol;
+    d.Substance_Smoke = raw.Substance_Smoke;
+    d.Substance_Smoke_Vol = raw.Substance_Smoke_Vol;
+    
+    d.Meds_Status = raw.Meds_Status;
+    d.Meds_Details = raw.Meds_Details;
 
-    // ข้อ 4: ADL (Table)
-    for(let i=1; i<=6; i++) {
-        d[`ADL_${i}`] = raw[`ADL_Item_${i}`];
-    }
+    // 6. Assessment 1: Health Perception (HP)
+    d.HP_Before = raw.HP_Before; // ดี, ไม่ดี
+    d.HP_Before_Detail = raw.HP_Before_Detail;
+    d.HP_Current = raw.HP_Current; // รุนแรง, ไม่รุนแรง
+    d.HP_Care = raw.HP_Care; // รพ, ซื้อยา, อื่นๆ
+    d.HP_Care_Other = raw.HP_Care_Other;
+    d.HP_Expect = raw.HP_Expect; // หาย, ไม่แน่ใจ, ไม่หาย
 
-    // ข้อ 5: การนอน
+    // 7. Assessment 2: Nutrition
+    d.Nutri_Meals = raw.Nutri_Meals;
+    d.Nutri_Type = raw.Nutri_Type; // ธรรมดา, อ่อน, สายยาง, เฉพาะโรค
+    d.Nutri_Type_Detail = raw.Nutri_Type_Detail;
+    d.Nutri_Problem = raw.Nutri_Problem; // ไม่มี, มี
+    d.Nutri_Problem_Detail = raw.Nutri_Problem_Detail;
+    d.Nutri_Skin = raw.Nutri_Skin; // ปกติ, ไม่ปกติ
+    d.Nutri_Skin_Detail = raw.Nutri_Skin_Detail;
+
+    // 8. Assessment 3: Elimination
+    d.Elim_Urine_Freq = raw.Elim_Urine_Freq;
+    d.Elim_Urine_Status = raw.Elim_Urine_Status;
+    d.Elim_Urine_Detail = raw.Elim_Urine_Detail;
+    d.Elim_Bowel_Freq = raw.Elim_Bowel_Freq;
+    d.Elim_Bowel_Status = raw.Elim_Bowel_Status;
+    d.Elim_Bowel_Detail = raw.Elim_Bowel_Detail;
+    d.Elim_Stoma = raw.Elim_Stoma; // ไม่มี, มี
+
+    // 9. Assessment 4: ADL (Before/Current)
+    d.ADL = {};
+    const adlItems = ['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'];
+    adlItems.forEach(item => {
+        d.ADL[`${item}_Before`] = raw[`ADL_${item}_Before`];
+        d.ADL[`${item}_Current`] = raw[`ADL_${item}_Current`];
+    });
+
+    // 10. Assessment 5: Sleep
     d.Sleep_Hours = raw.Sleep_Hours;
-    d.Sleep_Sufficiency = raw.Sleep_Sufficiency;
+    d.Sleep_Adequacy = raw.Sleep_Adequacy; // เพียงพอ, ไม่เพียงพอ
     d.Sleep_Problem = raw.Sleep_Problem;
     d.Sleep_Problem_Detail = raw.Sleep_Problem_Detail;
 
-    // ข้อ 6: รับรู้/ประสาทสัมผัส
-    d.Conscious = raw.Neuro_Conscious;
-    d.Vision = raw.Sensory_Vision;
-    d.Vision_Other = raw.Sensory_Vision_Other;
-    d.Comm = raw.Comm_Speech;
-    d.Comm_Problem = raw.Comm_Problem_Detail;
-    d.Comm_Lang = raw.Comm_Foreign_Lang;
-    d.Move = raw.Move_Status;
-    d.Move_Other = raw.Move_Other_Detail;
+    // 11. Assessment 6: Cognition (Cogn)
+    d.Cogn_LOC = raw.Cogn_LOC; // รู้สึกตัวดี, สับสน, ซึม, ไม่รู้สึกตัว
+    d.Cogn_Vision = raw.Cogn_Vision; // ปกติ, สั้น, ยาว, แว่น, อื่นๆ
+    d.Cogn_Vision_Other = raw.Cogn_Vision_Other;
+    d.Cogn_Speech = raw.Cogn_Speech; // ปกติ, มีปัญหา, ภาษาต่างประเทศ
+    d.Cogn_Speech_Detail = raw.Cogn_Speech_Detail;
+    d.Cogn_Speech_Other = raw.Cogn_Speech_Other;
+    d.Cogn_Movement = raw.Cogn_Movement; // ปกติ, ข้อติด, อัมพาต, ฯลฯ
+    d.Cogn_Movement_Other = raw.Cogn_Movement_Other;
 
     return d;
 }
@@ -4878,17 +4880,20 @@ async function handleForm004Print(an, preloadedData) {
 }
 
 // =================================================================
-// PAGE 1 RENDERER (FINAL: TEXT & LAYOUT 100% MATCHED)
+// PAGE 1 RENDERER (Layout PDF Match & Data Mapped)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
-    const d = options.data || {};
-    const admitDateStr = d.AdmitDate_Braden || d.AdmitDate; 
-    const dateText = formatDateThai(admitDateStr);
-    const timeText = formatTime(d.AdmitTime || admitDateStr);
+    const d = options.data || {}; // ข้อมูลที่ผ่าน normalizeData004 มาแล้ว
+    
+    const dateText = formatDateThai(d.AdmitDate);
+    const timeText = formatTime(d.AdmitTime);
+
+    // Helper เช็ค ADL (val = ค่าจาก DB, target = ค่าในตาราง)
+    const checkADL = (val, target) => (val === target ? '/' : '');
 
     let html = `
-    <div class="flex justify-between items-start mb-2 border-b-2 border-black pb-2 font-sarabun text-black">
-       <div class="w-[15%] text-[10px] text-center border border-black p-2 flex flex-col justify-center h-16">
+    <div class="flex justify-between items-start mb-1 border-b-2 border-black pb-1 font-sarabun text-black">
+       <div class="w-[15%] text-[10px] text-center border border-black p-1 flex flex-col justify-center h-14">
           <div class="font-bold text-lg">แบบ 004</div>
        </div>
        <div class="text-center w-[70%] pt-1">
@@ -4901,132 +4906,129 @@ function renderForm004Page1(container, options = {}) {
        </div>
     </div>
 
-    <div class="text-[12px] leading-snug font-sarabun text-black">
+    <div class="text-[11px] leading-snug font-sarabun text-black">
         <div class="flex items-end w-full mb-1 whitespace-nowrap">
-            <span class="mr-1">วันที่</span> ${dot(dateText, "90px")}
-            <span class="mx-1">เวลา</span> ${dot(timeText, "50px")} <span class="mr-2">น.</span>
-            <span class="mr-1">รับจาก</span> ${dot(d.AdmitFrom, "150px")}
-            <span class="mx-1">รับ REFER จาก</span> ${dot(d.ReferFrom, "150px")}
+            <span class="mr-1">วันที่</span> ${dot(dateText, "80px")}
+            <span class="mx-1">เวลา</span> ${dot(timeText, "40px")} <span class="mr-2">น.</span>
+            <span class="mr-1">รับจาก</span> ${dot(d.AdmittedFrom, "140px")}
+            <span class="mx-1">รับ REFER จาก</span> ${dot(d.Refer, "140px")}
         </div>
 
         <div class="flex flex-wrap items-end gap-1 mb-1">
             <span class="font-bold mr-2">มาโดย :</span> 
-            ${chkGroup(d.ArrivalMethod, 'เดินมา', 'เดินมา')}
-            ${chkGroup(d.ArrivalMethod, 'รถนั่ง', 'รถนั่ง')}
-            ${chkGroup(d.ArrivalMethod, 'เปลนอน', 'เปลนอน')}
+            ${chkGroup(d.ArriveBy, 'Walk', 'เดินมา')}
+            ${chkGroup(d.ArriveBy, 'Wheelchair', 'รถนั่ง')}
+            ${chkGroup(d.ArriveBy, 'Stretcher', 'เปลนอน')}
         </div>
         
         <div class="flex flex-wrap items-end gap-1 mb-1">
             <span class="font-bold mr-2">ผู้ให้ข้อมูล :</span>
-            ${chkGroup(d.Informant, 'ผู้ป่วย', 'ผู้ป่วย')}
-            ${chkGroup(d.Informant, 'ญาติ', 'ผู้นำส่ง/ญาติ')}
+            ${chkGroup(d.InfoSource, 'Patient', 'ผู้ป่วย')}
+            ${chkGroup(d.InfoSource, 'Relative', 'ผู้นำส่ง/ญาติ')}
             
-            <span class="font-bold ml-4 mr-1">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver, "180px")}
-            <span class="font-bold ml-1 mr-1">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.CaregiverRelation, "120px")}
+            <span class="font-bold ml-6 mr-1">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver_Name, "160px")}
+            <span class="font-bold ml-1 mr-1">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.MainCaregiver_Rel, "100px")}
         </div>
 
-        <div class="border border-black p-2 mt-2 space-y-1">
+        <div class="border border-black p-2 mt-1 space-y-1">
             <div class="flex items-end">
-                <span class="font-bold w-24 flex-shrink-0">อาการสำคัญ</span>
-                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold relative top-[1px]">${d.ChiefComplaint || ''}</div>
+                <span class="font-bold w-20 flex-shrink-0">อาการสำคัญ</span>
+                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold relative top-[2px]">${d.ChiefComplaint || ''}</div>
             </div>
             <div class="flex items-end">
-                <span class="font-bold w-28 flex-shrink-0">ประวัติการเจ็บป่วย</span>
-                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold relative top-[1px]">${d.PresentIllness || ''}</div>
+                <span class="font-bold w-24 flex-shrink-0">ประวัติการเจ็บป่วย</span>
+                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold relative top-[2px]">${d.PresentIllness || ''}</div>
             </div>
             <div class="flex items-end mt-1">
-                <span class="font-bold w-40 flex-shrink-0">อาการและอาการแสดงแรกรับ</span>
-                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold relative top-[1px]">${d.InitialSymptoms || ''}</div>
+                <span class="font-bold w-36 flex-shrink-0">อาการและอาการแสดงแรกรับ</span>
+                <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold relative top-[2px]">${d.AdmitSymptoms || ''}</div>
             </div>
             
             <div class="flex items-end mt-1">
                 <span class="font-bold mr-2">สัญญาณชีพแรกรับ</span>
-                BT ${dot(d.T, "40px")} (°C) 
-                <span class="ml-2">PR</span> ${dot(d.P, "40px")} (/min)
-                <span class="ml-2">RR</span> ${dot(d.R, "40px")} (/min)
+                BT ${dot(d.BT, "30px")} (°C) 
+                <span class="ml-2">PR</span> ${dot(d.PR, "30px")} (/min)
+                <span class="ml-2">RR</span> ${dot(d.RR, "30px")} (/min)
                 <span class="ml-2">BP</span> ${dot(d.BP, "60px")} (mmHg)
             </div>
 
-            <div class="flex flex-wrap items-start mt-2 border-t border-black pt-2">
+            <div class="flex flex-wrap items-start mt-2 border-t border-black pt-1">
                 <span class="font-bold mr-2 w-20">โรคประจำตัว</span>
                 <div class="flex flex-col flex-grow">
                     <div class="flex gap-4 mb-1">
-                        ${chkGroup(d.UD, 'ไม่มี', 'ไม่มี')}
-                        ${chkGroup(d.UD, 'ไม่ทราบ', 'ไม่ทราบ')}
-                        ${chkGroup(d.UD, 'ไม่เคยตรวจ', 'ไม่เคยตรวจ')}
+                        ${chkGroup(d.Hx_Status, 'None', 'ไม่มี')}
+                        ${chkGroup(d.Hx_Status, 'Unknown', 'ไม่ทราบ')}
+                        ${chkGroup(d.Hx_Status, 'NeverCheck', 'ไม่เคยตรวจ')}
                     </div>
                     <div class="flex flex-wrap gap-y-1 items-end">
-                        ${chkGroup(d.UD, 'มี', 'มี ได้แก่')}
+                        ${chkGroup(d.Hx_Status, 'Yes', 'มี ได้แก่')}
                         <div class="ml-2 grid grid-cols-4 gap-x-1 gap-y-1 w-full">
-                            ${chkGroup(d.UD_List, 'HT', 'ความดันโลหิตสูง')}
-                            ${chkGroup(d.UD_List, 'Heart', 'โรคหัวใจ')}
-                            ${chkGroup(d.UD_List, 'Liver', 'โรคตับ')}
-                            ${chkGroup(d.UD_List, 'Kidney', 'โรคไต')}
-                            ${chkGroup(d.UD_List, 'DM', 'เบาหวาน')}
-                            ${chkGroup(d.UD_List, 'Asthma', 'หอบหืด')}
-                            ${chkGroup(d.UD_List, 'Epilepsy', 'ลมชัก')}
-                            ${chkGroup(d.UD_List, 'TB', 'วัณโรค')}
-                            
+                            ${chkGroup(d.Hx_List, 'HT', 'ความดันโลหิตสูง')}
+                            ${chkGroup(d.Hx_List, 'Heart', 'โรคหัวใจ')}
+                            ${chkGroup(d.Hx_List, 'Liver', 'โรคตับ')}
+                            ${chkGroup(d.Hx_List, 'Kidney', 'โรคไต')}
+                            ${chkGroup(d.Hx_List, 'DM', 'เบาหวาน')}
+                            ${chkGroup(d.Hx_List, 'Asthma', 'หอบหืด')}
+                            ${chkGroup(d.Hx_List, 'Epilepsy', 'ลมชัก')}
+                            ${chkGroup(d.Hx_List, 'TB', 'วัณโรค')}
                             <div class="col-span-2 flex items-end">
-                                ${chkGroup(d.UD_List, 'Cancer', 'มะเร็ง')} ${dot(d.UD_Cancer_Detail, "100px")}
+                                ${chkGroup(d.Hx_List, 'Cancer', 'มะเร็ง')} ${dot(d.Hx_Other, "120px")}
                             </div>
-                            <div class="col-span-4 flex items-end">
-                                <span>อื่นๆ : ${dot(d.UD_Other, "300px")}</span>
+                            <div class="col-span-2 flex items-end">
+                                <span>อื่นๆ: ${dot("", "100%")}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-1 mt-1 border-t border-black pt-2">
+            <div class="grid grid-cols-1 gap-1 mt-1 border-t border-black pt-1">
                 <div class="flex items-end">
                     <span class="font-bold w-32">การแพ้ยา/สารต่าง ๆ :</span>
-                    ${chkGroup(d.Allergy, 'ไม่เคย', 'ไม่เคย')}
-                    ${chkGroup(d.Allergy, 'เคย', 'เคย (ระบุ)')} ${dot(d.AllergyDetail, "100%")}
+                    ${chkGroup(d.Allergy_Status, 'No', 'ไม่เคย')}
+                    ${chkGroup(d.Allergy_Status, 'Yes', 'เคย(ระบุ)')} ${dot(d.Allergy_Details, "100%")}
                 </div>
                 <div class="flex items-end">
-                    <span class="font-bold w-36">การรักษาตัวในโรงพยาบาล :</span>
-                    ${chkGroup(d.PrevAdmit, 'ไม่เคย', 'ไม่เคย')}
-                    ${chkGroup(d.PrevAdmit, 'เคย', 'เคย ด้วยโรค')} ${dot(d.PrevAdmitDx, "150px")}
-                    <span class="ml-2">เมื่อ</span> ${dot(d.PrevAdmitYear, "80px")}
+                    <span class="font-bold w-36">การรักษาตัวในโรงพยาบาล:</span>
+                    ${chkGroup(d.AdmitHx_Status, 'No', 'ไม่เคย')}
+                    ${chkGroup(d.AdmitHx_Status, 'Yes', 'เคย ด้วยโรค')} ${dot(d.AdmitHx_Disease, "150px")}
+                    <span class="ml-2">เมื่อ</span> ${dot(d.AdmitHx_Date, "80px")}
                 </div>
                 <div class="flex items-end">
                     <span class="font-bold w-32">การผ่าตัด :</span>
-                    ${chkGroup(d.Surgery, 'ไม่เคย', 'ไม่เคย')}
-                    ${chkGroup(d.Surgery, 'เคย', 'เคย ผ่าตัด')} ${dot(d.SurgeryDetail, "150px")}
-                    <span class="ml-2">เมื่อ</span> ${dot(d.SurgeryYear, "80px")}
+                    ${chkGroup(d.Sx_Status, 'No', 'ไม่เคย')}
+                    ${chkGroup(d.Sx_Status, 'Yes', 'เคย ผ่าตัด')} ${dot(d.Sx_Details, "150px")}
+                    <span class="ml-2">เมื่อ</span> ${dot(d.Sx_Date, "80px")}
                 </div>
                 <div class="flex items-end">
-                    <span class="font-bold w-40">ประวัติการเจ็บป่วยในครอบครัว :</span>
-                    ${chkGroup(d.FamilyHx, 'ไม่มี', 'ไม่มี')}
-                    ${chkGroup(d.FamilyHx, 'มี', 'มี (ระบุ)')} ${dot(d.FamilyHxDetail, "100%")}
+                    <span class="font-bold w-40">ประวัติการเจ็บป่วยในครอบครัว:</span>
+                    ${chkGroup(d.FamilyHx_Status, 'No', 'ไม่มี')}
+                    ${chkGroup(d.FamilyHx_Status, 'Yes', 'มี(ระบุ)')} ${dot(d.FamilyHx_Details, "100%")}
                 </div>
             </div>
 
-            <div class="flex items-start mt-1 border-t border-black pt-2">
+            <div class="flex items-start mt-1 border-t border-black pt-1">
                 <span class="font-bold w-20">สิ่งเสพติด :</span>
                 <div class="flex-grow">
                     <div class="flex flex-wrap gap-4 mb-1">
-                        <span class="font-bold">สุรา</span>
-                        ${chkGroup(d.Alcohol, 'ไม่ดื่ม', 'ไม่ดื่ม')}
-                        ${chkGroup(d.Alcohol, 'ดื่มนานๆครั้ง', 'ดื่มนานๆครั้ง')}
-                        ${chkGroup(d.Alcohol, 'ดื่มเป็นประจำ', 'ดื่มเป็นประจำ')}
-                        <span>ปริมาณ ${dot(d.AlcoholAmount, "40px")} ต่อวัน</span>
+                        <span class="font-bold w-10">สุรา</span>
+                        ${chkGroup(d.Substance_Alcohol, 'No', 'ไม่ดื่ม')}
+                        ${chkGroup(d.Substance_Alcohol, 'Occasional', 'ดื่มนานๆครั้ง')}
+                        ${chkGroup(d.Substance_Alcohol, 'Regular', 'ดื่มเป็นประจำ ปริมาณ')} ${dot(d.Substance_Alcohol_Vol, "50px")} <span>ต่อวัน</span>
                     </div>
                     <div class="flex flex-wrap gap-4 mb-1">
-                        <span class="font-bold">บุหรี่</span>
-                        ${chkGroup(d.Smoking, 'ไม่สูบ', 'ไม่สูบ')}
-                        ${chkGroup(d.Smoking, 'สูบนานๆครั้ง', 'สูบนานๆครั้ง')}
-                        ${chkGroup(d.Smoking, 'สูบเป็นประจำ', 'สูบเป็นประจำ')}
-                        <span>ปริมาณ ${dot(d.SmokingAmount, "40px")} มวน/วัน</span>
+                        <span class="font-bold w-10">บุหรี่</span>
+                        ${chkGroup(d.Substance_Smoke, 'No', 'ไม่สูบ')}
+                        ${chkGroup(d.Substance_Smoke, 'Occasional', 'สูบนานๆครั้ง')}
+                        ${chkGroup(d.Substance_Smoke, 'Regular', 'สูบเป็นประจำ ปริมาณ')} ${dot(d.Substance_Smoke_Vol, "50px")} <span>มวน/วัน</span>
                     </div>
                 </div>
             </div>
             
-            <div class="flex items-end pt-2 border-t border-black">
+            <div class="flex items-end pt-1 border-t border-black">
                 <span class="font-bold w-32">ยาที่ใช้ประจำ :</span>
-                ${chkGroup(d.CurrentMeds ? 'มี' : 'ไม่มี', 'ไม่มี', 'ไม่มี')}
-                ${chkGroup(d.CurrentMeds ? 'มี' : 'ไม่มี', 'มี', 'มี (ระบุ)')} ${dot(d.CurrentMeds, "100%")}
+                ${chkGroup(d.Meds_Status, 'No', 'ไม่มี')}
+                ${chkGroup(d.Meds_Status, 'Yes', 'มี(ระบุ)')} ${dot(d.Meds_Details, "100%")}
             </div>
         </div>
 
@@ -5035,25 +5037,25 @@ function renderForm004Page1(container, options = {}) {
             <div class="pl-2 space-y-1">
                 <div class="flex flex-wrap items-end">
                     <span class="mr-2">ก่อนการเจ็บป่วยครั้งนี้:</span>
-                    ${chkGroup(d.Health_Before, 'Good', 'ดี')}
-                    ${chkGroup(d.Health_Before, 'Bad', 'ไม่ดี:')} ${dot(d.Health_Before_Detail, "100px")}
+                    ${chkGroup(d.HP_Before, 'Good', 'ดี')}
+                    ${chkGroup(d.HP_Before, 'Bad', 'ไม่ดี:')} ${dot(d.HP_Before_Detail, "100px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="mr-2">เจ็บป่วยครั้งนี้:</span>
-                    ${chkGroup(d.Health_Current, 'Severe', 'รุนแรง')}
-                    ${chkGroup(d.Health_Current, 'NotSevere', 'ไม่รุนแรง')}
+                    ${chkGroup(d.HP_Current, 'Severe', 'รุนแรง')}
+                    ${chkGroup(d.HP_Current, 'NotSevere', 'ไม่รุนแรง')}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="mr-2">การดูแล:</span>
-                    ${chkGroup(d.Health_Care, 'Hospital', 'ไปรพ./คลินิก')}
-                    ${chkGroup(d.Health_Care, 'BuyMed', 'ซื้อยารับประทาน')}
-                    ${chkGroup(d.Health_Care, 'Other', 'อื่นๆ:')} ${dot(d.Health_Care_Other, "100px")}
+                    ${chkGroup(d.HP_Care, 'Hospital', 'ไปรพ./คลินิก')}
+                    ${chkGroup(d.HP_Care, 'BuyMed', 'ซื้อยารับประทาน')}
+                    ${chkGroup(d.HP_Care, 'Other', 'อื่นๆ:')} ${dot(d.HP_Care_Other, "100px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="mr-2">ความคาดหวังในการรักษา:</span>
-                    ${chkGroup(d.Health_Expect, 'Cure', 'หาย')}
-                    ${chkGroup(d.Health_Expect, 'NotSure', 'ไม่แน่ใจ')}
-                    ${chkGroup(d.Health_Expect, 'NotCure', 'ไม่หาย')}
+                    ${chkGroup(d.HP_Expect, 'Cure', 'หาย')}
+                    ${chkGroup(d.HP_Expect, 'NotSure', 'ไม่แน่ใจ')}
+                    ${chkGroup(d.HP_Expect, 'NotCure', 'ไม่หาย')}
                 </div>
             </div>
         </div>
@@ -5062,22 +5064,22 @@ function renderForm004Page1(container, options = {}) {
             <div class="font-bold mb-1">2) โภชนาการและการเผาผลาญ</div>
             <div class="pl-2 space-y-1">
                 <div class="flex flex-wrap items-end">
-                    <span>รับประทานอาหาร</span> ${dot(d.Diet_Meal_Per_Day, "30px")} <span>มื้อ/วัน</span>
+                    <span>รับประทานอาหาร</span> ${dot(d.Nutri_Meals, "30px")} <span>มื้อ/วัน</span>
                     <span class="ml-2"></span>
-                    ${chkGroup(d.Diet_Type, 'Normal', 'อาหารธรรมดา')}
-                    ${chkGroup(d.Diet_Type, 'Soft', 'อาหารอ่อน')}
-                    ${chkGroup(d.Diet_Type, 'Tube', 'อาหารทางสายยาง')}
-                    ${chkGroup(d.Diet_Type, 'Specific', 'อาหารเฉพาะโรค:')} ${dot(d.Diet_Specific, "100px")}
+                    ${chkGroup(d.Nutri_Type, 'Normal', 'อาหารธรรมดา')}
+                    ${chkGroup(d.Nutri_Type, 'Soft', 'อาหารอ่อน')}
+                    ${chkGroup(d.Nutri_Type, 'Tube', 'อาหารทางสายยาง')}
+                    ${chkGroup(d.Nutri_Type, 'Specific', 'อาหารเฉพาะโรค:')} ${dot(d.Nutri_Type_Detail, "100px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="mr-2">ปัญหาในการรับประทานอาหาร:</span>
-                    ${chkGroup(d.Diet_Problem, 'No', 'ไม่มี')}
-                    ${chkGroup(d.Diet_Problem, 'Yes', 'มี:')} ${dot(d.Diet_Problem_Detail, "150px")}
+                    ${chkGroup(d.Nutri_Problem, 'No', 'ไม่มี')}
+                    ${chkGroup(d.Nutri_Problem, 'Yes', 'มี:')} ${dot(d.Nutri_Problem_Detail, "150px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="mr-2">ผิวหนัง:</span>
-                    ${chkGroup(d.Skin, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Skin, 'Abnormal', 'ไม่ปกติ:')} ${dot(d.Skin_Detail, "150px")}
+                    ${chkGroup(d.Nutri_Skin, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Nutri_Skin, 'Abnormal', 'ไม่ปกติ:')} ${dot(d.Nutri_Skin_Detail, "150px")}
                 </div>
             </div>
         </div>
@@ -5086,21 +5088,21 @@ function renderForm004Page1(container, options = {}) {
             <div class="font-bold mb-1">3) การขับถ่าย</div>
             <div class="pl-2 space-y-1">
                 <div class="flex flex-wrap items-end">
-                    <span>ปัสสาวะ</span> ${dot(d.Urine_Freq, "30px")} <span>ครั้ง/วัน</span>
+                    <span>ปัสสาวะ</span> ${dot(d.Elim_Urine_Freq, "30px")} <span>ครั้ง/วัน</span>
                     <span class="ml-2"></span>
-                    ${chkGroup(d.Urine_Status, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Urine_Status, 'Abnormal', 'ไม่ปกติ:')} ${dot(d.Urine_Detail, "150px")}
+                    ${chkGroup(d.Elim_Urine_Status, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Elim_Urine_Status, 'Abnormal', 'ไม่ปกติ:')} ${dot(d.Elim_Urine_Detail, "150px")}
                 </div>
                 <div class="flex flex-wrap items-end">
-                    <span>อุจจาระ</span> ${dot(d.Stool_Freq, "30px")} <span>ครั้ง/วัน</span>
+                    <span>อุจจาระ</span> ${dot(d.Elim_Bowel_Freq, "30px")} <span>ครั้ง/วัน</span>
                     <span class="ml-2"></span>
-                    ${chkGroup(d.Stool_Status, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Stool_Status, 'Abnormal', 'ไม่ปกติ:')} ${dot(d.Stool_Detail, "150px")}
+                    ${chkGroup(d.Elim_Bowel_Status, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Elim_Bowel_Status, 'Abnormal', 'ไม่ปกติ:')} ${dot(d.Elim_Bowel_Detail, "150px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="mr-2">การขับถ่ายทางหน้าท้อง:</span>
-                    ${chkGroup(d.Abdom_Excrete, 'No', 'ไม่มี')}
-                    ${chkGroup(d.Abdom_Excrete, 'Yes', 'มี')}
+                    ${chkGroup(d.Elim_Stoma, 'No', 'ไม่มี')}
+                    ${chkGroup(d.Elim_Stoma, 'Yes', 'มี')}
                 </div>
             </div>
         </div>
@@ -5109,18 +5111,33 @@ function renderForm004Page1(container, options = {}) {
             <div class="font-bold mb-1">4) กิจวัตรประจำวัน</div>
             <table class="w-full border-collapse border border-black text-center text-[10px]">
                 <tr class="bg-gray-100">
-                    <th class="border border-black p-1 text-left w-[40%]">กิจกรรม</th>
-                    <th class="border border-black p-1 w-[20%]">ทำได้เอง</th>
-                    <th class="border border-black p-1 w-[20%]">ทำได้บ้าง</th>
-                    <th class="border border-black p-1 w-[20%]">ไม่ได้เลย</th>
+                    <th rowspan="2" class="border border-black p-1 text-left w-[20%] align-middle">กิจกรรม</th>
+                    <th colspan="3" class="border border-black p-1">ก่อนการเจ็บป่วย</th>
+                    <th colspan="3" class="border border-black p-1">ขณะเจ็บป่วย</th>
                 </tr>
-                ${['การรับประทานอาหาร', 'การทำความสะอาดปาก/ฟัน', 'การแต่งตัว', 'การเดิน', 'การขับถ่าย', 'การอาบน้ำ'].map((act, idx) => `
-                <tr>
-                    <td class="border border-black p-1 text-left pl-2">${act}</td>
-                    <td class="border border-black p-1">${d[`ADL_${idx+1}`] === 'Independent' ? '/' : ''}</td>
-                    <td class="border border-black p-1">${d[`ADL_${idx+1}`] === 'Partial' ? '/' : ''}</td>
-                    <td class="border border-black p-1">${d[`ADL_${idx+1}`] === 'Dependent' ? '/' : ''}</td>
-                </tr>`).join('')}
+                <tr class="bg-gray-50">
+                    <th class="border border-black p-1 w-[13%]">ทำได้เอง</th>
+                    <th class="border border-black p-1 w-[13%]">บางส่วน</th>
+                    <th class="border border-black p-1 w-[13%]">ไม่ได้เลย</th>
+                    <th class="border border-black p-1 w-[13%]">ทำได้เอง</th>
+                    <th class="border border-black p-1 w-[13%]">บางส่วน</th>
+                    <th class="border border-black p-1 w-[13%]">ไม่ได้เลย</th>
+                </tr>
+                ${['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'].map((act, i) => {
+                    const label = ['รับประทานอาหาร', 'ทำความสะอาดปาก', 'แต่งตัว', 'เดิน', 'ขับถ่าย', 'อาบน้ำ'][i];
+                    const b = d.ADL?.[`${act}_Before`];
+                    const c = d.ADL?.[`${act}_Current`];
+                    return `
+                    <tr>
+                        <td class="border border-black p-1 text-left pl-2">${label}</td>
+                        <td class="border border-black p-1">${checkADL(b, 'Independent')}</td>
+                        <td class="border border-black p-1">${checkADL(b, 'Partial')}</td>
+                        <td class="border border-black p-1">${checkADL(b, 'Dependent')}</td>
+                        <td class="border border-black p-1">${checkADL(c, 'Independent')}</td>
+                        <td class="border border-black p-1">${checkADL(c, 'Partial')}</td>
+                        <td class="border border-black p-1">${checkADL(c, 'Dependent')}</td>
+                    </tr>`;
+                }).join('')}
             </table>
         </div>
 
@@ -5129,11 +5146,11 @@ function renderForm004Page1(container, options = {}) {
             <div class="pl-2 flex flex-wrap items-end">
                 <span>นอน:</span> ${dot(d.Sleep_Hours, "40px")} <span>ชั่วโมงต่อวัน</span>
                 <span class="ml-4"></span>
-                ${chkGroup(d.Sleep_Sufficiency, 'Enough', 'เพียงพอ')}
-                ${chkGroup(d.Sleep_Sufficiency, 'NotEnough', 'ไม่เพียงพอ')}
+                ${chkGroup(d.Sleep_Adequacy, 'Yes', 'เพียงพอ')}
+                ${chkGroup(d.Sleep_Adequacy, 'No', 'ไม่เพียงพอ')}
                 <span class="ml-4">ปัญหาการนอน:</span>
                 ${chkGroup(d.Sleep_Problem, 'No', 'ไม่มี')}
-                ${chkGroup(d.Sleep_Problem, 'Yes', 'มี ระบุ:')} ${dot(d.Sleep_Problem_Detail, "150px")}
+                ${chkGroup(d.Sleep_Problem, 'Yes', 'มี ระบุ:')} ${dot(d.Sleep_Problem_Detail, "120px")}
             </div>
         </div>
 
@@ -5142,40 +5159,40 @@ function renderForm004Page1(container, options = {}) {
             <div class="pl-2 space-y-1">
                 <div class="flex flex-wrap items-end">
                     <span class="w-24 font-bold">ระดับความรู้สึก:</span>
-                    ${chkGroup(d.Conscious, 'Alert', 'รู้สึกตัวดี')}
-                    ${chkGroup(d.Conscious, 'Stupor', 'สับสน')}
-                    ${chkGroup(d.Conscious, 'Drowsy', 'ซึม')}
-                    ${chkGroup(d.Conscious, 'Coma', 'ไม่รู้สึกตัว')}
+                    ${chkGroup(d.Cogn_LOC, 'Alert', 'รู้สึกตัวดี')}
+                    ${chkGroup(d.Cogn_LOC, 'Confused', 'สับสน')}
+                    ${chkGroup(d.Cogn_LOC, 'Drowsy', 'ซึม')}
+                    ${chkGroup(d.Cogn_LOC, 'Unconscious', 'ไม่รู้สึกตัว')}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="w-24 font-bold">การมองเห็น:</span>
-                    ${chkGroup(d.Vision, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Vision, 'Short', 'สายตาสั้น')}
-                    ${chkGroup(d.Vision, 'Long', 'สายตายาว')}
-                    ${chkGroup(d.Vision, 'Glasses', 'ใช้แว่นตา')}
-                    ${chkGroup(d.Vision, 'Other', 'อื่นๆ:')} ${dot(d.Vision_Other, "80px")}
+                    ${chkGroup(d.Cogn_Vision, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Cogn_Vision, 'Short', 'สายตาสั้น')}
+                    ${chkGroup(d.Cogn_Vision, 'Long', 'สายตายาว')}
+                    ${chkGroup(d.Cogn_Vision, 'Glasses', 'ใช้แว่นตา')}
+                    ${chkGroup(d.Cogn_Vision, 'Other', 'อื่นๆ:')} ${dot(d.Cogn_Vision_Other, "80px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="w-24 font-bold">การพูด:</span>
-                    ${chkGroup(d.Comm, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Comm, 'Problem', 'มีปัญหา:')} ${dot(d.Comm_Problem, "100px")}
-                    ${chkGroup(d.Comm, 'Foreign', 'ใช้ภาษาต่างประเทศ:')} ${dot(d.Comm_Lang, "80px")}
+                    ${chkGroup(d.Cogn_Speech, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Cogn_Speech, 'Problem', 'มีปัญหา:')} ${dot(d.Cogn_Speech_Detail, "100px")}
+                    ${chkGroup(d.Cogn_Speech, 'Foreign', 'ใช้ภาษาต่างประเทศ:')} ${dot(d.Cogn_Speech_Other, "80px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="w-24 font-bold">การเคลื่อนไหว:</span>
-                    ${chkGroup(d.Move, 'Normal', 'ปกติ')}
-                    ${chkGroup(d.Move, 'Stiff', 'ข้อติดแข็ง')}
-                    ${chkGroup(d.Move, 'Paralysis', 'อัมพาต')}
-                    ${chkGroup(d.Move, 'Arthritis', 'ข้ออักเสบ')}
-                    ${chkGroup(d.Move, 'Broken', 'กระดูกหัก')}
-                    ${chkGroup(d.Move, 'Other', 'อื่นๆ:')} ${dot(d.Move_Other, "80px")}
+                    ${chkGroup(d.Cogn_Movement, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Cogn_Movement, 'Stiff', 'ข้อติดแข็ง')}
+                    ${chkGroup(d.Cogn_Movement, 'Paralysis', 'อัมพาต')}
+                    ${chkGroup(d.Cogn_Movement, 'Arthritis', 'ข้ออักเสบ')}
+                    ${chkGroup(d.Cogn_Movement, 'Broken', 'กระดูกหัก')}
+                    ${chkGroup(d.Cogn_Movement, 'Other', 'อื่นๆ:')} ${dot(d.Cogn_Movement_Other, "80px")}
                 </div>
             </div>
         </div>
 
     </div>
     
-    <div class="text-right text-[10px] mt-1 font-sarabun text-black font-bold">- 1 -</div>
+    <div class="text-right text-[10px] mt-1 font-bold font-sarabun text-black">- 1 -</div>
     `;
 
     container.innerHTML = html;
