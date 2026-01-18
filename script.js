@@ -5195,7 +5195,7 @@ function renderForm004Page1(container, options = {}) {
 }
 
 // =================================================================
-// PAGE 2 RENDERER (Sections 7-15)
+// PAGE 2 RENDERER (Updated Braden Scale & Risk Criteria)
 // =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = options.data || {};
@@ -5215,16 +5215,30 @@ function renderForm004Page2(container, options = {}) {
     };
     const chk = (val, target, label) => `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${boxCheck(val, target)} ${label}</span>`;
 
+    // Helper Braden Logic
+    const getBradenScore = (val) => parseInt(val) || 0;
+    const totalBraden = getBradenScore(d.Braden_Sensory) + getBradenScore(d.Braden_Moisture) + 
+                        getBradenScore(d.Braden_Activity) + getBradenScore(d.Braden_Mobility) + 
+                        getBradenScore(d.Braden_Nutrition) + getBradenScore(d.Braden_Friction);
+    
+    // Check Risk Level
+    const checkRisk = (score, min, max) => {
+        if (score === 0) return boxCheck(false, ''); // ถ้าไม่มีคะแนน ไม่ติ๊ก
+        if (max === null) return boxCheck(score >= min, true); // กรณี >= 15
+        return boxCheck(score >= min && score <= max, true);
+    };
+
     let html = `
-    <div class="flex justify-between items-start mb-2 font-sarabun text-black">
-       <div class="w-[15%] text-[12px] text-center border border-black p-1">
-          <div class="font-bold text-[16px]">แบบ 004</div>
-       </div>
+    <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
+       
+       <div class="w-[15%]"></div>
+
        <div class="text-center w-[70%]">
-          <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
+          <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน (ต่อ)</h2>
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
-       <div class="w-[15%] text-right text-[10px]">
+
+       <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
           <div class="font-bold text-[12px]">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
        </div>
@@ -5338,33 +5352,49 @@ function renderForm004Page2(container, options = {}) {
             <div class="font-bold text-[14px]">14. Braden Scale (Predicting Pressure Sore Risk)</div>
             <table class="w-full border-collapse border border-black text-center text-[10px] mt-1">
                 <tr class="bg-gray-100">
-                    <th class="border border-black p-1 text-left w-[20%]">Parameter</th>
-                    <th class="border border-black p-1 w-[20%]">1</th>
-                    <th class="border border-black p-1 w-[20%]">2</th>
-                    <th class="border border-black p-1 w-[20%]">3</th>
-                    <th class="border border-black p-1 w-[20%]">4</th>
+                    <th class="border border-black p-1 text-left w-[18%]">Parameter</th>
+                    <th class="border border-black p-1 w-[18%]">1</th>
+                    <th class="border border-black p-1 w-[18%]">2</th>
+                    <th class="border border-black p-1 w-[18%]">3</th>
+                    <th class="border border-black p-1 w-[18%]">4</th>
+                    <th class="border border-black p-1 w-[10%]">Score</th>
                 </tr>
                 ${[
+                    // [Label, Text1, Text2, Text3, Text4, Value]
                     ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด', 'จำกัดมาก', 'จำกัดเล็กน้อย', 'ไม่บกพร่อง', d.Braden_Sensory],
                     ['ความเปียกชื้น', 'ตลอดเวลา', 'บ่อยมาก', 'บางครั้ง', 'น้อยมาก', d.Braden_Moisture],
-                    ['กิจกรรม', 'นอนติดเตียง', 'นั่งรถเข็น', 'เดินบ้าง', 'เดินบ่อย', d.Braden_Activity],
-                    ['การเคลื่อนไหว', 'ไม่ได้เลย', 'จำกัดมาก', 'จำกัดเล็กน้อย', 'ไม่จำกัด', d.Braden_Mobility],
-                    ['โภชนาการ', 'แย่มาก', 'ไม่เพียงพอ', 'เพียงพอ', 'ดีมาก', d.Braden_Nutrition],
-                    ['แรงเสียดทาน', 'มีปัญหา', 'อาจมีปัญหา', 'ไม่มีปัญหา', '', d.Braden_Friction]
-                ].map(row => `
-                <tr>
-                    <td class="border border-black text-left pl-2">${row[0]}</td>
-                    <td class="border border-black font-bold">${row[5] == 1 ? '/' : ''}</td>
-                    <td class="border border-black font-bold">${row[5] == 2 ? '/' : ''}</td>
-                    <td class="border border-black font-bold">${row[5] == 3 ? '/' : ''}</td>
-                    <td class="border border-black font-bold bg-gray-100">${row[4] === '' ? '' : (row[5] == 4 ? '/' : '')}</td>
-                </tr>`).join('')}
+                    ['กิจกรรม', 'นอนติดเตียง', 'นั่งรถเข็น', 'เดินได้เป็นบางครั้ง', 'เดินได้ปกติ', d.Braden_Activity],
+                    ['การเคลื่อนไหว', 'เคลื่อนไหวเองไม่ได้', 'เคลื่อนไหวเองได้น้อย', 'เคลื่อนไหวเองได้บ้าง', 'เคลื่อนไหวได้ปกติ', d.Braden_Mobility],
+                    ['โภชนาการ', 'แย่มาก (ไม่เพียงพอ)', 'อาจไม่เพียงพอ', 'เพียงพอ', 'ดีเยี่ยม', d.Braden_Nutrition],
+                    ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยงต่อการเกิดปัญหา', 'ไม่มีปัญหา', '', d.Braden_Friction]
+                ].map(row => {
+                    const score = row[5]; // คะแนนที่เลือก
+                    // ฟังก์ชันเช็คว่าต้อง Bold ช่องไหน
+                    const b1 = score == 1 ? 'font-bold bg-gray-200' : '';
+                    const b2 = score == 2 ? 'font-bold bg-gray-200' : '';
+                    const b3 = score == 3 ? 'font-bold bg-gray-200' : '';
+                    const b4 = score == 4 ? 'font-bold bg-gray-200' : '';
+                    
+                    return `
+                    <tr>
+                        <td class="border border-black text-left pl-2 align-middle">${row[0]}</td>
+                        <td class="border border-black p-1 align-middle ${b1}">${row[1]}</td>
+                        <td class="border border-black p-1 align-middle ${b2}">${row[2]}</td>
+                        <td class="border border-black p-1 align-middle ${b3}">${row[3]}</td>
+                        <td class="border border-black p-1 align-middle ${b4} bg-gray-50">${row[4]}</td>
+                        <td class="border border-black font-bold align-middle text-[12px]">${score || ''}</td>
+                    </tr>`;
+                }).join('')}
             </table>
-            <div class="flex justify-end mt-1 items-center gap-4">
-                <span class="font-bold">Total Score:</span> <span class="border border-black px-2 w-10 text-center font-bold">${d.Braden_Total || ''}</span>
-                <span class="font-bold">การแปลผล:</span>
-                ${chk(d.Braden_Result, 'High', 'เสี่ยงสูง (≤ 16)')}
-                ${chk(d.Braden_Result, 'Low', 'เสี่ยงต่ำ (> 16)')}
+            
+            <div class="flex justify-end mt-2 items-center gap-4 text-[12px]">
+                <span class="font-bold text-[14px]">Total Score:</span> 
+                <span class="border border-black px-2 py-1 w-12 text-center font-bold bg-white text-[14px]">${totalBraden || 0}</span>
+                <span class="font-bold ml-2">การแปลผล:</span>
+                <span class="inline-flex items-center ml-2">${checkRisk(totalBraden, 0, 9)} ≤ 9 Very high risk</span>
+                <span class="inline-flex items-center ml-2">${checkRisk(totalBraden, 10, 12)} 10-12 High risk</span>
+                <span class="inline-flex items-center ml-2">${checkRisk(totalBraden, 13, 14)} 13-14 Moderate risk</span>
+                <span class="inline-flex items-center ml-2">${checkRisk(totalBraden, 15, null)} ≥ 15 Low risk</span>
             </div>
         </div>
 
@@ -5385,11 +5415,12 @@ function renderForm004Page2(container, options = {}) {
 
     </div>
 
-    <div class="mt-4 flex justify-end px-10">
-        <div class="text-center w-[250px]">
-            <div class="mb-4">ลงชื่อผู้ประเมิน...........................................</div>
-            <div>(${d.Assessor_Name || '...........................................'})</div>
-            <div>ตำแหน่ง ${d.Assessor_Position || '...........................................'}</div>
+    <div class="mt-6 flex justify-end px-10 text-[12px] font-sarabun text-black">
+        <div class="flex items-end">
+            <span class="font-bold">ลงชื่อผู้ประเมิน/ผู้บันทึก</span>
+            <span class="mx-2 border-b border-black border-dotted min-w-[150px] text-center">${d.Assessor_Name || '&nbsp;'}</span>
+            <span class="font-bold ml-2">ตำแหน่ง</span>
+            <span class="mx-2 border-b border-black border-dotted min-w-[150px] text-center">${d.Assessor_Position || '&nbsp;'}</span>
         </div>
     </div>
     
