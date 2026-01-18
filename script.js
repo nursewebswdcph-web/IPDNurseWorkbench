@@ -4924,8 +4924,6 @@ function renderForm004Page1(container, options = {}) {
        </div>
     </div>
     
-    `;
-
     <div class="font-bold text-[12px]">
         <span>ชื่อ-สกุล: ${p.Name || '-'}</span>
         <span>HN: ${p.HN || '-'}</span>
