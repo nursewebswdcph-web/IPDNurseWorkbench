@@ -4603,35 +4603,46 @@ function renderBradenPage2(container, data, options = {}) {
     container.innerHTML = html;
 }
 // =================================================================
-// FR-IPD-004 PRINT SYSTEM (FIXED: FETCH FRESH DATA & CHECKBOX LOGIC)
+// FR-IPD-004 PRINT SYSTEM (FINAL FIXED: REAL DATA + PDF LAYOUT)
 // =================================================================
 
 // --- Helper Functions ---
+
+// สร้างเส้นประพร้อมข้อมูล (ถ้าไม่มีข้อมูลให้เว้นว่างสวยๆ)
 const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.4em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
 
+// สร้าง Checkbox แบบ [ / ]
 const box = (isChecked) => `<span class="inline-block font-sarabun text-[12px] font-bold mr-1">[ ${isChecked ? '/' : '&nbsp;'} ]</span>`;
 
-// (แก้ไข) ปรับปรุงฟังก์ชันตรวจสอบค่า Checkbox ให้รองรับข้อมูล String ที่มาจาก Sheet (เช่น "A,B,C")
+// ตรวจสอบค่า Checkbox (รองรับทั้ง Array และ String คั่นด้วย comma)
 const chkGroup = (val, target, label) => {
     let isChecked = false;
     if (val) {
         if (Array.isArray(val)) {
-            // กรณีเป็น Array (ข้อมูลยังไม่ถูกแปลง)
             isChecked = val.includes(target);
         } else if (typeof val === 'string') {
-            // กรณีเป็น String (ข้อมูลจาก Sheet) ให้แยกด้วย comma
+            // ข้อมูลจาก Sheet อาจมาเป็น "HT,DM"
             const values = val.split(',').map(s => s.trim());
             isChecked = values.includes(target);
         }
     }
-    return `<span class="inline-flex items-center mr-2">${box(isChecked)} ${label}</span>`;
+    return `<span class="inline-flex items-center mr-2 select-none">${box(isChecked)} ${label}</span>`;
 };
 
+// แปลงวันที่เป็น พ.ศ. (เช่น 19/01/2569)
 const formatDateThai = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "";
-    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    let day = d.getDate().toString().padStart(2, '0');
+    let month = (d.getMonth() + 1).toString().padStart(2, '0');
+    let year = d.getFullYear();
+    
+    // ถ้าปีเป็น ค.ศ. (เช่น 2024) ให้บวก 543, ถ้าเป็น พ.ศ. อยู่แล้ว (เช่น 25xx) ไม่ต้องบวก
+    if (year < 2400) year += 543;
+    
+    return `${day}/${month}/${year}`;
 };
 
 const formatTime = (dateStr) => {
@@ -4641,25 +4652,22 @@ const formatTime = (dateStr) => {
     return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 };
 
-// --- 1. Main Entry Point (แก้ไข: โหลดข้อมูลใหม่ก่อนแสดงผล) ---
+// --- 1. Main Entry Point (เรียกเมื่อกดปุ่ม พรีวิว) ---
 async function renderForm004PrintMode(an) {
     chartPreviewContent.innerHTML = "";
-    
-    // แสดง Loading ระหว่างรอข้อมูล
-    showLoading("กำลังโหลดข้อมูลล่าสุด...");
+    showLoading("กำลังดึงข้อมูลล่าสุด...");
 
     try {
-        // 1. ดึงข้อมูลล่าสุดจาก Server (Assessment + Patient Info)
+        // 1. ดึงข้อมูลล่าสุดจาก Server เสมอ (เพื่อให้ได้ข้อมูลที่เพิ่งบันทึก)
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
         const result = await response.json();
         
         if (!result.success) throw new Error("โหลดข้อมูลไม่สำเร็จ");
-        
-        const freshData = result.data || {}; // ข้อมูลสดใหม่
-        
-        Swal.close(); // ปิด Loading
+        const freshData = result.data || {}; // ข้อมูลที่พร้อมใช้งาน
 
-        // 2. สร้าง Controls
+        Swal.close();
+
+        // 2. สร้างปุ่ม Controls
         const controlDiv = document.createElement('div');
         controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
         controlDiv.innerHTML = `
@@ -4671,19 +4679,20 @@ async function renderForm004PrintMode(an) {
             </div>`;
         chartPreviewContent.appendChild(controlDiv);
 
-        // 3. Container
+        // 3. พื้นที่แสดงผล
         const previewContainer = document.createElement('div');
         previewContainer.className = "overflow-y-auto bg-gray-300 p-4 print:p-0 flex flex-col items-center gap-4";
         previewContainer.style.maxHeight = "calc(100vh - 200px)";
         chartPreviewContent.appendChild(previewContainer);
 
-        // 4. Render Pages โดยส่ง freshData เข้าไป
+        // 4. สร้างหน้า 1 และ 2
         const p1 = document.createElement('div');
         p1.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
         p1.style.width = "210mm";
         p1.style.minHeight = "297mm";
         p1.style.padding = "10mm 10mm";
-        renderForm004Page1(p1, { data: freshData, isPreview: true });
+        // ส่ง freshData เข้าไป render
+        renderForm004Page1(p1, { data: freshData }); 
         previewContainer.appendChild(p1);
 
         const p2 = document.createElement('div');
@@ -4691,25 +4700,22 @@ async function renderForm004PrintMode(an) {
         p2.style.width = "210mm";
         p2.style.minHeight = "297mm";
         p2.style.padding = "10mm 10mm";
-        renderForm004Page2(p2, { data: freshData, isPreview: true });
+        renderForm004Page2(p2, { data: freshData });
         previewContainer.appendChild(p2);
 
-        // Bind Print Button
-        // ใช้ Arrow function เพื่อส่ง freshData ต่อไปยังฟังก์ชัน print
+        // ผูกปุ่มพิมพ์ (ส่ง freshData ไปด้วย เพื่อไม่ต้องโหลดซ้ำ)
         document.getElementById("btn-print-004-action").addEventListener("click", () => handleForm004Print(an, freshData));
 
-    } catch (error) {
+    } catch (e) {
         Swal.close();
-        showError("เกิดข้อผิดพลาด", error.message);
+        showError("เกิดข้อผิดพลาด", e.message);
     }
 }
 
-// --- 2. Print Handler (แก้ไข: รับ Data มาพิมพ์) ---
-async function handleForm004Print(an, dataToPrint) {
-    // ถ้าไม่มี data ส่งมา (กรณีเรียกใช้ที่อื่น) ให้โหลดใหม่
-    if (!dataToPrint) {
-        // ... logic โหลดซ้ำถ้าจำเป็น ...
-    }
+// --- 2. Print Handler ---
+async function handleForm004Print(an, preloadedData) {
+    // ถ้าไม่มีข้อมูลส่งมา (กรณีเรียกใช้ทางอื่น) ให้ใช้ currentPatientData (แต่อาจเก่า)
+    const dataToPrint = preloadedData || currentPatientData;
 
     if (globalStaffList.length === 0) await refreshStaffDatalists();
     let staffOptions = '';
@@ -4739,7 +4745,7 @@ async function handleForm004Print(an, dataToPrint) {
 
     if (isDismissed) return;
 
-    // Create Print Area
+    // สร้างพื้นที่พิมพ์ชั่วคราว
     const oldPrintArea = document.getElementById("form004-print-area");
     if (oldPrintArea) oldPrintArea.remove();
 
@@ -4750,7 +4756,7 @@ async function handleForm004Print(an, dataToPrint) {
 
     showLoading("กำลังเตรียมเอกสาร...");
 
-    // Render Real Print Pages Using dataToPrint
+    // Render ลงกระดาษพิมพ์จริง
     const p1 = document.createElement('div');
     p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
     p1.style.width = "210mm";
@@ -4772,12 +4778,13 @@ async function handleForm004Print(an, dataToPrint) {
 }
 
 // =================================================================
-// PAGE 1 RENDERER (แก้ไข: ใช้ data จาก options)
+// PAGE 1 RENDERER (LAYOUT ตาม PDF 100%)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
-    const d = options.data || {}; // ใช้ข้อมูลที่ส่งเข้ามา (ถ้าไม่มีให้ว่างไว้)
+    const d = options.data || {};
     
-    const admitDateStr = d.AdmitDate || d.AdmitDate_Braden; 
+    // วันที่ Admit (ถ้าใน Assessment ไม่มี ให้ใช้จาก Profile)
+    const admitDateStr = d.AdmitDate_Braden || d.AdmitDate; 
     const dateText = formatDateThai(admitDateStr);
     const timeText = formatTime(admitDateStr);
 
@@ -5056,14 +5063,14 @@ function renderForm004Page1(container, options = {}) {
 
         </div>
     </div>
-    <div class="text-right text-[10px] mt-1 font-bold font-sarabun text-black">- 1 -</div>
+    <div class="text-right text-[10px] mt-1 font-sarabun text-black font-bold">- 1 -</div>
     `;
 
     container.innerHTML = html;
 }
 
 // =================================================================
-// PAGE 2 RENDERER (แก้ไข: ใช้ data จาก options)
+// PAGE 2 RENDERER (ข้อ 7-15 + Footer)
 // =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = options.data || {};
