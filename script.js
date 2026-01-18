@@ -2909,83 +2909,55 @@ async function fetchAndRenderBradenPage(an, page) {
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${an}&page=${page}`);
         const result = await response.json();
-        
         const data = result.data || {}; 
         
-        // --- เติมข้อมูลส่วนหัว (Header Inputs) ---
-        // ใช้ document.getElementById เพื่อความแม่นยำ และเช็คว่ามี element จริงไหม
-        
-        const safeSetValue = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.value = value;
-        };
-        
-        const safeSetByName = (name, value) => {
-            const el = document.querySelector(`[name="${name}"]`);
-            if (el) el.value = value;
-        };
+        const safeSetValue = (id, value) => { const el = document.getElementById(id); if (el) el.value = value; };
+        const safeSetByName = (name, value) => { const el = document.querySelector(`[name="${name}"]`); if (el) el.value = value; };
 
-        // 1. วันที่ Admit
-        const admitDateVal = data.AdmitDate_Braden || currentPatientData.AdmitDate || "";
-        safeSetValue("braden-admit-date", admitDateVal);
-
-        // 2. Diagnosis
-        const dxVal = data.Dx_Op || currentPatientData.AdmittingDx || "";
-        safeSetValue("braden-dx", dxVal);
-
-        // 3. ข้อมูลอื่นๆ (ใช้ Name เพราะบางตัวไม่ได้ตั้ง ID)
+        // Header Data
+        safeSetValue("braden-admit-date", data.AdmitDate_Braden || currentPatientData.AdmitDate || "");
+        safeSetValue("braden-dx", data.Dx_Op || currentPatientData.AdmittingDx || "");
         safeSetByName("TransferDate", data.TransferDate || "");
         safeSetByName("FromWard", data.FromWard || "");
         safeSetByName("FirstAssessDate", data.FirstAssessDate || "");
         
-        // 4. แผลกดทับแรกรับ (Radio)
         if (data.PressureUlcer_Adm_Status) {
             const puRadio = document.querySelector(`input[name="PressureUlcer_Adm_Status"][value="${data.PressureUlcer_Adm_Status}"]`);
             if (puRadio) puRadio.checked = true;
         }
         safeSetByName("PressureUlcer_Adm_Detail", data.PressureUlcer_Adm_Detail || "");
-
-        // 5. Labs
         safeSetValue("braden-albumin", data.Albumin || "");
         safeSetValue("braden-hb", data.Hb || "");
         safeSetByName("Hct", data.Hct || "");
         safeSetValue("braden-bmi", data.BMI || "");
         
-        // --- สร้างตาราง ---
+        // Render Table
         renderBradenTable(data);
         
-        // --- เติมข้อมูลส่วนที่ 4 (สรุป) ---
+        // --- Part 4 Summary Data (เพิ่มวันที่จำหน่าย/ย้ายตรงนี้) ---
         if (data.Discharge_Status) {
              const statusRadio = document.querySelector(`input[name="Discharge_Status"][value="${data.Discharge_Status}"]`);
              if(statusRadio) statusRadio.checked = true;
         }
+        // วันที่จำหน่าย/ย้าย
+        safeSetByName("Discharge_Summary_Date", data.Discharge_Summary_Date || "");
+        
         safeSetByName("Discharge_Position", data.Discharge_Position || "");
         safeSetByName("Discharge_Stage", data.Discharge_Stage || "");
-        
-        if(data.Discharge_Date) {
-             try { 
-                 const dateEl = document.querySelector('[name="Discharge_Date"]');
-                 if(dateEl) dateEl.value = getISODate(new Date(data.Discharge_Date)); 
-             } catch(e){}
-        }
-        
+        if(data.Discharge_Date) { try { const d = document.querySelector('[name="Discharge_Date"]'); if(d) d.value = getISODate(new Date(data.Discharge_Date)); } catch(e){} }
         safeSetByName("Discharge_Size", data.Discharge_Size || "");
         safeSetByName("Discharge_Char", data.Discharge_Char || "");
         safeSetByName("Discharge_Count", data.Discharge_Count || "");
 
-        // --- เติมข้อมูลส่วนที่ 3 (บันทึกแผล) ---
+        // Wound Record
         if (data.Wound_Record_JSON) {
-             try {
-                 const records = JSON.parse(data.Wound_Record_JSON);
-                 renderWoundRows(records);
-             } catch(e) { console.error("Error parsing wound records", e); }
+             try { renderWoundRows(JSON.parse(data.Wound_Record_JSON)); } catch(e) { console.error(e); }
         } else {
              renderWoundRows([]); 
         }
 
         const pageDisplay = document.getElementById("braden-page-display");
         if(pageDisplay) pageDisplay.textContent = page;
-        
         const prevBtn = document.getElementById("braden-prev-page");
         if(prevBtn) prevBtn.disabled = (page <= 1);
         
@@ -3008,7 +2980,6 @@ function renderBradenTable(data = {}) {
         </th>`;
     
     for (let i = 1; i <= 10; i++) {
-        // ใช้การตรวจสอบข้อมูลป้องกัน Error Date_1
         const dateVal = (data && data[`Date_${i}`]) ? getISODate(new Date(data[`Date_${i}`])) : "";
         theadHtml += `<th class="p-2 border min-w-[80px] text-center bg-red-50">
             <div class="text-[10px] text-gray-500 mb-1">วันที่ (${i})</div>
@@ -3021,21 +2992,17 @@ function renderBradenTable(data = {}) {
     // --- BODY (BRADEN SCALE) ---
     let tbodyHtml = `<tbody>`;
     
-    BRADEN_CRITERIA.forEach((criteria, cIdx) => {
+    BRADEN_CRITERIA.forEach((criteria) => {
         let rowHtml = `<tr>`;
-        
-        // Column ซ้าย: ข้อความตัวเลือก
         let leftColHtml = `<div class="font-bold text-sm text-gray-800 pb-2 pt-2 border-b border-gray-200 bg-white px-2">${criteria.name}</div>`;
         criteria.options.forEach(opt => {
-            // ใช้ h-8 (32px) เพื่อประหยัดพื้นที่แนวตั้ง
             leftColHtml += `<div class="h-8 flex items-center text-xs text-gray-600 border-b border-gray-100 pl-4 hover:bg-gray-50">${opt.text}</div>`;
         });
         rowHtml += `<td class="p-0 border-r border-b bg-white align-top sticky left-0 z-10 shadow-md">${leftColHtml}</td>`;
         
-        // Column ขวา: Radio Buttons 10 วัน
         for (let i = 1; i <= 10; i++) {
             const savedVal = data[`${criteria.id}_${i}`];
-            let cellHtml = `<div class="pb-2 pt-2 border-b border-gray-200 bg-white">&nbsp;</div>`; // Spacer หัวข้อ
+            let cellHtml = `<div class="pb-2 pt-2 border-b border-gray-200 bg-white">&nbsp;</div>`;
             
             criteria.options.forEach(opt => {
                 const isChecked = (String(savedVal) === String(opt.val)) ? "checked" : "";
@@ -3055,41 +3022,20 @@ function renderBradenTable(data = {}) {
     });
 
     // --- SUMMARY ROWS ---
-    // คะแนนรวม
-    let totalRow = `<tr class="bg-gray-100 font-bold">
-        <td class="p-2 border text-right sticky left-0 bg-gray-100 z-10 text-sm">คะแนนรวม</td>`;
-    for(let i=1; i<=10; i++) {
-        totalRow += `<td class="p-1 border text-center">
-            <input type="text" readonly name="Total_${i}" class="w-full text-center bg-transparent font-bold text-blue-700 braden-total text-sm" data-day="${i}" value="${data[`Total_${i}`] || ''}">
-        </td>`;
-    }
+    let totalRow = `<tr class="bg-gray-100 font-bold"><td class="p-2 border text-right sticky left-0 bg-gray-100 z-10 text-sm">คะแนนรวม</td>`;
+    for(let i=1; i<=10; i++) totalRow += `<td class="p-1 border text-center"><input type="text" readonly name="Total_${i}" class="w-full text-center bg-transparent font-bold text-blue-700 braden-total text-sm" data-day="${i}" value="${data[`Total_${i}`] || ''}"></td>`;
     tbodyHtml += totalRow + `</tr>`;
 
-    // แปลผล
-    let riskRow = `<tr class="bg-white">
-        <td class="p-2 border text-right sticky left-0 bg-white z-10 text-xs">แปลผลความเสี่ยง</td>`;
-    for(let i=1; i<=10; i++) {
-        riskRow += `<td class="p-1 border text-center text-[10px]">
-            <input type="text" readonly name="Risk_${i}" class="w-full text-center bg-transparent" id="risk_text_${i}" value="${data[`Risk_${i}`] || ''}">
-        </td>`;
-    }
+    let riskRow = `<tr class="bg-white"><td class="p-2 border text-right sticky left-0 bg-white z-10 text-xs">แปลผลความเสี่ยง</td>`;
+    for(let i=1; i<=10; i++) riskRow += `<td class="p-1 border text-center text-[10px]"><input type="text" readonly name="Risk_${i}" class="w-full text-center bg-transparent" id="risk_text_${i}" value="${data[`Risk_${i}`] || ''}"></td>`;
     tbodyHtml += riskRow + `</tr>`;
 
-    // ผู้ประเมิน
-    let assessorRow = `<tr class="bg-gray-50">
-        <td class="p-2 border text-right sticky left-0 bg-gray-50 z-10 text-sm">พยาบาลผู้ประเมิน</td>`;
-    for(let i=1; i<=10; i++) {
-        assessorRow += `<td class="p-1 border text-center">
-            <input type="text" list="staff-list-datalist" name="Assessor_${i}" 
-                   class="w-full text-[10px] p-1 border rounded text-center bg-white focus:ring-1 focus:ring-red-500" 
-                   placeholder="ลงชื่อ" value="${data[`Assessor_${i}`] || ''}">
-        </td>`;
-    }
+    let assessorRow = `<tr class="bg-gray-50"><td class="p-2 border text-right sticky left-0 bg-gray-50 z-10 text-sm">พยาบาลผู้ประเมิน</td>`;
+    for(let i=1; i<=10; i++) assessorRow += `<td class="p-1 border text-center"><input type="text" list="staff-list-datalist" name="Assessor_${i}" class="w-full text-[10px] p-1 border rounded text-center bg-white focus:ring-1 focus:ring-red-500" placeholder="ลงชื่อ" value="${data[`Assessor_${i}`] || ''}"></td>`;
     tbodyHtml += assessorRow + `</tr></tbody>`;
     table.insertAdjacentHTML('beforeend', tbodyHtml);
 
     // --- APPEND EXTRA PARTS (2, 3, 4) ---
-    // ตรวจสอบว่ามีส่วนเสริมหรือยัง ถ้ามีให้ลบก่อนสร้างใหม่
     const existingExtra = document.getElementById("braden-extra-parts");
     if (existingExtra) existingExtra.remove();
 
@@ -3125,26 +3071,23 @@ function renderBradenTable(data = {}) {
         <div class="bg-white p-4 rounded border shadow-sm">
             <h4 class="font-bold text-red-800 mb-2 text-lg">ส่วนที่ 3 บันทึกแผลกดทับ</h4>
             <p class="text-xs text-gray-500 mb-2">(ระดับ 1 ผิวหนังแดง, ระดับ 2 มี Bleb แตก, ระดับ 3 ลึกถึง Subcutaneous, ระดับ 4 ลึกถึงกล้ามเนื้อ กระดูก)</p>
-            
             <table class="w-full border-collapse border text-sm" id="wound-record-table">
                 <thead class="bg-gray-100">
-                    <tr>
-                        <th class="border p-2 w-32">ว/ด/ป</th>
-                        <th class="border p-2">ตำแหน่งแผล</th>
-                        <th class="border p-2 w-24">ระดับ</th>
-                        <th class="border p-2">ลักษณะแผล</th>
-                        <th class="border p-2 w-32">ชื่อผู้บันทึก</th>
-                        <th class="border p-2 w-10">ลบ</th>
-                    </tr>
+                    <tr><th class="border p-2 w-32">ว/ด/ป</th><th class="border p-2">ตำแหน่งแผล</th><th class="border p-2 w-24">ระดับ</th><th class="border p-2">ลักษณะแผล</th><th class="border p-2 w-32">ชื่อผู้บันทึก</th><th class="border p-2 w-10">ลบ</th></tr>
                 </thead>
-                <tbody id="wound-record-body">
-                    </tbody>
+                <tbody id="wound-record-body"></tbody>
             </table>
             <button type="button" onclick="addWoundRow()" class="mt-2 text-sm text-blue-600 hover:underline">+ เพิ่มรายการบันทึกแผล</button>
         </div>
 
         <div class="bg-white p-4 rounded border shadow-sm">
-            <h4 class="font-bold text-red-800 mb-2 text-lg">ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย/ย้าย)</h4>
+            <div class="flex items-center gap-4 mb-2">
+                <h4 class="font-bold text-red-800 text-lg">ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย/ย้าย)</h4>
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-bold">ระบุวันที่:</label>
+                    <input type="date" name="Discharge_Summary_Date" class="border rounded p-1 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-300">
+                </div>
+            </div>
             
             <div class="space-y-3 text-sm">
                 <div class="flex items-center gap-2">
@@ -3187,10 +3130,7 @@ function renderBradenTable(data = {}) {
         </div>
     </div>`;
 
-    // แทรกต่อจากตาราง
     table.insertAdjacentHTML('afterend', extraHtml);
-
-    // Event Listeners for Table
     table.querySelectorAll('.braden-radio').forEach(r => {
         r.addEventListener('change', () => calculateBradenDay(r.dataset.day));
     });
@@ -4505,7 +4445,7 @@ function renderBradenPage1(container, data, options = {}) {
     container.innerHTML = html;
 }
 
-// === PAGE 2: Part 2, 3, 4 ===
+// === PAGE 2: Part 2, 3, 4 (Print Preview) ===
 function renderBradenPage2(container, data, options = {}) {
     let html = `
     <div class="text-center mb-2">
@@ -4555,7 +4495,6 @@ function renderBradenPage2(container, data, options = {}) {
         if (data.Wound_Record_JSON) {
             try { woundRecords = JSON.parse(data.Wound_Record_JSON); } catch(e){}
         }
-        // เติมบรรทัดว่างให้เต็มหน้า (ประมาณ 15 บรรทัด)
         for(let i=0; i<15; i++) {
             let rec = woundRecords[i] || {};
             let dateStr = rec.date ? new Date(rec.date).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "";
@@ -4573,10 +4512,16 @@ function renderBradenPage2(container, data, options = {}) {
     let dDate = data.Discharge_Date ? new Date(data.Discharge_Date).toLocaleDateString('th-TH') : ".....................";
     let isNoPU = (data.Discharge_Status === 'ไม่เกิดแผลกดทับ') ? '✓' : '&nbsp;';
     let isHasPU = (data.Discharge_Status === 'เกิดแผลกดทับ') ? '✓' : '&nbsp;';
+    
+    // วันที่จำหน่าย/ย้าย สำหรับแสดงใน Header
+    let summaryDate = data.Discharge_Summary_Date ? new Date(data.Discharge_Summary_Date).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "........................";
 
     html += `
     <div class="border border-black p-3 text-[11px]">
-        <div class="font-bold text-sm mb-2 border-b border-gray-300 pb-1">ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย / ย้าย)</div>
+        <div class="font-bold text-sm mb-2 border-b border-gray-300 pb-1 flex justify-between">
+            <span>ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย / ย้าย)</span>
+            <span>วันที่: ${summaryDate}</span>
+        </div>
         
         <div class="flex items-center gap-2 mb-2">
             <div class="border border-black w-4 h-4 text-center leading-none font-bold">${isNoPU}</div> 
