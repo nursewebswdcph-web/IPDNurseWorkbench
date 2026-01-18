@@ -3434,20 +3434,18 @@ function renderClassifySheetA4(page) {
   if (currentPatientData.DischargeDate) {
       dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
   } else if (currentPatientData.Status === 'Discharged') {
-     // กรณี Check status แต่ไม่มีวันที่ (เผื่อไว้)
      dischargeDateStr = "........................";
   }
 
-  // --- สร้าง HTML Header ---
+  // ดึงชื่อตึก (Ward) ของผู้ป่วย
+  const wardName = currentPatientData.Ward || "........................"; 
+
+  // --- สร้าง HTML Header (แก้ไขตรงนี้) ---
   let html = `
     <div class="flex flex-col items-center mb-4 relative">
-        <h2 class="font-bold text-lg">แบบบันทึกการจำแนกผู้ป่วย หอสงฆ์อาพาธ</h2>
+        <h2 class="font-bold text-lg">แบบบันทึกการจำแนกผู้ป่วย ${wardName}</h2>
         <h3 class="font-bold text-md">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
-        
-        <div class="absolute right-0 top-0 text-[10px] text-right mt-1">
-            <div>จำหน่าย ${dischargeDateStr}</div>
-            <div>รับใหม่ ${admitDateStr}</div>
-        </div>
+        <h4 class="font-bold text-md"รับใหม่ ${admitDateStr} จำหน่าย ${dischargeDateStr}</h4>
     </div>
 
     <div class="mb-2 text-[11px] font-bold">
@@ -3487,13 +3485,13 @@ function renderClassifySheetA4(page) {
     { type: 'header', text: 'I. สภาวะสุขภาพ' },
     { type: 'row', label: '1. สัญญาณชีพ', key: 'Score_1' },
     { type: 'row', label: '2. อาการแสดงทางระบบประสาท', key: 'Score_2' },
-    { type: 'row', label: '3. การตรวจรักษา/ผ่าตัด', key: 'Score_3' },
-    { type: 'row', label: '4. พฤติกรรม/อารมณ์/สังคม', key: 'Score_4' },
+    { type: 'row', label: '3. การได้รับการตรวจรักษา/การผ่าตัดหรือหัตถการ', key: 'Score_3' },
+    { type: 'row', label: '4. พฤติกรรมที่ผิดปกติ/อารมณ์/จิตสังคม', key: 'Score_4' },
     { type: 'header', text: 'II. ความต้องการการดูแลขั้นต่ำ' },
-    { type: 'row', label: '5. กิจวัตรประจำวัน', key: 'Score_5' },
-    { type: 'row', label: '6. สนับสนุนจิตใจ/อารมณ์', key: 'Score_6' },
-    { type: 'row', label: '7. ยา/หัตถการ/ฟื้นฟู', key: 'Score_7' },
-    { type: 'row', label: '8. บรรเทาอาการรบกวน', key: 'Score_8' },
+    { type: 'row', label: '5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน', key: 'Score_5' },
+    { type: 'row', label: '6. ความต้องการด้านอารมณ์และจิตใจของผู้ป่วย', key: 'Score_6' },
+    { type: 'row', label: '7. ความต้องการยา/หัตถการ/ฟื้นฟู', key: 'Score_7' },
+    { type: 'row', label: '8. ความต้องการบรรเทาอาการรบกวน', key: 'Score_8' },
     { type: 'summary', label: 'รวมคะแนน', key: 'Total_Score' },
     { type: 'summary', label: 'ประเภทผู้ป่วย', key: 'Category' },
     { type: 'text', label: 'ผู้ประเมิน', key: 'Assessor_Name' }
@@ -3562,10 +3560,11 @@ function renderClassifySheetA4(page) {
             <div><b>ประเภทที่ 1:</b> ผู้ป่วยพักฟื้นดูแลตัวเองได้ (คะแนน ≤ 8)</div>
             <div><b>ประเภทที่ 2:</b> ผู้ป่วยเจ็บป่วยเล็กน้อย (คะแนน 9-14)</div>
             <div><b>ประเภทที่ 3:</b> ผู้ป่วยเจ็บป่วยปานกลาง (คะแนน 15-20)</div>
-          </div>
-          <div>
             <div><b>ประเภทที่ 4:</b> ผู้ป่วยหนัก (คะแนน 21-26)</div>
             <div><b>ประเภทที่ 5:</b> ผู้ป่วยหนักมาก/วิกฤต (คะแนน 27-32)</div>
+          </div>
+          <div>
+            <div><b>ชื่อผู้ประเมิน (..................................)</div>
           </div>
        </div>
     </div>
