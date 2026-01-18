@@ -1,85 +1,77 @@
 // =================================================================
-// == IPD Nurse Workbench script.js (Final Fixed & Cleaned)
+// == IPD Nurse Workbench script.js (Final Corrected Version 2.8)
 // =================================================================
 
 // ----------------------------------------------------------------
 // (1) URL ของ Google Apps Script
 // ----------------------------------------------------------------
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_Wf0QMK-I80d6A2riIDQRRMpMy3IAoGMpYw0_gFuOXMuqWjThVHFHP2g/exec";
-
 // ----------------------------------------------------------------
 // (2) Constants & Configs
 // ----------------------------------------------------------------
 const ADL_TASKS = ["การรับประทานอาหาร", "การทำความสะอาดปาก/ฟัน", "การแต่งตัว", "การเดิน", "การขับถ่าย", "การอาบน้ำ"];
 const ADL_OPTIONS = ["ทำได้เอง", "บางส่วน", "ไม่ได้เลย", "ใช้อุปกรณ์"];
-
 const CLASSIFY_CRITERIA = {
-  "1": { title: "1. สัญญาณชีพ", 4: "ผิดปกติ โดยมีการเปลี่ยนแปลงตลอดเวลาหรือรวดเร็ว...", 3: "ผิดปกติ แต่ควบคุมได้...", 2: "ผิดปกติ แต่มีโอกาสเปลี่ยนแปลงได้ง่าย...", 1: "คงที่ มีโอกาสเปลี่ยนแปลงได้น้อย..." },
-  "2": { title: "2. อาการแสดงทางระบบประสาท", 4: "มีการเปลี่ยนแปลงตลอดเวลา...", 3: "ผิดปกติ แต่ควบคุมได้...", 2: "ปกติ หรือคงที่ ที่มีโอกาสเปลี่ยนแปลง...", 1: "ปกติ หรือคงที่" },
-  "3": { title: "3. การได้รับการตรวจรักษา...", 4: "มีหัตถการฉุกเฉิน...", 3: "มีหัตถการเร่งด่วน...", 2: "มีหัตถการฉุกเฉินแบบไม่ฉุกเฉิน...", 1: "มีหัตถการทั่วไป..." },
-  "4": { title: "4. พฤติกรรมที่ผิดปกติ...", 4: "พฤติกรรมผิดปกติรุนแรง...", 3: "พฤติกรรมผิดปกติรุนแรง ควบคุมไม่ได้...", 2: "พฤติกรรมผิดปกติ แต่ควบคุมตนเองได้...", 1: "ไม่มีปัญหาการปรับตัว" },
-  "5": { title: "5. ความสามารถในการปฏิบัติกิจวัตร...", 4: "ไม่สามารถปฏิบัติกิจวัตรประจำวันด้วยตนเอง 3 ใน 4 ข้อ...", 3: "ไม่สามารถปฏิบัติด้วยตนเอง...", 2: "สามารถช่วยเหลือตนเองได้บ้าง...", 1: "สามารถช่วยเหลือตนเองได้ทั้งหมด" },
-  "6": { title: "6. ความต้องการการสนับสนุน...", 4: "กลัวและวิตกกังวลสูงมาก...", 3: "วิตกกังวลสูง...", 2: "วิตกกังวลเล็กน้อย...", 1: "ต้องการคำแนะนำทั่วไป..." },
-  "7": { title: "7. ความต้องการยา...", 4: "ได้รับยาทางหลอดเลือดดำที่มีผลต่ออวัยวะที่สำคัญ...", 3: "ต้องการการปฏิบัติที่ใช้ทักษะเฉพาะ...", 2: "ได้รับยาเพื่อการรักษา...", 1: "ได้รับยาที่ใช้รักษา..." },
-  "8": { title: "8. ความต้องการการบรรเทาอาการ...", 4: "ทุกข์ทรมานจากอาการรบกวนรุนแรง...", 3: "มีอาการรบกวนรุนแรง ควบคุมได้...", 2: "มีอาการรบกวนที่ควบคุมได้...", 1: "มีอาการรบกวนเล็กน้อย..." }
-};
-
-const MORSE_CRITERIA = [
-  { id: "Morse_1", label: "1. ประวัติการหกล้ม (3 เดือน)", options: [{ text: "ไม่ใช่ / ไม่มีประวัติ (0)", score: 0 }, { text: "ใช่ / มีประวัติหกล้ม (25)", score: 25 }] },
-  { id: "Morse_2", label: "2. การวินิจฉัยโรคมากกว่า 1 รายการ", options: [{ text: "ไม่ใช่ (0)", score: 0 }, { text: "ใช่ (15)", score: 15 }] },
-  { id: "Morse_3", label: "3. การช่วยในการเคลื่อนย้าย", options: [{ text: "เดินได้เอง/ใช้รถเข็นนั่ง/นอนพักบนเตียง (0)", score: 0 }, { text: "ใช้ไม้ค้ำยัน/ไม้เท้า/Walker (15)", score: 15 }, { text: "เดินโดยการยึดเกาะเตียง/โต๊ะ/เก้าอี้ (30)", score: 30 }] },
-  { id: "Morse_4", label: "4. ให้สารละลายทางหลอดเลือด/คา Heparin lock", options: [{ text: "ไม่ใช่ (0)", score: 0 }, { text: "ใช่ (20)", score: 20 }] },
-  { id: "Morse_5", label: "5. การเดิน / การเคลื่อนย้าย", options: [{ text: "ปกติ / นอนพักบนเตียงโดยไม่ลุก (0)", score: 0 }, { text: "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (10)", score: 10 }, { text: "บกพร่อง ลุกนั่งลำบาก/ต้องช่วยพยุงเดิน (20)", score: 20 }] },
-  { id: "Morse_6", label: "6. สภาพจิตใจ", options: [{ text: "รับรู้บุคคล เวลา สถานที่ (0)", score: 0 }, { text: "ตอบสนองไม่ตรงความจริง/ไม่รับรู้ข้อจำกัด (15)", score: 15 }] }
-];
-
-const MAAS_OPTIONS = [
-  { score: 0, text: "0: ไม่ตอบสนอง" },
-  { score: 1, text: "1: ตอบสนองต่อการกระตุ้นแรง ๆ" },
-  { score: 2, text: "2: ตอบสนองต่อการสัมผัสและการเรียกชื่อ" },
-  { score: 3, text: "3: สงบและให้ความร่วมมือ" },
-  { score: 4, text: "4: พักได้น้อยและไม่ให้ความร่วมมือ" },
-  { score: 5, text: "5: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา" },
-  { score: 6, text: "6: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น" }
-];
-
-const BRADEN_CRITERIA = [
-    { id: "Sensory", name: "1. การรับความรู้สึก", options: [{ val: 1, text: "1.1 ไม่ตอบสนอง" }, { val: 2, text: "1.2 มี Pain Stimuli" }, { val: 3, text: "1.3 สับสน สื่อไม่ได้ทุกครั้ง" }, { val: 4, text: "1.4 ไม่มีความบกพร่อง ปกติ" }] },
-    { id: "Moisture", name: "2. การเปียกชื้นของผิวหนัง", options: [{ val: 1, text: "2.1 เปียกชุ่มตลอดเวลา Diarrhea" }, { val: 2, text: "2.2 ปัสสาวะราด / อุจจาระราดบ่อยครั้ง" }, { val: 3, text: "2.3 ปัสสาวะราด / อุจจาระราดบางครั้ง" }, { val: 4, text: "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้" }] },
-    { id: "Activity", name: "3. การทำกิจกรรม", options: [{ val: 1, text: "3.1 ต้องอยู่บนเตียงตลอดเวลา" }, { val: 2, text: "3.2 ทรงตัวไม่อยู่ / ต้องนั่งรถเข็น" }, { val: 3, text: "3.3 เดินได้ระยะสั้น ต้องช่วยพยุง" }, { val: 4, text: "3.4 เดินได้เอง / ทำกิจกรรมเองได้" }] },
-    { id: "Mobility", name: "4. การเคลื่อนไหว", options: [{ val: 1, text: "4.1 เคลื่อนไหวเองไม่ได้" }, { val: 2, text: "4.2 เคลื่อนไหวเองได้น้อย / มีข้อติด" }, { val: 3, text: "4.3 เคลื่อนไหวเองได้ มีผู้ช่วยเหลือบางครั้ง" }, { val: 4, text: "4.4 เคลื่อนไหวเองได้ปกติ" }] },
-    { id: "Nutrition", name: "5. การรับอาหาร", options: [{ val: 1, text: "5.1 NPO / กินได้ 1/3 ถาด" }, { val: 2, text: "5.2 กินได้บ้างเล็กน้อย / กินได้ 1/2 ถาด" }, { val: 3, text: "5.3 กินได้พอควร / กินได้ > 1/2 ถาด" }, { val: 4, text: "5.4 กินได้ปกติ / Feed รับได้หมด" }] },
-    { id: "Friction", name: "6. การเสียดสี", options: [{ val: 1, text: "6.1 มีกล้ามเนื้อหดเกร็ง / ใช้ผู้ช่วยหลายคน" }, { val: 2, text: "6.2 เวลานั่งลื่นไถลได้ / ใช้ผู้ช่วยน้อยคน" }, { val: 3, text: "6.3 เคลื่อนย้ายอิสระ ไม่มีปัญหาการเสียดสี" }] }
-];
-
-const BRADEN_CRITERIA_FULL = [
-  { id: "Sensory", label: "1. การรับรู้/ความรู้สึก", 1: "จำกัดทั้งหมด: ไม่ตอบสนองต่อสิ่งกระตุ้น", 2: "จำกัดมาก: ตอบสนองต่อสิ่งกระตุ้นที่เจ็บปวดเท่านั้น", 3: "จำกัดเล็กน้อย: ตอบสนองต่อเสียง ไม่ได้ผลเสมอไป", 4: "ไม่บกพร่อง: ตอบสนองตามคำสั่งและสื่อสารได้ปกติ" },
-  { id: "Moisture", label: "2. ความเปียกชื้น", 1: "ชื้นตลอดเวลา: ตรวจพบผ้าเปียกชื้นทุกครั้ง", 2: "ชื้นมาก: ผ้าเปียกชื้นส่วนใหญ่ (ต้องเปลี่ยนเวรละ 1 ครั้ง)", 3: "ชื้นเป็นครั้งคราว: ผ้าเปียกชื้นวันละ 1 ครั้ง", 4: "ชื้นน้อยมาก: ผิวแห้งปกติ เปลี่ยนผ้าตามรอบ" },
-  { id: "Activity", label: "3. กิจกรรม", 1: "นอนอยู่บนเตียงตลอดเวลา", 2: "เดินไม่ได้: ต้องใช้รถเข็น", 3: "เดินได้เป็นครั้งคราว: โดยมีผู้ช่วยพยุง", 4: "เดินได้ปกติ: เดินบ่อยๆ อย่างน้อยวันละ 2 ครั้ง" },
-  { id: "Mobility", label: "4. การเคลื่อนไหว", 1: "เคลื่อนไหวเองไม่ได้เลย", 2: "เคลื่อนไหวได้น้อยมาก: ขยับได้เพียงเล็กน้อย", 3: "เคลื่อนไหวได้บ้าง: ขยับได้ด้วยตนเองอย่างจำกัด", 4: "เคลื่อนไหวได้ปกติ: เปลี่ยนตำแหน่งได้เองบ่อยๆ" },
-  { id: "Nutrition", label: "5. โภชนาการ", 1: "ไม่เพียงพอ: กินได้ไม่ถึง 1/3 ของถาด", 2: "อาจไม่เพียงพอ: กินได้ประมาณ 1/2 ของถาด", 3: "เพียงพอ: กินได้เกินกว่า 1/2 ของถาด", 4: "ดีเยี่ยม: กินได้หมดเกือบทุกมื้อ" },
-  { id: "Friction", label: "6. การเสียดสี", 1: "มีปัญหา: ต้องใช้ผู้ช่วยพยุง ดึงลากผิวหนัง", 2: "เสี่ยงต่อการมีปัญหา: ขยับตัวได้ลำบาก ลื่นไถลได้", 3: "ไม่มีปัญหา: เคลื่อนไหวได้เอง ยกตัวได้พ้นที่นอน", 4: "" }
-];
-
-const WARD_CONFIG = {
-  "ศัลยกรรมทั่วไป": { icon: "fa-user-doctor", color: "text-blue-600", desc: "" },
-  "ศัลยกรรมกระดูก": { icon: "fa-bone", color: "text-orange-500", desc: "" },
-  "สูติ-นรีเวช": { icon: "fa-person-pregnant", color: "text-pink-500", desc: "" },
-  "พวงชมพู": { icon: "fa-star", color: "text-pink-600", desc: "" },
-  "อายุรกรรมชาย": { icon: "fa-user-injured", color: "text-blue-500", desc: "" },
-  "อายุรกรรมหญิง": { icon: "fa-user-nurse", color: "text-rose-400", desc: "" },
-  "กุมารเวชกรรม": { icon: "fa-child-reaching", color: "text-yellow-500", desc: "" },
-  "ปาริฉัตร": { icon: "fa-bed-pulse", color: "text-indigo-600", desc: "" },
-  "สงฆ์อาพาธ": { icon: "fa-hands-praying", color: "text-yellow-600", desc: "" },
-  "ICU": { icon: "fa-heart-pulse", color: "text-red-600", desc: "" },
-  "NICU-SNB": { icon: "fa-baby", color: "text-green-500", desc: "" },
-  "Stroke": { icon: "fa-brain", color: "text-purple-600", desc: "" },
-  "รักษ์ใจปันสุข": { icon: "fa-puzzle-piece", color: "text-teal-600", desc: "" },
-  "ห้องคลอด": { icon: "fa-baby-carriage", color: "text-pink-400", desc: "" }
+  "1": {
+    title: "1. สัญญาณชีพ",
+    4: "ผิดปกติ โดยมีการเปลี่ยนแปลงตลอดเวลาหรือรวดเร็ว ของ T/P/R/BP ต้องเฝ้าระวังทุก 15 นาที - 1 ชั่วโมง",
+    3: "ผิดปกติ แต่ควบคุมได้/ปกติ แต่มีโอกาสเปลี่ยนแปลงได้ง่าย ต้องเฝ้าระวัง ทุก 2-4 ชั่วโมง",
+    2: "ผิดปกติ แต่มีโอกาสเปลี่ยนแปลงได้ง่าย ต้องเฝ้าระวัง ทุก 4 - 6 ชั่วโมง",
+    1: "คงที่ มีโอกาสเปลี่ยนแปลงได้น้อย ต้องเฝ้าระวัง 1 - 2 ครั้ง/วัน"
+  },
+  "2": {
+    title: "2. อาการแสดงทางระบบประสาท",
+    4: "มีการเปลี่ยนแปลงตลอดเวลา ต้องเฝ้าระวังทุก 1 ชั่วโมง / 1 - 2 ชั่วโมง",
+    3: "ผิดปกติ แต่ควบคุมได้และมีโอกาสเปลี่ยนแปลง ต้องเฝ้าระวังทุก 2-4 ชั่วโมง",
+    2: "ปกติ หรือคงที่ ที่มีโอกาสเปลี่ยนแปลง ต้องเฝ้าระวังเวรละ 1 ครั้ง",
+    1: "ปกติ หรือคงที่"
+  },
+  "3": {
+    title: "3. การได้รับการตรวจรักษาด้วยการผ่าตัด/หัตถการฯ",
+    4: "- มีหัตถการฉุกเฉินต่ออวัยวะที่สำคัญต่อการมีชีวิต เช่น CPR, Hemodialysis, Cut down emergency, ICU, SB tube, Blood exchange\n- ผ่าตัดสมอง ปอด ตับ ไต หรืออวัยวะที่สำคัญต่อการมีชีวิต ภายใน 24 ชั่วโมงแรก ที่ยังไม่สามารถควบคุมอาการได้\n- ผ่าตัดใหญ่อวัยวะอื่น ที่ไม่สามารถควบคุมการเปลี่ยนแปลงได้\n- ใช้อุปกรณ์ช่วยชีวิตในระยะแรกที่ต้องเฝ้าระวังใกล้ชิด และมีการปรับการทำงานของอุปกรณ์ตามการเปลี่ยนแปลงของผู้ป่วย เช่น ใช้เครื่องช่วยหายใจ CPAP Wean O2 ระยะแรก  HFNC",
+    3: "- มีหัตถการเร่งด่วน เช่น ICD, Hemodialysis ในรายที่มีอาการคงที่, เจาะปอด PD เจาะท้อง, Sepsis ที่ควบคุมอาการได้\n- หลังผ่าตัดสมอง ปอด ตับ ไต หรืออวัยวะที่สำคัญต่อการมีชีวิต 24 - 48 ชั่วโมง\n- ใช้อุปกรณ์ช่วยชีวิตในระยะควบคุมอาการได้ หรือปรับการทำงานของอุปกรณ์น้อยลง หรือเตรียมวางแผนปรับลดการใช้ เช่น O2 mask c bag,",
+    2: "- มีหัตถการฉุกเฉินต่ออวัยวะที่สำคัญแบบไม่ฉุกเฉิน เช่น เจาะปอด, LP ส่องตรวจ\n- หลังผ่าตัดสมอง ปอด ตับ ไต หรืออวัยวะที่สำคัญต่อการมีชีวิต 48-72 ชั่วโมง ที่อาการคงที่ หรือหลังผ่าตัดใหญ่ที่ควบคุมอาการได้ 24-48 ชั่วโมงแรก\n- ใช้อุปกรณ์เพื่อช่วยชีวิต แต่ไม่ต้องปรับการทำงานของอุปกรณ์ แต่เฝ้าระวัง, เพื่อวางแผนปรับลดการใช้อุปกรณ์ เช่น O2 canular",
+    1: "- มีหัตถการทั่วไป เช่น เจาะเลือด ใส่สายสวนปัสสาวะ ผ่าฝี\n- ได้รับการตรวจรักษาทั่วไปที่ไม่ใช้วิธีการตรวจพิเศษ\n- หลังผ่าตัดในระยะพักฟื้นและไม่มีภาวะแทรกซ้อน\n- ไม่มีการใช้อุปกรณ์พิเศษเพื่อช่วยชีวิต"
+  },
+  "4": {
+    title: "4. พฤติกรรมที่ผิดปกติ อารมณ์ จิตสังคม",
+    4: "- พฤติกรรมผิดปกติรุนแรง ควบคุมไม่ได้/มีโอกาสจะฆ่าตัวตาย/ไม่สามารถแสดงพฤติกรรมการรับรู้ได้\n- พฤติกรรมผิดปกติด้านการปรับตัวทางอารมณ์และจิตสังคมที่รุนแรง เช่น ต่อต้านการรักษา ดึง ETT, ดึง NG tube",
+    3: "- พฤติกรรมผิดปกติรุนแรง ควบคุมไม่ได้\n- ซึมเศร้า ปรับตัวไม่ได้ ปฏิเสธการรักษา",
+    2: "- พฤติกรรมผิดปกติ แต่ควบคุมตนเองได้ เครียด วิตกกังวล",
+    1: "- ไม่มีปัญหาการปรับตัว"
+  },
+  "5": {
+    title: "5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน",
+    4: "ไม่สามารถปฏิบัติกิจวัตรประจำวันด้วยตนเอง 3 ใน 4 ข้อ (อาหาร, เคลื่อนไหว, ความสะอาด และขับถ่าย)",
+    3: "ไม่สามารถปฏิบัติด้วยตนเอง ต้องทดแทนส่วนมากอย่างน้อย 2 ใน 4 ข้อ",
+    2: "สามารถช่วยเหลือตนเองได้บ้าง ต้องทดแทนบางส่วน",
+    1: "สามารถช่วยเหลือตนเองได้ทั้งหมด"
+  },
+  "6": {
+    title: "6. ความต้องการการสนับสนุนด้านจิตใจและอารมณ์ฯ",
+    4: "กลัวและวิตกกังวลสูงมาก/ได้รับความกระทบกระเทือนจิตใจรุนแรง/ต้องการข้อมูลที่ชัดเจน/เจาะจง/ ไม่ยอมรับสภาพความเจ็บป่วย/ไม่เข้าใจการรักษา/ไม่สนใจตนเอง สิ้นหวัง",
+    3: "วิตกกังวลสูง ต้องการข้อมูลที่ชัดเจนเพื่อการตัดสินใจ/การดูแลตนเอง",
+    2: "วิตกกังวลเล็กน้อย ต้องการข้อมูลเพื่อควบคุมอาการ/การดูแลตนเอง",
+    1: "ต้องการคำแนะนำทั่วไป เช่น กฎระเบียบ, การดูแลตนเอง เมื่อเจ็บป่วย"
+  },
+  "7": {
+    title: "7. ความต้องการยา การรักษา/หัตถการและการฟื้นฟู",
+    4: "ได้รับยาทางหลอดเลือดดำที่มีผลต่ออวัยวะที่สำคัญต่อการมีชีวิตและ/หรือต้องเฝ้าระวังอย่างใกล้ชิด/มีการให้ต้องได้รับการบำบัดทดแทน ที่มีบันทึกทุก 15 นาที - 1 ชั่วโมง เช่น ยา HAD ให้เลือดผู้ป่วยที่เสียเลือด พ่นยาทุก 30 นาที - 1 ชั่วโมง",
+    3: "- ต้องการการปฏิบัติที่ใช้ทักษะเฉพาะ หัตถการที่ปฏิบัติบ่อยมาก เช่น ทำแผลขนาดใหญ่/ซับซ้อน/ดูดเสมหะทุก 15 นาที - 1 ชั่วโมง / เจาะ Hct, DTX ทุก 1 ชั่วโมง การ Dilate ม่านตา/ Nasal packing\n- ภายหลังได้รับหัตถการต้องต่ออวัยวะที่สำคัญต่อชีวิต ต้องการเฝ้าระวังอย่างใกล้ชิด เช่น เจาะตับ, เจาะ ABG\n- ได้รับยาที่ต้องประเมิน/ช่วยเหลือ/เฝ้าระวังก่อนและหลังการให้ยา เช่น ยาปรับระดับน้ำตาล BP, ชีพจร/ให้เลือดผู้ป่วยซีด/พ่นยาทุก 2-4 ชั่วโมง /Stat order\n- ต้องการช่วยเหลือที่ใช้ทักษะเฉพาะทางไม่ยุ่งยาก ต้องปฏิบัติบ่อย เช่น ทำแผลพื้นที่จำนวนมาก/เช็ดตา/ดูดเสมหะ/เจาะ Hct, DTX ทุก 2-4 ชั่วโมง\n- หัตถการทั่วไป เช่น สวนปัสสาวะ อุจจาระ สวนล้างช่องคลอด ล้างกระเพาะอาหาร ใส่เผือก Skin traction ครั้งแรก",
+    2: "- ได้รับยาเพื่อการรักษา/ควบคุมอาการทั่วไป ต้องเฝ้าระวังตามปกติหรือมีอุปกรณ์ที่ต้องการดูแลไม่ยุ่งยากซับซ้อน การทำ Passive, active exercise / เจาะ Hct, DTX ทุก 6-12 ชั่วโมง การให้ยาชนิดฉีด/การให้สารน้ำทางหลอดเลือดดำ",
+    1: "ได้รับยาที่ใช้รักษา/ควบคุมอาการในลักษณะประจำ/ต้องการกระตุ้นการดูแลตนเอง"
+  },
+  "8": {
+    title: "8. ความต้องการการบรรเทาอาการรบกวน",
+    4: "ทุกข์ทรมานจากอาการรบกวนรุนแรงควบคุมไม่ได้/พักผ่อน/เกิดความเครียดมาก ต้องเฝ้าระวัง อย่างน้อยทุก 1 ชั่วโมง",
+    3: "มีอาการรบกวนรุนแรง ควบคุมได้ ต้องการเฝ้าระวังทุก 2-4 ชั่วโมง",
+    2: "มีอาการรบกวนที่ควบคุมได้ ต้องเฝ้าระวังเวรละ 1 ครั้ง",
+    1: "มีอาการรบกวนเล็กน้อย ควบคุมได้ ไม่ต้องการการเฝ้าระวัง หรือไม่มีอาการรบกวนเลย"
+  }
 };
 
 // ----------------------------------------------------------------
-// (3) Global Variables & DOM Elements
+// (3) Global Variables
 // ----------------------------------------------------------------
 let currentWard = null;
 let currentPatientAN = null;
@@ -91,10 +83,10 @@ let globalStaffList = [];
 let currentClassifyPage = 1;
 let globalFocusTemplates = { problems: [], goals: [] };
 let globalProgressTemplates = [];
-let currentMorsePage = 1;
-let currentBradenPage = 1;
 
-// DOM Elements
+// ----------------------------------------------------------------
+// (4) DOM Element Variables
+// ----------------------------------------------------------------
 const wardSelectionPage = document.getElementById("ward-selection");
 const registryPage = document.getElementById("registry-page");
 const wardGrid = document.getElementById("ward-grid");
@@ -103,33 +95,38 @@ const wardSwitcher = document.getElementById("ward-switcher");
 const patientTableBody = document.getElementById("patient-table-body");
 const clockElement = document.getElementById("realtime-clock");
 
-// Modal Elements
+// (Admit Modal)
 const admitModal = document.getElementById("admit-modal");
+const openAdmitModalBtn = document.getElementById("open-admit-modal-btn");
+const closeAdmitModalBtn = document.getElementById("close-admit-modal-btn");
+const cancelAdmitBtn = document.getElementById("cancel-admit-btn");
 const admitForm = document.getElementById("admit-form");
 const admitDobInput = document.getElementById("admit-dob");
 const admitAgeInput = document.getElementById("admit-age");
-const openAdmitModalBtn = document.getElementById("open-admit-modal-btn");
-const closeAdmitModalBtn = document.getElementById("close-admit-modal-btn");
 
+// (Details Modal)
 const detailsModal = document.getElementById("details-modal");
+const closeDetailsModalBtn = document.getElementById("close-details-modal-btn");
 const detailsForm = document.getElementById("details-form");
 const detailsFieldset = document.getElementById("details-fieldset");
 const editPatientBtn = document.getElementById("edit-patient-btn");
 const saveDetailsBtn = document.getElementById("save-details-btn");
 const cancelEditBtn = document.getElementById("cancel-edit-btn");
 const dischargeBtn = document.getElementById("discharge-btn");
-const transferWardBtn = document.getElementById("transfer-ward-btn");
 const detailsBedDisplay = document.getElementById("details-bed-display");
 const detailsBedSelect = document.getElementById("details-bed-select");
 const detailsDobInput = document.getElementById("details-dob");
 const detailsAgeInput = document.getElementById("details-age");
-const closeDetailsModalBtn = document.getElementById("close-details-modal-btn");
+const transferWardBtn = document.getElementById("transfer-ward-btn");
 
+// (Chart Page)
 const chartPage = document.getElementById("chart-page");
 const closeChartBtn = document.getElementById("close-chart-btn");
 const chartAnDisplay = document.getElementById("chart-an-display");
 const chartHnDisplay = document.getElementById("chart-hn-display");
 const chartNameDisplay = document.getElementById("chart-name-display");
+
+// (Chart Preview Area)
 const chartPreviewTitle = document.getElementById("chart-preview-title");
 const chartPreviewContent = document.getElementById("chart-preview-content");
 const chartPreviewPlaceholder = document.getElementById("chart-preview-placeholder");
@@ -138,10 +135,16 @@ const chartAddNewBtn = document.getElementById("chart-add-new-btn");
 const chartBedDisplay = document.getElementById("chart-bed-display");
 const chartDoctorDisplay = document.getElementById("chart-doctor-display");
 
+// (Assessment Modal)
 const assessmentModal = document.getElementById("assessment-modal");
 const assessmentForm = document.getElementById("assessment-form");
 const closeAssessmentModalBtn = document.getElementById("close-assessment-modal-btn");
+const assessAnDisplay = document.getElementById("assess-an-display");
+const assessNameDisplay = document.getElementById("assess-name-display");
+const assessorNameSelect = document.getElementById("assessor-name");
+const assessorPositionInput = document.getElementById("assessor-position");
 
+// (Classification Modal)
 const classifyModal = document.getElementById("classify-modal");
 const classifyForm = document.getElementById("classify-form");
 const classifyAnDisplay = document.getElementById("classify-an-display");
@@ -150,57 +153,262 @@ const classifyPageDisplay = document.getElementById("classify-page-display");
 const classifyPrevPageBtn = document.getElementById("classify-prev-page-btn");
 const classifyNextPageBtn = document.getElementById("classify-next-page-btn");
 const classifyAddPageBtn = document.getElementById("classify-add-page-btn");
+const closeClassifyModalBtn = document.getElementById("close-classify-modal-btn");
 const classifyTable = document.getElementById("classify-table");
 const classifyTableBody = document.getElementById("classify-table-body");
 
+// (Focus List Modal)
 const focusProblemModal = document.getElementById("focus-problem-modal");
 const focusProblemForm = document.getElementById("focus-problem-form");
 const focusModalTitle = document.getElementById("focus-modal-title");
+const closeFocusModalBtn = document.getElementById("close-focus-modal-btn");
+const cancelFocusBtn = document.getElementById("cancel-focus-btn");
 const focusProblemText = document.getElementById("focus-problem-text");
 const focusGoalText = document.getElementById("focus-goal-text");
 const focusTemplateSearch = document.getElementById("focus-template-search");
 const focusTemplateDatalist = document.getElementById("focus-template-datalist");
 
+// (Add Template Modal)
 const addTemplateModal = document.getElementById("add-template-modal");
 const addTemplateForm = document.getElementById("add-template-form");
+const openFocusTemplateModalBtn = document.getElementById("open-template-modal-btn");
+const closeTemplateModalBtn = document.getElementById("close-template-modal-btn");
+const cancelTemplateModalBtn = document.getElementById("cancel-template-modal-btn");
 
+// (Progress Modal)
 const progressNoteModal = document.getElementById("progress-note-modal");
 const progressNoteForm = document.getElementById("progress-note-form");
 const progAnDisplay = document.getElementById("prog-an-display");
 const progNameDisplay = document.getElementById("prog-name-display");
+const progTemplateSearch = document.getElementById("prog-template-search");
+const reProgressBtn = document.getElementById("re-progress-btn");
+const saveAsTemplateBtn = document.getElementById("save-as-template-btn");
 
+// (Discharge Modal)
 const dischargeModal = document.getElementById("discharge-form-modal");
 const dischargeForm = document.getElementById("discharge-form");
 const closeDischargeBtn = document.getElementById("close-discharge-modal-btn");
 
+// (Discharge Plan Modal)
 const adviceModal = document.getElementById("advice-form-modal");
 const adviceForm = document.getElementById("advice-form");
 const closeAdviceBtn = document.getElementById("close-advice-modal-btn");
 
+// (MORSE  Modal)
+let currentMorsePage = 1;
 const morseModal = document.getElementById("morse-modal");
+const morseTableBody = document.getElementById("morse-table-body");
 const morseTable = document.getElementById("morse-table");
 
+// 2. Config สำหรับ Dropdown และ คะแนน (ตามเอกสาร PDF เป๊ะๆ)
+const MORSE_CRITERIA = [
+  {
+    id: "Morse_1",
+    label: "1. ประวัติการหกล้ม (3 เดือน)",
+    options: [
+      { text: "ไม่ใช่ / ไม่มีประวัติ (0)", score: 0 },
+      { text: "ใช่ / มีประวัติหกล้ม (25)", score: 25 }
+    ]
+  },
+  {
+    id: "Morse_2",
+    label: "2. การวินิจฉัยโรคมากกว่า 1 รายการ",
+    options: [
+      { text: "ไม่ใช่ (0)", score: 0 },
+      { text: "ใช่ (15)", score: 15 }
+    ]
+  },
+  {
+    id: "Morse_3",
+    label: "3. การช่วยในการเคลื่อนย้าย",
+    options: [
+      { text: "เดินได้เอง/ใช้รถเข็นนั่ง/นอนพักบนเตียง (0)", score: 0 },
+      { text: "ใช้ไม้ค้ำยัน/ไม้เท้า/Walker (15)", score: 15 },
+      { text: "เดินโดยการยึดเกาะเตียง/โต๊ะ/เก้าอี้ (30)", score: 30 }
+    ]
+  },
+  {
+    id: "Morse_4",
+    label: "4. ให้สารละลายทางหลอดเลือด/คา Heparin lock",
+    options: [
+      { text: "ไม่ใช่ (0)", score: 0 },
+      { text: "ใช่ (20)", score: 20 }
+    ]
+  },
+  {
+    id: "Morse_5",
+    label: "5. การเดิน / การเคลื่อนย้าย",
+    options: [
+      { text: "ปกติ / นอนพักบนเตียงโดยไม่ลุก (0)", score: 0 },
+      { text: "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (10)", score: 10 },
+      { text: "บกพร่อง ลุกนั่งลำบาก/ต้องช่วยพยุงเดิน (20)", score: 20 }
+    ]
+  },
+  {
+    id: "Morse_6",
+    label: "6. สภาพจิตใจ",
+    options: [
+      { text: "รับรู้บุคคล เวลา สถานที่ (0)", score: 0 },
+      { text: "ตอบสนองไม่ตรงความจริง/ไม่รับรู้ข้อจำกัด (15)", score: 15 }
+    ]
+  }
+];
+
+const MAAS_OPTIONS = [
+  { score: 0, text: "0: ไม่ตอบสนอง" },
+  { score: 1, text: "1: ตอบสนองต่อการกระตุ้นแรง ๆ" },
+  { score: 2, text: "2: ตอบสนองต่อการสัมผัสและการเรียกชื่อ" },
+  { score: 3, text: "3: สงบและให้ความร่วมมือ" },
+  { score: 4, text: "4: พักได้น้อยและไม่ให้ความร่วมมือ" },
+  { score: 5, text: "5: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา" },
+  { score: 6, text: "6: ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น" }
+];
+// (Braden  Modal)
+let currentBradenPage = 1;
 const bradenModal = document.getElementById("braden-modal");
 const bradenForm = document.getElementById("braden-form");
-
-// ----------------------------------------------------------------
-// (4) Utility Functions
-// ----------------------------------------------------------------
-
-// *** แก้ไข: ป้องกัน Error หาก google.script ไม่พร้อมใช้งาน (เช่น Local Test) ***
-let staffListCache = [];
-function loadStaffData() {
-    if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-        console.warn("Google Apps Script environment not detected. Mock data or skipping.");
-        return;
+const BRADEN_CRITERIA = [
+    {
+        id: "Sensory",
+        name: "1. การรับความรู้สึก",
+        options: [
+            { val: 1, text: "1.1 ไม่ตอบสนอง" },
+            { val: 2, text: "1.2 มี Pain Stimuli" },
+            { val: 3, text: "1.3 สับสน สื่อไม่ได้ทุกครั้ง" },
+            { val: 4, text: "1.4 ไม่มีความบกพร่อง ปกติ" }
+        ]
+    },
+    {
+        id: "Moisture",
+        name: "2. การเปียกชื้นของผิวหนัง",
+        options: [
+            { val: 1, text: "2.1 เปียกชุ่มตลอดเวลา Diarrhea" },
+            { val: 2, text: "2.2 ปัสสาวะราด / อุจจาระราดบ่อยครั้ง" },
+            { val: 3, text: "2.3 ปัสสาวะราด / อุจจาระราดบางครั้ง" },
+            { val: 4, text: "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้" }
+        ]
+    },
+    {
+        id: "Activity",
+        name: "3. การทำกิจกรรม",
+        options: [
+            { val: 1, text: "3.1 ต้องอยู่บนเตียงตลอดเวลา" },
+            { val: 2, text: "3.2 ทรงตัวไม่อยู่ / ต้องนั่งรถเข็น" },
+            { val: 3, text: "3.3 เดินได้ระยะสั้น ต้องช่วยพยุง" },
+            { val: 4, text: "3.4 เดินได้เอง / ทำกิจกรรมเองได้" }
+        ]
+    },
+    {
+        id: "Mobility",
+        name: "4. การเคลื่อนไหว",
+        options: [
+            { val: 1, text: "4.1 เคลื่อนไหวเองไม่ได้" },
+            { val: 2, text: "4.2 เคลื่อนไหวเองได้น้อย / มีข้อติด" },
+            { val: 3, text: "4.3 เคลื่อนไหวเองได้ มีผู้ช่วยเหลือบางครั้ง" },
+            { val: 4, text: "4.4 เคลื่อนไหวเองได้ปกติ" }
+        ]
+    },
+    {
+        id: "Nutrition",
+        name: "5. การรับอาหาร",
+        options: [
+            { val: 1, text: "5.1 NPO / กินได้ 1/3 ถาด" },
+            { val: 2, text: "5.2 กินได้บ้างเล็กน้อย / กินได้ 1/2 ถาด" },
+            { val: 3, text: "5.3 กินได้พอควร / กินได้ > 1/2 ถาด" },
+            { val: 4, text: "5.4 กินได้ปกติ / Feed รับได้หมด" }
+        ]
+    },
+    {
+        id: "Friction",
+        name: "6. การเสียดสี",
+        options: [
+            { val: 1, text: "6.1 มีกล้ามเนื้อหดเกร็ง / ใช้ผู้ช่วยหลายคน" },
+            { val: 2, text: "6.2 เวลานั่งลื่นไถลได้ / ใช้ผู้ช่วยน้อยคน" },
+            { val: 3, text: "6.3 เคลื่อนย้ายอิสระ ไม่มีปัญหาการเสียดสี" }
+        ]
     }
-    google.script.run.withSuccessHandler(data => {
-        staffListCache = data;
-    }).getStaffList();
-}
-// เรียกใช้ตอนโหลดหน้าเว็บ
-window.addEventListener('load', loadStaffData);
+];
+// ----------------------------------------------------------------
+// (5) Utility Functions
+// ----------------------------------------------------------------
+// =================================================================
+// 1. ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
+// =================================================================
+function calcBraden() {
+    // Helper: แปลงค่าเป็นตัวเลข (Base 10) ป้องกันการต่อ String
+    const getVal = (name) => {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        // ใช้ parseInt(..., 10) เพื่อบังคับให้เป็นตัวเลข
+        return el ? parseInt(el.value, 10) : 0;
+    };
 
+    // 1. ดึงค่าคะแนน (จะเป็นตัวเลขแน่นอน)
+    const s1 = getVal("Braden_Sensory");
+    const s2 = getVal("Braden_Moisture");
+    const s3 = getVal("Braden_Activity");
+    const s4 = getVal("Braden_Mobility");
+    const s5 = getVal("Braden_Nutrition");
+    const s6 = getVal("Braden_Friction");
+
+    // 2. แสดงคะแนนรายข้อ (ถ้ามี Element รองรับ)
+    const setScoreText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val > 0 ? val : '-';
+    };
+    setScoreText("score_Braden_Sensory", s1);
+    setScoreText("score_Braden_Moisture", s2);
+    setScoreText("score_Braden_Activity", s3);
+    setScoreText("score_Braden_Mobility", s4);
+    setScoreText("score_Braden_Nutrition", s5);
+    setScoreText("score_Braden_Friction", s6);
+
+    // 3. คำนวณผลรวม (บวกเลขทางคณิตศาสตร์)
+    const total = s1 + s2 + s3 + s4 + s5 + s6;
+
+    // 4. แปลผล
+    let resultText = "";
+    let colorClass = "text-gray-500";
+
+    // คำนวณเมื่อมีการเลือกอย่างน้อย 1 ข้อ หรือคะแนน > 0
+    if (total > 0) {
+        if (total <= 9) {
+            resultText = "Very high risk (เสี่ยงสูงมาก)";
+            colorClass = "text-red-700";
+        } else if (total >= 10 && total <= 12) {
+            resultText = "High risk (เสี่ยงสูง)";
+            colorClass = "text-red-500";
+        } else if (total >= 13 && total <= 14) {
+            resultText = "Moderate risk (เสี่ยงปานกลาง)";
+            colorClass = "text-orange-500";
+        } else {
+            resultText = "Low risk (เสี่ยงต่ำ)";
+            colorClass = "text-green-600";
+        }
+    }
+
+    // 5. อัปเดต UI หน้าบันทึก
+    const totalEl = document.getElementById("braden-total-score"); // ตรวจสอบ ID ใน HTML ให้ตรงกัน
+    const resultEl = document.getElementById("braden-result");
+
+    if (totalEl) totalEl.value = total; // ใส่ค่าตัวเลขลงไป
+    
+    if (resultEl) {
+        resultEl.value = resultText;
+        // ล้าง class สีเก่าออกแล้วใส่สีใหม่
+        resultEl.className = `w-full text-right text-lg font-black italic border-none bg-transparent focus:outline-none ${colorClass}`;
+    }
+}
+
+// ฟังก์ชันกลางสำหรับปิด Modal ทุกตัวในระบบ
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add("hidden");
+        // ถ้ามีฟอร์มข้างใน ให้ Reset ข้อมูลด้วย (ถ้าต้องการ)
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+    }
+}
 function showLoading(title = 'กำลังประมวลผล...') {
   Swal.fire({ title: title, allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }, });
 }
@@ -223,7 +431,7 @@ function updateClock() {
   const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'Asia/Bangkok' };
   const thaiDate = now.toLocaleDateString('th-TH', options);
   const time = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok' });
-  if(clockElement) clockElement.textContent = `${thaiDate} | ${time}`;
+  clockElement.textContent = `${thaiDate} | ${time}`;
 }
 
 function calculateAge(dobString_BE) {
@@ -285,8 +493,29 @@ function setFormDefaults() {
   const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
   const dateString = localDate.toISOString().split('T')[0];
   const timeString = now.toTimeString().split(' ')[0].substring(0, 5);
-  if(document.getElementById("admit-date")) document.getElementById("admit-date").value = dateString;
-  if(document.getElementById("admit-time")) document.getElementById("admit-time").value = timeString;
+  document.getElementById("admit-date").value = dateString;
+  document.getElementById("admit-time").value = timeString;
+}
+
+function calculateBradenScore(targetForm = assessmentForm) {
+  let total = 0;
+  const inputs = targetForm.querySelectorAll(".braden-score");
+  inputs.forEach(input => {
+    total += parseInt(input.value, 10) || 0;
+  });
+  
+  const totalEl = targetForm.querySelector("#braden-total-score");
+  const resultEl = targetForm.querySelector("#braden-result");
+  
+  if(totalEl) totalEl.value = total;
+
+  if(resultEl) {
+    if (total <= 9) resultEl.textContent = "Very high risk ( 9)";
+    else if (total <= 12) resultEl.textContent = "High risk (10-12)";
+    else if (total <= 14) resultEl.textContent = "Moderate risk (13-14)";
+    else if (total <= 18) resultEl.textContent = "Low risk (15-18)";
+    else resultEl.textContent = "No risk (> 18)";
+  }
 }
 
 function populateSelect(elementId, options, defaultValue = null) {
@@ -315,22 +544,13 @@ function populateDatalist(datalistId, options) {
 }
 
 function getISODate(date) {
+  // ใช้เทคนิคปรับ Timezone Offset เพื่อให้ได้ค่าวันที่แบบ Local (ไทย) เสมอ
   const offsetDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
   return offsetDate.toISOString().split('T')[0];
 }
 
-// ฟังก์ชันกลางสำหรับปิด Modal ทุกตัว
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add("hidden");
-        const form = modal.querySelector('form');
-        if (form) form.reset();
-    }
-}
-
 // ----------------------------------------------------------------
-// (5) Core App Functions (Load Wards, Patients)
+// (6) Core App Functions
 // ----------------------------------------------------------------
 
 async function refreshStaffDatalists() {
@@ -340,6 +560,7 @@ async function refreshStaffDatalists() {
       const result = await response.json();
       if (result.success) globalStaffList = result.data;
     }
+    // อัปเดต datalist
     const dl = document.getElementById("staff-list-datalist");
     if (dl) {
       dl.innerHTML = "";
@@ -351,6 +572,24 @@ async function refreshStaffDatalists() {
     }
   } catch (e) { console.error("Error loading staff", e); }
 }
+
+// สร้าง Config สำหรับจับคู่ชื่อตึกกับไอคอนและสี
+const WARD_CONFIG = {
+  "ศัลยกรรมทั่วไป": { icon: "fa-user-doctor", color: "text-blue-600", desc: "" },
+  "ศัลยกรรมกระดูก": { icon: "fa-bone", color: "text-orange-500", desc: "" },
+  "สูติ-นรีเวช": { icon: "fa-person-pregnant", color: "text-pink-500", desc: "" },
+  "พวงชมพู": { icon: "fa-star", color: "text-pink-600", desc: "" },
+  "อายุรกรรมชาย": { icon: "fa-user-injured", color: "text-blue-500", desc: "" },
+  "อายุรกรรมหญิง": { icon: "fa-user-nurse", color: "text-rose-400", desc: "" },
+  "กุมารเวชกรรม": { icon: "fa-child-reaching", color: "text-yellow-500", desc: "" },
+  "ปาริฉัตร": { icon: "fa-bed-pulse", color: "text-indigo-600", desc: "" },
+  "สงฆ์อาพาธ": { icon: "fa-hands-praying", color: "text-yellow-600", desc: "" },
+  "ICU": { icon: "fa-heart-pulse", color: "text-red-600", desc: "" },
+  "NICU-SNB": { icon: "fa-baby", color: "text-green-500", desc: "" },
+  "Stroke": { icon: "fa-brain", color: "text-purple-600", desc: "" },
+  "รักษ์ใจปันสุข": { icon: "fa-puzzle-piece", color: "text-teal-600", desc: "" },
+  "ห้องคลอด": { icon: "fa-baby-carriage", color: "text-pink-400", desc: "" }
+};
 
 async function loadWards() {
   showLoading('กำลังโหลดหน้าเริ่มต้น กรุณารอสักครู่...');
@@ -365,9 +604,11 @@ async function loadWards() {
       
       allWards.forEach(ward => {
         const wardName = ward.value;
+        // ดึงค่า Config ถ้าไม่มีให้ใช้ค่า Default
         const config = WARD_CONFIG[wardName] || { icon: "fa-hospital", color: "text-gray-600", desc: "" };
 
         const card = document.createElement("div");
+        // ปรับแต่ง CSS ให้เป็นการ์ดสวยงาม มี Icon ตรงกลาง
         card.className = "bg-white p-6 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-3 border border-gray-100 transform hover:-translate-y-1 group";
         
         card.innerHTML = `
@@ -383,6 +624,7 @@ async function loadWards() {
         card.onclick = () => selectWard(wardName);
         wardGrid.appendChild(card);
         
+        // เพิ่มลงใน Dropdown ด้วย
         const option = document.createElement("option");
         option.value = wardName; 
         option.textContent = wardName;
@@ -426,9 +668,13 @@ async function loadPatients(wardName) {
         data-name="${pt.Name}"
         data-bed="${pt.Bed}" 
         data-doctor="${pt.Doctor}">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 pointer-events-none">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
         Chart
       </button>`;
       
+      // 2. จัดเรียงลำดับคอลัมน์ใหม่: เอา chartButton ไว้บรรทัดแรก
       row.innerHTML = `
         <td class="p-3 text-center">${chartButton}</td>
         <td class="p-3">${pt.Bed}</td>
@@ -449,7 +695,7 @@ async function loadPatients(wardName) {
 }
 
 // ----------------------------------------------------------------
-// (6) Modal Functions: Admit, Details
+// (7) Modal Functions: Admit, Details, Chart, Assessment
 // ----------------------------------------------------------------
 
 // --- ADMIT MODAL ---
@@ -458,22 +704,36 @@ async function openAdmitModal() {
     showError('กรุณาเลือกหอผู้ป่วยก่อนทำรายการ');
     return;
   }
+
   showLoading('กำลังเตรียมฟอร์ม...');
+  
   try {
+    // ดึงข้อมูลพื้นฐานจาก Server (หอผู้ป่วย, รายชื่อแพทย์, แผนก, เตียงว่าง)
     const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard);
+    
+    // 1. เติมรายชื่อแพทย์ลงใน Datalist เพื่อให้ช่อง Input ค้นหาได้
     if (doctors && doctors.length > 0) {
       populateDatalist("doctor-list", doctors.map(o => o.value));
     }
+
+    // 2. เติมข้อมูลลงใน Select Dropdown ปกติ
     populateSelect("admit-from", admittedFrom.map(o => o.value));
     populateSelect("admit-bed", availableBeds);
     populateSelect("admit-dept", departments.map(o => o.value));
     
+    // 3. รีเซ็ตฟอร์มและตั้งค่าเริ่มต้นใหม่
     admitForm.reset();
     setFormDefaults();
-    if (document.getElementById("admit-age")) document.getElementById("admit-age").value = "";
+    
+    // ล้างค่าอายุผู้ป่วย (ถ้ามี)
+    if (document.getElementById("admit-age")) {
+      document.getElementById("admit-age").value = "";
+    }
 
+    // แสดง Modal
     admitModal.classList.remove("hidden");
     Swal.close();
+    
   } catch (error) {
     console.error('Error in openAdmitModal:', error);
     showError('เตรียมฟอร์มไม่สำเร็จ', 'ไม่สามารถโหลดข้อมูลพื้นฐานจากระบบได้ กรุณาลองใหม่อีกครั้ง');
@@ -494,6 +754,7 @@ async function handleAdmitSubmit(event) {
   if (patientData.DOB_BE) {
     patientData.DOB_BE = convertCEtoBE(patientData.DOB_BE);
   }
+  
   patientData.Age = document.getElementById("admit-age").value;
   patientData.Ward = currentWard;
   try {
@@ -516,6 +777,7 @@ async function fetchFormData(ward, currentBed = null) {
      const beds = await fetchAvailableBeds(ward, null);
      return { ...globalConfigData, availableBeds: beds };
   }
+  
   let url = `${GAS_WEB_APP_URL}?action=getFormData&ward=${ward}`;
   if(currentBed) { url += `&currentBed=${currentBed}`; }
   
@@ -550,6 +812,7 @@ async function openDetailsModal(an) {
     if (!globalConfigData.departments) {
         await fetchFormData(currentWard);
     }
+    
     populateDetailsForm(result.data);
     resetDetailsModalState();
     detailsModal.classList.remove("hidden");
@@ -561,6 +824,7 @@ async function openDetailsModal(an) {
 
 function populateDetailsForm(data) {
   detailsForm.reset();
+  
   populateSelect("details-from", globalConfigData.admittedFrom.map(o => o.value), data.AdmittedFrom);
   populateSelect("details-dept", globalConfigData.departments.map(o => o.value), data.Dept);
   populateSelect("details-doctor", globalConfigData.doctors.map(o => o.value), data.Doctor);
@@ -646,7 +910,9 @@ async function handleUpdateSubmit(event) {
     patientData.DOB_BE = convertCEtoBE(patientData.DOB_CE);
     delete patientData.DOB_CE;
   }
+  
   patientData.Age = document.getElementById("details-age").value;
+  
   if (!patientData.Bed) {
     patientData.Bed = detailsBedDisplay.value;
   }
@@ -787,7 +1053,7 @@ async function handleTransferWard() {
   }
 }
 
-// --- CHART PAGE & PREVIEW ---
+// --- CHART PAGE ---
 async function openChart(an, hn, name, bed, doctor) {
   currentPatientAN = an;
   chartAnDisplay.textContent = an;
@@ -862,36 +1128,29 @@ function showPreviewPlaceholder() {
   chartEditBtn.classList.add("hidden");
   chartAddNewBtn.classList.add("hidden");
 }
+// --- ส่วนของตัวแปร Braden (PDF) ---
+const BRADEN_CRITERIA_FULL = [
+  { id: "Sensory", label: "1. การรับรู้/ความรู้สึก", 
+    1: "จำกัดทั้งหมด: ไม่ตอบสนองต่อสิ่งกระตุ้น", 2: "จำกัดมาก: ตอบสนองต่อสิ่งกระตุ้นที่เจ็บปวดเท่านั้น", 3: "จำกัดเล็กน้อย: ตอบสนองต่อเสียง ไม่ได้ผลเสมอไป", 4: "ไม่บกพร่อง: ตอบสนองตามคำสั่งและสื่อสารได้ปกติ" },
+  { id: "Moisture", label: "2. ความเปียกชื้น", 
+    1: "ชื้นตลอดเวลา: ตรวจพบผ้าเปียกชื้นทุกครั้ง", 2: "ชื้นมาก: ผ้าเปียกชื้นส่วนใหญ่ (ต้องเปลี่ยนเวรละ 1 ครั้ง)", 3: "ชื้นเป็นครั้งคราว: ผ้าเปียกชื้นวันละ 1 ครั้ง", 4: "ชื้นน้อยมาก: ผิวแห้งปกติ เปลี่ยนผ้าตามรอบ" },
+  { id: "Activity", label: "3. กิจกรรม", 
+    1: "นอนอยู่บนเตียงตลอดเวลา", 2: "เดินไม่ได้: ต้องใช้รถเข็น", 3: "เดินได้เป็นครั้งคราว: โดยมีผู้ช่วยพยุง", 4: "เดินได้ปกติ: เดินบ่อยๆ อย่างน้อยวันละ 2 ครั้ง" },
+  { id: "Mobility", label: "4. การเคลื่อนไหว", 
+    1: "เคลื่อนไหวเองไม่ได้เลย", 2: "เคลื่อนไหวได้น้อยมาก: ขยับได้เพียงเล็กน้อย", 3: "เคลื่อนไหวได้บ้าง: ขยับได้ด้วยตนเองอย่างจำกัด", 4: "เคลื่อนไหวได้ปกติ: เปลี่ยนตำแหน่งได้เองบ่อยๆ" },
+  { id: "Nutrition", label: "5. โภชนาการ", 
+    1: "ไม่เพียงพอ: กินได้ไม่ถึง 1/3 ของถาด", 2: "อาจไม่เพียงพอ: กินได้ประมาณ 1/2 ของถาด", 3: "เพียงพอ: กินได้เกินกว่า 1/2 ของถาด", 4: "ดีเยี่ยม: กินได้หมดเกือบทุกมื้อ" },
+  { id: "Friction", label: "6. การเสียดสี", 
+    1: "มีปัญหา: ต้องใช้ผู้ช่วยพยุง ดึงลากผิวหนัง", 2: "เสี่ยงต่อการมีปัญหา: ขยับตัวได้ลำบาก ลื่นไถลได้", 3: "ไม่มีปัญหา: เคลื่อนไหวได้เอง ยกตัวได้พ้นที่นอน", 4: "" }
+];
 
-// ----------------------------------------------------------------
-// (7) Form Preview Logic (Classify, 004, Advice, 006, 007, Braden, Morse)
-// ----------------------------------------------------------------
-
-function renderADLTable() {
-  const tbody = document.getElementById("adl-table-body");
-  if (!tbody) return;
-  tbody.innerHTML = "";
-  ADL_TASKS.forEach((task, idx) => {
-    const fieldPrefix = ["Eat", "Brush", "Dress", "Walk", "Toilet", "Bath"][idx];
-    let row = `<tr><td class="border p-3 text-left font-medium">${task}</td>`;
-    
-    row += `<td class="border p-2"><select name="ADL_${fieldPrefix}_Before" class="w-full p-1 border rounded">`;
-    ADL_OPTIONS.forEach(opt => row += `<option value="${opt}">${opt}</option>`);
-    row += `</select></td>`;
-    
-    row += `<td class="border p-2"><select name="ADL_${fieldPrefix}_Current" class="w-full p-1 border rounded">`;
-    ADL_OPTIONS.forEach(opt => row += `<option value="${opt}">${opt}</option>`);
-    row += `</select></td></tr>`;
-    
-    tbody.innerHTML += row;
-  });
-}
-
+// --- ฟังก์ชันสร้างตาราง Braden  ---
 function renderBradenInitial() {
   const tbody = document.getElementById("braden-table-body");
   if (!tbody) return;
   tbody.innerHTML = "";
   
+  // ใช้ BRADEN_CRITERIA_FULL สำหรับฟอร์มแรกรับ 004
   BRADEN_CRITERIA_FULL.forEach(crit => {
     let row = `<tr class="hover:bg-gray-50">
       <td class="border p-2 font-bold text-left bg-gray-50">${crit.label}</td>`;
@@ -899,7 +1158,7 @@ function renderBradenInitial() {
       if (crit.id === "Friction" && i === 4) { row += `<td class="border p-2 bg-gray-100">-</td>`; continue; }
       row += `<td class="border p-2 text-left">
         <label class="flex items-start gap-1 cursor-pointer">
-          <input type="radio" name="Braden_${crit.id}" value="${i}" class="mt-1 braden-score" required onclick="calculateBradenScore()">
+          <input type="radio" name="Braden_${crit.id}" value="${i}" class="mt-1 braden-score" required>
           <span>${crit[i]}</span>
         </label>
       </td>`;
@@ -908,146 +1167,75 @@ function renderBradenInitial() {
     tbody.innerHTML += row;
   });
 }
+function updateBradenResult(total) {
+  const resEl = document.getElementById("braden-result");
+  if (!resEl) return;
+  
+  if (total <= 9) { resEl.textContent = "Very high risk"; resEl.className = "text-xl font-black italic text-red-700"; }
+  else if (total <= 12) { resEl.textContent = "High risk"; resEl.className = "text-xl font-bold italic text-red-600"; }
+  else if (total <= 14) { resEl.textContent = "Moderate risk"; resEl.className = "text-xl font-bold italic text-orange-600"; }
+  else if (total >= 15) { resEl.textContent = "Low risk"; resEl.className = "text-xl font-bold italic text-green-600"; }
+}
 
-function calculateBradenScore(targetForm = assessmentForm) {
-  let total = 0;
-  const inputs = targetForm.querySelectorAll(".braden-score:checked");
-  inputs.forEach(input => {
-    total += parseInt(input.value, 10) || 0;
+// --- CHART PREVIEW LOGIC ---
+function renderADLTable() {
+  const tbody = document.getElementById("adl-table-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  ADL_TASKS.forEach((task, idx) => {
+    const fieldPrefix = ["Eat", "Brush", "Dress", "Walk", "Toilet", "Bath"][idx];
+    let row = `<tr><td class="border p-3 text-left font-medium">${task}</td>`;
+    
+    // ก่อนป่วย
+    row += `<td class="border p-2"><select name="ADL_${fieldPrefix}_Before" class="w-full p-1 border rounded">`;
+    ADL_OPTIONS.forEach(opt => row += `<option value="${opt}">${opt}</option>`);
+    row += `</select></td>`;
+    
+    // ขณะป่วย
+    row += `<td class="border p-2"><select name="ADL_${fieldPrefix}_Current" class="w-full p-1 border rounded">`;
+    ADL_OPTIONS.forEach(opt => row += `<option value="${opt}">${opt}</option>`);
+    row += `</select></td></tr>`;
+    
+    tbody.innerHTML += row;
   });
-  
-  const totalEl = targetForm.querySelector("#braden-total-score");
-  const resultEl = targetForm.querySelector("#braden-result");
-  
-  if(totalEl) totalEl.value = total;
-
-  if(resultEl) {
-    if (total <= 9) resultEl.textContent = "Very high risk (<= 9)";
-    else if (total <= 12) resultEl.textContent = "High risk (10-12)";
-    else if (total <= 14) resultEl.textContent = "Moderate risk (13-14)";
-    else if (total <= 18) resultEl.textContent = "Low risk (15-18)";
-    else resultEl.textContent = "No risk (> 18)";
-  }
 }
-
-// ----------------------------------------------------------------
-// (8) Print Settings & Logic
-// ----------------------------------------------------------------
-
-// 2. เปิด Modal
-function openPrintSettings004() {
-    document.getElementById('printSettingsModal').classList.remove('hidden');
-    document.getElementById('printerSearch').value = '';
-    document.getElementById('staffDropdown').innerHTML = '';
-}
-
-// 3. ปิด Modal
-function closePrintModal() {
-    document.getElementById('printSettingsModal').classList.add('hidden');
-}
-
-// 4. ค้นหารายชื่อ
-function filterStaffList(keyword) {
-    const dropdown = document.getElementById('staffDropdown');
-    dropdown.innerHTML = '';
-    
-    if (!keyword) {
-        dropdown.classList.add('hidden');
-        return;
-    }
-
-    const filtered = staffListCache.filter(s => s.name.includes(keyword));
-    
-    if (filtered.length > 0) {
-        dropdown.classList.remove('hidden');
-        filtered.forEach(staff => {
-            const div = document.createElement('div');
-            div.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm';
-            div.innerText = `${staff.name} (${staff.position})`;
-            div.onclick = () => selectStaff(staff);
-            dropdown.appendChild(div);
-        });
-    } else {
-        dropdown.classList.add('hidden');
-    }
-}
-
-// 5. เลือกรายชื่อ
-function selectStaff(staff) {
-    document.getElementById('printerSearch').value = staff.name;
-    document.getElementById('selectedPrinterName').value = staff.name;
-    document.getElementById('selectedPrinterPosition').value = staff.position;
-    document.getElementById('staffDropdown').classList.add('hidden');
-}
-
-// 6. สั่งพิมพ์จริง (Render + Footer)
-function executePrint004() {
-    const printerName = document.getElementById('selectedPrinterName').value || '-';
-    const printerPos = document.getElementById('selectedPrinterPosition').value || '-';
-    
-    // สร้างวันที่ไทย
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }); // 19/01/2569
-    const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    const printDate = `${dateStr} เวลา ${timeStr} น.`;
-
-    // เตรียมข้อมูล Footer
-    const footerData = {
-        name: printerName,
-        position: printerPos,
-        date: printDate
-    };
-
-    // Render หน้า 1 และ 2 ใหม่โดยส่ง Footer Data ไปด้วย
-    const printArea = document.getElementById('printArea'); // หรือ ID ที่ท่านใช้แสดงผลตอนพิมพ์
-    if(!printArea) return;
-
-    printArea.innerHTML = ''; // เคลียร์ของเก่า
-    
-    // สร้าง Container หน้า 1
-    const page1 = document.createElement('div');
-    page1.className = 'page-break'; 
-    // แปลงข้อมูลล่าสุดก่อนส่ง
-    const freshData = normalizeData004(currentPatientData);
-    renderForm004Page1(page1, { data: freshData, footer: footerData }); 
-    printArea.appendChild(page1);
-
-    // สร้าง Container หน้า 2
-    const page2 = document.createElement('div');
-    page2.className = 'page-break';
-    renderForm004Page2(page2, { data: freshData, footer: footerData }); 
-    printArea.appendChild(page2);
-
-    closePrintModal();
-    window.print();
-}
-
-// ----------------------------------------------------------------
-// (9) MAIN RENDERERS (Cleaned & Updated)
-// ----------------------------------------------------------------
-
 async function showFormPreview(formType) {
+  // 1. ซ่อน Placeholder และเคลียร์เนื้อหาเก่า
   chartPreviewPlaceholder.classList.add("hidden");
   chartPreviewContent.innerHTML = "";
 
+  // --- กรณี Classify (เปลี่ยนจาก showEntryList เป็น renderClassifyPrintMode) ---
   if (formType === 'classify') {
     chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย (Print View)";
+    // ซ่อนปุ่มแก้ไข (Edit) เพราะหน้า Print View เน้นดูภาพรวม
     chartEditBtn.classList.add("hidden"); 
+    // แสดงปุ่มเพิ่มใหม่ (Add New)
     chartAddNewBtn.classList.remove("hidden");
     chartAddNewBtn.dataset.form = "classify";
+    
+    // เรียกฟังก์ชันเรนเดอร์แบบใหม่ (เสมือนพิมพ์)
     await renderClassifyPrintMode(currentPatientAN);
   }
-  else if (formType === '004') {
+
+  // --- กรณีแบบประเมินแรกรับ FR-IPD-004 (เวอร์ชันเสมือนพิมพ์) ---
+  // --- กรณีแบบประเมินแรกรับ FR-IPD-004 (Print View 2 หน้า) ---
+  if (formType === '004') {
     chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
-    chartEditBtn.classList.remove("hidden");
+    chartEditBtn.classList.remove("hidden"); // ปุ่มแก้ไขข้อมูล
     chartEditBtn.dataset.form = "004";
     chartAddNewBtn.classList.add("hidden");
+
+    // เรียกฟังก์ชันเรนเดอร์แบบ Print Mode
     await renderForm004PrintMode(currentPatientAN);
   }
+
+  // --- กรณีคำแนะนำการปฏิบัติตัว (Advice) ---
   else if (formType === 'advice') {
     chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัว";
     await showAdvicePreview(currentPatientAN);
   }
+
+  // --- กรณีบันทึกทางการพยาบาล (Focus Note 006) ---
   else if (formType === '006') {
     chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล (Nursing Progress Note)";
     chartEditBtn.classList.add("hidden");
@@ -1055,50 +1243,3755 @@ async function showFormPreview(formType) {
     chartAddNewBtn.dataset.form = "006";
     await showProgressNotePreview(currentPatientAN);
   }
+
+  // --- กรณีใบบันทึกจำหน่าย (Discharge 007) ---
   else if (formType === '007') {
      chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)";
      await showDischargePreview(currentPatientAN);
   }
+  
+  // --- กรณี Braden Scale (Print View) ---
   else if (formType === 'braden') {
     chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale) - Print View";
+    // แสดงปุ่มแก้ไข เพื่อให้ User กดเข้าไปกรอกข้อมูลได้
     chartEditBtn.classList.remove("hidden");
     chartEditBtn.dataset.form = "braden"; 
     chartAddNewBtn.classList.add("hidden");
+
+    // เรียกฟังก์ชันเรนเดอร์แบบ Print Mode
     await renderBradenPrintMode(currentPatientAN);
   }
+  // --- กรณี Morse Fall Scale / MAAS (Print View) ---
   else if (formType === 'morse_maas') {
     chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
-    chartEditBtn.classList.remove("hidden");
+    chartEditBtn.classList.remove("hidden"); // ปุ่มแก้ไขยังคงไว้เพื่อเปิด Modal กรอกข้อมูล
     chartEditBtn.dataset.form = "morse_maas";
-    chartAddNewBtn.classList.add("hidden");
+    chartAddNewBtn.classList.add("hidden"); // ซ่อนปุ่มเพิ่มใหม่ (ใช้ปุ่มแก้ไขแทน)
+
+    // เรียกฟังก์ชันเรนเดอร์แบบ Print View
     await renderMorsePrintMode(currentPatientAN);
   }
+
+  // --- กรณีอื่นๆ (Generic) ---
   else {
     const formTitleItem = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`);
     const formTitle = formTitleItem ? formTitleItem.textContent : "รายละเอียด";
+    
     chartPreviewTitle.textContent = formTitle;
     await showEntryList(formType, formTitle);
+    
     chartEditBtn.classList.add("hidden");
     chartAddNewBtn.classList.remove("hidden");
     chartAddNewBtn.dataset.form = formType;
   }
 }
+async function showEntryList(formType, formTitle) { 
+  const template = document.getElementById("template-entry-list");
+  if (!template) return;
+  
+  const preview = template.content.cloneNode(true);
+  let entries = [];
+  showLoading('กำลังโหลดรายการที่บันทึก...');
+  
+  try {
+    if (formType === 'classify') {
+      const response = await fetch(`${GAS_WEB_APP_URL}?action=getClassificationSummary&an=${currentPatientAN}`);
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message);
+      entries = result.data;
+    } 
+    Swal.close();
+  } catch (error) {
+    showError('โหลดข้อมูลไม่สำเร็จ', error.message);
+    return;
+  }
+
+  const header = document.createElement('div');
+  header.className = 'p-4 flex justify-between items-center';
+  header.innerHTML = `<p class="text-sm text-gray-500">พบ ${entries.length} รายการ</p>`;
+  preview.prepend(header);
+
+  if (entries.length === 0) {
+      const noEntryDiv = document.createElement('div');
+      noEntryDiv.className = 'p-6 text-center text-gray-400';
+      noEntryDiv.innerHTML = `<p>-- ยังไม่มีการบันทึก --</p><p>กรุณากดปุ่ม "+ เพิ่มใหม่"</p>`;
+      preview.appendChild(noEntryDiv);
+  } else {
+    entries.forEach(entry => {
+      const entryDiv = document.createElement('div');
+      entryDiv.className = 'p-4 hover:bg-gray-100 cursor-pointer entry-list-item border-b';
+      
+      const entryDate = new Date(entry.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const shift = entry.shift === 'N' ? 'ดึก' : (entry.shift === 'D' ? 'เช้า' : 'บ่าย');
+      
+      entryDiv.innerHTML = `
+        <p class="font-semibold text-blue-600">${entryDate} (เวร ${shift})</p>
+        <p class="text-sm text-gray-600">ผู้บันทึก: ${entry.user || 'N/A'}</p>
+      `;
+      
+      entryDiv.onclick = () => { openClassifyModal(); };
+      preview.appendChild(entryDiv);
+    });
+  }
+  
+  chartPreviewContent.innerHTML = ""; 
+  chartPreviewContent.appendChild(preview);
+}
+
+// --- ASSESSMENT FORM LOGIC (FR-004) ---
+async function openAssessmentForm() {
+  if (!currentPatientAN) return;
+  showLoading('กำลังเตรียมฟอร์มประเมิน...');
+  
+  // 1. โหลดรายชื่อพยาบาลเข้า Datalist (แก้ไขเคสคีย์คำค้นไม่ขึ้น)
+  await refreshStaffDatalists(); 
+  
+  try {
+    // 2. ดึงข้อมูลประเมิน + ข้อมูลจากทะเบียนผู้ป่วย (Patients)
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${currentPatientAN}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    
+    const data = result.data;
+    
+    // 3. Populate Form (ฟังก์ชันเดิมของคุณ)
+    populateAssessmentForm(data, assessmentForm);
+    
+    // 4. Force Fill Readonly Fields (Admit Info) จากตัวแปร global ที่บันทึกไว้
+    // (เพื่อให้ช่อง รับจาก, Refer, อาการสำคัญ ขึ้นอัตโนมัติ)
+    document.getElementById("assess-admit-from").value = data.AdmittedFrom || "";
+    document.getElementById("assess-refer-from").value = data.Refer || "";
+    document.getElementById("assess-cc").value = data.ChiefComplaint || "";
+    document.getElementById("assess-pi").value = data.PresentIllness || "";
+
+    assessmentModal.classList.remove("hidden");
+    Swal.close();
+  } catch(e) {
+    showError('เกิดข้อผิดพลาด', e.message);
+  }
+}
+
+function closeAssessmentModal() {
+  assessmentModal.classList.add("hidden");
+  assessmentForm.reset();
+  calculateBradenScore(assessmentForm);
+}
+
+function populateAssessmentForm(data, targetForm) {
+  if (!targetForm) return;
+  targetForm.reset(); // ล้างค่าเก่าออกก่อนเสมอ
+
+  // 1. แสดง AN และ ชื่อผู้ป่วย (ส่วน Header ของ Modal)
+  if (targetForm.id === 'assessment-form') {
+    const anDisplay = targetForm.querySelector('#assess-an-display');
+    const nameDisplay = targetForm.querySelector('#assess-name-display');
+    if (anDisplay) anDisplay.textContent = data.AN || '';
+    if (nameDisplay) nameDisplay.textContent = data.Name || '';
+  }
+
+  // 2. แมพฟิลด์พิเศษที่ใช้ ID (ส่วนใหญ่เป็นฟิลด์ Readonly จากหน้าแรกรับ)
+  const fieldsById = {
+    'AdmitDate': 'assess-admit-date',
+    'AdmitTime': 'assess-admit-time',
+    'AdmittedFrom': 'assess-admit-from',
+    'Refer': 'assess-refer-from',
+    'ChiefComplaint': 'assess-cc',
+    'PresentIllness': 'assess-pi'
+  };
+
+  for (const [key, id] of Object.entries(fieldsById)) {
+    const el = targetForm.querySelector(`#${id}`);
+    if (el) el.value = data[key] || '';
+  }
+
+  // 3. วนลูปจัดการฟิลด์อื่นๆ ตาม "name" (Radio, Checkbox, Text, Select)
+  Object.keys(data).forEach(key => {
+    const value = data[key];
+    const inputs = targetForm.querySelectorAll(`[name="${key}"]`);
+
+    inputs.forEach(input => {
+      if (input.type === 'radio') {
+        // ถ้าค่าใน data ตรงกับ value ของ radio ให้ติ๊กเลือก
+        if (String(input.value) === String(value)) {
+          input.checked = true;
+        }
+      } else if (input.type === 'checkbox') {
+        // จัดการ Checkbox (รองรับทั้งค่า boolean และ string "true")
+        input.checked = (value === true || value === 'true' || value === 'on');
+      } else if (input.tagName === 'SELECT' || input.tagName === 'TEXTAREA' || input.type === 'text' || input.type === 'number') {
+        // ฟิลด์ทั่วไป
+        input.value = value || '';
+      }
+    });
+  });
+
+  // 4. สั่งให้ระบบ Toggle (ซ่อน/แสดงช่องระบุเพิ่มเติม) ทำงานทันที
+  // วนลูปหา Input ที่เป็นตัวควบคุมการเปิด-ปิดช่องพิเศษ
+  targetForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
+    if (el.tagName === 'SELECT' || (el.type === 'radio' && el.checked)) {
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+
+  // 5. จัดการข้อมูลผู้ประเมิน (Datalist/Position)
+  const assessorNameEl = targetForm.querySelector("#assessor-name");
+  const assessorPosEl = targetForm.querySelector("#assessor-position");
+  if (assessorNameEl) assessorNameEl.value = data.Assessor_Name || "";
+  if (assessorPosEl) assessorPosEl.value = data.Assessor_Position || "";
+
+  // 6. คำนวณคะแนน Braden ใหม่ตามข้อมูลที่ถูกติ๊ก
+  if (typeof calculateBradenScore === "function") {
+    calculateBradenScore(targetForm);
+  }
+}
+
+async function handleSaveAssessment(event) {
+  event.preventDefault();
+  
+  // ตรวจสอบว่ามี AN หรือไม่
+  if (!currentPatientAN) {
+    showError('บันทึกไม่สำเร็จ', 'ไม่พบข้อมูล AN ของผู้ป่วย กรุณาเลือกผู้ป่วยใหม่อีกครั้ง');
+    return;
+  }
+
+  showLoading('กำลังบันทึกแบบประเมิน...');
+
+  try {
+    const formData = new FormData(assessmentForm);
+    const data = Object.fromEntries(formData.entries());
+
+    // จัดการ Checkbox (ให้เป็น true/false แทน on/undefined)
+    assessmentForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      data[cb.name] = cb.checked;
+    });
+
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      // ส่ง Action และ Data ไปในก้อนเดียว
+      body: JSON.stringify({
+        action: "saveAssessmentData",
+        an: currentPatientAN,
+        formData: data,
+        user: data.Assessor_Name || "System"
+      })
+    });
+
+    // ตรวจสอบว่า HTTP Status OK หรือไม่
+    if (!response.ok) throw new Error('Network response was not ok');
+
+    const result = await response.json(); // บรรทัดที่ 1646 เดิม
+    
+    if (result.success) {
+      showSuccess('บันทึกสำเร็จ!', result.message);
+      closeAssessmentModal();
+      showFormPreview('004'); // รีเฟรชหน้า Preview
+    } else {
+      throw new Error(result.message);
+    }
+  } catch (error) {
+    console.error("Save Error:", error);
+    showError('เกิดข้อผิดพลาดในการบันทึก', error.message);
+  }
+}
+// ----------------------------------------------------------------
+// (8) Classification Logic
+// ----------------------------------------------------------------
+
+async function openClassifyModal() {
+  classifyAnDisplay.textContent = currentPatientAN;
+  classifyNameDisplay.textContent = currentPatientData.Name || '';
+  currentClassifyPage = 1;
+  
+  if (!document.getElementById('staff-list-datalist')) {
+    const dataList = document.createElement('datalist');
+    dataList.id = 'staff-list-datalist';
+    globalStaffList.forEach(staff => {
+      dataList.innerHTML += `<option value="${staff.fullName}"></option>`;
+    });
+    classifyForm.appendChild(dataList);
+  }
+  
+  await fetchAndRenderClassifyPage(currentPatientAN, currentClassifyPage);
+  classifyModal.classList.remove("hidden");
+}
+
+function closeClassifyModal() {
+  classifyModal.classList.add("hidden");
+  chartPage.querySelectorAll('.chart-list-item').forEach(li => li.classList.remove('bg-indigo-100'));
+  const classifyItem = document.querySelector('.chart-list-item[data-form="classify"]');
+  if (classifyItem) classifyItem.classList.add('bg-indigo-100');
+  showFormPreview('classify');
+}
+
+async function fetchAndRenderClassifyPage(an, page) {
+  showLoading('กำลังโหลดข้อมูลการประเมิน...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getClassificationPage&an=${an}&page=${page}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    
+    renderClassifyTable(result.data, page);
+    classifyPageDisplay.textContent = page;
+    classifyPrevPageBtn.disabled = (page <= 1);
+    Swal.close();
+  } catch (error) {
+    showError('โหลดข้อมูลไม่สำเร็จ', error.message);
+  }
+}
+
+function renderClassifyTable(data, page) {
+  const table = classifyTable;
+  let thead = table.querySelector("thead");
+  let tbody = table.querySelector("tbody");
+  
+  if (!thead) {
+      thead = document.createElement('thead');
+      table.prepend(thead);
+  }
+  thead.innerHTML = "";
+  
+  // --- 1. สร้างส่วนหัวตาราง (Header) ---
+  const headerRow1 = document.createElement('tr');
+  headerRow1.className = 'bg-gray-100';
+  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left text-sm font-semibold text-gray-700 w-1/4 sticky left-0 bg-gray-100 z-10">หมวดการประเมิน</th>';
+  
+  const headerRow2 = document.createElement('tr');
+  headerRow2.className = 'bg-gray-50';
+  
+  const admitDate = new Date(currentPatientData.AdmitDate || new Date());
+  const startDate = new Date(admitDate);
+  startDate.setDate(startDate.getDate() + ((page - 1) * 5));
+  
+  for (let i = 0; i < 5; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
+    const dateString = getISODate(currentDate);
+    
+    const dateHeader = document.createElement('th');
+    dateHeader.colSpan = 3;
+    dateHeader.className = 'p-2 border text-center text-sm font-semibold text-gray-700 border-l-2 border-gray-300';
+    dateHeader.innerHTML = `<span class="classify-date-display" data-day-index="${i}">${currentDate.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                          <input type="hidden" value="${dateString}" class="classify-date-input" data-day-index="${i}">`;
+    headerRow1.appendChild(dateHeader);
+    
+    ['N', 'D', 'E'].forEach((shift, idx) => {
+      const shiftHeader = document.createElement('th');
+      const borderClass = idx === 0 ? 'border-l-2 border-gray-300' : 'border';
+      shiftHeader.className = `p-1 ${borderClass} text-xs font-medium text-gray-600 min-w-[50px]`;
+      shiftHeader.textContent = shift === 'N' ? 'ดึก' : (shift === 'D' ? 'เช้า' : 'บ่าย');
+      headerRow2.appendChild(shiftHeader);
+    });
+  }
+  thead.appendChild(headerRow1);
+  thead.appendChild(headerRow2);
+  
+  tbody.innerHTML = "";
+  
+  // --- 2. สร้างแถวข้อมูล (Data Rows) ---
+  const categories = [
+    { name: 'I. สภาวะสุขภาพ', isHeader: true },
+    { name: '1. สัญญาณชีพ', isHeader: false, scoreIndex: 1 },
+    { name: '2. อาการแสดงทางระบบประสาท', isHeader: false, scoreIndex: 2 },
+    { name: '3. การได้รับการตรวจรักษา/ผ่าตัดหรือหัตถการ', isHeader: false, scoreIndex: 3 },
+    { name: '4. พฤติกรรมที่ผิดปกติ อารมณ์ จิตสังคม', isHeader: false, scoreIndex: 4 },
+    { name: 'II. ความต้องการการดูแลขั้นต่ำ', isHeader: true },
+    { name: '5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน', isHeader: false, scoreIndex: 5 },
+    { name: '6. ความต้องการการสนับสนุนด้านจิตใจและอารมณ์', isHeader: false, scoreIndex: 6 },
+    { name: '7. ความต้องการยา การรักษา/หัตถการและการฟื้นฟู', isHeader: false, scoreIndex: 7 },
+    { name: '8. ความต้องการการบรรเทาอาการรบกวน', isHeader: false, scoreIndex: 8 }
+  ];
+  
+  categories.forEach((cat) => {
+    const row = document.createElement('tr');
+    if (cat.isHeader) {
+      row.className = 'bg-indigo-50';
+      row.innerHTML = `<td class="p-2 border font-bold text-indigo-800 sticky left-0 bg-indigo-50 z-10">${cat.name}</td>`;
+      // เติมช่องว่างให้เต็มแถว Header
+      for(let k=0; k<15; k++) { row.innerHTML += `<td class="bg-indigo-50 border"></td>`; }
+    } else {
+      row.innerHTML = `
+        <td class="p-2 border font-semibold sticky left-0 bg-white z-10 shadow-sm text-xs">
+          ${cat.name}
+          <button type="button" class="classify-criteria-btn ml-1 text-blue-500 hover:text-blue-700" onclick="showCriteriaPopover(${cat.scoreIndex})">(?)</button>
+        </td>`;
+      
+      const currentStartDate = new Date(admitDate);
+      currentStartDate.setDate(currentStartDate.getDate() + ((page - 1) * 5));
+      
+      for (let i = 0; i < 5; i++) {
+        const currentDate = new Date(currentStartDate);
+        currentDate.setDate(currentStartDate.getDate() + i);
+        const dateString = getISODate(currentDate);
+
+        ['N', 'D', 'E'].forEach((shift, idx) => {
+          const entry = data.find(d => d.Date === dateString && d.Shift === shift);
+          const score = (entry && entry[`Score_${cat.scoreIndex}`]) ? entry[`Score_${cat.scoreIndex}`] : 0;
+          const borderClass = idx === 0 ? 'border-l-2 border-gray-300' : 'border';
+          
+          row.innerHTML += `
+            <td class="p-1 ${borderClass}">
+              <select name="Score_${cat.scoreIndex}" class="w-full text-center p-1 border rounded classify-input text-xs" data-day-index="${i}" data-shift="${shift}">
+                <option value="0" ${score == 0 ? 'selected' : ''}></option>
+                <option value="1" ${score == 1 ? 'selected' : ''}>1</option>
+                <option value="2" ${score == 2 ? 'selected' : ''}>2</option>
+                <option value="3" ${score == 3 ? 'selected' : ''}>3</option>
+                <option value="4" ${score == 4 ? 'selected' : ''}>4</option>
+              </select>
+            </td>`;
+        });
+      }
+    }
+    tbody.appendChild(row);
+  });
+
+  // --- 3. สร้างแถวสรุป (Summary Rows) ---
+  const summaryRows = [
+    { id: 'total-score', label: 'รวมคะแนน', class: 'bg-gray-50' },
+    { id: 'category', label: 'ประเภท', class: 'bg-gray-100' },
+    { id: 'assessor', label: 'ผู้ประเมิน', class: 'bg-gray-50' },
+    { id: 'save', label: '', class: 'bg-white' }
+  ];
+
+  summaryRows.forEach(sr => {
+    const row = document.createElement('tr');
+    row.className = sr.class;
+    row.id = `classify-row-${sr.id}`;
+    row.innerHTML = `<td class="p-2 border font-bold text-right sticky left-0 ${sr.class} z-10 text-xs">${sr.label}</td>`;
+    
+    const currentStartDate = new Date(admitDate);
+    currentStartDate.setDate(currentStartDate.getDate() + ((page - 1) * 5));
+    
+    for (let i = 0; i < 5; i++) {
+      const currentDate = new Date(currentStartDate);
+      currentDate.setDate(currentStartDate.getDate() + i);
+      const dateString = getISODate(currentDate);
+
+      ['N', 'D', 'E'].forEach((shift, idx) => {
+        const entry = data.find(d => d.Date === dateString && d.Shift === shift);
+        const borderClass = idx === 0 ? 'border-l-2 border-gray-300' : 'border';
+        
+        if (sr.id === 'save') {
+          row.innerHTML += `
+            <td class="p-1 ${borderClass} text-center">
+              <button type="button" class="classify-save-btn bg-blue-500 hover:bg-blue-600 text-white text-[10px] py-1 px-2 rounded w-full shadow" 
+                      data-day-index="${i}" data-shift="${shift}">
+                บันทึก
+              </button>
+            </td>`;
+        } else {
+          let value = '';
+          if (sr.id === 'total-score') value = entry?.Total_Score || '';
+          if (sr.id === 'category') value = entry?.Category || '';
+          if (sr.id === 'assessor') value = entry?.Assessor_Name || '';
+          
+          const inputType = (sr.id === 'assessor') ? `list="staff-list-datalist"` : 'text';
+          const isReadonly = (sr.id !== 'assessor') ? 'readonly' : '';
+          const inputClass = (sr.id !== 'assessor') ? 'bg-gray-200 font-bold text-blue-600' : 'classify-assessor-input bg-white focus:ring-1 focus:ring-blue-500';
+          
+          row.innerHTML += `
+            <td class="p-1 ${borderClass}">
+              <input ${inputType} name="${sr.id}" 
+                     class="w-full text-center p-1 border rounded text-xs ${inputClass}" 
+                     data-day-index="${i}" data-shift="${shift}" value="${value}" ${isReadonly}>
+            </td>`;
+        }
+      });
+    }
+    tbody.appendChild(row);
+  });
+
+  // ============================================================
+  // [สำคัญมาก] ส่วนที่เพิ่ม: ผูก Event Listener ให้ปุ่มทำงาน
+  // ============================================================
+
+  // 1. เมื่อเปลี่ยนคะแนนใน Dropdown -> คำนวณยอดรวมทันที
+  tbody.querySelectorAll('.classify-input').forEach(select => {
+    select.addEventListener('change', (e) => {
+        const day = e.target.dataset.dayIndex;
+        const shift = e.target.dataset.shift;
+        updateClassifyColumnTotals(day, shift);
+    });
+  });
+
+  // 2. เมื่อกดปุ่ม "บันทึก" -> เรียกฟังก์ชันบันทึก
+  tbody.querySelectorAll('.classify-save-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const day = e.target.dataset.dayIndex;
+        const shift = e.target.dataset.shift;
+        // เรียกฟังก์ชันบันทึก
+        saveClassificationShiftData(day, shift);
+    });
+  });
+}
+
+function updateClassifyColumnTotals(dayIndex, shift) {
+  let total = 0;
+  for (let i = 1; i <= 8; i++) {
+    const scoreInput = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+    if (!scoreInput) continue; 
+    let score = parseInt(scoreInput.value, 10) || 0;
+    total += score;
+  }
+  
+  const totalInput = classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+  if (totalInput) totalInput.value = total > 0 ? total : '';
+  
+  const categoryInput = classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+  if (categoryInput) {
+    let category = 0;
+    if (total > 0 && total <= 8) category = 1;
+    else if (total >= 9 && total <= 14) category = 2;
+    else if (total >= 15 && total <= 20) category = 3;
+    else if (total >= 21 && total <= 26) category = 4;
+    else if (total >= 27) category = 5;
+    categoryInput.value = category > 0 ? category : '';
+  }
+  return { Total_Score: total > 0 ? total : '', Category: categoryInput.value };
+}
+
+// แก้ไขการบันทึกและรวมคะแนน Classification (ชุดอัปเดต v2.8)
+async function saveClassificationShiftData(dayIndex, shift) {
+    const dateInput = classifyTable.querySelector(`input.classify-date-input[data-day-index="${dayIndex}"]`);
+    if (!dateInput) return;
+    const date = dateInput.value;
+    
+    if (!currentPatientAN) {
+        showError('ไม่พบข้อมูล AN', 'กรุณาเปิด Chart ใหม่อีกครั้ง');
+        return;
+    }
+
+    const entryData = { 
+        AN: currentPatientAN, 
+        Page: currentClassifyPage, 
+        Date: date, 
+        Shift: shift 
+    };
+
+    let hasData = false;
+    let total = 0;
+    
+    // วนลูปเก็บคะแนน 8 ข้อ และรวมคะแนนฝั่ง Client
+    for (let i = 1; i <= 8; i++) {
+        const sel = classifyTableBody.querySelector(`select[name="Score_${i}"][data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+        const val = parseInt(sel.value) || 0;
+        if (val > 0) hasData = true;
+        entryData[`Score_${i}`] = val;
+        total += val;
+    }
+    
+    const assessorInp = classifyTableBody.querySelector(`#classify-row-assessor input[data-day-index="${dayIndex}"][data-shift="${shift}"]`);
+    entryData.Assessor_Name = assessorInp ? assessorInp.value : "";
+    if (entryData.Assessor_Name) hasData = true;
+    
+    if (!hasData) {
+        showError("ยังไม่มีข้อมูล", "กรุณาลงคะแนนอย่างน้อย 1 หมวด หรือลงชื่อผู้ประเมิน");
+        return;
+    }
+
+    // คำนวณประเภทผู้ป่วย (Category) อัตโนมัติก่อนส่ง
+    let category = 0;
+    if (total > 0 && total <= 8) category = 1;
+    else if (total >= 9 && total <= 14) category = 2;
+    else if (total >= 15 && total <= 20) category = 3;
+    else if (total >= 21 && total <= 26) category = 4;
+    else if (total >= 27) category = 5;
+    
+    entryData.Total_Score = total;
+    entryData.Category = category;
+
+    showLoading('กำลังบันทึก...');
+    try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "saveClassificationShift", entryData: entryData })
+        });
+        const result = await response.json();
+        if (result.success) {
+            // อัปเดตช่องคะแนนรวมและประเภทในตารางให้เห็นทันที
+            classifyTableBody.querySelector(`#classify-row-total-score input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = total;
+            classifyTableBody.querySelector(`#classify-row-category input[data-day-index="${dayIndex}"][data-shift="${shift}"]`).value = category;
+            
+            showSuccess('บันทึกสำเร็จ!', `เวร ${shift} วันที่ ${date} เรียบร้อย`);
+        } else throw new Error(result.message);
+    } catch (error) { 
+        console.error("Save Classify Error:", error);
+        showError('บันทึกไม่สำเร็จ', error.message); 
+    }
+}
+// ฟังก์ชันจัดการเครื่องหมายถูก ☑ ในหน้า Preview (เสมือนพิมพ์)
+function updateCheckmarkPreview(data, container) {
+  // 1. จัดการช่อง ☑/☐ ทั่วไป
+  container.querySelectorAll('.chk').forEach(span => {
+    const chkKey = span.dataset.chk;
+    if (!chkKey) return;
+    const [field, targetVal] = chkKey.split(':');
+    const actualVal = String(data[field]);
+    const isMatched = (actualVal === targetVal) || (targetVal === 'true' && (actualVal === 'true' || actualVal === true));
+    span.innerHTML = `<span class="chk-box">${isMatched ? '✓' : '&nbsp;'}</span>`;
+  });
+
+  // 2. จัดการตาราง Braden (ติ๊กในเซลล์)
+  container.querySelectorAll('.chk-cell').forEach(td => {
+    const chkKey = td.dataset.chk;
+    if (!chkKey) return;
+    const [field, score] = chkKey.split(':');
+    if (String(data[field]) === score) {
+      td.innerHTML = '<span class="font-bold">✓</span>';
+      td.classList.add('bg-blue-50');
+    } else {
+      td.innerHTML = '';
+      td.classList.remove('bg-blue-50');
+    }
+  });
+}
+function changeClassifyPage(direction) {
+  const newPage = currentClassifyPage + direction;
+  if (newPage < 1) return;
+  currentClassifyPage = newPage;
+  fetchAndRenderClassifyPage(currentPatientAN, currentClassifyPage);
+}
+
+function showCriteriaPopover(categoryIndex) {
+  const criteria = CLASSIFY_CRITERIA[categoryIndex.toString()];
+  if (!criteria) {
+    showError('ไม่พบเกณฑ์', `ไม่พบเกณฑ์สำหรับหมวด ${categoryIndex}`);
+    return;
+  }
+  const criteriaHtml = `
+    <div class="text-left space-y-4 p-4">
+      <div class="p-3 bg-gray-100 rounded-md"><p class="font-semibold text-lg text-red-600">คะแนน 4:</p><p>${criteria[4]}</p></div>
+      <div class="p-3 bg-gray-100 rounded-md"><p class="font-semibold text-lg text-orange-600">คะแนน 3:</p><p>${criteria[3]}</p></div>
+      <div class="p-3 bg-gray-100 rounded-md"><p class="font-semibold text-lg text-yellow-600">คะแนน 2:</p><p>${criteria[2]}</p></div>
+      <div class="p-3 bg-gray-100 rounded-md"><p class="font-semibold text-lg text-green-600">คะแนน 1:</p><p>${criteria[1]}</p></div>
+    </div>`;
+  Swal.fire({ title: criteria.title, html: criteriaHtml, width: '800px', confirmButtonText: 'ปิด' });
+}
 
 // ----------------------------------------------------------------
-// (10) 004 RENDERERS (PAGE 1 & 2 with Flexbox Footer)
+// (9) Focus List (FR-IPD-005) Logic
 // ----------------------------------------------------------------
 
+// ในไฟล์ script.js ค้นหา function showFocusListPreview แล้วแทนที่ด้วย Code นี้
+async function showFocusListPreview(an) {
+  chartPreviewTitle.textContent = "รายการปัญหาสุขภาพ (FOCUS LIST)";
+  chartPreviewPlaceholder.classList.add("hidden");
+  chartEditBtn.classList.add("hidden");
+  chartAddNewBtn.classList.remove("hidden");
+  chartAddNewBtn.dataset.form = "005";
+
+  showLoading('กำลังโหลดรายการปัญหา...');
+
+  try {
+    // --- จุดที่แก้ไข: สั่งให้ทำงานพร้อมกัน 2 อย่าง (Parallel) ---
+    const templatePromise = loadFocusTemplates(); // 1. เริ่มโหลด Template (ถ้าไม่มี)
+    const listPromise = fetch(`${GAS_WEB_APP_URL}?action=getFocusList&an=${an}`); // 2. เริ่มโหลดรายการปัญหา
+    
+    // รอให้เสร็จทั้งคู่ (ใช้เวลาเท่ากับตัวที่ช้าที่สุด ไม่ใช่เวลาบวกกัน)
+    const [_, listResponse] = await Promise.all([templatePromise, listPromise]);
+    const result = await listResponse.json();
+    // -------------------------------------------------------
+
+    if (!result.success) throw new Error(result.message);
+    const entries = result.data;
+    
+    // อัปเดตตัวเลขจำนวนปัญหา
+    const span005 = document.getElementById('last-updated-005');
+    if (span005) span005.textContent = entries.length > 0 ? `มี ${entries.length} ปัญหา` : "ยังไม่เคยบันทึก";
+
+    // Render ตาราง (เหมือนเดิม)
+    const template = document.getElementById("preview-template-005");
+    if (!template) return;
+    const preview = template.content.cloneNode(true);
+    const tableBody = preview.querySelector("tbody");
+
+    if (entries.length === 0) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td colspan="6" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึกปัญหา --</td>`;
+      tableBody.appendChild(row);
+    } else {
+      entries.forEach(entry => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50";
+        const activeDate = entry.ActiveDate ? new Date(entry.ActiveDate).toLocaleDateString('th-TH') : '';
+        const resolvedDate = entry.ResolvedDate ? new Date(entry.ResolvedDate).toLocaleDateString('th-TH') : '';
+        const editButton = `<button type="button" class="focus-edit-btn text-blue-600 hover:text-blue-800" data-entry-id="${entry.Entry_ID}">แก้ไข</button>`;
+
+        row.innerHTML = `<td class="p-2 border text-center">${entry.Seq}</td><td class="p-2 border text-left">${entry.Problem || ''}</td><td class="p-2 border text-left">${entry.Goal || ''}</td><td class="p-2 border text-center">${activeDate}</td><td class="p-2 border text-center">${resolvedDate}</td><td class="p-2 border text-center">${editButton}</td>`;
+        row.querySelector(".focus-edit-btn").addEventListener("click", () => { openFocusProblemModal(entry); });
+        tableBody.appendChild(row);
+      });
+    }
+
+    chartPreviewContent.innerHTML = ""; 
+    chartPreviewContent.appendChild(preview);
+    Swal.close();
+
+  } catch (error) {
+    Swal.close();
+    showError('โหลดรายการปัญหาไม่สำเร็จ', error.message);
+    return;
+  }
+}
+
+async function loadFocusTemplates() {
+  // ถ้ามีข้อมูลอยู่แล้ว ให้ Return เป็น Promise ที่ Resolve ทันที (เพื่อความเร็ว)
+  if (globalFocusTemplates.problems.length > 0) return Promise.resolve();
+  
+  try {
+    // Return Promise ของการ Fetch ออกไปเลย
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getFocusTemplates`);
+    const result = await response.json();
+    if (result.success) {
+        globalFocusTemplates = result.data;
+    }
+  } catch (e) { 
+    console.error("Could not load focus templates:", e); 
+  }
+}
+
+function closeFocusProblemModal() {
+  focusProblemModal.classList.add("hidden");
+  focusProblemForm.reset();
+}
+
+async function handleSaveFocusProblem(event) {
+  event.preventDefault();
+  showLoading('กำลังบันทึกข้อมูล...');
+  const formData = new FormData(focusProblemForm);
+  const problemData = Object.fromEntries(formData.entries());
+
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "saveFocusProblem", an: currentPatientAN, problemData: problemData })
+    });
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+
+    showSuccess('บันทึกสำเร็จ!');
+    closeFocusProblemModal();
+    showFocusListPreview(currentPatientAN); 
+  } catch (error) { showError('บันทึกไม่สำเร็จ', error.message); }
+}
+
+function populateFocusTemplateDropdowns() {
+  if (!focusTemplateDatalist) return;
+  focusTemplateDatalist.innerHTML = ""; 
+  
+  if (globalFocusTemplates.problems) {
+    globalFocusTemplates.problems.forEach(t => {
+      const option = document.createElement("option");
+      // ใช้ t.name (ชื่อสั้น) เป็นค่าที่จะแสดงในช่องค้นหา
+      option.value = t.name; 
+      // (เสริม) แสดงตัวอย่างปัญหาเล็กน้อยในวงเล็บ (Chrome อาจไม่โชว์แต่โค้ดนี้รองรับไว้)
+      option.label = t.problem.substring(0, 30) + "..."; 
+      focusTemplateDatalist.appendChild(option);
+    });
+  }
+}
+
+function openFocusProblemModal(entryData = null) {
+  focusProblemForm.reset();
+  if(focusTemplateSearch) focusTemplateSearch.value = "";
+  populateFocusTemplateDropdowns();
+
+  if (entryData) {
+    focusModalTitle.textContent = "แก้ไขรายการปัญหาสุขภาพ";
+    document.getElementById("focus-entry-id").value = entryData.Entry_ID;
+    focusProblemText.value = entryData.Problem || '';
+    focusGoalText.value = entryData.Goal || '';
+    document.getElementById("focus-active-date").value = entryData.ActiveDate || '';
+    document.getElementById("focus-resolved-date").value = entryData.ResolvedDate || '';
+  } else {
+    focusModalTitle.textContent = "เพิ่มรายการปัญหาสุขภาพ";
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    document.getElementById("focus-active-date").value = localDate.toISOString().split('T')[0];
+  }
+  focusProblemModal.classList.remove("hidden");
+}
+
+function openAddTemplateModal() {
+  if (addTemplateForm) addTemplateForm.reset();
+  if (addTemplateModal) {
+    addTemplateModal.classList.remove("hidden");
+    addTemplateModal.style.zIndex = "9999"; 
+  }
+}
+
+function closeAddTemplateModal() {
+  addTemplateModal.classList.add("hidden");
+  addTemplateForm.reset();
+}
+
+async function handleSaveFocusTemplate(event) {
+  event.preventDefault();
+
+  // --- 1. เรียก Popup Loading ทันที ---
+  showLoading('กำลังบันทึกเทมเพลต...'); 
+
+  const formData = new FormData(addTemplateForm);
+  const templateData = Object.fromEntries(formData.entries());
+
+  // (Optional) ตรวจสอบเบื้องต้นว่ากรอกครบไหม
+  if (!templateData.Name || !templateData.Problem) {
+    Swal.close(); // ปิด Loading
+    showError('ข้อมูลไม่ครบ', 'กรุณาระบุชื่อเทมเพลตและรายละเอียดปัญหา');
+    return;
+  }
+
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "addFocusTemplate", templateData: templateData })
+    });
+    const result = await response.json();
+
+    if (!result.success) throw new Error(result.message);
+
+    // --- 2. โหลดข้อมูลเทมเพลตใหม่ทันที เพื่อให้ค้นหาเจอเลย ---
+    // (เคลียร์ค่าเดิมเพื่อให้ loadFocusTemplates ดึงใหม่จาก Server)
+    globalFocusTemplates = { problems: [] }; 
+    await loadFocusTemplates(); 
+    populateFocusTemplateDropdowns(); 
+
+    // --- 3. แสดงข้อความสำเร็จ ---
+    showSuccess('บันทึกเทมเพลตสำเร็จ!');
+    closeAddTemplateModal();
+    
+  } catch (error) {
+    // ถ้าพัง ให้ปิด Loading และแสดง Error
+    Swal.close(); 
+    showError('บันทึกเทมเพลตไม่สำเร็จ', error.message); 
+  }
+}
+
+// ----------------------------------------------------------------
+// (FR-IPD-006) Logic
+// ----------------------------------------------------------------
+// --- ฟังก์ชันแสดงรายการย้อนหลังของ FR-006 ---
+async function showProgressNotePreview(an) {
+  showLoading('กำลังโหลดประวัติ...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getNursingProgressHistory&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success) throw new Error(result.message);
+    
+    const entries = result.data;
+    
+    // อัปเดตข้อความสถานะที่เมนูซ้าย
+    const span006 = document.getElementById('last-updated-006');
+    if (span006) span006.textContent = entries.length > 0 ? `มี ${entries.length} รายการ` : "ยังไม่เคยบันทึก";
+
+    // ดึง Template ตารางมาใช้
+    const template = document.getElementById("preview-template-006"); 
+    
+    if (template) {
+      const preview = template.content.cloneNode(true);
+      const tableBody = preview.querySelector("tbody");
+      
+      if (entries.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-gray-400">-- ยังไม่มีการบันทึก --</td></tr>`;
+      } else {
+        entries.forEach(entry => {
+          const row = document.createElement("tr");
+          row.className = "hover:bg-gray-50 border-b align-top";
+          
+          // จัดรูปแบบวันที่
+          let dateStr = entry.Date;
+          try { 
+             const d = new Date(entry.Date);
+             dateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'short', year:'2-digit'});
+          } catch(e){}
+
+          // กำหนดสีป้ายเวร
+          let shiftClass = 'bg-gray-100 text-gray-800';
+          if (entry.Shift.includes('ดึก')) shiftClass = 'bg-indigo-100 text-indigo-800';
+          else if (entry.Shift.includes('เช้า')) shiftClass = 'bg-yellow-100 text-yellow-800';
+          else if (entry.Shift.includes('บ่าย')) shiftClass = 'bg-green-100 text-green-800';
+
+          // แสดงข้อมูลครบทุกช่อง
+          row.innerHTML = `
+            <td class="p-2 border text-center align-top">
+                <div class="font-bold text-gray-800 mb-1">${dateStr}</div>
+                <span class="px-2 py-0.5 rounded text-xs font-bold ${shiftClass} inline-block">${entry.Shift}</span>
+            </td>
+            <td class="p-2 border text-center font-medium text-gray-600 align-top">
+                ${entry.Time} น.
+            </td>
+            <td class="p-2 border font-bold text-blue-800 align-top">
+                ${entry.Focus || '-'}
+            </td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.S_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.O_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">${entry.I_Data || '-'}</td>
+            <td class="p-2 border text-gray-600 whitespace-pre-line align-top">
+               ${entry.E_Data || '-'}
+               ${entry.E_Time ? `<br><span class="text-xs bg-purple-100 text-purple-800 px-1 rounded">เวลา: ${entry.E_Time}</span>` : ''}
+            </td>
+            <td class="p-2 border text-center text-sm font-medium align-top">
+                ${entry.Nurse_Name || '-'}<br>
+                <button class="mt-2 text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-xs btn-edit-note">แก้ไข</button>
+            </td>
+          `;
+
+          // ผูก Event ปุ่มแก้ไข ให้ส่งข้อมูล entry ทั้งก้อนไปที่ฟังก์ชันเปิด Modal
+          row.querySelector('.btn-edit-note').addEventListener('click', () => {
+             openProgressNoteModal(entry); 
+          });
+
+          tableBody.appendChild(row);
+        });
+      }
+      
+      chartPreviewContent.innerHTML = "";
+      chartPreviewContent.appendChild(preview);
+    }
+    Swal.close();
+
+  } catch (error) {
+    Swal.close();
+    showError('โหลดข้อมูลไม่สำเร็จ', error.message);
+  }
+}
+async function loadProgressTemplates() {
+  if (globalProgressTemplates.length > 0) return;
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getProgressTemplates`);
+    const result = await response.json();
+    if (result.success) {
+      globalProgressTemplates = result.data;
+      updateProgressTemplateDatalist();
+    }
+  } catch (e) { console.error(e); }
+}
+
+function updateProgressTemplateDatalist() {
+  const datalist = document.getElementById("prog-template-list");
+  if(!datalist) return;
+  datalist.innerHTML = "";
+  globalProgressTemplates.forEach(t => {
+    const option = document.createElement("option");
+    option.value = t.name;
+    option.label = t.focus.substring(0, 30) + "...";
+    datalist.appendChild(option);
+  });
+}
+
+// --- 3. ฟังก์ชันเปิด Modal และ Re-Progress ---
+// ฟังก์ชันเปิด Modal (รองรับทั้ง เพิ่มใหม่ และ แก้ไข)
+async function openProgressNoteModal(editData = null) {
+  progAnDisplay.textContent = currentPatientAN;
+  progNameDisplay.textContent = currentPatientData.Name;
+  
+  // โหลดรายชื่อพยาบาล (ถ้ายังไม่มี)
+  if (globalStaffList.length === 0) {
+     try {
+       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
+       const result = await response.json();
+       if (result.success) globalStaffList = result.data;
+     } catch(e) { console.error(e); }
+  }
+  // สร้าง Datalist
+  let staffDatalist = document.getElementById('staff-list-datalist');
+  if (!staffDatalist) {
+      staffDatalist = document.createElement('datalist');
+      staffDatalist.id = 'staff-list-datalist';
+      document.body.appendChild(staffDatalist);
+  }
+  staffDatalist.innerHTML = "";
+  globalStaffList.forEach(staff => staffDatalist.innerHTML += `<option value="${staff.fullName}">`);
+
+  // --- ตรวจสอบโหมด (เพิ่มใหม่ vs แก้ไข) ---
+  if (editData) {
+    // >> โหมดแก้ไข: เติมข้อมูลเดิมลงฟอร์ม
+    document.getElementById("prog-entry-id").value = editData.Entry_ID || ""; // ใส่ ID
+    document.getElementById("prog-date").value = editData.Date ? getISODate(new Date(editData.Date)) : "";
+    document.getElementById("prog-time").value = editData.Time || "";
+    
+    // เลือก Shift
+    const shiftRadios = document.getElementsByName("Shift");
+    shiftRadios.forEach(r => { r.checked = (r.value === editData.Shift); });
+
+    document.getElementById("prog-focus").value = editData.Focus || "";
+    document.getElementById("prog-s").value = editData.S_Data || "";
+    document.getElementById("prog-o").value = editData.O_Data || "";
+    document.getElementById("prog-i").value = editData.I_Data || "";
+    document.getElementById("prog-e").value = editData.E_Data || "";
+    document.getElementById("prog-e-time").value = editData.E_Time || ""; // เวลาประเมินผล
+    
+    // ชื่อพยาบาล
+    const nurseInput = document.querySelector('input[name="Nurse_Name"]');
+    if(nurseInput) nurseInput.value = editData.Nurse_Name || "";
+
+  } else {
+    // >> โหมดเพิ่มใหม่: เคลียร์ค่า, ตั้งเวลาปัจจุบัน
+    document.getElementById("progress-note-form").reset();
+    document.getElementById("prog-entry-id").value = ""; // เคลียร์ ID สำคัญมาก!
+    
+    const now = new Date();
+    const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    document.getElementById("prog-date").value = localDate.toISOString().split('T')[0];
+    document.getElementById("prog-time").value = now.toTimeString().substring(0,5);
+    
+    // Auto Shift
+    const hour = now.getHours();
+    const shiftRadios = document.getElementsByName("Shift");
+    if (hour >= 0 && hour < 8) document.querySelector('input[name="Shift"][value^="ดึก"]').checked = true;
+    else if (hour >= 8 && hour < 16) document.querySelector('input[name="Shift"][value^="เช้า"]').checked = true;
+    else document.querySelector('input[name="Shift"][value^="บ่าย"]').checked = true;
+  }
+
+  await loadProgressTemplates();
+  progressNoteModal.classList.remove("hidden");
+}
+
+// ฟังก์ชัน Re-Progress (หัวใจสำคัญ)
+async function handleReProgress() {
+  showLoading("กำลังค้นหาประวัติ...");
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getNursingProgressHistory&an=${currentPatientAN}`);
+    const result = await response.json();
+    if(!result.success) throw new Error(result.message);
+    
+    const history = result.data;
+    Swal.close();
+
+    if (history.length === 0) {
+      showError("ไม่พบข้อมูล", "ผู้ป่วยรายนี้ยังไม่มีประวัติการบันทึก");
+      return;
+    }
+
+    // ให้เลือกจาก 5 รายการล่าสุด
+    const options = {};
+    history.slice(0, 5).forEach((h, index) => {
+      const date = new Date(h.Date).toLocaleDateString('th-TH', {day:'2-digit', month:'short'});
+      options[index] = `${date} (${h.Shift}) - ${h.Focus}`;
+    });
+
+    const { value: selectedIndex } = await Swal.fire({
+      title: 'เลือกรายการเดิม (Re-Progress)',
+      input: 'select',
+      inputOptions: options,
+      inputPlaceholder: 'เลือกรายการที่ต้องการคัดลอก',
+      showCancelButton: true,
+      width: '600px'
+    });
+
+    if (selectedIndex !== undefined) {
+      const h = history[selectedIndex];
+      // เติมข้อมูลลงฟอร์ม
+      document.getElementById("prog-focus").value = h.Focus;
+      document.getElementById("prog-s").value = h.S_Data;
+      document.getElementById("prog-o").value = h.O_Data;
+      document.getElementById("prog-i").value = h.I_Data;
+      document.getElementById("prog-e").value = h.E_Data; // อาจจะลบออกก็ได้ถ้าต้องการประเมินใหม่
+      
+      // แจ้งเตือนเล็กน้อย
+      const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+      Toast.fire({ icon: 'success', title: 'ดึงข้อมูลเรียบร้อย' });
+    }
+
+  } catch(e) {
+    showError("เกิดข้อผิดพลาด", e.message);
+  }
+}
+
+// --- ฟังก์ชันจัดการ 007 ---
+
+// 1. เปิด Modal (ถ้ามีข้อมูลคือ Edit, ไม่มีคือ New)
+// ฟังก์ชันเปิด Modal 007 (อัปเดตล่าสุด)
+async function openDischargeModal(editData = null) {
+  dischargeForm.reset();
+  await refreshStaffDatalists();
+  // ตั้งค่าเริ่มต้น
+  if (!editData) {
+     const now = new Date();
+     const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+     dischargeForm.querySelector('[name="DischargeDate"]').value = localDate.toISOString().split('T')[0];
+     dischargeForm.querySelector('[name="LeaveDate"]').value = localDate.toISOString().split('T')[0]; // วันที่ออก
+     dischargeForm.querySelector('[name="LeaveTime"]').value = now.toTimeString().substring(0,5);
+  } else {
+     // เติมข้อมูลเดิม (Loop ใส่ค่า)
+     // (หมายเหตุ: สำหรับ Checkbox ต้องเช็ค value ให้ตรง ถ้าใน DB เก็บเป็น true/false หรือ comma separated อาจต้องเขียน logic เพิ่ม)
+     // เบื้องต้นใช้ logic พื้นฐาน:
+     for (const key in editData) {
+         const input = dischargeForm.querySelector(`[name="${key}"]`);
+         if (input) {
+             if(input.type === 'checkbox' || input.type === 'radio') {
+                 // กรณี Checkbox ต้องดูว่าค่าตรงกันไหม (โค้ดนี้รองรับแบบง่าย)
+                 if(input.value === editData[key] || editData[key] === true || editData[key] === 'true') input.checked = true;
+             } else if(key.includes('Date')) {
+                 try { input.value = getISODate(new Date(editData[key])); } catch(e){}
+             } else {
+                 input.value = editData[key];
+             }
+         }
+     }
+  }
+
+  // โหลดรายชื่อพยาบาล + ตำแหน่ง
+  if (globalStaffList.length === 0) {
+     try {
+       const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
+       const result = await response.json();
+       if (result.success) {
+           globalStaffList = result.data;
+           let dl = document.getElementById('staff-list-datalist');
+           if(!dl) {
+               dl = document.createElement('datalist');
+               dl.id = 'staff-list-datalist';
+               document.body.appendChild(dl);
+           }
+           dl.innerHTML = "";
+           globalStaffList.forEach(s => dl.innerHTML += `<option value="${s.fullName}">`);
+       }
+     } catch(e) {}
+  }
+
+  dischargeModal.classList.remove("hidden");
+}
+
+// เพิ่ม Event Listener ให้ช่องชื่อพยาบาล เพื่อดึงตำแหน่งมาใส่
+dischargeForm.querySelector('[name="Nurse_Name"]').addEventListener('change', (e) => {
+    const val = e.target.value;
+    const staff = globalStaffList.find(s => s.fullName === val);
+    if(staff) {
+        dischargeForm.querySelector('[name="Nurse_Pos"]').value = staff.position || "";
+    }
+});
+
+// 3. สร้างฟังก์ชัน showAdvicePreview (วางไว้ใกล้ๆ showDischargePreview)
+// ฟังก์ชันแสดง Preview การให้คำแนะนำ (แก้ไขเรื่องซ่อน Checkbox และปุ่ม Edit)
+async function showAdvicePreview(an) {
+  showLoading('กำลังโหลดคำแนะนำ...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAdviceFormData&an=${an}`);
+    const result = await response.json();
+    Swal.close();
+    
+    const data = result.data;
+    currentAdviceData = data; // เก็บข้อมูลไว้ใช้ตอนกดปุ่มแก้ไข
+
+    const spanStatus = document.getElementById('last-updated-advice');
+    if (spanStatus) spanStatus.textContent = data ? "บันทึกแล้ว" : "ยังไม่บันทึก";
+
+    chartPreviewContent.innerHTML = "";
+
+    if (!data) {
+       // กรณีไม่มีข้อมูล
+       chartPreviewContent.innerHTML = `
+         <div class="text-center py-10 text-gray-400">
+            <p>-- ยังไม่มีการบันทึกคำแนะนำ --</p>
+            <button class="mt-4 bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600" onclick="openAdviceModal()">+ สร้างบันทึกคำแนะนำ</button>
+         </div>
+       `;
+       chartEditBtn.classList.add("hidden");
+       chartAddNewBtn.classList.add("hidden");
+    } else {
+       // กรณีมีข้อมูล
+       const template = document.getElementById("preview-template-advice");
+       if (!template) {
+           console.error("ไม่พบ Template: preview-template-advice");
+           return;
+       }
+       const clone = template.content.cloneNode(true);
+       
+       // วนลูปใส่ข้อมูล
+       for (const key in data) {
+           const el = clone.querySelector(`[data-field="${key}"]`);
+           if (el) {
+               let val = data[key];
+
+               // 1. จัดการวันที่ (Format Date เป็นไทยย่อ)
+               if (key.includes('Date') && val && !key.includes('Appoint')) {
+                   try { 
+                     let dateObj = new Date(val);
+                     let yearBE = (dateObj.getFullYear() + 543).toString().slice(-2);
+                     let month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                     let day = dateObj.getDate().toString().padStart(2, '0');
+                     val = `${day}/${month}/${yearBE}`;
+                   } catch(e){}
+               }
+
+               // 2. Logic ซ่อน Checkbox ที่ไม่ได้เลือก
+               // หา Parent Element ที่เป็นบรรทัดของ Checkbox นั้น
+               const parent = el.parentElement; 
+               // ตรวจสอบว่าเป็นบรรทัด Checkbox จริงหรือไม่ (ดูจากวงเล็บ [ )
+               const isCheckboxLine = parent && (parent.innerText.includes('['));
+
+               if (val === 'on' || val === true || val === 'true') {
+                   // ถ้าเลือก: ใส่เครื่องหมายถูก และแสดงบรรทัดนั้น
+                   el.innerHTML = '<b class="text-green-600 font-bold">/</b>'; 
+                   if(isCheckboxLine) parent.style.display = ""; 
+               } else if (!val || val === 'false') {
+                   // ถ้าไม่เลือก: ลบข้อความ และสั่งซ่อนบรรทัด (display: none)
+                   el.textContent = ''; 
+                   if(isCheckboxLine) {
+                      parent.style.display = "none"; 
+                   }
+               } else {
+                   // ถ้าเป็น Text ธรรมดา
+                   el.textContent = val;
+               }
+           }
+       }
+
+       chartPreviewContent.appendChild(clone);
+       
+       // **จุดสำคัญที่แก้ปัญหาปุ่มแก้ไข:**
+       chartEditBtn.classList.remove("hidden");
+       chartEditBtn.dataset.form = "advice"; // กำหนดค่านี้ เพื่อให้ Event Listener รู้ว่าต้องเปิดฟอร์มไหน
+       
+       chartAddNewBtn.classList.add("hidden"); 
+    }
+  } catch (e) {
+    Swal.close();
+    showError('โหลดข้อมูลไม่สำเร็จ', e.message);
+  }
+}
+
+// 4. สร้างฟังก์ชัน openAdviceModal
+function openAdviceModal(editData = null) {
+    adviceForm.reset();
+    
+    if (editData) {
+        // กรณีแก้ไข: เติมข้อมูลเดิม
+        for (const key in editData) {
+            const input = adviceForm.querySelector(`[name="${key}"]`);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    if (editData[key] === 'on' || editData[key] === true || editData[key] === 'true') input.checked = true;
+                } else if (input.type === 'date') {
+                     try { input.value = getISODate(new Date(editData[key])); } catch(e){}
+                } else {
+                    input.value = editData[key];
+                }
+            }
+        }
+    } else {
+        // กรณีเพิ่มใหม่: ใส่วันที่ปัจจุบัน
+        const now = new Date();
+        const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        adviceForm.querySelectorAll('input[type="date"]').forEach(inp => inp.value = localDate);
+    }
+    adviceModal.classList.remove("hidden");
+}
+
+// 2. แสดง Preview (007)
+async function showDischargePreview(an) {
+  showLoading('กำลังโหลดข้อมูลจำหน่าย...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getDischargeForm007&an=${an}`);
+    const result = await response.json();
+    Swal.close();
+
+    const data = result.data;
+    // อัปเดตสถานะที่เมนู
+    const span007 = document.getElementById('last-updated-007');
+    if (span007) span007.textContent = data ? "บันทึกแล้ว" : "ยังไม่บันทึก";
+
+    chartPreviewContent.innerHTML = "";
+    
+    if (!data) {
+       // กรณีไม่มีข้อมูล
+       chartPreviewContent.innerHTML = `
+         <div class="text-center py-10 text-gray-400">
+            <p>-- ยังไม่มีข้อมูลการจำหน่าย --</p>
+            <button class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" onclick="openDischargeModal()">+ สร้างบันทึกจำหน่าย</button>
+         </div>
+       `;
+       chartEditBtn.classList.add("hidden");
+       chartAddNewBtn.classList.add("hidden"); // 007 มีใบเดียว ไม่ต้อง Add New ซ้ำ
+    } else {
+       // กรณีมีข้อมูล -> แสดง Template
+       const template = document.getElementById("preview-template-007");
+       const clone = template.content.cloneNode(true);
+       
+       // (ในฟังก์ชัน showDischargePreview)
+       // Map ข้อมูลลง Template
+       for (const key in data) {
+           const el = clone.querySelector(`[data-field="${key}"]`);
+           if (el) {
+               let val = data[key];
+               
+               // 1. จัดการวันที่
+               if (key.includes('Date') || key.includes('Timestamp')) {
+                  try { 
+                      if(val) val = new Date(val).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }); 
+                  } catch(e){}
+               }
+               
+               // 2. จัดการ Checkbox (ถ้าค่าเป็น on/true ให้โชว์ ✓)
+               if (val === 'on' || val === true || val === 'true') {
+                   el.innerHTML = '<b class="text-green-600 text-lg">✓</b>';
+               } 
+               // 3. ถ้าไม่มีค่า
+               else if (!val || val === 'false') {
+                   el.textContent = ''; // ปล่อยว่างในวงเล็บ []
+               } 
+               // 4. ค่าปกติ (Text)
+               else {
+                   el.textContent = val;
+               }
+           }
+       }
+       chartPreviewContent.appendChild(clone);
+       
+       // ปุ่มแก้ไข
+       chartEditBtn.classList.remove("hidden");
+       chartEditBtn.onclick = () => openDischargeModal(data); // ส่งข้อมูลไปแก้ไข
+       chartAddNewBtn.classList.add("hidden"); 
+    }
+
+  } catch (e) {
+    Swal.close();
+    showError('โหลดข้อมูลไม่สำเร็จ', e.message);
+  }
+}
+
+// 3. บันทึกข้อมูล (Save)
+if (dischargeForm) {
+    dischargeForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        showLoading("กำลังบันทึก...");
+        
+        const formData = new FormData(dischargeForm);
+        const data = Object.fromEntries(formData.entries());
+        data.AN = currentPatientAN; // อย่าลืม AN
+
+        try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "saveDischargeForm007", formData: data })
+            });
+            const result = await response.json();
+            if (result.success) {
+                showSuccess("บันทึกสำเร็จ");
+                dischargeModal.classList.add("hidden");
+                // Reload Preview
+                showDischargePreview(currentPatientAN);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (err) {
+            showError("บันทึกไม่สำเร็จ", err.message);
+        }
+    });
+}
+
+// ปุ่มปิด
+if (closeDischargeBtn) {
+    closeDischargeBtn.addEventListener("click", () => {
+        dischargeModal.classList.add("hidden");
+    });
+}
+
+// 4. ฟังก์ชันหลักสำหรับ Morse/MAAS
+
+async function openMorseModal() {
+  document.getElementById("morse-an-display").textContent = currentPatientAN;
+  document.getElementById("morse-name-display").textContent = currentPatientData.Name || '';
+  currentMorsePage = 1;
+  
+  // โหลด Datalist staff
+  if (!document.getElementById('staff-list-datalist')) {
+      // (โค้ดสร้าง datalist เหมือน Classification)
+  }
+  
+  await fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
+  morseModal.classList.remove("hidden");
+}
+
+async function fetchAndRenderMorsePage(an, page) {
+  showLoading('กำลังโหลดตารางประเมิน...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getMorseMAASPage&an=${an}&page=${page}`);
+    const result = await response.json();
+    
+    renderMorseTable(result.data, page);
+    document.getElementById("morse-page-display").textContent = page;
+    document.getElementById("morse-prev-page-btn").disabled = (page <= 1);
+    
+    Swal.close();
+  } catch (e) { showError('โหลดไม่สำเร็จ', e.message); }
+}
+
+function renderMorseTable(data, page) {
+  const table = morseTable;
+  let thead = table.querySelector("thead");
+  let tbody = table.querySelector("tbody");
+  
+  if (!thead) { thead = document.createElement('thead'); table.prepend(thead); }
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+
+  // --- Header Row 1: วันที่ ---
+  const headerRow1 = document.createElement('tr');
+  headerRow1.className = 'bg-gray-100';
+  // ขยายความกว้างคอลัมน์ซ้ายเพื่อให้ใส่ข้อความได้พอดี
+  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left w-80 align-middle bg-white sticky left-0 z-20 shadow-md">รายการประเมิน</th>'; 
+  
+  // --- Header Row 2: เวร ---
+  const headerRow2 = document.createElement('tr');
+  headerRow2.className = 'bg-gray-50';
+  
+  const admitDate = new Date(currentPatientData.AdmitDate || new Date());
+  const startDate = new Date(admitDate);
+  startDate.setDate(startDate.getDate() + ((page - 1) * 5));
+  
+  // Loop สร้างหัวตาราง 5 วัน
+  for (let i = 0; i < 5; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
+    const dateString = getISODate(currentDate);
+    
+    // Header วันที่
+    const dateHeader = document.createElement('th');
+    dateHeader.colSpan = 3;
+    dateHeader.className = 'p-2 border text-center text-sm font-bold border-l-2 border-gray-300';
+    dateHeader.innerHTML = `
+        <div class="flex flex-col items-center">
+            <span>${currentDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'})}</span>
+            <input type="hidden" value="${dateString}" class="morse-date-input" data-day-index="${i}">
+        </div>`;
+    headerRow1.appendChild(dateHeader);
+    
+    // Header เวร (ดึก, เช้า, บ่าย)
+    ['ด', 'ช', 'บ'].forEach((shift, idx) => {
+       const th = document.createElement('th');
+       const borderClass = (idx === 0) ? 'border-l-2 border-gray-300' : 'border';
+       th.className = `p-1 ${borderClass} text-xs font-normal text-center min-w-[50px]`;
+       th.textContent = shift;
+       headerRow2.appendChild(th);
+    });
+  }
+  thead.appendChild(headerRow1);
+  thead.appendChild(headerRow2);
+
+  // --- Body Rows: Morse Items ---
+  MORSE_CRITERIA.forEach((item, idx) => {
+     const row = document.createElement('tr');
+     
+     // --- คอลัมน์ซ้ายสุด: แสดงหัวข้อ และ รายละเอียดตัวเลือก ---
+     // ใช้ div ซ้อนกันเพื่อจัด layout แนวตั้ง
+     let leftColHtml = `<div class="font-bold text-sm text-gray-800 pb-2 pt-2 border-b border-gray-200 bg-gray-50 px-2">${item.label}</div>`;
+     item.options.forEach(opt => {
+        // กำหนดความสูง h-10 (40px) ให้แต่ละตัวเลือก เพื่อให้ตรงกับช่อง Radio ด้านขวา
+        leftColHtml += `<div class="h-10 flex items-center text-xs text-gray-600 border-b border-gray-100 pl-4 hover:bg-gray-50">${opt.text}</div>`;
+     });
+     row.innerHTML = `<td class="p-0 border-r border-b bg-white align-top sticky left-0 z-10 shadow-md">${leftColHtml}</td>`;
+     
+     // --- คอลัมน์ข้อมูล (5 วัน x 3 เวร) ---
+     for (let i = 0; i < 5; i++) {
+       const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
+       ['N', 'D', 'E'].forEach((shiftCode, sIdx) => { 
+          const entry = data && data.find(d => d.Date === dateStr && d.Shift === shiftCode);
+          const val = entry ? entry[`Morse_${idx+1}`] : "";
+          const borderClass = (sIdx === 0) ? 'border-l-2 border-gray-300' : 'border-r border-gray-200';
+
+          // สร้าง Radio Buttons โดยใช้ Div กั้นความสูงให้เท่ากับข้อความทางซ้าย
+          // Spacer สำหรับหัวข้อ (ความสูงเท่ากับหัวข้อด้านซ้าย + padding)
+          let cellHtml = `<div class="pb-2 pt-2 border-b border-gray-200 bg-gray-50">&nbsp;</div>`; 
+          
+          item.options.forEach(opt => {
+             const isChecked = (String(val) === String(opt.score)) ? 'checked' : '';
+             const radioId = `m_${idx+1}_${i}_${shiftCode}_${opt.score}`;
+             
+             // ใช้ h-10 และ flex center เพื่อจัดปุ่มให้อยู่ตรงกลางบรรทัดเดียวกับข้อความ
+             // เพิ่ม hover effect เพื่อให้ดูง่ายเวลากวาดสายตา
+             cellHtml += `
+               <div class="h-10 flex items-center justify-center border-b border-gray-100 hover:bg-blue-100 transition-colors cursor-pointer"
+                    onclick="document.getElementById('${radioId}').click()">
+                 <input type="radio" id="${radioId}" 
+                        name="Morse_${idx+1}_Day${i}_${shiftCode}" 
+                        value="${opt.score}" 
+                        class="morse-radio cursor-pointer transform scale-125 accent-blue-600" 
+                        data-day="${i}" data-shift="${shiftCode}" 
+                        ${isChecked}>
+               </div>`;
+          });
+          
+          row.innerHTML += `<td class="p-0 ${borderClass} align-top bg-white min-w-[50px]">${cellHtml}</td>`;
+       });
+     }
+     tbody.appendChild(row);
+  });
+
+  // --- Body Rows: Total & MAAS & Save (คงเดิมแต่ปรับ Sticky ให้สวยงาม) ---
+  const totalRow = document.createElement('tr');
+  totalRow.className = 'bg-orange-50 font-bold';
+  totalRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-orange-100 shadow-md">รวมคะแนน (Morse)</td>`;
+  
+  const maasRow = document.createElement('tr');
+  maasRow.className = 'bg-blue-50';
+  maasRow.innerHTML = `<td class="p-2 border font-bold sticky left-0 z-10 bg-blue-100 shadow-md">แบบประเมินการดึงอุปกรณ์ฯ (MAAS)</td>`;
+
+  const actionRow = document.createElement('tr');
+  actionRow.innerHTML = `<td class="p-2 border text-right sticky left-0 z-10 bg-gray-100 shadow-md">พยาบาลผู้ประเมิน / บันทึก</td>`;
+
+  for (let i = 0; i < 5; i++) {
+      const dateStr = getISODate(new Date(startDate.getTime() + (i * 86400000)));
+      ['N', 'D', 'E'].forEach((shiftCode, sIdx) => {
+         const entry = data && data.find(d => d.Date === dateStr && d.Shift === shiftCode);
+         const borderClass = (sIdx === 0) ? 'border-l-2 border-gray-300' : 'border';
+         
+         // Total
+         totalRow.innerHTML += `<td class="p-1 ${borderClass} text-center align-middle">
+             <input type="text" readonly class="w-full text-center bg-transparent text-sm font-bold morse-total-input text-blue-600" 
+             data-day="${i}" data-shift="${shiftCode}" value="${entry ? entry.Morse_Total : ''}">
+         </td>`;
+
+         // MAAS (ใช้ Dropdown เพื่อประหยัดที่ในแนวตั้ง)
+         let maasSelect = `<select class="w-full p-1 border text-[10px] text-center bg-white rounded focus:ring-2 focus:ring-blue-400" name="MAAS_Score" 
+                           data-day="${i}" data-shift="${shiftCode}">
+                           <option value="">-เลือก-</option>`;
+         MAAS_OPTIONS.forEach(opt => {
+             maasSelect += `<option value="${opt.score}" ${entry && String(entry.MAAS_Score) === String(opt.score) ? 'selected' : ''}>${opt.text}</option>`;
+         });
+         maasSelect += `</select>`;
+         maasRow.innerHTML += `<td class="p-1 ${borderClass} align-top">${maasSelect}</td>`;
+
+         // Save
+         actionRow.innerHTML += `<td class="p-1 ${borderClass} text-center align-top">
+            <input type="text" list="staff-list-datalist" 
+                   class="w-full text-xs p-1 border mb-1 rounded bg-gray-50 focus:bg-white morse-assessor-input text-center" 
+                   placeholder="ชื่อ" 
+                   data-day="${i}" data-shift="${shiftCode}" 
+                   value="${entry ? entry.Assessor_Name : ''}">
+            <button type="button" class="bg-green-500 hover:bg-green-600 text-white text-[10px] py-1 px-2 rounded w-full save-morse-btn shadow"
+                   data-day="${i}" data-shift="${shiftCode}">
+               บันทึก
+            </button>
+         </td>`;
+      });
+  }
+
+  tbody.appendChild(totalRow);
+  tbody.appendChild(maasRow);
+  tbody.appendChild(actionRow);
+
+  // Event Listeners
+  tbody.querySelectorAll('.morse-radio').forEach(radio => {
+      radio.addEventListener('change', () => calculateMorseColumn(radio.dataset.day, radio.dataset.shift));
+  });
+  
+  tbody.querySelectorAll('.save-morse-btn').forEach(btn => {
+      btn.addEventListener('click', () => handleSaveMorse(btn.dataset.day, btn.dataset.shift));
+  });
+}
+
+function calculateMorseColumn(day, shift) {
+    let total = 0;
+    
+    // วนลูป 6 ข้อ
+    for (let i = 1; i <= 6; i++) {
+        // หา Radio ที่ถูกเลือกในข้อนั้นๆ ของวัน/เวร นั้นๆ
+        const checkedRadio = document.querySelector(`input[name="Morse_${i}_Day${day}_${shift}"]:checked`);
+        if (checkedRadio) {
+            total += parseInt(checkedRadio.value);
+        }
+    }
+    
+    // แสดงผลรวม
+    const totalInput = document.querySelector(`.morse-total-input[data-day="${day}"][data-shift="${shift}"]`);
+    if (totalInput) totalInput.value = total;
+    
+    return total;
+}
+
+// 5. ฟังก์ชันบันทึก และ **แสดง Pop-up แนวทางปฏิบัติ**
+async function handleSaveMorse(day, shift) {
+    // 1. ดึงค่าต่างๆ ด้วย Selector ที่แม่นยำ
+    const assessorInput = document.querySelector(`.morse-assessor-input[data-day="${day}"][data-shift="${shift}"]`);
+    const assessorName = assessorInput ? assessorInput.value.trim() : "";
+    
+    if (!assessorName) {
+        showError("กรุณาระบุชื่อผู้ประเมิน", "ต้องลงชื่อพยาบาลก่อนบันทึก");
+        if(assessorInput) assessorInput.focus();
+        return;
+    }
+
+    const dateInput = document.querySelector(`input.morse-date-input[data-day-index="${day}"]`);
+    const dateVal = dateInput ? dateInput.value : "";
+    
+    if (!dateVal) {
+        showError("ไม่พบข้อมูลวันที่", "กรุณารีเฟรชหน้าจอ");
+        return;
+    }
+
+    // คำนวณคะแนนรวม Morse
+    const morseTotal = calculateMorseColumn(day, shift);
+    
+    // ดึงคะแนน MAAS
+    const maasSel = document.querySelector(`select[name="MAAS_Score"][data-day="${day}"][data-shift="${shift}"]`);
+    const maasScore = maasSel && maasSel.value !== "" ? parseInt(maasSel.value) : null;
+
+    let morseLevel = "No Risk";
+    if (morseTotal >= 51) morseLevel = "High Risk";
+    else if (morseTotal >= 25) morseLevel = "Low Risk";
+    
+    const entryData = {
+        AN: currentPatientAN,
+        Page: currentMorsePage,
+        Date: dateVal,
+        Shift: shift,
+        Morse_Total: morseTotal,
+        Morse_Level: morseLevel,
+        MAAS_Score: maasScore,
+        Assessor_Name: assessorName
+    };
+    
+    for (let i = 1; i <= 6; i++) {
+        const checkedRadio = document.querySelector(`input[name="Morse_${i}_Day${day}_${shift}"]:checked`);
+        entryData[`Morse_${i}`] = checkedRadio ? checkedRadio.value : "";
+    }
+
+    // --- ส่งข้อมูลไปบันทึก ---
+    showLoading("กำลังบันทึก...");
+    try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "saveMorseMAASShift", entryData: entryData })
+        });
+        const result = await response.json();
+        
+        if (!result.success) throw new Error(result.message);
+        
+        Swal.close();
+
+        // --- สร้างข้อความ Pop-up แนวทางปฏิบัติ ---
+        let interventionHtml = `<div class="text-left text-sm space-y-4">`;
+        
+        // 1. ส่วนของ Morse Fall Scale
+        if (morseTotal >= 25) {
+             const colorClass = morseTotal >= 51 ? "text-red-600" : "text-orange-600";
+             const riskText = morseTotal >= 51 ? "High Risk (≥ 51)" : "Low Risk (25-50)";
+             
+             interventionHtml += `<div class="p-3 bg-gray-50 rounded border border-gray-200">
+                <h4 class="font-bold ${colorClass} border-b pb-1 mb-2">เสี่ยงต่อการพลัดตกหกล้ม: ${riskText}</h4>
+                <ul class="list-disc pl-5 space-y-1 text-gray-700 text-xs">
+                    <li>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</li>
+                    <li>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</li>
+                    <li>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</li>
+                    <li>4. จัดสิ่งแวดล้อมให้ปลอดภัย</li>
+                    <li>5. ให้ญาติเฝ้า</li>
+                    <li>6. ยกเหล็กกั้นเตียง</li>
+                    <li>7. ตรวจเยี่ยมผู้ป่วย ${morseTotal >= 51 ? 'ทุก 2 ชั่วโมง' : 'ทุก 4 ชั่วโมง'}</li>
+                    <li>8. ติดสัญลักษณ์ความเสี่ยงการพลัดตกหกล้ม</li>
+                    ${morseTotal >= 51 ? '<li>9. ผูกมัดผู้ป่วยตามสภาพ</li>' : ''}
+                    ${morseTotal >= 51 ? '<li>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</li>' : ''}
+                    ${morseTotal >= 51 ? '<li>11. ปรึกษาสหวิชาชีพ</li>' : ''}
+                </ul>
+            </div>`;
+        } else {
+             interventionHtml += `<div class="p-3 bg-green-50 rounded border border-green-200">
+                <h4 class="font-bold text-green-700 mb-1">เสี่ยงต่อการพลัดตกหกล้ม: No Risk (0-24)</h4>
+                <p class="text-gray-600 text-xs">ปฏิบัติตามมาตรฐานการดูแลทั่วไป (ข้อ 1-7 ตรวจเยี่ยมเวรละ 1 ครั้ง)</p>
+             </div>`;
+        }
+
+        // 2. ส่วนของ MAAS
+        if (maasScore !== null) {
+            let maasHtml = "";
+            
+            // กรณีคะแนน 0-3
+            if (maasScore <= 3) {
+                maasHtml = `<div class="text-green-700 font-bold">ไม่ต้องผูกยึด</div>`;
+            } 
+            // กรณีคะแนน 4-6
+            else {
+                maasHtml = `
+                <div class="text-red-700 font-bold mb-1">ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด</div>
+                <ul class="list-disc pl-5 space-y-1 text-red-600 text-xs">
+                    <li>***ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง***</li>
+                    <li>***กรณีไม่มีญาติให้ผู้ยึดได้เลย****</li>
+                </ul>`;
+            }
+
+            interventionHtml += `<div class="p-3 bg-blue-50 rounded border border-blue-200">
+                <h4 class="font-bold text-blue-800 border-b border-blue-200 pb-1 mb-2">
+                    แนวทางปฏิบัติการป้องกันการดึงอุปกรณ์ฯ (MAAS Score: ${maasScore})
+                </h4>
+                ${maasHtml}
+            </div>`;
+        }
+        
+        interventionHtml += `</div>`;
+
+        await Swal.fire({
+            title: 'บันทึกสำเร็จ',
+            html: interventionHtml,
+            icon: 'info',
+            confirmButtonText: 'รับทราบ',
+            confirmButtonColor: '#3085d6',
+            width: '600px'
+        });
+
+    } catch (e) {
+        showError("บันทึกไม่สำเร็จ", e.message);
+    }
+}
+
+// ----------------------------------------------------------------
+// Braden Scale Logic
+// ----------------------------------------------------------------
+
+async function openBradenModal(targetPage = 1) {
+    document.getElementById("braden-an-display").textContent = currentPatientAN;
+    document.getElementById("braden-name-display").textContent = currentPatientData.Name || '';
+    
+    // กำหนดหน้าที่จะเปิด (ถ้าส่งมาให้ใช้หน้านั้น ถ้าไม่ส่งให้เริ่มที่ 1)
+    currentBradenPage = targetPage || 1;
+    
+    if (!document.getElementById('staff-list-datalist')) {
+       // (Logic datalist เดิม...)
+    }
+
+    await fetchAndRenderBradenPage(currentPatientAN, currentBradenPage);
+    bradenModal.classList.remove("hidden");
+}
+
+async function fetchAndRenderBradenPage(an, page) {
+    showLoading("กำลังโหลดตาราง...");
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${an}&page=${page}`);
+        const result = await response.json();
+        const data = result.data || {}; 
+        
+        const safeSetValue = (id, value) => { const el = document.getElementById(id); if (el) el.value = value; };
+        const safeSetByName = (name, value) => { const el = document.querySelector(`[name="${name}"]`); if (el) el.value = value; };
+
+        // Header Data
+        safeSetValue("braden-admit-date", data.AdmitDate_Braden || currentPatientData.AdmitDate || "");
+        safeSetValue("braden-dx", data.Dx_Op || currentPatientData.AdmittingDx || "");
+        safeSetByName("TransferDate", data.TransferDate || "");
+        safeSetByName("FromWard", data.FromWard || "");
+        safeSetByName("FirstAssessDate", data.FirstAssessDate || "");
+        
+        if (data.PressureUlcer_Adm_Status) {
+            const puRadio = document.querySelector(`input[name="PressureUlcer_Adm_Status"][value="${data.PressureUlcer_Adm_Status}"]`);
+            if (puRadio) puRadio.checked = true;
+        }
+        safeSetByName("PressureUlcer_Adm_Detail", data.PressureUlcer_Adm_Detail || "");
+        safeSetValue("braden-albumin", data.Albumin || "");
+        safeSetValue("braden-hb", data.Hb || "");
+        safeSetByName("Hct", data.Hct || "");
+        safeSetValue("braden-bmi", data.BMI || "");
+        
+        // Render Table
+        renderBradenTable(data);
+        
+        // --- Part 4 Summary Data (เพิ่มวันที่จำหน่าย/ย้ายตรงนี้) ---
+        if (data.Discharge_Status) {
+             const statusRadio = document.querySelector(`input[name="Discharge_Status"][value="${data.Discharge_Status}"]`);
+             if(statusRadio) statusRadio.checked = true;
+        }
+        // วันที่จำหน่าย/ย้าย
+        safeSetByName("Discharge_Summary_Date", data.Discharge_Summary_Date || "");
+        
+        safeSetByName("Discharge_Position", data.Discharge_Position || "");
+        safeSetByName("Discharge_Stage", data.Discharge_Stage || "");
+        if(data.Discharge_Date) { try { const d = document.querySelector('[name="Discharge_Date"]'); if(d) d.value = getISODate(new Date(data.Discharge_Date)); } catch(e){} }
+        safeSetByName("Discharge_Size", data.Discharge_Size || "");
+        safeSetByName("Discharge_Char", data.Discharge_Char || "");
+        safeSetByName("Discharge_Count", data.Discharge_Count || "");
+
+        // Wound Record
+        if (data.Wound_Record_JSON) {
+             try { renderWoundRows(JSON.parse(data.Wound_Record_JSON)); } catch(e) { console.error(e); }
+        } else {
+             renderWoundRows([]); 
+        }
+
+        const pageDisplay = document.getElementById("braden-page-display");
+        if(pageDisplay) pageDisplay.textContent = page;
+        const prevBtn = document.getElementById("braden-prev-page");
+        if(prevBtn) prevBtn.disabled = (page <= 1);
+        
+        Swal.close();
+    } catch (e) { 
+        console.error(e);
+        showError("โหลดข้อมูลไม่สำเร็จ", e.message); 
+    }
+}
+
+function renderBradenTable(data = {}) { 
+    const table = document.getElementById("braden-table");
+    if (!table) return;
+    table.innerHTML = "";
+    
+    let theadHtml = `<thead class="bg-red-50">
+      <tr>
+        <th class="p-2 border w-80 text-left sticky left-0 bg-red-50 z-20 shadow-md align-bottom">
+            <div class="font-bold text-red-800 text-lg">ส่วนที่ 1 การประเมินความเสี่ยง</div>
+        </th>`;
+    
+    for (let i = 1; i <= 10; i++) {
+        const dateVal = (data && data[`Date_${i}`]) ? getISODate(new Date(data[`Date_${i}`])) : "";
+        theadHtml += `<th class="p-2 border min-w-[80px] text-center bg-red-50">
+            <div class="text-[10px] text-gray-500 mb-1">วันที่ (${i})</div>
+            <input type="date" name="Date_${i}" class="w-full text-[10px] border rounded p-0.5 braden-date-input text-center" value="${dateVal}">
+        </th>`;
+    }
+    theadHtml += `</tr></thead>`;
+    table.insertAdjacentHTML('beforeend', theadHtml);
+    
+    // --- BODY (BRADEN SCALE) ---
+    let tbodyHtml = `<tbody>`;
+    
+    BRADEN_CRITERIA.forEach((criteria) => {
+        let rowHtml = `<tr>`;
+        let leftColHtml = `<div class="font-bold text-sm text-gray-800 pb-2 pt-2 border-b border-gray-200 bg-white px-2">${criteria.name}</div>`;
+        criteria.options.forEach(opt => {
+            leftColHtml += `<div class="h-8 flex items-center text-xs text-gray-600 border-b border-gray-100 pl-4 hover:bg-gray-50">${opt.text}</div>`;
+        });
+        rowHtml += `<td class="p-0 border-r border-b bg-white align-top sticky left-0 z-10 shadow-md">${leftColHtml}</td>`;
+        
+        for (let i = 1; i <= 10; i++) {
+            const savedVal = data[`${criteria.id}_${i}`];
+            let cellHtml = `<div class="pb-2 pt-2 border-b border-gray-200 bg-white">&nbsp;</div>`;
+            
+            criteria.options.forEach(opt => {
+                const isChecked = (String(savedVal) === String(opt.val)) ? "checked" : "";
+                const radioId = `braden_${criteria.id}_${i}_${opt.val}`;
+                
+                cellHtml += `
+                <div class="h-8 flex items-center justify-center border-b border-gray-100 hover:bg-red-50 transition-colors cursor-pointer"
+                     onclick="document.getElementById('${radioId}').click()">
+                    <input type="radio" name="${criteria.id}_${i}" value="${opt.val}" id="${radioId}" 
+                           class="mt-0.5 accent-red-600 braden-radio cursor-pointer" data-day="${i}" ${isChecked}>
+                </div>`;
+            });
+            rowHtml += `<td class="p-0 border align-top bg-white min-w-[80px]">${cellHtml}</td>`;
+        }
+        rowHtml += `</tr>`;
+        tbodyHtml += rowHtml;
+    });
+
+    // --- SUMMARY ROWS ---
+    let totalRow = `<tr class="bg-gray-100 font-bold"><td class="p-2 border text-right sticky left-0 bg-gray-100 z-10 text-sm">คะแนนรวม</td>`;
+    for(let i=1; i<=10; i++) totalRow += `<td class="p-1 border text-center"><input type="text" readonly name="Total_${i}" class="w-full text-center bg-transparent font-bold text-blue-700 braden-total text-sm" data-day="${i}" value="${data[`Total_${i}`] || ''}"></td>`;
+    tbodyHtml += totalRow + `</tr>`;
+
+    let riskRow = `<tr class="bg-white"><td class="p-2 border text-right sticky left-0 bg-white z-10 text-xs">แปลผลความเสี่ยง</td>`;
+    for(let i=1; i<=10; i++) riskRow += `<td class="p-1 border text-center text-[10px]"><input type="text" readonly name="Risk_${i}" class="w-full text-center bg-transparent" id="risk_text_${i}" value="${data[`Risk_${i}`] || ''}"></td>`;
+    tbodyHtml += riskRow + `</tr>`;
+
+    let assessorRow = `<tr class="bg-gray-50"><td class="p-2 border text-right sticky left-0 bg-gray-50 z-10 text-sm">พยาบาลผู้ประเมิน</td>`;
+    for(let i=1; i<=10; i++) assessorRow += `<td class="p-1 border text-center"><input type="text" list="staff-list-datalist" name="Assessor_${i}" class="w-full text-[10px] p-1 border rounded text-center bg-white focus:ring-1 focus:ring-red-500" placeholder="ลงชื่อ" value="${data[`Assessor_${i}`] || ''}"></td>`;
+    tbodyHtml += assessorRow + `</tr></tbody>`;
+    table.insertAdjacentHTML('beforeend', tbodyHtml);
+
+    // --- APPEND EXTRA PARTS (2, 3, 4) ---
+    const existingExtra = document.getElementById("braden-extra-parts");
+    if (existingExtra) existingExtra.remove();
+
+    const extraHtml = `
+    <div id="braden-extra-parts" class="mt-6 space-y-6 border-t pt-4">
+        
+        <div class="bg-white p-4 rounded border shadow-sm">
+            <h4 class="font-bold text-red-800 mb-2 text-lg">ส่วนที่ 2 การปฏิบัติเพื่อป้องกัน / ดูแลการเกิดแผลกดทับ</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="bg-red-50 p-3 rounded">
+                    <div class="font-bold mb-2 text-red-700">การป้องกัน</div>
+                    <ul class="space-y-1 list-disc pl-4 text-gray-700">
+                        <li>พลิกตะแคงตัวทุก 2 ชั่วโมง ตรงตามเวลาที่กำหนด</li>
+                        <li>ใช้ที่นอนลม</li>
+                        <li>จับคู่ช่วยกันพลิกตะแคงตัว / ไม่ดึงลากเวลาพลิก</li>
+                        <li>ดึงผ้าปูที่นอนให้เรียบตึง</li>
+                        <li>ประเมินผิวหนังปุ่มกระดูกบริเวณกดทับทุกเวร</li>
+                    </ul>
+                </div>
+                <div class="bg-blue-50 p-3 rounded">
+                    <div class="font-bold mb-2 text-blue-700">การดูแลแผล</div>
+                    <ul class="space-y-1 list-disc pl-4 text-gray-700">
+                        <li>บันทึกการเกิดแผลกดทับทุกครั้งที่พบแผลใหม่</li>
+                        <li>บันทึกเมื่อมีการเปลี่ยนแปลงของแผล (รอยแดง/ใหญ่ขึ้น/หาย)</li>
+                        <li>ทำความสะอาดแผลด้วย NSS ทา Zinc Paste</li>
+                        <li>แผลมีเนื้อตาย รายงานแพทย์ ตัดเนื้อตาย Wet Dressing</li>
+                        <li>ดูแลให้ผู้ป่วยมีภาวะโภชนาการที่เหมาะสม</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded border shadow-sm">
+            <h4 class="font-bold text-red-800 mb-2 text-lg">ส่วนที่ 3 บันทึกแผลกดทับ</h4>
+            <p class="text-xs text-gray-500 mb-2">(ระดับ 1 ผิวหนังแดง, ระดับ 2 มี Bleb แตก, ระดับ 3 ลึกถึง Subcutaneous, ระดับ 4 ลึกถึงกล้ามเนื้อ กระดูก)</p>
+            <table class="w-full border-collapse border text-sm" id="wound-record-table">
+                <thead class="bg-gray-100">
+                    <tr><th class="border p-2 w-32">ว/ด/ป</th><th class="border p-2">ตำแหน่งแผล</th><th class="border p-2 w-24">ระดับ</th><th class="border p-2">ลักษณะแผล</th><th class="border p-2 w-32">ชื่อผู้บันทึก</th><th class="border p-2 w-10">ลบ</th></tr>
+                </thead>
+                <tbody id="wound-record-body"></tbody>
+            </table>
+            <button type="button" onclick="addWoundRow()" class="mt-2 text-sm text-blue-600 hover:underline">+ เพิ่มรายการบันทึกแผล</button>
+        </div>
+
+        <div class="bg-white p-4 rounded border shadow-sm">
+            <div class="flex items-center gap-4 mb-2">
+                <h4 class="font-bold text-red-800 text-lg">ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย/ย้าย)</h4>
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-bold">ระบุวันที่:</label>
+                    <input type="date" name="Discharge_Summary_Date" class="border rounded p-1 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-red-300">
+                </div>
+            </div>
+            
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center gap-2">
+                    <input type="radio" name="Discharge_Status" value="ไม่เกิดแผลกดทับ">
+                    <label>ไม่เกิดแผลกดทับ</label>
+                </div>
+                <div class="flex items-start gap-2">
+                    <input type="radio" name="Discharge_Status" value="เกิดแผลกดทับ">
+                    <div class="w-full">
+                        <label class="font-bold">เกิดแผลกดทับ</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 bg-gray-50 p-3 rounded border">
+                            <div class="flex items-center gap-2">
+                                <label>วันที่เกิด:</label>
+                                <input type="date" name="Discharge_Date" class="border rounded p-1">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>ตำแหน่ง:</label>
+                                <input type="text" name="Discharge_Position" class="border rounded p-1 w-full">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>ระดับ:</label>
+                                <input type="text" name="Discharge_Stage" class="border rounded p-1 w-20 text-center">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>ขนาด:</label>
+                                <input type="text" name="Discharge_Size" class="border rounded p-1 w-full">
+                            </div>
+                            <div class="flex items-center gap-2 col-span-2">
+                                <label>ลักษณะแผล:</label>
+                                <input type="text" name="Discharge_Char" class="border rounded p-1 w-full">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label>จำนวนแผล:</label>
+                                <input type="number" name="Discharge_Count" class="border rounded p-1 w-20 text-center"> แผล
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    table.insertAdjacentHTML('afterend', extraHtml);
+    table.querySelectorAll('.braden-radio').forEach(r => {
+        r.addEventListener('change', () => calculateBradenDay(r.dataset.day));
+    });
+}
+
+// --- Helper Functions สำหรับ Part 3 (Wound Record) ---
+function addWoundRow(data = {}) {
+    const tbody = document.getElementById("wound-record-body");
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td class="border p-1"><input type="date" class="w-full border rounded p-1 text-xs wound-date" value="${data.date || ''}"></td>
+        <td class="border p-1"><input type="text" class="w-full border rounded p-1 text-xs wound-pos" value="${data.pos || ''}"></td>
+        <td class="border p-1"><input type="text" class="w-full border rounded p-1 text-xs text-center wound-stage" value="${data.stage || ''}"></td>
+        <td class="border p-1"><input type="text" class="w-full border rounded p-1 text-xs wound-char" value="${data.char || ''}"></td>
+        <td class="border p-1"><input type="text" list="staff-list-datalist" class="w-full border rounded p-1 text-xs text-center wound-user" value="${data.user || ''}"></td>
+        <td class="border p-1 text-center"><button type="button" onclick="this.closest('tr').remove()" class="text-red-500 hover:text-red-700">x</button></td>
+    `;
+    tbody.appendChild(row);
+}
+
+function renderWoundRows(records) {
+    const tbody = document.getElementById("wound-record-body");
+    if(tbody) {
+        tbody.innerHTML = "";
+        if (records.length > 0) {
+            records.forEach(rec => addWoundRow(rec));
+        } else {
+            addWoundRow(); // Default 1 row
+        }
+    }
+}
+
+function calculateBradenDay(day) {
+    let total = 0;
+    const criteriaIds = ["Sensory", "Moisture", "Activity", "Mobility", "Nutrition", "Friction"];
+    
+    criteriaIds.forEach(id => {
+        const checked = document.querySelector(`input[name="${id}_${day}"]:checked`);
+        if (checked) total += parseInt(checked.value);
+    });
+
+    // Update Total
+    const totalInput = document.querySelector(`input[name="Total_${day}"]`);
+    if (totalInput && total > 0) totalInput.value = total;
+
+    // Update Risk
+    const riskInput = document.getElementById(`risk_text_${day}`);
+    if (riskInput && total > 0) {
+        if (total <= 16) {
+            riskInput.value = "เสี่ยงสูง";
+            riskInput.classList.add("text-red-600", "font-bold");
+            riskInput.classList.remove("text-green-600");
+        } else {
+            riskInput.value = "เสี่ยงต่ำ";
+            riskInput.classList.add("text-green-600", "font-bold");
+            riskInput.classList.remove("text-red-600");
+        }
+    }
+}
+// ----------------------------------------------------------------
+// (Updated) Classify Print Preview Logic (A4 Portrait & Print All)
+// ----------------------------------------------------------------
+let currentClassifyPrintPage = 1;
+let allClassifyDataCache = [];
+
+async function renderClassifyPrintMode(an) {
+  // 1. เตรียม Template
+  chartPreviewContent.innerHTML = "";
+  
+  // สร้าง Container สำหรับควบคุม (Control Panel)
+  const controlDiv = document.createElement('div');
+  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+  controlDiv.innerHTML = `
+      <div class="font-bold text-gray-700 flex items-center gap-2">
+        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-classify-page-num">1</span></span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-prev-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
+          &lt; ก่อนหน้า
+        </button>
+        <button id="btn-next-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
+          ถัดไป &gt;
+        </button>
+        
+        <button id="btn-print-classify-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
+        </button>
+      </div>
+  `;
+  chartPreviewContent.appendChild(controlDiv);
+
+  // สร้างพื้นที่กระดาษ A4 สำหรับ Preview (หน้าเดียว)
+  const sheetDiv = document.createElement('div');
+  sheetDiv.id = "classify-sheet-content";
+  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden"; // ซ่อนตัวนี้ตอน Print จริง
+  sheetDiv.style.width = "210mm";
+  sheetDiv.style.minHeight = "297mm";
+  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; // เพิ่ม Padding ล่างเผื่อ Footer
+  chartPreviewContent.appendChild(sheetDiv);
+  
+  // สร้างพื้นที่สำหรับ Print (Print Area) - จะถูกเติมข้อมูลเมื่อกดพิมพ์
+  const printArea = document.createElement('div');
+  printArea.id = "classify-print-area";
+  printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+  document.body.appendChild(printArea);
+
+  // 2. โหลดข้อมูล
+  showLoading('กำลังโหลดข้อมูล...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllClassificationData&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success && result.message) console.warn(result.message);
+    
+    allClassifyDataCache = result.success ? result.data : []; 
+    currentClassifyPrintPage = 1;
+    
+    // Render หน้าแรกสำหรับ Preview
+    renderClassifySheetA4(currentClassifyPrintPage);
+    
+    // Event Listeners
+    document.getElementById("btn-prev-classify-sheet").addEventListener("click", () => {
+       if(currentClassifyPrintPage > 1) {
+         currentClassifyPrintPage--;
+         renderClassifySheetA4(currentClassifyPrintPage);
+       }
+    });
+    
+    document.getElementById("btn-next-classify-sheet").addEventListener("click", () => {
+         currentClassifyPrintPage++;
+         renderClassifySheetA4(currentClassifyPrintPage);
+    });
+
+    // Event ปุ่มพิมพ์
+    document.getElementById("btn-print-classify-action").addEventListener("click", () => {
+        handleClassifyPrint();
+    });
+
+    Swal.close();
+  } catch (e) {
+    Swal.close();
+    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
+  }
+}
+
+// ฟังก์ชันจัดการการพิมพ์ (แก้ไข: ค้นหาตำแหน่งมาต่อท้ายชื่อ)
+async function handleClassifyPrint() {
+    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง
+    if (globalStaffList.length === 0) {
+        await refreshStaffDatalists();
+    }
+
+    // สร้างตัวเลือกสำหรับ Datalist
+    let staffOptions = '';
+    globalStaffList.forEach(s => {
+        staffOptions += `<option value="${s.fullName}">`;
+    });
+
+    // 2. แสดง Pop-up ตั้งค่าการพิมพ์
+    const { value: formValues, isDismissed } = await Swal.fire({
+        title: 'ตั้งค่าการพิมพ์เอกสาร',
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-2">ต้องการลงวันที่จำหน่ายหรือไม่?</label>
+                    <div class="flex items-center gap-4 mb-2">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="print_discharge_opt" value="no" class="mr-2" checked>
+                            ไม่ลงวันที่ (เว้นว่างไว้เขียนเอง)
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="print_discharge_opt" value="yes" class="mr-2">
+                            ลงวันที่จำหน่าย
+                        </label>
+                    </div>
+                    <input type="date" id="print_discharge_date" class="w-full p-2 border rounded hidden focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้ประเมิน (ที่จะปรากฏท้ายกระดาษ)</label>
+                    <input type="text" id="print_assessor_name" list="print_staff_list" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+                    <datalist id="print_staff_list">
+                        ${staffOptions}
+                    </datalist>
+                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติเมื่อสั่งพิมพ์</div>
+                </div>
+            </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'พิมพ์เอกสาร',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563EB',
+        didOpen: () => {
+            const popup = Swal.getPopup();
+            const dateInput = popup.querySelector('#print_discharge_date');
+            const radios = popup.querySelectorAll('input[name="print_discharge_opt"]');
+            
+            radios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.value === 'yes') {
+                        dateInput.classList.remove('hidden');
+                    } else {
+                        dateInput.classList.add('hidden');
+                        dateInput.value = ''; 
+                    }
+                });
+            });
+        },
+        preConfirm: () => {
+            const opt = document.querySelector('input[name="print_discharge_opt"]:checked').value;
+            const dateVal = document.getElementById('print_discharge_date').value;
+            const assessor = document.getElementById('print_assessor_name').value;
+
+            if (opt === 'yes' && !dateVal) {
+                Swal.showValidationMessage('กรุณาเลือกวันที่จำหน่าย');
+                return false;
+            }
+            if (!assessor) {
+                Swal.showValidationMessage('กรุณาระบุชื่อผู้ประเมิน');
+                return false;
+            }
+
+            // [ค้นหาตำแหน่ง] จาก globalStaffList
+            const staffData = globalStaffList.find(s => s.fullName === assessor);
+            const position = staffData ? staffData.position : ""; 
+
+            return {
+                dischargeDate: opt === 'yes' ? dateVal : null,
+                assessorName: assessor,
+                assessorPosition: position // ส่งตำแหน่งไปด้วย
+            };
+        }
+    });
+
+    if (isDismissed || !formValues) return;
+
+    // --- เริ่มกระบวนการพิมพ์ ---
+    const oldPrintArea = document.getElementById("classify-print-area");
+    if (oldPrintArea) oldPrintArea.remove();
+
+    const printArea = document.createElement('div');
+    printArea.id = "classify-print-area";
+    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+    document.body.appendChild(printArea);
+
+    let maxPage = 1;
+    if (allClassifyDataCache.length > 0) {
+        const dates = allClassifyDataCache.map(d => new Date(d.Date));
+        const maxDate = new Date(Math.max.apply(null, dates));
+        const admitDate = new Date(currentPatientData.AdmitDate);
+        const diffTime = Math.abs(maxDate - admitDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        maxPage = Math.max(1, Math.ceil(diffDays / 5));
+    }
+
+    for (let p = 1; p <= maxPage; p++) {
+        const pageContainer = document.createElement('div');
+        pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+        pageContainer.style.width = "210mm";
+        pageContainer.style.height = "297mm";
+        pageContainer.style.padding = "10mm 15mm 25mm 15mm";
+        pageContainer.style.pageBreakAfter = "always";
+        
+        printArea.appendChild(pageContainer);
+        
+        renderClassifySheetA4(p, pageContainer, { 
+            customDischargeDate: formValues.dischargeDate,
+            customAssessor: formValues.assessorName,
+            customAssessorPosition: formValues.assessorPosition // ส่งตำแหน่งไป Render
+        });
+    }
+
+    setTimeout(() => {
+        window.print();
+    }, 500);
+}
+
+// ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: แสดงตำแหน่งท้ายชื่อ)
+// ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: ปี พ.ศ. เต็ม + ตัดคำนำหน้าชื่อในตาราง)
+function renderClassifySheetA4(page, targetContainer = null, options = {}) {
+  const container = targetContainer || document.getElementById("classify-sheet-content");
+  
+  if(!container) return;
+
+  // --- Helper Function: ตัดคำนำหน้าและนามสกุล (เฉพาะในฟังก์ชันนี้) ---
+  const getShortName = (fullName) => {
+      if (!fullName) return "";
+      // 1. ลบคำนำหน้าชื่อออก (นาย, นาง, นางสาว, น.ส., ยศต่างๆ)
+      let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
+      // 2. ตัดเอาเฉพาะชื่อต้น (โดยการแบ่งช่องว่างแล้วเอาตัวแรก)
+      return cleaned.split(/\s+/)[0]; 
+  };
+
+  // 1. คำนวณวันที่
+  const admitDate = new Date(currentPatientData.AdmitDate); 
+  const startDayOffset = (page - 1) * 5;
+  // [แก้ไข] ใช้ year: 'numeric' เพื่อแสดง พ.ศ. เต็ม (เช่น 2569)
+  const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  
+  // จัดการวันที่จำหน่าย
+  let dischargeDateStr = "........................";
+  if (options.customDischargeDate) {
+      const d = new Date(options.customDischargeDate);
+      dischargeDateStr = d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  } else if (currentPatientData.DischargeDate) {
+      dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+
+  // จัดการชื่อและตำแหน่งผู้ประเมิน (สำหรับ Footer ใช้ชื่อเต็ม+ตำแหน่ง)
+  const assessorNameVal = options.customAssessor || "";
+  const assessorPosVal = options.customAssessorPosition || "";
+  
+  const assessorDisplay = assessorNameVal 
+      ? `(${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''})` 
+      : "(..................................................)";
+
+  const currentUser = assessorNameVal 
+      ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` 
+      : "(เจ้าหน้าที่)";
+
+  const wardName = currentPatientData.Ward || "........................"; 
+  
+  const now = new Date();
+  const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+
+  // =========================================================
+  // ส่วนหัวกระดาษ (Header)
+  // =========================================================
+  let html = `
+    <div class="mb-4 text-black font-sarabun">
+        <div class="text-center flex flex-col gap-1">
+            <h2 class="font-bold text-xl">แบบบันทึกการจำแนกผู้ป่วย ${wardName}</h2>
+            <h3 class="font-bold text-lg">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+            
+            <div class="flex justify-center items-center gap-16 mt-1 text-sm font-bold">
+                <div>รับใหม่  ${admitDateStr}</div>
+                <div>จำหน่าย  ${dischargeDateStr}</div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-end mt-4 px-1 text-[12px] font-bold border-b border-transparent">
+           <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
+           <div>AN: <span class="text-sm ml-1">${currentPatientData.AN}</span></div>
+           <div>HN: <span class="text-sm ml-1">${currentPatientData.HN}</span></div>
+        </div>
+    </div>
+  `;
+
+  // =========================================================
+  // ส่วนตาราง (Table Body)
+  // =========================================================
+  html += `
+    <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
+      <thead>
+        <tr class="bg-gray-100">
+          <th rowspan="2" class="border border-black p-1 w-[160px] text-left align-middle font-bold">รายการประเมิน</th>
+  `;
+
+  for (let i = 0; i < 5; i++) {
+     const currDate = new Date(admitDate);
+     currDate.setDate(admitDate.getDate() + startDayOffset + i);
+     // [แก้ไข] ใช้ year: 'numeric' แสดงปีเต็ม (เช่น 13/01/2569)
+     const dateStr = currDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+     html += `<th colspan="3" class="border border-black p-1 font-bold">${dateStr}</th>`;
+  }
+  html += `</tr><tr class="bg-gray-50">`;
+  
+  for (let i = 0; i < 5; i++) {
+     html += `
+       <th class="border border-black p-0.5 w-[20px]">ด</th>
+       <th class="border border-black p-0.5 w-[20px]">ช</th>
+       <th class="border border-black p-0.5 w-[20px]">บ</th>
+     `;
+  }
+  html += `</tr></thead><tbody>`;
+
+  const tableStructure = [
+    { type: 'header', text: 'I. สภาวะสุขภาพ' },
+    { type: 'row', label: '1. สัญญาณชีพ', key: 'Score_1' },
+    { type: 'row', label: '2. อาการแสดงทางระบบประสาท', key: 'Score_2' },
+    { type: 'row', label: '3. การตรวจรักษา/ผ่าตัดหรือหัตถการ', key: 'Score_3' },
+    { type: 'row', label: '4. พฤติกรรมที่ผิดปกติ/อารมณ์/จิตสังคม', key: 'Score_4' },
+    { type: 'header', text: 'II. ความต้องการการดูแลขั้นต่ำ' },
+    { type: 'row', label: '5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน', key: 'Score_5' },
+    { type: 'row', label: '6. ความต้องการด้านอารมณ์และจิตใจ', key: 'Score_6' },
+    { type: 'row', label: '7. ความต้องการยา/หัตถการ/ฟื้นฟู', key: 'Score_7' },
+    { type: 'row', label: '8. ความต้องการบรรเทาอาการรบกวน', key: 'Score_8' },
+    { type: 'summary', label: 'รวมคะแนน', key: 'Total_Score' },
+    { type: 'summary', label: 'ประเภทผู้ป่วย', key: 'Category' },
+    { type: 'text', label: 'ผู้ประเมิน', key: 'Assessor_Name' }
+  ];
+
+  tableStructure.forEach(item => {
+     if (item.type === 'header') {
+         html += `
+            <tr class="bg-indigo-50/50">
+                <td class="border border-black p-1 text-left font-bold" colspan="16">${item.text}</td>
+            </tr>
+         `;
+     } else {
+         let labelClass = "text-left pl-1";
+         let rowBg = "";
+         if (item.type === 'summary') {
+             labelClass = "text-right pr-2 font-bold";
+             rowBg = item.key === 'Category' ? "bg-gray-200" : "bg-gray-100";
+         }
+
+         html += `<tr class="${rowBg}">
+            <td class="border border-black p-1 ${labelClass}">${item.label}</td>`;
+
+         for (let i = 0; i < 5; i++) {
+            const currDate = new Date(admitDate);
+            currDate.setDate(admitDate.getDate() + startDayOffset + i);
+            const dateKey = getISODate(currDate); 
+            
+            ['N', 'D', 'E'].forEach(shift => {
+               const entry = allClassifyDataCache.find(d => {
+                  let dStr = d.Date;
+                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
+                      dStr = getISODate(new Date(d.Date));
+                  }
+                  return dStr === dateKey && d.Shift === shift;
+               });
+
+               let val = entry ? entry[item.key] : "";
+               
+               // [แก้ไข] ตัดคำนำหน้าและนามสกุลสำหรับช่องผู้ประเมิน
+               if (item.type === 'text' && val) {
+                  const shortName = getShortName(val);
+                  val = `<span class="text-[8px] block leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[35px]" title="${val}">${shortName}</span>`;
+               } else if ((item.type === 'row' || item.type === 'summary') && val == 0) {
+                  val = ""; 
+               }
+
+               html += `<td class="border border-black p-0.5 text-center align-middle h-5">${val}</td>`;
+            });
+         }
+         html += `</tr>`;
+     }
+  });
+
+  html += `</tbody></table>`;
+
+  // =========================================================
+  // ส่วนท้าย (Criteria & Footer)
+  // =========================================================
+  html += `
+    <div class="mt-4 text-[10px] text-gray-700">
+       <div class="mb-1 font-bold underline">เกณฑ์การแบ่งประเภท: (นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8)</div>
+       <div class="grid grid-cols-2 gap-x-8">
+          <div class="space-y-0.5">
+            <div><b>ประเภทที่ 1:</b> ผู้ป่วยพักฟื้นดูแลตัวเองได้ (คะแนน ≤ 8)</div>
+            <div><b>ประเภทที่ 2:</b> ผู้ป่วยเจ็บป่วยเล็กน้อย (คะแนน 9-14)</div>
+            <div><b>ประเภทที่ 3:</b> ผู้ป่วยเจ็บป่วยปานกลาง (คะแนน 15-20)</div>
+            <div><b>ประเภทที่ 4:</b> ผู้ป่วยหนัก (คะแนน 21-26)</div>
+            <div><b>ประเภทที่ 5:</b> ผู้ป่วยหนักมาก/วิกฤต (คะแนน 27-32)</div>
+          </div>
+          <div class="space-y-0.5">
+             <div class="mt-2 text-right"><b>ชื่อผู้ประเมิน</b> ${assessorDisplay}</div>
+          </div>
+       </div>
+    </div>
+    
+    <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
+        <div class="flex justify-between items-end">
+            <div class="text-left leading-tight">
+                <div>ผู้พิมพ์ : ${currentUser}</div>
+                <div>วันที่พิมพ์ : ${printDate} เวลา ${printTime} น.</div>
+            </div>
+            <div class="text-right leading-tight">
+                <div class="font-bold">โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  
+  if(!targetContainer) {
+      if(document.getElementById("print-classify-page-num")) {
+          document.getElementById("print-classify-page-num").textContent = page;
+      }
+      if(document.getElementById("btn-prev-classify-sheet")) {
+          document.getElementById("btn-prev-classify-sheet").disabled = (page <= 1);
+      }
+  }
+}
+
+// =================================================================
+// (New) Morse/MAAS Print Preview Logic (A4 Portrait)
+// =================================================================
+let currentMorsePrintPage = 1;
+let allMorseDataCache = [];
+
+async function renderMorsePrintMode(an) {
+  chartPreviewContent.innerHTML = "";
+  
+  // 1. สร้าง Controls
+  const controlDiv = document.createElement('div');
+  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+  controlDiv.innerHTML = `
+      <div class="font-bold text-gray-700 flex items-center gap-2">
+        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-morse-page-num">1</span></span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-prev-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ก่อนหน้า</button>
+        <button id="btn-next-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ถัดไป &gt;</button>
+        <button id="btn-print-morse-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
+        </button>
+      </div>
+  `;
+  chartPreviewContent.appendChild(controlDiv);
+
+  // 2. สร้าง Sheet Container
+  const sheetDiv = document.createElement('div');
+  sheetDiv.id = "morse-sheet-content";
+  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden";
+  sheetDiv.style.width = "210mm";
+  sheetDiv.style.minHeight = "297mm";
+  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; 
+  chartPreviewContent.appendChild(sheetDiv);
+
+  // 3. โหลดข้อมูล
+  showLoading('กำลังโหลดข้อมูล...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllMorseData&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success && result.message) console.warn(result.message);
+    
+    allMorseDataCache = result.success ? result.data : []; 
+    currentMorsePrintPage = 1;
+    
+    // Render หน้าแรก
+    renderMorseSheetA4(currentMorsePrintPage);
+    
+    // Event Listeners
+    document.getElementById("btn-prev-morse-sheet").addEventListener("click", () => {
+       if(currentMorsePrintPage > 1) {
+         currentMorsePrintPage--;
+         renderMorseSheetA4(currentMorsePrintPage);
+       }
+    });
+    
+    document.getElementById("btn-next-morse-sheet").addEventListener("click", () => {
+         currentMorsePrintPage++;
+         renderMorseSheetA4(currentMorsePrintPage);
+    });
+
+    document.getElementById("btn-print-morse-action").addEventListener("click", handleMorsePrint);
+
+    Swal.close();
+  } catch (e) {
+    Swal.close();
+    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
+  }
+}
+
+// ฟังก์ชันจัดการการพิมพ์ Morse (Pop-up + Loop Pages)
+async function handleMorsePrint() {
+    // โหลดรายชื่อ
+    if (globalStaffList.length === 0) await refreshStaffDatalists();
+    let staffOptions = '';
+    globalStaffList.forEach(s => { staffOptions += `<option value="${s.fullName}">`; });
+
+    // Pop-up ตั้งค่า
+    const { value: formValues, isDismissed } = await Swal.fire({
+        title: 'ตั้งค่าการพิมพ์เอกสาร',
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้ประเมิน / ผู้พิมพ์</label>
+                    <input type="text" id="print_assessor_name" list="print_staff_list" class="w-full p-2 border rounded" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+                    <datalist id="print_staff_list">${staffOptions}</datalist>
+                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
+                </div>
+            </div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'พิมพ์เอกสาร',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563EB',
+        preConfirm: () => {
+            const assessor = document.getElementById('print_assessor_name').value;
+            if (!assessor) {
+                Swal.showValidationMessage('กรุณาระบุชื่อผู้พิมพ์');
+                return false;
+            }
+            const staffData = globalStaffList.find(s => s.fullName === assessor);
+            return {
+                assessorName: assessor,
+                assessorPosition: staffData ? staffData.position : ""
+            };
+        }
+    });
+
+    if (isDismissed || !formValues) return;
+
+    // เตรียมพื้นที่พิมพ์
+    const oldPrintArea = document.getElementById("morse-print-area");
+    if (oldPrintArea) oldPrintArea.remove();
+
+    const printArea = document.createElement('div');
+    printArea.id = "morse-print-area";
+    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+    document.body.appendChild(printArea);
+
+    // คำนวณจำนวนหน้า
+    let maxPage = 1;
+    if (allMorseDataCache.length > 0) {
+        const dates = allMorseDataCache.map(d => new Date(d.Date));
+        const maxDate = new Date(Math.max.apply(null, dates));
+        const admitDate = new Date(currentPatientData.AdmitDate);
+        const diffTime = Math.abs(maxDate - admitDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        maxPage = Math.max(1, Math.ceil(diffDays / 5));
+    }
+
+    // สร้างทุกหน้า
+    for (let p = 1; p <= maxPage; p++) {
+        const pageContainer = document.createElement('div');
+        pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+        pageContainer.style.width = "210mm";
+        pageContainer.style.height = "297mm";
+        pageContainer.style.padding = "10mm 15mm 25mm 15mm";
+        pageContainer.style.pageBreakAfter = "always";
+        
+        printArea.appendChild(pageContainer);
+        
+        renderMorseSheetA4(p, pageContainer, { 
+            customAssessor: formValues.assessorName,
+            customAssessorPosition: formValues.assessorPosition
+        });
+    }
+
+    setTimeout(() => { window.print(); }, 500);
+}
+
+// ฟังก์ชัน Render หน้ากระดาษ Morse A4 (แก้ไข: ตาราง Morse/MAAS แบบเดิม + แนวปฏิบัติแบบใหม่ + หัวกระดาษพอดี)
+function renderMorseSheetA4(page, targetContainer = null, options = {}) {
+  const container = targetContainer || document.getElementById("morse-sheet-content");
+  if(!container) return;
+
+  // Helper: ตัดชื่อ
+  const getShortName = (fullName) => {
+      if (!fullName) return "";
+      let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
+      return cleaned.split(/\s+/)[0]; 
+  };
+
+  // 1. เตรียมข้อมูลวันที่
+  const admitDate = new Date(currentPatientData.AdmitDate); 
+  const startDayOffset = (page - 1) * 5;
+  
+  // ข้อมูลผู้พิมพ์
+  const assessorNameVal = options.customAssessor || "";
+  const assessorPosVal = options.customAssessorPosition || "";
+  const currentUser = assessorNameVal ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` : "(เจ้าหน้าที่)";
+  
+  const now = new Date();
+  const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+
+  const wardName = currentPatientData.Ward || "........................"; 
+
+  // =========================================================
+  // 1. HEADER (ปรับขนาดตัวอักษรให้พอดีบรรทัด ไม่ตกขอบ)
+  // =========================================================
+  let html = `
+    <div class="mb-2 text-black font-sarabun">
+        <div class="text-center mb-2">
+            <h2 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h2>
+            <h3 class="font-bold text-base whitespace-nowrap">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / การดึงอุปกรณ์ที่สอดใส่ในร่างกายผู้ป่วย (MAAS)</h3>
+        </div>
+        <div class="flex justify-between items-end px-1 text-[11px] font-bold border-b border-transparent">
+           <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
+           <div>AN: <span class="text-sm ml-1">${currentPatientData.AN}</span></div>
+           <div>HN: <span class="text-sm ml-1">${currentPatientData.HN}</span></div>
+           <div>ตึก: <span class="text-sm ml-1">${wardName}</span></div>
+        </div>
+    </div>
+  `;
+
+  // =========================================================
+  // 2. MORSE TABLE (กู้คืนรูปแบบตาม PDF 100%)
+  // =========================================================
+  html += `
+    <div class="font-bold text-[10px] mb-1 mt-2">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม (Morse)</div>
+    <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight mb-2">
+      <thead>
+        <tr class="bg-gray-100">
+          <th rowspan="2" class="border border-black p-1 w-[240px] text-left align-middle font-bold">ประเด็น / คะแนน</th>
+  `;
+
+  // Header วันที่
+  for (let i = 0; i < 5; i++) {
+     const currDate = new Date(admitDate);
+     currDate.setDate(admitDate.getDate() + startDayOffset + i);
+     const dateStr = currDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+     html += `<th colspan="3" class="border border-black p-1 font-bold">${dateStr}</th>`;
+  }
+  html += `</tr><tr class="bg-gray-50">`;
+  
+  // Header เวร
+  for (let i = 0; i < 5; i++) {
+     html += `
+       <th class="border border-black p-0.5 w-[20px]">ด</th>
+       <th class="border border-black p-0.5 w-[20px]">ช</th>
+       <th class="border border-black p-0.5 w-[20px]">บ</th>
+     `;
+  }
+  html += `</tr></thead><tbody>`;
+
+  // --- ข้อมูล Morse (ตาม PDF: มีคะแนนกำกับในข้อความ) ---
+  const morseRows = [
+      {
+          label: "1. มีการหกล้มกะทันหัน หรือหกล้มช่วง 3 เดือนก่อนมา รพ.",
+          sub: ["ไม่ใช่ = 0", "ใช่ = 25"],
+          key: "Morse_1"
+      },
+      {
+          label: "2. มีการวินิจฉัยโรคมากกว่า 1 รายการ",
+          sub: ["ไม่ใช่ = 0", "ใช่ = 15"],
+          key: "Morse_2"
+      },
+      {
+          label: "3. การช่วยในการเคลื่อนย้าย",
+          sub: [
+              "- เดินได้เองใช้/รถเข็นนั่ง/นอนพักบนเตียงหรือทำกิจกรรมบนเตียง (ใช่ = 0)",
+              "- ไม้ค้ำยัน/ไม้เท้า (ใช่ = 15)",
+              "เดิน- โดยการยึดเกาะไปตามเตียง / โต๊ะ / เก้าอี้ (ใช่ = 30)"
+          ],
+          key: "Morse_3"
+      },
+      {
+          label: "4. ให้สารละลายทางหลอดเลือด/คา Heparin lock",
+          sub: ["ไม่ใช่ = 0", "ใช่ = 20"],
+          key: "Morse_4"
+      },
+      {
+          label: "5. การเดิน / การเคลื่อนย้าย",
+          sub: [
+              "- ปกติ / นอนพักบนเตียงโดยไม่ให้ลุกจากเตียงไม่เคลื่อนไหว (ใช่ = 0)",
+              "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (ใช่ = 10)",
+              "- มีความบกพร่อง เช่น ลุกจากเก้าอี้ด้วยความลำบาก / ไม่สามารถเดินได้โดยปราศจากการช่วยเหลือ (ใช่ = 20)"
+          ],
+          key: "Morse_5"
+      },
+      {
+          label: "6. สภาพจิตใจ",
+          sub: [
+              "- รับรู้บุคคล เวลา สถานที่ (ใช่ = 0)",
+              "ตอบสนองไม่ตรงกับความเป็นจริง ไม่รับรู้ข้อจำกัดของตนเอง (ใช่ = 15)"
+          ],
+          key: "Morse_6"
+      }
+  ];
+
+  morseRows.forEach((row) => {
+      let labelHtml = `<div class="font-bold border-b border-gray-300 pb-1 mb-1">${row.label}</div>`;
+      row.sub.forEach(txt => {
+          labelHtml += `<div class="pl-2 mb-0.5 text-[8px] leading-tight text-gray-700 font-medium">${txt}</div>`;
+      });
+
+      html += `<tr><td class="border border-black p-1 text-left align-top bg-white">${labelHtml}</td>`;
+      
+      for (let i = 0; i < 5; i++) {
+          const currDate = new Date(admitDate);
+          currDate.setDate(admitDate.getDate() + startDayOffset + i);
+          const dateKey = getISODate(currDate); 
+          ['N', 'D', 'E'].forEach(shift => {
+              const entry = allMorseDataCache.find(d => {
+                  let dStr = d.Date;
+                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
+                      dStr = getISODate(new Date(d.Date));
+                  }
+                  return dStr === dateKey && d.Shift === shift;
+              });
+              let val = entry ? entry[row.key] : "";
+              html += `<td class="border border-black p-0.5 text-center align-middle font-medium">${val !== "" ? val : ""}</td>`;
+          });
+      }
+      html += `</tr>`;
+  });
+
+  // Row: รวมคะแนน Morse
+  html += `<tr class="bg-gray-100"><td class="border border-black p-1 text-right font-bold">รวมคะแนน</td>`;
+  for (let i = 0; i < 5; i++) {
+      const currDate = new Date(admitDate);
+      currDate.setDate(admitDate.getDate() + startDayOffset + i);
+      const dateKey = getISODate(currDate); 
+      ['N', 'D', 'E'].forEach(shift => {
+          const entry = allMorseDataCache.find(d => {
+              let dStr = d.Date;
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+              return dStr === dateKey && d.Shift === shift;
+          });
+          let val = entry ? entry.Morse_Total : "";
+          let color = "";
+          if(val >= 51) color = "text-red-600 font-bold";
+          else if(val >= 25) color = "text-orange-600 font-bold";
+          html += `<td class="border border-black p-0.5 text-center ${color}">${val}</td>`;
+      });
+  }
+  html += `</tr>`;
+
+  // Row: พยาบาลผู้ประเมิน
+  html += `<tr><td class="border border-black p-1 text-right font-bold">พยาบาลผู้ประเมิน</td>`;
+  for (let i = 0; i < 5; i++) {
+      const currDate = new Date(admitDate);
+      currDate.setDate(admitDate.getDate() + startDayOffset + i);
+      const dateKey = getISODate(currDate); 
+      ['N', 'D', 'E'].forEach(shift => {
+          const entry = allMorseDataCache.find(d => {
+              let dStr = d.Date;
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+              return dStr === dateKey && d.Shift === shift;
+          });
+          let val = entry ? entry.Assessor_Name : "";
+          html += `<td class="border border-black p-0.5 text-center text-[7px] whitespace-nowrap overflow-hidden">${getShortName(val)}</td>`;
+      });
+  }
+  html += `</tr></tbody></table>`;
+
+  // =========================================================
+  // 3. MAAS TABLE (กู้คืนรูปแบบเดิม: 0-6 เป็นแถวแยก)
+  // =========================================================
+  html += `
+    <div class="font-bold text-[10px] mb-1 mt-2">แบบประเมินความเสี่ยงต่อ การดึงอุปกรณ์ที่สอดใส่ในร่างกายผู้ป่วย (MAAS)</div>
+    <table class="w-full border-collapse border border-black text-center text-[8px] leading-tight mb-2">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="border border-black p-1 text-left w-[200px]">ประเด็น</th>
+          <th class="border border-black p-1 w-[30px]">คะแนน</th>
+  `;
+  for (let i = 0; i < 5; i++) {
+     html += `
+       <th class="border border-black p-0.5 w-[20px]">ด</th>
+       <th class="border border-black p-0.5 w-[20px]">ช</th>
+       <th class="border border-black p-0.5 w-[20px]">บ</th>
+     `;
+  }
+  html += `</tr></thead><tbody>`;
+
+  const maasItems = [
+      { t: "ไม่ตอบสนอง", s: 0 },
+      { t: "ตอบสนองต่อการกระตุ้นแรง ๆ", s: 1 },
+      { t: "ตอบสนองต่อการสัมผัสและการเรียกชื่อ", s: 2 },
+      { t: "สงบและให้ความร่วมมือ", s: 3 },
+      { t: "พักได้น้อยและไม่ให้ความร่วมมือ", s: 4 },
+      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา", s: 5 },
+      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น", s: 6 },
+  ];
+
+  maasItems.forEach(item => {
+      html += `<tr>
+        <td class="border border-black p-0.5 text-left">${item.t}</td>
+        <td class="border border-black p-0.5 font-bold">${item.s}</td>`;
+      
+      for (let i = 0; i < 5; i++) {
+          const currDate = new Date(admitDate);
+          currDate.setDate(admitDate.getDate() + startDayOffset + i);
+          const dateKey = getISODate(currDate); 
+          ['N', 'D', 'E'].forEach(shift => {
+              const entry = allMorseDataCache.find(d => {
+                  let dStr = d.Date;
+                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+                  return dStr === dateKey && d.Shift === shift;
+              });
+              let val = entry ? entry.MAAS_Score : "";
+              // ถ้าคะแนนตรงกับแถวนี้ ให้โชว์คะแนน
+              let mark = (val !== "" && parseInt(val) === item.s) ? val : "";
+              html += `<td class="border border-black p-0.5">${mark}</td>`;
+          });
+      }
+      html += `</tr>`;
+  });
+
+  // Row: คะแนนที่ได้ (สรุป)
+  html += `<tr class="bg-gray-50"><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนที่ได้</td>`;
+  for (let i = 0; i < 5; i++) {
+      const currDate = new Date(admitDate);
+      currDate.setDate(admitDate.getDate() + startDayOffset + i);
+      const dateKey = getISODate(currDate); 
+      ['N', 'D', 'E'].forEach(shift => {
+          const entry = allMorseDataCache.find(d => {
+              let dStr = d.Date;
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+              return dStr === dateKey && d.Shift === shift;
+          });
+          let val = entry ? entry.MAAS_Score : "";
+          let color = (val >= 4) ? "text-red-600 font-bold" : "";
+          html += `<td class="border border-black p-0.5 text-center ${color}">${val}</td>`;
+      });
+  }
+  html += `</tr>`;
+  html += `</tbody></table>`;
+
+  // =========================================================
+  // 4. FOOTER (แนวปฏิบัติ 3 คอลัมน์ แบบใหม่)
+  // =========================================================
+  html += `
+    <div class="mt-2 border border-black p-0 text-[8px] text-black">
+       <div class="grid grid-cols-3 border-b border-black font-bold text-center bg-gray-100">
+           <div class="border-r border-black p-1">No Risk (0-24)</div>
+           <div class="border-r border-black p-1">Low Risk (25-50)</div>
+           <div class="p-1 text-red-700">High Risk (≥ 51)</div>
+       </div>
+       
+       <div class="grid grid-cols-3 text-left leading-snug">
+           <div class="border-r border-black p-1 space-y-1">
+               <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
+               <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
+               <div>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</div>
+               <div>4. จัดสิ่งแวดล้อมให้ปลอดภัย</div>
+               <div>5. ให้ญาติเฝ้า</div>
+               <div>6. ยกเหล็กกั้นเตียง</div>
+               <div class="font-bold">7. ตรวจเยี่ยมผู้ป่วย (เวรละ 1 ครั้ง)</div>
+           </div>
+
+           <div class="border-r border-black p-1 space-y-1">
+               <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
+               <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
+               <div>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</div>
+               <div>4. จัดสิ่งแวดล้อมให้ปลอดภัย</div>
+               <div>5. ให้ญาติเฝ้า</div>
+               <div>6. ยกเหล็กกั้นเตียง</div>
+               <div class="font-bold">7. ตรวจเยี่ยมผู้ป่วย (ทุก 4 ชม.)</div>
+               <div>8. ติดสัญลักษณ์ความเสี่ยง (สีเหลือง)</div>
+               <div>9. ผูกมัดผู้ป่วยตามสภาพ</div>
+               <div>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</div>
+           </div>
+
+           <div class="p-1 space-y-1">
+               <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
+               <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
+               <div>3. ให้ข้อมูลผู้ป่วย/ญาติเกี่ยวกับการป้องกันการพลัดหกล้ม</div>
+               <div>4. จัดสิ่งแวดล้อมให้ปลอดภัย</div>
+               <div>5. ให้ญาติเฝ้า</div>
+               <div>6. ยกเหล็กกั้นเตียง</div>
+               <div class="font-bold text-red-600">7. ตรวจเยี่ยมผู้ป่วย (ทุก 2 ชม.)</div>
+               <div class="text-red-600">8. ติดสัญลักษณ์ความเสี่ยง (สีแดง)</div>
+               <div>9. ผูกมัดผู้ป่วยตามสภาพ</div>
+               <div>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</div>
+               <div>11. ปรึกษาสหวิชาชีพ</div>
+           </div>
+       </div>
+
+       <div class="border-t border-black p-1 bg-gray-50 flex gap-4 items-center">
+          <div class="font-bold underline">เกณฑ์ MAAS:</div>
+          <div>0-3: ไม่ต้องผูกยึด</div>
+          <div class="text-red-600 font-bold">4-6: ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด (ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง หากกรณีไม่มีญาติให้ผูกยึดได้เลย)</div>
+       </div>
+    </div>
+
+    <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
+        <div class="flex justify-between items-end">
+            <div class="text-left leading-tight">
+                <div>ผู้พิมพ์ : ${currentUser}</div>
+                <div>วันที่พิมพ์ : ${printDate} เวลา ${printTime} น.</div>
+            </div>
+            <div class="text-right leading-tight">
+                <div class="font-bold">โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  
+  if(!targetContainer) {
+      if(document.getElementById("print-morse-page-num")) {
+          document.getElementById("print-morse-page-num").textContent = page;
+      }
+      if(document.getElementById("btn-prev-morse-sheet")) {
+          document.getElementById("btn-prev-morse-sheet").disabled = (page <= 1);
+      }
+  }
+}
+// =================================================================
+// (New) Braden Scale Print Preview Logic (1 Set = 2 Pages)
+// =================================================================
+let currentBradenPrintSet = 1;
+let allBradenDataCache = []; // เก็บข้อมูลราย "ชุด" (Pages) ที่โหลดมา
+
+async function renderBradenPrintMode(an) {
+  chartPreviewContent.innerHTML = "";
+  
+  // 1. สร้าง Controls
+  const controlDiv = document.createElement('div');
+  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+  controlDiv.innerHTML = `
+      <div class="font-bold text-gray-700 flex items-center gap-2">
+        <span>มุมมองแบบพิมพ์ (ชุดละ 2 หน้า) - ชุดที่ <span id="print-braden-set-num">1</span></span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-prev-braden-set" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ชุดก่อนหน้า</button>
+        <button id="btn-next-braden-set" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ชุดถัดไป &gt;</button>
+        <button id="btn-print-braden-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
+        </button>
+      </div>
+  `;
+  chartPreviewContent.appendChild(controlDiv);
+
+  // 2. สร้าง Container สำหรับแสดงผล (Scrollable)
+  const previewContainer = document.createElement('div');
+  previewContainer.id = "braden-preview-container";
+  previewContainer.className = "overflow-y-auto bg-gray-200 p-4 print:p-0";
+  previewContainer.style.maxHeight = "calc(100vh - 200px)";
+  chartPreviewContent.appendChild(previewContainer);
+
+  // 3. โหลดข้อมูล (List รายการชุดที่มี)
+  showLoading('กำลังโหลดข้อมูล...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success) throw new Error(result.message);
+    
+    // เก็บรายการชุดข้อมูล (เช่น Page 1, Page 2...)
+    allBradenDataCache = result.data || []; 
+    
+    if (allBradenDataCache.length === 0) {
+        previewContainer.innerHTML = `<div class="text-center text-gray-500 py-10">ยังไม่มีข้อมูลการประเมิน<br>กรุณากดปุ่ม "แก้ไข" เพื่อเริ่มประเมิน</div>`;
+        Swal.close();
+        return;
+    }
+
+    // เริ่มต้นแสดงชุดล่าสุด (หรือชุดที่ 1 ตามต้องการ)
+    currentBradenPrintSet = allBradenDataCache.length > 0 ? allBradenDataCache[allBradenDataCache.length - 1].page : 1;
+    
+    await fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
+    
+    // Event Listeners
+    document.getElementById("btn-prev-braden-set").addEventListener("click", () => {
+       // หาชุดก่อนหน้า
+       const currIdx = allBradenDataCache.findIndex(d => d.page == currentBradenPrintSet);
+       if(currIdx > 0) {
+           currentBradenPrintSet = allBradenDataCache[currIdx - 1].page;
+           fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
+       }
+    });
+    
+    document.getElementById("btn-next-braden-set").addEventListener("click", () => {
+         const currIdx = allBradenDataCache.findIndex(d => d.page == currentBradenPrintSet);
+         if(currIdx < allBradenDataCache.length - 1) {
+             currentBradenPrintSet = allBradenDataCache[currIdx + 1].page;
+             fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
+         }
+    });
+
+    document.getElementById("btn-print-braden-action").addEventListener("click", handleBradenPrint);
+
+    Swal.close();
+  } catch (e) {
+    Swal.close();
+    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
+  }
+}
+
+// ฟังก์ชันโหลดข้อมูลและเรนเดอร์ 1 ชุด (2 หน้า) ลงใน Container
+async function fetchAndRenderBradenSet(an, pageNum, container) {
+    document.getElementById("print-braden-set-num").textContent = pageNum;
+    container.innerHTML = `<div class="text-center py-4">กำลังโหลดเนื้อหาชุดที่ ${pageNum}...</div>`;
+    
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${an}&page=${pageNum}`);
+        const result = await response.json();
+        const data = result.data || {};
+        
+        container.innerHTML = ""; // Clear loader
+        
+        // Render หน้า 1
+        const page1 = document.createElement('div');
+        page1.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative mb-4 print:mb-0 print:break-after-page";
+        page1.style.width = "210mm";
+        page1.style.minHeight = "297mm";
+        page1.style.padding = "10mm 15mm 25mm 15mm";
+        renderBradenPage1(page1, data);
+        container.appendChild(page1);
+
+        // Render หน้า 2
+        const page2 = document.createElement('div');
+        page2.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative";
+        page2.style.width = "210mm";
+        page2.style.minHeight = "297mm";
+        page2.style.padding = "10mm 15mm 25mm 15mm";
+        renderBradenPage2(page2, data);
+        container.appendChild(page2);
+
+    } catch (e) {
+        container.innerHTML = `<div class="text-red-500 text-center">เกิดข้อผิดพลาด: ${e.message}</div>`;
+    }
+}
+
+// --- ฟังก์ชันจัดการการพิมพ์ (Loop ทุกชุด) + ค้นหาชื่อพยาบาล ---
+async function handleBradenPrint() {
+    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง ถ้าไม่มีให้โหลด
+    if (globalStaffList.length === 0) {
+        await refreshStaffDatalists();
+    }
+
+    // 2. สร้างตัวเลือกสำหรับ Datalist
+    let staffOptions = '';
+    globalStaffList.forEach(s => {
+        staffOptions += `<option value="${s.fullName}">`;
+    });
+
+    // 3. Pop-up ตั้งค่าก่อนพิมพ์ (เปลี่ยน Input เป็น Searchable List)
+    const { value: formValues, isDismissed } = await Swal.fire({
+        title: 'ตั้งค่าการพิมพ์เอกสาร',
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้พิมพ์ (Footer)</label>
+                    <input type="text" id="print_user_name" list="print_staff_list" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+                    <datalist id="print_staff_list">
+                        ${staffOptions}
+                    </datalist>
+                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
+                </div>
+            </div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'พิมพ์เอกสาร',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563EB',
+        preConfirm: () => {
+            const name = document.getElementById('print_user_name').value;
+            if (!name) {
+                Swal.showValidationMessage('กรุณาระบุชื่อผู้พิมพ์');
+                return false;
+            }
+            
+            // ค้นหาตำแหน่งจากฐานข้อมูลเพื่อนำมาต่อท้าย
+            const staff = globalStaffList.find(s => s.fullName === name);
+            const position = staff ? staff.position : "";
+            
+            // สร้าง Format ชื่อ + ตำแหน่ง (ถ้ามี)
+            const finalName = position ? `${name}, ${position}` : name;
+
+            return { user: finalName };
+        }
+    });
+
+    if (isDismissed) return;
+
+    // เตรียมพื้นที่พิมพ์
+    const oldPrintArea = document.getElementById("braden-print-area");
+    if (oldPrintArea) oldPrintArea.remove();
+
+    const printArea = document.createElement('div');
+    printArea.id = "braden-print-area";
+    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+    document.body.appendChild(printArea);
+
+    showLoading("กำลังเตรียมเอกสาร...");
+
+    // Loop สร้างทุกชุดที่มี
+    for (const setItem of allBradenDataCache) {
+        try {
+            const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${currentPatientAN}&page=${setItem.page}`);
+            const result = await response.json();
+            const data = result.data || {};
+
+            // สร้าง Page 1
+            const p1 = document.createElement('div');
+            p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+            p1.style.width = "210mm";
+            p1.style.height = "297mm";
+            p1.style.padding = "10mm 15mm 25mm 15mm";
+            renderBradenPage1(p1, data, { customUser: formValues.user });
+            printArea.appendChild(p1);
+
+            // สร้าง Page 2
+            const p2 = document.createElement('div');
+            p2.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+            p2.style.width = "210mm";
+            p2.style.height = "297mm";
+            p2.style.padding = "10mm 15mm 25mm 15mm";
+            renderBradenPage2(p2, data, { customUser: formValues.user });
+            printArea.appendChild(p2);
+
+        } catch (e) { console.error(e); }
+    }
+
+    Swal.close();
+    setTimeout(() => { window.print(); }, 500);
+}
+
+// --- Helper Functions สำหรับ Render เนื้อหาแต่ละหน้า ---
+
+function getSystemFooter(currentUser) {
+    const now = new Date();
+    const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+    const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+    return `
+    <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
+        <div class="flex justify-between items-end">
+            <div class="text-left leading-tight">
+                <div>ผู้พิมพ์ : ${currentUser || '(เจ้าหน้าที่)'}</div>
+                <div>วันที่พิมพ์ : ${printDate} เวลา ${printTime} น.</div>
+            </div>
+            <div class="text-right leading-tight">
+                <div class="font-bold">โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// === PAGE 1: Admission & Part 1 (แก้ไข: วันที่เต็ม, เส้นประไม่ล้น, วันที่ตารางแนวนอน, คงข้อความเดิม) ===
+function renderBradenPage1(container, data, options = {}) {
+    const wardName = currentPatientData.Ward || "........................";
+    
+    // Helper แปลงวันที่เป็น พ.ศ. เต็ม (4 หลัก)
+    const formatDateFull = (dateStr) => {
+        if (!dateStr) return "";
+        return new Date(dateStr).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+    };
+
+    const admitDate = formatDateFull(data.AdmitDate_Braden);
+    const firstAssessDate = formatDateFull(data.FirstAssessDate);
+    const transferDate = formatDateFull(data.TransferDate);
+    
+    // Checkbox Logic
+    const isNoPU = (data.PressureUlcer_Adm_Status === 'ไม่มี') ? '✓' : '&nbsp;';
+    const isHasPU = (data.PressureUlcer_Adm_Status === 'มี') ? '✓' : '&nbsp;';
+
+    // Helper สำหรับสร้างเส้นประ (ปรับปรุงไม่ให้ล้นกรอบ)
+    const dotted = (text, minW = "50px") => `<span class="border-b border-black border-dotted px-1 inline-block text-center font-bold text-blue-900 whitespace-nowrap overflow-hidden" style="min-width:${minW}; flex-grow: 1;">${text || "&nbsp;"}</span>`;
+
+    let html = `
+    <div class="text-center mb-2">
+        <h2 class="font-bold text-lg">แบบบันทึกการพยาบาลเพื่อป้องกันและการดูแลผู้ป่วยที่มีแผลกดทับ</h2>
+        <h3 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+    </div>
+
+    <div class="flex justify-between items-end mb-2 px-1 text-[11px] font-bold border-b border-transparent">
+        <div>ชื่อ-สกุล: ${currentPatientData.Name}</div>
+        <div class="flex gap-4">
+             <span>HN: ${currentPatientData.HN}</span>
+             <span>AN: ${currentPatientData.AN}</span>
+        </div>
+    </div>
+
+    <div class="text-[11px] leading-loose mb-4 border border-black p-2 font-sarabun text-black">
+        
+        <div class="flex items-end gap-2 w-full">
+            <div class="flex items-end whitespace-nowrap">วันที่ Admit: ${dotted(admitDate, "70px")}</div>
+            <div class="flex items-end whitespace-nowrap">วันที่รับย้าย: ${dotted(transferDate, "70px")}</div>
+            <div class="flex items-end flex-grow min-w-0 whitespace-nowrap">จาก Ward: ${dotted(data.FromWard, "50px")}</div>
+            <div class="flex items-end whitespace-nowrap">วันที่ประเมินครั้งแรก: ${dotted(firstAssessDate, "70px")}</div>
+        </div>
+
+        <div class="flex mt-1 items-end w-full">
+            <span class="whitespace-nowrap mr-1">Diagnosis/Operation:</span>
+            <div class="border-b border-black border-dotted px-2 w-full text-blue-900 font-bold relative top-1 whitespace-nowrap overflow-hidden">${data.Dx_Op || currentPatientData.AdmittingDx || "&nbsp;"}</div>
+        </div>
+
+        <div class="flex items-center gap-2 mt-1 whitespace-nowrap w-full">
+            <span class="font-bold">แผลกดทับแรกรับ:</span>
+            
+            <div class="flex items-center gap-1 border border-black px-1" style="height: 18px;">
+                <div class="w-3 h-3 border border-black text-[8px] flex items-center justify-center leading-none">${isNoPU}</div> ไม่มี
+            </div>
+            
+            <div class="flex items-center gap-1 border border-black px-1 ml-2" style="height: 18px;">
+                <div class="w-3 h-3 border border-black text-[8px] flex items-center justify-center leading-none">${isHasPU}</div> มี
+            </div>
+
+            <div class="flex items-end flex-grow min-w-0 ml-2">
+                <span class="mr-1">ตำแหน่ง/ลักษณะ/ขนาด:</span>
+                ${dotted(data.PressureUlcer_Adm_Detail, "10px")}
+            </div>
+        </div>
+
+        <div class="flex justify-between mt-1 items-end whitespace-nowrap gap-2">
+            <div class="flex items-end">Serum Albumin ${dotted(data.Albumin, "30px")} mg/dL (3.5-5.4)</div>
+            <div class="flex items-end">Hb = ${dotted(data.Hb, "30px")} mg%</div>
+            <div class="flex items-end">Hct = ${dotted(data.Hct, "30px")} Vol%</div>
+            <div class="flex items-end">BMI = ${dotted(data.BMI, "30px")}</div>
+        </div>
+
+    </div>
+
+    <div class="mb-2 font-bold text-sm">ส่วนที่ 1 การประเมินความเสี่ยงต่อการเกิดแผลกดทับ</div>
+    <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
+        <thead>
+            <tr class="bg-gray-100">
+                <th rowspan="2" class="border border-black p-1 w-[200px] text-left align-middle">ปัจจัยส่งเสริมการเกิดแผลกดทับ</th>
+                <th rowspan="2" class="border border-black p-1 w-[30px] text-center align-middle">ค่า<br>คะแนน</th>
+                <th colspan="10" class="border border-black p-1">วันที่ประเมิน</th>
+            </tr>
+            <tr>`;
+            
+            // Loop Date Headers (แก้ไข: แนวนอน)
+            for(let i=1; i<=10; i++) {
+                // แสดงเฉพาะ วัน/เดือน เพื่อประหยัดพื้นที่ในช่องเล็กๆ
+                let d = data[`Date_${i}`] ? new Date(data[`Date_${i}`]).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit'}) : "";
+                html += `<th class="border border-black p-0.5 w-[25px] align-bottom text-[8px] font-bold">${d}</th>`;
+            }
+    html += `</tr></thead><tbody>`;
+
+    // Criteria Rows
+    const criteria = [
+        { name: "1. การรับความรู้สึก", items: ["1.1 ไม่ตอบสนอง (1)", "1.2 มี Pain Stimuli (2)", "1.3 สับสน สื่อไม่ได้ทุกครั้ง (3)", "1.4 ไม่มีความบกพร่อง ปกติ (4)"], id: "Sensory" },
+        { name: "2. การเปียกชื้นของผิวหนัง", items: ["2.1 เปียกชุ่มตลอดเวลา (1)", "2.2 ปัสสาวะ/อุจจาระราดบ่อยครั้ง (2)", "2.3 ปัสสาวะราด / อุจจาระราดบางครั้ง (3)", "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้/Retain Cath (4)"], id: "Moisture" },
+        { name: "3. การทำกิจกรรม", items: ["3.1 ต้องอยู่บนเตียงตลอดเวลา (1)", "3.2 ทรงตัวไม่อยู่ / ต้องนั่งรถเข็น  (2)", "3.3 เดินได้ระยะสั้น ต้องช่วยพยุง  (3)", "3.4 เดินได้เอง / ทำกิจกรรมเองได้ (4)"], id: "Activity" },
+        { name: "4. การเคลื่อนไหว", items: ["4.1 เคลื่อนไหวเองไม่ได้ (1)", "4.2 เคลื่อนไหวเองได้น้อย / มีข้อติด / ต้องมีผู้ช่วยเหลือ (2)", "4.3  เคลื่อนไหวเองได้ มีผู้ช่วยเหลือบางครั้ง (3)", "4.4 คลื่อนไหวเองได้ปกติ (4)"], id: "Mobility" },
+        { name: "5. การรับอาหาร", items: ["5.1 NPO / กินได้ 1/3 ถาด (1)", "5.2 รับประทานอาหารได้บ้างเล็กน้อย / กินได้ 1/2 ถาด (2)", "5.3 รับประทานอาหารได้พอควร / กินได้>1/2 ถาด (3)", "5.4 รับประทานอาหารได้ปกติ/ Feed รับได้หมด (4)"], id: "Nutrition" },
+        { name: "6. การเสียดสี", items: ["6.1 มีกล้ามเนื้อหดเกร็ง ต้องมีผู้ช่วยหลายคนในการเคลื่อนย้าย (1)", "6.2 เวลานั่งลื่นไถลได้ / ใช้ผู้ช่วยน้อยคนในการเคลื่อนย้าย (2)", "6.3 เคลื่อนย้ายบนตียงได้อย่างอิสระ ไม่มีปัญหาการเสียดสี (3)"], id: "Friction" }
+    ];
+
+    criteria.forEach(c => {
+        let rows = c.items.length;
+        html += `<tr><td class="border border-black p-1 text-left font-bold bg-gray-50" colspan="12">${c.name}</td></tr>`;
+        
+        c.items.forEach(item => {
+            const score = item.match(/\((\d)\)$/)[1]; 
+            const text = item.replace(/\(\d\)$/, "");
+            
+            html += `<tr>
+                <td class="border border-black p-0.5 text-left pl-2">${text}</td>
+                <td class="border border-black p-0.5 font-bold">${score}</td>`;
+            
+            for(let i=1; i<=10; i++) {
+                let val = data[`${c.id}_${i}`];
+                let mark = (String(val) === score) ? "/" : "";
+                html += `<td class="border border-black p-0.5">${mark}</td>`;
+            }
+            html += `</tr>`;
+        });
+    });
+
+    // Total & Assessor
+    html += `<tr><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนรวม</td>`;
+    for(let i=1; i<=10; i++) {
+        let val = data[`Total_${i}`] || '';
+        let color = (val && parseInt(val) <= 16) ? 'text-red-600 font-bold' : '';
+        html += `<td class="border border-black p-0.5 font-bold text-xs ${color}">${val}</td>`;
+    }
+    html += `</tr>`;
+
+    // Helper Function ตัดชื่อ
+    const getShortName = (fullName) => {
+      if (!fullName) return "";
+      let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
+      return cleaned.split(/\s+/)[0]; 
+    };
+
+    html += `<tr><td class="border border-black p-1 text-right font-bold" colspan="2">พยาบาลผู้ประเมิน</td>`;
+    for(let i=1; i<=10; i++) {
+        let name = data[`Assessor_${i}`] || "";
+        html += `<td class="border border-black p-0.5 text-[6px] whitespace-nowrap overflow-hidden">${getShortName(name)}</td>`;
+    }
+    html += `</tr></tbody></table>`;
+
+    // Footer Notes (คงข้อความเดิมตามที่ระบุ)
+    html += `
+    <div class="mt-2 text-[9px] text-gray-700">
+        <div class="mb-1"><b>หมายเหตุ:</b> คะแนน ≤ 16 ถือเป็นกลุ่มเสี่ยงต่อการเกิดแผลกดทับสูง , คะแนน ≥ 16 ถือเป็นกลุ่มเสี่ยงต่อการเกิดแผลกดทับต่ำ, กรณีคะแนนน้อยกว่า 16 ให้ประเมินใหม่ทุก 3-5 วัน </div>
+        <div class="font-bold underline">ผู้ป่วยกลุ่มเสี่ยง:</div>
+        <div class="grid grid-cols-2 gap-x-4">
+            <div>1) ผู้ป่วยถูกจำกัดการเคลื่อนไหว / จำกัดกิจกรรม เช่น มีการดึงถ่วงน้ำหนัก, เข้าเฝือก, On Respirator</div>
+            <div>2) ไม่รู้สึกตัว / อัมพาต</div>
+            <div>3) ผู้ป่วยที่มีปัญหาการบาดเจ็บของระบบประสาทและไขสันหลัง </div>
+            <div>4) ผู้ป่วยที่มีภาวะทุพโภชนาการ / มีระดับอัลบูมินในเลือดต่ำกว่า 3.4 mg/Dl </div>
+            <div>5) ผู้สูงอายุ > 60 ปี</div>
+            <div>6) ผู้ป่วยที่ถ่ายอุจจาระ ปัสสาวะราดบ่อยครั้ง/กลั้นปัสสาวะ อุจจาระไม่ได้ </div>
+            <div>7) ผู้ป่วยที่มีภาวะซีด </div>
+            <div>8) ผู้ป่วยที่อ้วน/ผอมมาก </div>
+            <div>9) ผู้ป่วยที่ได้รับยาระงับความนรู้สึกหลังการผ่าตัดภายใน 72 ชั่วโมง 1</div>
+            <div>10)ผู้ป่วยเรื้อรังที่ต้องนอนพักบนเตียงตลอด </div>
+        </div>
+    </div>
+    <div class="text-right text-[10px] mt-2 font-bold">- 1 -</div>
+    ${getSystemFooter(options.customUser)}`;
+
+    container.innerHTML = html;
+}
+
+// === PAGE 2: Part 2, 3, 4 (Print Preview) ===
+function renderBradenPage2(container, data, options = {}) {
+    let html = `
+    <div class="mb-2 font-bold text-sm">ส่วนที่ 2 การปฏิบัติเพื่อป้องกัน / ดูแลการเกิดแผลกดทับ</div>
+    <div class="text-[9px] mb-1">(โดยเฉพาะผู้ป่วยที่มีความเสี่ยงสูง Braden Score ≤ 16)</div>
+
+    <div class="grid grid-cols-2 gap-4 text-[10px] border border-black p-2 mb-4">
+        <div class="border-r border-black pr-2">
+            <div class="font-bold underline mb-1 text-center">การป้องกัน</div>
+            <ul class="list-decimal pl-4 space-y-1">
+                <li>พลิกตะแคงตัวทุก 2 ชั่วโมง ตรงตามเวลาที่กำหนด</li>
+                <li>ใช้ที่นอนลม</li>
+                <li>จับคู่ช่วยกันพลิกตะแคงตัว / ไม่ดึงลากเวลาพลิกตะแคงตัว / ดึงผ้าปูที่นอนให้เรียบตึง</li>
+                <li>ประเมินผิวหนังปุ่มกระดูกบริเวณกดทับทุกเวร</li>
+                <li>บันทึกการเกิดแผลกดทับทุกครั้งที่พบแผลใหม่</li>
+                <li>บันทึกเมื่อมีการเปลี่ยนแปลงของแผล (ตั้งแต่รอยแดง / ใหญ่ขึ้น / ลึกลง / แผลหาย)</li>
+                <li>ส่งต่อข้อมูลการเกิดแผลกดทับในการส่งเวรแต่ละครั้ง</li>
+            </ul>
+        </div>
+        <div class="pl-2">
+            <div class="font-bold underline mb-1 text-center">การดูแลแผล</div>
+            <ul class="list-decimal pl-4 space-y-1">
+                <li>ทำความสะอาดแผลด้วย NSS หลังจากนั้นทาด้วย Zinc Paste</li>
+                <li>แผลที่มีเนื้อตาย รายงานแพทย์ทราบตัดเนื้อตายออก และ Wet Dressing ด้วย NSS</li>
+                <li>ดูแลให้ผู้ป่วยมีภาวะโภชนาการที่เหมาะสม</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="mb-2 font-bold text-sm">ส่วนที่ 3 บันทึกแผลกดทับ</div>
+    <div class="text-[9px] mb-1">(ระดับ 1 ผิวหนังแดง, ระดับ 2 มี Bleb แตก, ระดับ 3 ลึกถึง Subcutaneous, ระดับ 4 ลึกถึงกล้ามเนื้อ กระดูก)</div>
+    
+    <table class="w-full border-collapse border border-black text-center text-[10px] mb-4">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="border border-black p-1 w-[15%]">ว/ด/ป</th>
+                <th class="border border-black p-1 w-[30%]">ตำแหน่งแผล</th>
+                <th class="border border-black p-1 w-[10%]">ระดับ</th>
+                <th class="border border-black p-1 w-[30%]">ลักษณะแผล</th>
+                <th class="border border-black p-1 w-[15%]">ชื่อผู้บันทึก</th>
+            </tr>
+        </thead>
+        <tbody>`;
+        
+        let woundRecords = [];
+        if (data.Wound_Record_JSON) {
+            try { woundRecords = JSON.parse(data.Wound_Record_JSON); } catch(e){}
+        }
+        for(let i=0; i<15; i++) {
+            let rec = woundRecords[i] || {};
+            let dateStr = rec.date ? new Date(rec.date).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "";
+            html += `<tr class="h-6">
+                <td class="border border-black p-1">${dateStr}</td>
+                <td class="border border-black p-1 text-left">${rec.pos || ""}</td>
+                <td class="border border-black p-1">${rec.stage || ""}</td>
+                <td class="border border-black p-1 text-left">${rec.char || ""}</td>
+                <td class="border border-black p-1">${rec.user || ""}</td>
+            </tr>`;
+        }
+    html += `</tbody></table>`;
+
+    // Part 4: Discharge Summary
+    let dDate = data.Discharge_Date ? new Date(data.Discharge_Date).toLocaleDateString('th-TH') : ".....................";
+    let isNoPU = (data.Discharge_Status === 'ไม่เกิดแผลกดทับ') ? '✓' : '&nbsp;';
+    let isHasPU = (data.Discharge_Status === 'เกิดแผลกดทับ') ? '✓' : '&nbsp;';
+    
+    // วันที่จำหน่าย/ย้าย สำหรับแสดงใน Header
+    let summaryDate = data.Discharge_Summary_Date ? new Date(data.Discharge_Summary_Date).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "........................";
+
+    html += `
+    <div class="border border-black p-3 text-[11px]">
+        <div class="font-bold text-sm mb-2 border-b border-gray-300 pb-1 flex justify-between">
+            <span>ส่วนที่ 4 สรุปการเกิดแผลกดทับ (วันที่จำหน่าย / ย้าย)</span>
+            <span>วันที่: ${summaryDate}</span>
+        </div>
+        
+        <div class="flex items-center gap-2 mb-2">
+            <div class="border border-black w-4 h-4 text-center leading-none font-bold">${isNoPU}</div> 
+            <div>ไม่เกิดแผลกดทับ</div>
+        </div>
+        
+        <div class="flex items-start gap-2">
+            <div class="border border-black w-4 h-4 text-center leading-none font-bold mt-1">${isHasPU}</div> 
+            <div class="w-full">
+                <div class="font-bold mb-1">เกิดแผลกดทับ</div>
+                <div class="grid grid-cols-2 gap-y-2 gap-x-8 pl-2">
+                    <div>วันที่เกิด: <span class="border-b border-black border-dotted px-2 inline-block min-w-[100px]">${dDate}</span></div>
+                    <div>ตำแหน่งที่เป็น: <span class="border-b border-black border-dotted px-2 inline-block min-w-[100px]">${data.Discharge_Position || ''}</span></div>
+                    <div>ระดับของแผล: <span class="border-b border-black border-dotted px-2 inline-block min-w-[50px]">${data.Discharge_Stage || ''}</span></div>
+                    <div>ขนาด: <span class="border-b border-black border-dotted px-2 inline-block min-w-[100px]">${data.Discharge_Size || ''}</span></div>
+                    <div class="col-span-2">ลักษณะแผล: <span class="border-b border-black border-dotted px-2 inline-block min-w-[200px]">${data.Discharge_Char || ''}</span></div>
+                    <div>จำนวนแผล: <span class="border-b border-black border-dotted px-2 inline-block min-w-[50px] text-center">${data.Discharge_Count || ''}</span> แผล</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-right text-[10px] mt-4 font-bold">- 2 -</div>
+    ${getSystemFooter(options.customUser)}`;
+
+    container.innerHTML = html;
+}
+// =================================================================
+// FR-IPD-004 PRINT SYSTEM (FIXED MAPPING & LAYOUT)
+// =================================================================
+// --- 1. ตัวแปลงข้อมูล (Map ครบทั้งหน้า 1 และ 2) ---
+function normalizeData004(raw) {
+    if (!raw) return {};
+    const d = {};
+
+    // --- Page 1 Data ---
+    d.AdmitDate = raw.AdmitDate; d.AdmitTime = raw.AdmitTime;
+    d.AdmittedFrom = raw.AdmittedFrom; d.Refer = raw.Refer;
+    d.ArriveBy = raw.ArriveBy; d.InfoSource = raw.InfoSource;
+    d.MainCaregiver_Name = raw.MainCaregiver_Name; d.MainCaregiver_Rel = raw.MainCaregiver_Rel;
+    d.ChiefComplaint = raw.ChiefComplaint; d.PresentIllness = raw.PresentIllness;
+    d.AdmitSymptoms = raw.AdmitSymptoms;
+    d.BT = raw.Admit_BT; d.PR = raw.Admit_PR; d.RR = raw.Admit_RR; d.BP = raw.Admit_BP;
+
+    d.Hx_Status = raw.Hx_Status; d.Hx_List = [];
+    const pushHx = (key, val) => { if(String(raw[key]).toLowerCase() === 'true' || raw[key] === true || raw[key] === 'มี') d.Hx_List.push(val); };
+    pushHx('Hx_HT', 'ความดันโลหิตสูง'); pushHx('Hx_Heart', 'โรคหัวใจ'); pushHx('Hx_Liver', 'โรคตับ');
+    pushHx('Hx_Kidney', 'โรคไต'); pushHx('Hx_DM', 'เบาหวาน'); pushHx('Hx_Asthma', 'หอบหืด');
+    pushHx('Hx_Epilepsy', 'ลมชัก'); pushHx('Hx_TB', 'วัณโรค'); pushHx('Hx_Cancer', 'มะเร็ง');
+    d.Hx_Other = raw.Hx_Other || "";
+
+    d.Allergy_Status = raw.Allergy_Status; d.Allergy_Details = raw.Allergy_Details;
+    d.AdmitHx_Status = raw.AdmitHx_Status; d.AdmitHx_Disease = raw.AdmitHx_Disease; d.AdmitHx_Date = raw.AdmitHx_Date;
+    d.Sx_Status = raw.Sx_Status; d.Sx_Details = raw.Sx_Details; d.Sx_Date = raw.Sx_Date;
+    d.FamilyHx_Status = raw.FamilyHx_Status; d.FamilyHx_Details = raw.FamilyHx_Details;
+    d.Substance_Alcohol = raw.Substance_Alcohol; d.Substance_Alcohol_Vol = raw.Substance_Alcohol_Vol;
+    d.Substance_Smoke = raw.Substance_Smoke; d.Substance_Smoke_Vol = raw.Substance_Smoke_Vol;
+    d.Meds_Status = raw.Meds_Status; d.Meds_Details = raw.Meds_Details;
+
+    d.HP_Before = raw.HP_Before; d.HP_Before_Detail = raw.HP_Before_Detail;
+    d.HP_Current = raw.HP_Current; d.HP_Care = raw.HP_Care; d.HP_Care_Other = raw.HP_Care_Other; d.HP_Expect = raw.HP_Expect;
+    d.Nutri_Meals = raw.Nutri_Meals; d.Nutri_Type = raw.Nutri_Type; d.Nutri_Type_Detail = raw.Nutri_Type_Detail;
+    d.Nutri_Problem = raw.Nutri_Problem; d.Nutri_Problem_Detail = raw.Nutri_Problem_Detail;
+    d.Nutri_Skin = raw.Nutri_Skin; d.Nutri_Skin_Detail = raw.Nutri_Skin_Detail;
+    d.Elim_Urine_Freq = raw.Elim_Urine_Freq; d.Elim_Urine_Status = raw.Elim_Urine_Status; d.Elim_Urine_Detail = raw.Elim_Urine_Detail;
+    d.Elim_Bowel_Freq = raw.Elim_Bowel_Freq; d.Elim_Bowel_Status = raw.Elim_Bowel_Status; d.Elim_Bowel_Detail = raw.Elim_Bowel_Detail;
+    d.Elim_Stoma = raw.Elim_Stoma;
+
+    d.ADL = {};
+    ['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'].forEach(i => {
+        d.ADL[`${i}_Before`] = raw[`ADL_${i}_Before`]; d.ADL[`${i}_Current`] = raw[`ADL_${i}_Current`];
+    });
+
+    d.Sleep_Hours = raw.Sleep_Hours; d.Sleep_Adequacy = raw.Sleep_Adequacy;
+    d.Sleep_Problem = raw.Sleep_Problem; d.Sleep_Problem_Detail = raw.Sleep_Problem_Detail;
+    d.Cogn_LOC = raw.Cogn_LOC; d.Cogn_Vision = raw.Cogn_Vision; d.Cogn_Vision_Other = raw.Cogn_Vision_Other;
+    d.Cogn_Hearing = raw.Cogn_Hearing; d.Cogn_Hearing_Other = raw.Cogn_Hearing_Other;
+    d.Cogn_Speech = raw.Cogn_Speech; d.Cogn_Speech_Detail = raw.Cogn_Speech_Detail; d.Cogn_Speech_Other = raw.Cogn_Speech_Other;
+    d.Cogn_Movement = raw.Cogn_Movement; d.Cogn_Movement_Other = raw.Cogn_Movement_Other;
+
+    // --- Page 2 Data (7-15) ---
+    // 7. Self
+    d.Self_Image = raw.Self_Image; d.Self_Image_Detail = raw.Self_Image_Detail;
+    d.Self_Mood = raw.Self_Mood; d.Self_Mood_Detail = raw.Self_Mood_Detail;
+    d.Self_Ability = raw.Self_Ability; d.Self_Ability_Detail = raw.Self_Ability_Detail;
+
+    // 8. Stress
+    d.Stress_Status = raw.Stress_Status; // ไม่มี/มี
+    d.Stress_Causes = [];
+    if(raw.Cope_Stress_Fear == true) d.Stress_Causes.push('กลัวไม่หาย');
+    if(raw.Cope_Stress_Cost == true) d.Stress_Causes.push('ค่ารักษาพยาบาล');
+    if(raw.Cope_Stress_Work == true) d.Stress_Causes.push('ขาดงาน/รายได้');
+    if(raw.Cope_Stress_Family == true) d.Stress_Causes.push('ครอบครัว');
+    d.Stress_Cause_Other = raw.Cope_Stress_Other;
+
+    d.Stress_Express = raw.Stress_Express; // สีหน้าเรียบเฉย, วิตก, ฯลฯ
+    d.Stress_Express_Other = raw.Stress_Express_Other;
+    d.Cope_Method = raw.Cope_Method; // ปรึกษา, แยกตัว, ยา
+    d.Cope_Method_Other = raw.Cope_Method_Other;
+
+    // 9. Roles
+    d.Roles = [];
+    if(raw.Role_Effect_Family == true) d.Roles.push('ครอบครัว');
+    if(raw.Role_Effect_Career == true) d.Roles.push('อาชีพ');
+    if(raw.Role_Effect_Education == true) d.Roles.push('การศึกษา');
+    if(raw.Role_Effect_Relationship == true) d.Roles.push('สัมพันธภาพในครอบครัวและผู้อื่น');
+
+    // 10. Sex
+    d.Sex_Menses = raw.Sex_Menses; d.Sex_Menses_Status = raw.Sex_Menses_Status;
+    d.Sex_Breast = raw.Sex_Breast;
+    d.Sex_Genitals = raw.Sex_Genitals; d.Sex_Genitals_Detail = raw.Sex_Genitals_Detail;
+
+    // 11. Beliefs
+    d.Belief_Cause = raw.Belief_Cause; d.Belief_Cause_Detail = raw.Belief_Cause_Detail;
+    d.Religion_Practice = raw.Religion_Practice; d.Religion_Practice_Detail = raw.Religion_Practice_Detail;
+    d.Belief_Anchor_Status = raw.Belief_Anchor_Status; d.Belief_Anchor_Detail = raw.Belief_Anchor_Detail;
+
+    // 12. Participation
+    d.Partic_Status = raw.Partic_Status; // ไม่ต้องการ, ต้องการ
+    d.Partic_Needs = [];
+    if(raw.Partic_Info == true) d.Partic_Needs.push('Info');
+    if(raw.Partic_Skill == true) d.Partic_Needs.push('Skill');
+    if(raw.Partic_Team == true) d.Partic_Needs.push('Team');
+    d.Partic_Other = raw.Partic_Other;
+
+    // 13. Pain
+    d.Pain_Status = raw.Pain_Status; d.Pain_Location = raw.Pain_Location; d.Pain_Cause = raw.Pain_Cause;
+    d.Pain_Pattern = raw.Pain_Pattern; d.Pain_Scale_Score = raw.Pain_Scale_Score;
+    d.Pain_Effects = [];
+    if(raw.Pain_Effect_Eat == true) d.Pain_Effects.push('Eat');
+    if(raw.Pain_Effect_Sleep == true) d.Pain_Effects.push('Sleep');
+    if(raw.Pain_Effect_Activity == true) d.Pain_Effects.push('Activity');
+    if(raw.Pain_Effect_Mood == true) d.Pain_Effects.push('Mood');
+    if(raw.Pain_Effect_Elim == true) d.Pain_Effects.push('Elim');
+    if(raw.Pain_Effect_Sex == true) d.Pain_Effects.push('Sex');
+    
+    d.Pain_Relief = [];
+    if(raw.Pain_Relief_Cold == true) d.Pain_Relief.push('Cold');
+    if(raw.Pain_Relief_Hot == true) d.Pain_Relief.push('Hot');
+    if(raw.Pain_Relief_Massage == true) d.Pain_Relief.push('Massage');
+    if(raw.Pain_Relief_Relax == true) d.Pain_Relief.push('Relax');
+    if(raw.Pain_Relief_Repo == true) d.Pain_Relief.push('Repo');
+    if(raw.Pain_Relief_Rest == true) d.Pain_Relief.push('Rest');
+    if(raw.Pain_Relief_Meds == true) d.Pain_Relief.push('Meds');
+
+    // 14. Braden
+    d.Braden_Sensory = raw.Braden_Sensory; d.Braden_Moisture = raw.Braden_Moisture;
+    d.Braden_Activity = raw.Braden_Activity; d.Braden_Mobility = raw.Braden_Mobility;
+    d.Braden_Nutrition = raw.Braden_Nutrition; d.Braden_Friction = raw.Braden_Friction;
+    d.Braden_Total = raw.Braden_Total;
+    // แปลผล
+    const bScore = parseInt(raw.Braden_Total) || 0;
+    d.Braden_Result = (bScore > 0 && bScore <= 16) ? 'High' : (bScore > 16 ? 'Low' : '');
+
+    // 15. Fall
+    d.Fall_Age_Child = raw.Fall_Age_Child; d.Fall_Age_Elder = raw.Fall_Age_Elder;
+    d.Fall_Mental = raw.Fall_Mental; d.Fall_History = raw.Fall_History;
+    d.Fall_Meds = raw.Fall_Meds; d.Fall_Vision = raw.Fall_Vision;
+    d.Fall_Gait = raw.Fall_Gait;
+    d.Fall_Prevention = raw.Fall_Prevention; // จำเป็น / ไม่จำเป็น
+
+    // Signature
+    d.Assessor_Name = raw.Assessor_Name;
+    d.Assessor_Position = raw.Assessor_Position;
+
+    return d;
+}
+
+// --- Helper Functions ---
+const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.4em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
+const box = (isChecked) => `<span class="inline-block font-sarabun text-[12px] font-bold mr-1" style="font-family: 'Sarabun', sans-serif;">[ ${isChecked ? '/' : '&nbsp;'} ]</span>`;
+
+const chkGroup = (dataVal, targetVal, label) => {
+    let isChecked = false;
+    if (dataVal) {
+        if (Array.isArray(dataVal)) {
+            isChecked = dataVal.includes(targetVal);
+        } else if (typeof dataVal === 'string') {
+            const values = dataVal.split(',').map(s => s.trim());
+            isChecked = values.includes(targetVal);
+        }
+    }
+    return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${box(isChecked)} ${label}</span>`;
+};
+
+const formatDateThai = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    let year = d.getFullYear();
+    if (year < 2400) year += 543;
+    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }) + "/" + year;
+};
+
+const formatTime = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) {
+        // กรณีชีตเก็บเป็น Text "18:40"
+        if(typeof dateStr === 'string' && dateStr.includes(':')) return dateStr;
+        return "";
+    }
+    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+};
+
+// --- Main Entry Point ---
+async function renderForm004PrintMode(an) {
+    chartPreviewContent.innerHTML = "";
+    showLoading("กำลังดึงข้อมูลล่าสุด...");
+
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
+        const result = await response.json();
+        
+        // **หัวใจสำคัญ: แปลงข้อมูลดิบจาก Sheet ให้เป็น Format ที่พร้อมแสดงผล**
+        const rawData = result.success ? (result.data || {}) : {};
+        const freshData = normalizeData004(rawData);
+        
+        Swal.close();
+
+        // Controls
+        const controlDiv = document.createElement('div');
+        controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+        controlDiv.innerHTML = `
+            <div class="font-bold text-gray-700">แบบประเมินผู้ป่วยใน (FR-IPD-004)</div>
+            <button id="btn-print-004-action" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+                <i class="fas fa-print"></i> พิมพ์เอกสาร
+            </button>`;
+        chartPreviewContent.appendChild(controlDiv);
+
+        // Container
+        const previewContainer = document.createElement('div');
+        previewContainer.className = "overflow-y-auto bg-gray-300 p-4 print:p-0 flex flex-col items-center gap-4";
+        previewContainer.style.maxHeight = "calc(100vh - 200px)";
+        chartPreviewContent.appendChild(previewContainer);
+
+        // Render Pages
+        const p1 = document.createElement('div');
+        p1.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
+        p1.style.width = "210mm";
+        p1.style.minHeight = "297mm";
+        p1.style.padding = "10mm 10mm";
+        renderForm004Page1(p1, { data: freshData });
+        previewContainer.appendChild(p1);
+
+        const p2 = document.createElement('div');
+        p2.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
+        p2.style.width = "210mm";
+        p2.style.minHeight = "297mm";
+        p2.style.padding = "10mm 10mm";
+        renderForm004Page2(p2, { data: freshData });
+        previewContainer.appendChild(p2);
+
+        document.getElementById("btn-print-004-action").addEventListener("click", () => handleForm004Print(an, freshData));
+
+    } catch (e) {
+        Swal.close();
+        showError("โหลดข้อมูลไม่สำเร็จ", e.message);
+    }
+}
+
+// --- Print Handler ---
+async function handleForm004Print(an, preloadedData) {
+    // ถ้าไม่มีข้อมูล ให้ใช้ current (แต่ปกติจะมีส่งมาจากปุ่มพรีวิว)
+    const dataToPrint = preloadedData || normalizeData004(currentPatientData);
+
+    if (globalStaffList.length === 0) await refreshStaffDatalists();
+    let staffOptions = '';
+    globalStaffList.forEach(s => { staffOptions += `<option value="${s.fullName}">`; });
+
+    const { value: formValues, isDismissed } = await Swal.fire({
+        title: 'ตั้งค่าการพิมพ์',
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-1">พยาบาลผู้ประเมิน</label>
+                    <input type="text" id="print_user_004" list="print_staff_list_004" class="w-full p-2 border rounded" placeholder="ระบุชื่อ..." value="(เจ้าหน้าที่)">
+                    <datalist id="print_staff_list_004">${staffOptions}</datalist>
+                </div>
+            </div>`,
+        showCancelButton: true,
+        confirmButtonText: 'พิมพ์',
+        preConfirm: () => {
+             const name = document.getElementById('print_user_004').value;
+             const staff = globalStaffList.find(s => s.fullName === name);
+             const position = staff ? staff.position : "";
+             return { user: position ? `${name} (${position})` : name };
+        }
+    });
+
+    if (isDismissed) return;
+
+    const oldPrintArea = document.getElementById("form004-print-area");
+    if (oldPrintArea) oldPrintArea.remove();
+
+    const printArea = document.createElement('div');
+    printArea.id = "form004-print-area";
+    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+    document.body.appendChild(printArea);
+
+    showLoading("กำลังเตรียมเอกสาร...");
+
+    const p1 = document.createElement('div');
+    p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+    p1.style.width = "210mm";
+    p1.style.height = "297mm";
+    p1.style.padding = "10mm 10mm";
+    renderForm004Page1(p1, { data: dataToPrint, customUser: formValues.user });
+    printArea.appendChild(p1);
+
+    const p2 = document.createElement('div');
+    p2.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+    p2.style.width = "210mm";
+    p2.style.height = "297mm";
+    p2.style.padding = "10mm 10mm";
+    renderForm004Page2(p2, { data: dataToPrint, customUser: formValues.user });
+    printArea.appendChild(p2);
+
+    Swal.close();
+    setTimeout(() => { window.print(); }, 800);
+}
+
+// =================================================================
+// PAGE 1 RENDERER (Font 16/12px, Add Hearing, Full Layout with Flexbox Footer)
+// =================================================================
 function renderForm004Page1(container, options = {}) {
     const d = options.data || {};
     const p = currentPatientData || {};
-    const f = options.footer; 
+    const f = options.footer; // รับค่า Footer สำหรับการพิมพ์
 
+    // --- Helpers ---
+    // ตรวจสอบว่าฟังก์ชัน Global มีหรือไม่ ถ้าไม่มีให้ใช้ fallback
     const formatDate = (date) => (typeof formatDateThai === 'function') ? formatDateThai(date) : (date || '');
     const formatT = (time) => (typeof formatTime === 'function') ? formatTime(time) : (time || '');
 
     const dateText = formatDate(d.AdmitDate);
     const timeText = formatT(d.AdmitTime);
+
+    // Helper: สร้างจุดไข่ปลา (dot)
     const dot = (val, w) => `<span class="border-b border-black border-dotted inline-block text-center whitespace-nowrap overflow-hidden text-blue-900 font-bold px-1" style="min-width: ${w};">${val || '&nbsp;'}</span>`;
+
+    const formatDateFull = (dateStr) => {
+        if (!dateStr) return ".........................";
+        const dt = new Date(dateStr);
+        if (isNaN(dt.getTime())) return dateStr;
+        let y = dt.getFullYear();
+        if (y < 2400) y += 543;
+        return dt.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }) + "/" + y;
+    };
 
     const checkADL = (val, target) => {
         if (!val) return '';
@@ -1126,6 +5019,7 @@ function renderForm004Page1(container, options = {}) {
         return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap">${boxCheck(val, target)} ${label}</span>`;
     };
 
+    // --- Footer HTML ---
     let footerHtml = '';
     if (f) {
         footerHtml = `
@@ -1141,6 +5035,7 @@ function renderForm004Page1(container, options = {}) {
         </div>`;
     }
 
+    // --- Main Content HTML ---
     let contentHtml = `
     <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
        <div class="w-[15%]"></div>
@@ -1220,9 +5115,9 @@ function renderForm004Page1(container, options = {}) {
             <div class="grid grid-cols-1 gap-1 mt-1 border-t border-black pt-1">
                 <div class="flex items-end"><span class="font-bold w-32">การแพ้ยา/สารต่าง ๆ :</span> ${chk(d.Allergy_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Allergy_Status, 'เคย', 'เคย(ระบุ)')} ${dot(d.Allergy_Details, "70%")}</div>
                 
-                <div class="flex items-end"><span class="font-bold w-40">การรักษาตัวในโรงพยาบาล:</span> ${chk(d.AdmitHx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.AdmitHx_Status, 'เคย', 'เคย ด้วยโรค')} ${dot(d.AdmitHx_Disease, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDate(d.AdmitHx_Date), "80px")}</div>
+                <div class="flex items-end"><span class="font-bold w-40">การรักษาตัวในโรงพยาบาล:</span> ${chk(d.AdmitHx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.AdmitHx_Status, 'เคย', 'เคย ด้วยโรค')} ${dot(d.AdmitHx_Disease, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.AdmitHx_Date), "80px")}</div>
                 
-                <div class="flex items-end"><span class="font-bold w-32">การผ่าตัด :</span> ${chk(d.Sx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Sx_Status, 'เคย', 'เคย ผ่าตัด')} ${dot(d.Sx_Details, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDate(d.Sx_Date), "80px")}</div>
+                <div class="flex items-end"><span class="font-bold w-32">การผ่าตัด :</span> ${chk(d.Sx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Sx_Status, 'เคย', 'เคย ผ่าตัด')} ${dot(d.Sx_Details, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.Sx_Date), "80px")}</div>
                 
                 <div class="flex items-end"><span class="font-bold w-48">ประวัติการเจ็บป่วยในครอบครัว:</span> ${chk(d.FamilyHx_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.FamilyHx_Status, 'มี', 'มี(ระบุ)')} ${dot(d.FamilyHx_Details, "50%")}</div>
             </div>
@@ -1394,10 +5289,14 @@ function renderForm004Page1(container, options = {}) {
     `;
 }
 
+// =================================================================
+// PAGE 2 RENDERER (Fixed: getBScore error & Full Layout with Flexbox Footer)
+// =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = options.data || {};
-    const f = options.footer; 
+    const f = options.footer; // รับค่า Footer
 
+    // --- Helper Functions ---
     const boxCheck = (val, target) => {
         let isChecked = false;
         if (val) {
@@ -1426,6 +5325,7 @@ function renderForm004Page2(container, options = {}) {
     };
     const chkRisk = (condition) => `[ <span class="font-bold">${condition ? '/' : '&nbsp;'}</span> ]`;
 
+    // --- Footer HTML ---
     let footerHtml = '';
     if (f) {
         footerHtml = `
@@ -1441,6 +5341,7 @@ function renderForm004Page2(container, options = {}) {
         </div>`;
     }
 
+    // --- Main Content HTML ---
     let contentHtml = `
     <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
        <div class="w-[15%]"></div>
@@ -1581,7 +5482,7 @@ function renderForm004Page2(container, options = {}) {
                     ['โภชนาการ', 'ไม่เพียงพอ', 'อาจไม่เพียงพอเกือบทุกมื้อ', 'เพียงพอ', 'ดีเยี่ยม)', d.Braden_Nutrition],
                     ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยงต่อการเกิดปัญหา', 'ไม่มีปัญหา', '', d.Braden_Friction]
                 ].map((row, idx) => {
-                    const score = getBScore(row[5]); 
+                    const score = getBScore(row[5]); // ใช้ getBScore ที่ประกาศไว้แล้ว
                     const b1 = score == 1 ? 'font-bold bg-gray-200' : '';
                     const b2 = score == 2 ? 'font-bold bg-gray-200' : '';
                     const b3 = score == 3 ? 'font-bold bg-gray-200' : '';
@@ -1646,6 +5547,7 @@ function renderForm004Page2(container, options = {}) {
     </div>
     `;
 
+    // Final Assembly with Flexbox for Footer
     container.innerHTML = `
         <div class="flex flex-col justify-between h-full">
             <div>${contentHtml}</div>
@@ -1656,15 +5558,113 @@ function renderForm004Page2(container, options = {}) {
         </div>
     `;
 }
+// --- Global Staff Data ---
+let staffListCache = [];
 
+// 1. โหลดรายชื่อเมื่อเปิดเว็บ
+function loadStaffData() {
+    google.script.run.withSuccessHandler(data => {
+        staffListCache = data;
+    }).getStaffList();
+}
+// เรียกใช้ตอนโหลดหน้าเว็บ
+window.addEventListener('load', loadStaffData);
+
+// 2. เปิด Modal
+function openPrintSettings004() {
+    document.getElementById('printSettingsModal').classList.remove('hidden');
+    document.getElementById('printerSearch').value = '';
+    document.getElementById('staffDropdown').innerHTML = '';
+}
+
+// 3. ปิด Modal
+function closePrintModal() {
+    document.getElementById('printSettingsModal').classList.add('hidden');
+}
+
+// 4. ค้นหารายชื่อ
+function filterStaffList(keyword) {
+    const dropdown = document.getElementById('staffDropdown');
+    dropdown.innerHTML = '';
+    
+    if (!keyword) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+
+    const filtered = staffListCache.filter(s => s.name.includes(keyword));
+    
+    if (filtered.length > 0) {
+        dropdown.classList.remove('hidden');
+        filtered.forEach(staff => {
+            const div = document.createElement('div');
+            div.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm';
+            div.innerText = `${staff.name} (${staff.position})`;
+            div.onclick = () => selectStaff(staff);
+            dropdown.appendChild(div);
+        });
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+// 5. เลือกรายชื่อ
+function selectStaff(staff) {
+    document.getElementById('printerSearch').value = staff.name;
+    document.getElementById('selectedPrinterName').value = staff.name;
+    document.getElementById('selectedPrinterPosition').value = staff.position;
+    document.getElementById('staffDropdown').classList.add('hidden');
+}
+
+// 6. สั่งพิมพ์จริง (Render + Footer)
+function executePrint004() {
+    const printerName = document.getElementById('selectedPrinterName').value || '-';
+    const printerPos = document.getElementById('selectedPrinterPosition').value || '-';
+    
+    // สร้างวันที่ไทย
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }); // 19/01/2569
+    const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    const printDate = `${dateStr} เวลา ${timeStr} น.`;
+
+    // เตรียมข้อมูล Footer
+    const footerData = {
+        name: printerName,
+        position: printerPos,
+        date: printDate
+    };
+
+    // Render หน้า 1 และ 2 ใหม่โดยส่ง Footer Data ไปด้วย
+    // สมมติว่ามี div id="printArea" สำหรับพิมพ์
+    const printArea = document.getElementById('printArea'); // หรือ ID ที่ท่านใช้แสดงผลตอนพิมพ์
+    if(!printArea) return;
+
+    printArea.innerHTML = ''; // เคลียร์ของเก่า
+    
+    // สร้าง Container หน้า 1
+    const page1 = document.createElement('div');
+    page1.className = 'page-break'; // class สำหรับขึ้นหน้าใหม่ตอนพิมพ์
+    renderForm004Page1(page1, { data: currentFormData, footer: footerData }); // *ส่ง footer ไปด้วย*
+    printArea.appendChild(page1);
+
+    // สร้าง Container หน้า 2
+    const page2 = document.createElement('div');
+    page2.className = 'page-break';
+    renderForm004Page2(page2, { data: currentFormData, footer: footerData }); // *ส่ง footer ไปด้วย*
+    printArea.appendChild(page2);
+
+    closePrintModal();
+    window.print();
+}
 // ----------------------------------------------------------------
-// (11) DOMContentLoaded Listener
+// (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
+    // --- [1] การตั้งค่าเริ่มต้น (UI & Initial Renders) ---
     updateClock(); 
     setInterval(updateClock, 1000);
     loadWards();
-
+  // --- รวบรวมปุ่มปิดทุกตัวในที่เดียว ---
     const closeButtons = [
         { btn: "close-admit-modal-btn", modal: "admit-modal" },
         { btn: "cancel-admit-btn", modal: "admit-modal" },
@@ -1688,22 +5688,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // --- เพิ่มเติม: ปิด Modal เมื่อคลิกพื้นที่สีดำรอบๆ ---
     window.addEventListener("click", (e) => {
         if (e.target.classList.contains('fixed') && e.target.classList.contains('bg-black')) {
             e.target.classList.add("hidden");
         }
     });
 
+    // เรียกใช้ฟังก์ชันสร้างตารางพื้นฐานแบบปลอดภัย (Try-Catch ป้องกันหน้าเว็บค้าง)
     try {
         if (typeof renderADLTable === "function") renderADLTable();
+        // สร้างตาราง Braden สำหรับหน้าแรกรับ (004)
         if (typeof renderBradenInitial === "function") renderBradenInitial();
+        // สร้างตาราง Braden สำหรับหน้าเฝ้าระวัง (ส่ง {} เพื่อป้องกัน TypeError: Date_1)
         if (typeof renderBradenMonitoring === "function") renderBradenMonitoring({}); 
-    } catch (e) { console.warn("Initial table rendering warning:", e); }
+    } catch (e) {
+        console.warn("Initial table rendering failed:", e);
+    }
 
+    // --- [2] ส่วนจัดการการเลือกตึก (Ward Switcher) ---
     if (wardSwitcher) {
         wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
     }
 
+    // --- [3] ส่วนคลิกในตารางทะเบียนผู้ป่วย (Details & Chart) ---
     patientTableBody.addEventListener('click', (e) => {
         const target = e.target;
         if (target.tagName === 'A' && target.dataset.an) {
@@ -1716,6 +5724,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // --- [4] ส่วน Modal Admit และ Details ผู้ป่วย ---
     if (openAdmitModalBtn) openAdmitModalBtn.addEventListener("click", openAdmitModal);
     if (closeAdmitModalBtn) closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
     if (admitForm) admitForm.addEventListener("submit", handleAdmitSubmit);
@@ -1736,6 +5745,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (closeChartBtn) closeChartBtn.addEventListener("click", closeChart);
 
+    // --- [5] ส่วนปุ่มควบคุมในหน้าเวชระเบียน (Chart Page) ---
     chartPage.addEventListener('click', (e) => {
         const targetItem = e.target.closest('.chart-list-item');
         if (targetItem) {
@@ -1746,6 +5756,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // ปุ่มแก้ไข (Edit) ในหน้า Preview
     chartEditBtn.addEventListener('click', (e) => {
         const formType = e.currentTarget.dataset.form; 
         if (formType === '004') openAssessmentForm();
@@ -1755,6 +5766,7 @@ document.addEventListener("DOMContentLoaded", () => {
         else showComingSoon();
     });
 
+    // ปุ่มเพิ่มรายการใหม่ (Add New)
     chartAddNewBtn.addEventListener('click', (e) => {
         const formType = e.target.dataset.form;
         if (formType === 'classify') openClassifyModal();
@@ -1763,35 +5775,32 @@ document.addEventListener("DOMContentLoaded", () => {
         else showComingSoon(); 
     });
 
+    // --- [6] ระบบทำงานภายในฟอร์มประเมิน FR-004 ---
     if (assessmentForm) {
         assessmentForm.addEventListener("submit", handleSaveAssessment);
         
         assessmentForm.addEventListener('change', (e) => {
+            // 6.1 คำนวณ Braden Score อัตโนมัติในฟอร์ม 004
             if (e.target.classList.contains('braden-score')) {
                 let total = 0;
                 assessmentForm.querySelectorAll('.braden-score:checked').forEach(r => total += parseInt(r.value));
                 const totalInp = document.getElementById("braden-total-score");
                 if (totalInp) {
                     totalInp.value = total;
-                    // Logic Update Risk Text (Local)
-                    const resEl = document.getElementById("braden-result");
-                    if (resEl) {
-                        if (total <= 9) resEl.textContent = "Very high risk (<= 9)";
-                        else if (total <= 12) resEl.textContent = "High risk (10-12)";
-                        else if (total <= 14) resEl.textContent = "Moderate risk (13-14)";
-                        else if (total <= 18) resEl.textContent = "Low risk (15-18)";
-                        else resEl.textContent = "No risk (> 18)";
-                    }
+                    updateBradenResult(total); // ฟังก์ชันแปลผลตามเกณฑ์ใหม่ (Very High - Low Risk)
                 }
             }
             
+            // 6.2 ระบบ Toggle ซ่อน/แสดงช่องระบุเพิ่มเติม (data-controls)
             if (e.target.classList.contains('assessment-radio-toggle')) {
                 const groupName = e.target.name;
                 const form = e.target.closest('form');
+                // ซ่อนกลุ่มพี่น้องทั้งหมดก่อน
                 form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
                     const tid = sibling.dataset.controls;
                     if (tid) form.querySelector(`#${tid}`)?.classList.add('hidden');
                 });
+                // แสดงเฉพาะตัวที่เลือก
                 const targetId = e.target.dataset.controls;
                 if (e.target.checked && targetId) {
                     form.querySelector(`#${targetId}`)?.classList.remove('hidden');
@@ -1800,10 +5809,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // --- [7] ระบบค้นหาและเติมชื่อพยาบาลอัตโนมัติ (Unified Search) ---
     document.body.addEventListener('input', (e) => {
         if (e.target.list && e.target.list.id === 'staff-list-datalist') {
             const staff = globalStaffList.find(s => s.fullName === e.target.value.trim());
             if (staff) {
+                // หาช่อง "ตำแหน่ง" ในฟอร์มปัจจุบัน
                 const parentForm = e.target.closest('form') || document;
                 const posInput = parentForm.querySelector('[name*="Position"]') || 
                                  parentForm.querySelector('[name*="Pos"]') ||
@@ -1814,16 +5825,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // --- [8] การบันทึก Braden Monitoring (หน้าจอ 10 วัน) ---
     const bForm = document.getElementById("braden-form");
     if (bForm) {
         bForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+            // เรียกใช้ฟังก์ชันบันทึกข้อมูล Braden Monitoring
             if (typeof handleSaveBradenMonitoring === "function") {
                 handleSaveBradenMonitoring();
             }
         });
     }
 
+    // --- [9] การจัดการหน้า Morse / MAAS ---
     const mPrev = document.getElementById("morse-prev-page-btn");
     const mNext = document.getElementById("morse-next-page-btn");
     if(mPrev) mPrev.addEventListener("click", () => {
@@ -1832,26 +5846,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if(mNext) mNext.addEventListener("click", () => {
         currentMorsePage++; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
     });
-
+  // จัดการปุ่มเปลี่ยนหน้า Classification (จำแนกประเภทผู้ป่วย)
     const classifyPrevBtn = document.getElementById("classify-prev-page-btn");
     const classifyNextBtn = document.getElementById("classify-next-page-btn");
     const classifyAddBtn = document.getElementById("classify-add-page-btn");
 
     if (classifyPrevBtn) {
         classifyPrevBtn.addEventListener("click", () => {
-            changeClassifyPage(-1); 
+            changeClassifyPage(-1); // ย้อนกลับ
         });
     }
 
     if (classifyNextBtn) {
         classifyNextBtn.addEventListener("click", () => {
-            changeClassifyPage(1); 
+            changeClassifyPage(1); // ไปหน้าถัดไป
         });
     }
 
     if (classifyAddBtn) {
         classifyAddBtn.addEventListener("click", () => {
+            // การเพิ่มหน้าใหม่ ในเชิง Logic คือการขยับไปหน้าถัดไป (Page + 1)
+            // ระบบจะโหลดตารางเปล่าของหน้านั้นขึ้นมาให้เอง
             changeClassifyPage(1); 
         });
     }
-});
+}); // จบ DOMContentLoaded อย่างสมบูรณ์
