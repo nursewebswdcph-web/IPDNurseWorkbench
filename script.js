@@ -4319,43 +4319,77 @@ function getSystemFooter(currentUser) {
     </div>`;
 }
 
-// === PAGE 1: Admission & Part 1 ===
+// === PAGE 1: Admission & Part 1 (แก้ไขส่วนหัวตามแบบฟอร์ม PDF) ===
 function renderBradenPage1(container, data, options = {}) {
     const wardName = currentPatientData.Ward || "........................";
-    const admitDate = data.AdmitDate_Braden ? new Date(data.AdmitDate_Braden).toLocaleDateString('th-TH') : "-";
-    const firstAssessDate = data.FirstAssessDate ? new Date(data.FirstAssessDate).toLocaleDateString('th-TH') : "-";
-    const transferDate = data.TransferDate ? new Date(data.TransferDate).toLocaleDateString('th-TH') : "-";
+    const admitDate = data.AdmitDate_Braden ? new Date(data.AdmitDate_Braden).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "..................";
+    const firstAssessDate = data.FirstAssessDate ? new Date(data.FirstAssessDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "..................";
+    const transferDate = data.TransferDate ? new Date(data.TransferDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "..................";
     
+    // Checkbox Logic
+    const isNoPU = (data.PressureUlcer_Adm_Status === 'ไม่มี') ? '✓' : '&nbsp;';
+    const isHasPU = (data.PressureUlcer_Adm_Status === 'มี') ? '✓' : '&nbsp;';
+
+    // Helper สำหรับสร้างเส้นประรองรับข้อมูล
+    const dotted = (text, minW = "50px") => `<span class="border-b border-black border-dotted px-2 inline-block text-center font-bold text-blue-900" style="min-width:${minW};">${text || "&nbsp;"}</span>`;
+
     let html = `
-    <div class="text-center mb-4">
-        <div class="font-bold text-lg">แบบบันทึกการพยาบาลเพื่อป้องกันและการดูแลผู้ป่วยที่มีแผลกดทับ</div>
-        <div class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</div>
+    <div class="text-center mb-2">
+        <h2 class="font-bold text-lg">แบบบันทึกการพยาบาลเพื่อป้องกันและการดูแลผู้ป่วยที่มีแผลกดทับ</h2>
+        <h3 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
     </div>
 
-    <div class="text-[11px] leading-relaxed mb-4 border-b pb-2">
+    <div class="flex justify-between items-end mb-2 px-1 text-[11px] font-bold border-b border-transparent">
+        <div>ชื่อ-สกุล: ${currentPatientData.Name}</div>
+        <div class="flex gap-4">
+             <span>HN: ${currentPatientData.HN}</span>
+             <span>AN: ${currentPatientData.AN}</span>
+        </div>
+    </div>
+
+    <div class="text-[11px] leading-loose mb-4 border border-black p-2">
+        
         <div class="flex justify-between">
-            <div>จาก Ward: <b>${data.FromWard || '-'}</b></div>
-            <div>วันที่ประเมินครั้งแรก: <b>${firstAssessDate}</b></div>
-        </div>
-        <div class="flex gap-4 mt-1">
-            <div>แผลกดทับแรกรับ: 
-                <span class="inline-block w-4 h-4 border border-black text-center leading-none text-xs mr-1">${data.PressureUlcer_Adm_Status === 'ไม่มี' ? '✓' : ''}</span>ไม่มี 
-                <span class="inline-block w-4 h-4 border border-black text-center leading-none text-xs mr-1 ml-2">${data.PressureUlcer_Adm_Status === 'มี' ? '✓' : ''}</span>มี
+            <div class="w-1/2 flex items-end">
+                <span>จาก Ward</span> ${dotted(data.FromWard, "100px")}
             </div>
-            <div>ตำแหน่ง/ลักษณะ/ขนาด: <b>${data.PressureUlcer_Adm_Detail || '-'}</b></div>
+            <div class="w-1/2 flex items-end">
+                <span>วันที่ประเมินครั้งแรก</span> ${dotted(firstAssessDate, "100px")}
+            </div>
         </div>
-        <div class="flex justify-between mt-1">
-            <div>Serum Albumin: <b>${data.Albumin || '-'}</b> mg/dL</div>
-            <div>Hb: <b>${data.Hb || '-'}</b> mg%</div>
-            <div>Hct: <b>${data.Hct || '-'}</b> Vol%</div>
-            <div>BMI: <b>${data.BMI || '-'}</b></div>
+
+        <div class="flex items-center gap-2 mt-1">
+            <span class="font-bold">แผลกดทับแรกรับ :</span>
+            <div class="flex items-center gap-1 border border-black px-1">
+                <div class="w-3 h-3 border border-black text-[8px] flex items-center justify-center leading-none">${isNoPU}</div> ไม่มี
+            </div>
+            <div class="flex items-center gap-1 border border-black px-1 ml-2">
+                <div class="w-3 h-3 border border-black text-[8px] flex items-center justify-center leading-none">${isHasPU}</div> มี
+            </div>
+            <div class="ml-2 flex-grow flex items-end">
+                <span>ตำแหน่ง/ลักษณะ/ขนาด</span> ${dotted(data.PressureUlcer_Adm_Detail, "100%")}
+            </div>
         </div>
-        <div class="flex justify-between mt-1">
-            <div>วันที่ Admit: <b>${admitDate}</b></div>
-            <div>วันที่รับย้าย: <b>${transferDate}</b></div>
+
+        <div class="flex justify-between mt-1 items-end">
+            <div>Serum Albumin ${dotted(data.Albumin, "40px")} mg/dL</div>
+            <div>Hb ${dotted(data.Hb, "40px")} mg%</div>
+            <div>Hct ${dotted(data.Hct, "40px")} Vol%</div>
+            <div>BMI ${dotted(data.BMI, "40px")}</div>
         </div>
-        <div class="mt-1">Diagnosis/Operation: <b>${data.Dx_Op || currentPatientData.AdmittingDx || '-'}</b></div>
-        <div class="mt-1 font-bold">ชื่อ-สกุล: ${currentPatientData.Name}  AN: ${currentPatientData.AN}</div>
+
+        <div class="flex justify-between mt-1 items-end">
+            <div class="w-1/2">
+                <span>วันที่ Admit</span> ${dotted(admitDate, "100px")}
+            </div>
+            <div class="w-1/2">
+                <span>วันที่รับย้าย</span> ${dotted(transferDate, "100px")}
+            </div>
+        </div>
+
+        <div class="flex mt-1 items-end">
+            <span>Diagnosis/Operation</span> ${dotted(data.Dx_Op || currentPatientData.AdmittingDx, "80%")}
+        </div>
     </div>
 
     <div class="mb-2 font-bold text-sm">ส่วนที่ 1 การประเมินความเสี่ยงต่อการเกิดแผลกดทับ</div>
@@ -4390,14 +4424,13 @@ function renderBradenPage1(container, data, options = {}) {
         html += `<tr><td class="border border-black p-1 text-left font-bold bg-gray-50" colspan="12">${c.name}</td></tr>`;
         
         c.items.forEach(item => {
-            const score = item.match(/\((\d)\)$/)[1]; // Extract score (1)
+            const score = item.match(/\((\d)\)$/)[1]; 
             const text = item.replace(/\(\d\)$/, "");
             
             html += `<tr>
                 <td class="border border-black p-0.5 text-left pl-2">${text}</td>
                 <td class="border border-black p-0.5 font-bold">${score}</td>`;
             
-            // Data Columns
             for(let i=1; i<=10; i++) {
                 let val = data[`${c.id}_${i}`];
                 let mark = (String(val) === score) ? "/" : "";
@@ -4409,19 +4442,29 @@ function renderBradenPage1(container, data, options = {}) {
 
     // Total & Assessor
     html += `<tr><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนรวม</td>`;
-    for(let i=1; i<=10; i++) html += `<td class="border border-black p-0.5 font-bold text-xs">${data[`Total_${i}`] || ''}</td>`;
+    for(let i=1; i<=10; i++) {
+        let val = data[`Total_${i}`] || '';
+        // Highlight High Risk (<=16)
+        let color = (val && parseInt(val) <= 16) ? 'text-red-600 font-bold' : '';
+        html += `<td class="border border-black p-0.5 font-bold text-xs ${color}">${val}</td>`;
+    }
     html += `</tr>`;
+
+    // Helper Function ตัดชื่อ
+    const getShortName = (fullName) => {
+      if (!fullName) return "";
+      let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
+      return cleaned.split(/\s+/)[0]; 
+    };
 
     html += `<tr><td class="border border-black p-1 text-right font-bold" colspan="2">พยาบาลผู้ประเมิน</td>`;
     for(let i=1; i<=10; i++) {
         let name = data[`Assessor_${i}`] || "";
-        // ตัดชื่อให้สั้น
-        name = name.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.)\s*/, '').split(' ')[0];
-        html += `<td class="border border-black p-0.5 text-[6px] whitespace-nowrap overflow-hidden">${name}</td>`;
+        html += `<td class="border border-black p-0.5 text-[6px] whitespace-nowrap overflow-hidden">${getShortName(name)}</td>`;
     }
     html += `</tr></tbody></table>`;
 
-    // Footer Notes (Risk Groups)
+    // Footer Notes
     html += `
     <div class="mt-2 text-[9px] text-gray-700">
         <div class="mb-1"><b>หมายเหตุ:</b> คะแนน ≤ 16 ถือเป็นกลุ่มเสี่ยงสูง, คะแนน > 16 ถือเป็นกลุ่มเสี่ยงต่ำ (กรณีคะแนนน้อยกว่า 16 ให้ประเมินใหม่ทุก 3-5 วัน)</div>
