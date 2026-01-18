@@ -3339,25 +3339,21 @@ function calculateBradenDay(day) {
     }
 }
 // ----------------------------------------------------------------
-// (Updated) Classify Print Preview Logic (A4 Portrait)
+// (Updated) Classify Print Preview Logic (A4 Portrait & Print All)
 // ----------------------------------------------------------------
 let currentClassifyPrintPage = 1;
 let allClassifyDataCache = [];
 
 async function renderClassifyPrintMode(an) {
   // 1. เตรียม Template
-  const template = document.getElementById("preview-template-classify-print");
-  // ถ้ายังไม่มี Template นี้ใน HTML ให้สร้าง Placeholder รอไว้ก่อน (หรือใช้ div เปล่า)
-  // แต่ปกติเราจะ inject HTML ผ่าน JS ในฟังก์ชันนี้เลยจะง่ายกว่าสำหรับการจัด Layout A4
-  
   chartPreviewContent.innerHTML = "";
   
-  // สร้าง Container สำหรับควบคุมการเปลี่ยนหน้า
+  // สร้าง Container สำหรับควบคุม (Control Panel)
   const controlDiv = document.createElement('div');
   controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
   controlDiv.innerHTML = `
-      <div class="font-bold text-gray-700">
-        มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-classify-page-num">1</span>
+      <div class="font-bold text-gray-700 flex items-center gap-2">
+        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-classify-page-num">1</span></span>
       </div>
       <div class="flex gap-2">
         <button id="btn-prev-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
@@ -3366,38 +3362,44 @@ async function renderClassifyPrintMode(an) {
         <button id="btn-next-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
           ถัดไป &gt;
         </button>
+        
+        <button id="btn-print-classify-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
+        </button>
       </div>
   `;
   chartPreviewContent.appendChild(controlDiv);
 
-  // สร้างพื้นที่กระดาษ A4
+  // สร้างพื้นที่กระดาษ A4 สำหรับ Preview (หน้าเดียว)
   const sheetDiv = document.createElement('div');
   sheetDiv.id = "classify-sheet-content";
-  // กำหนดขนาด A4 แนวตั้ง (210mm x 297mm)
-  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative";
+  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden"; // ซ่อนตัวนี้ตอน Print จริง
   sheetDiv.style.width = "210mm";
   sheetDiv.style.minHeight = "297mm";
-  sheetDiv.style.padding = "10mm 15mm"; // ขอบซ้ายขวาเผื่อเจาะรู
+  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; // เพิ่ม Padding ล่างเผื่อ Footer
   chartPreviewContent.appendChild(sheetDiv);
   
+  // สร้างพื้นที่สำหรับ Print (Print Area) - จะถูกเติมข้อมูลเมื่อกดพิมพ์
+  const printArea = document.createElement('div');
+  printArea.id = "classify-print-area";
+  printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+  document.body.appendChild(printArea);
+
   // 2. โหลดข้อมูล
   showLoading('กำลังโหลดข้อมูล...');
   try {
-    // ดึงข้อมูลทั้งหมดของ AN นี้
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllClassificationData&an=${an}`);
     const result = await response.json();
     
-    // หมายเหตุ: หากยังไม่ได้แก้ Code.gs ให้รองรับ getAllClassificationData 
-    // โค้ดนี้จะ Error ดังนั้นต้องแน่ใจว่า Code.gs มี action นี้แล้ว
-    // ถ้ายังไม่มี ให้ใช้ array ว่างไปก่อนเพื่อทดสอบ UI
     if (!result.success && result.message) console.warn(result.message);
     
     allClassifyDataCache = result.success ? result.data : []; 
     currentClassifyPrintPage = 1;
     
+    // Render หน้าแรกสำหรับ Preview
     renderClassifySheetA4(currentClassifyPrintPage);
     
-    // ผูก Event ปุ่ม
+    // Event Listeners
     document.getElementById("btn-prev-classify-sheet").addEventListener("click", () => {
        if(currentClassifyPrintPage > 1) {
          currentClassifyPrintPage--;
@@ -3410,14 +3412,69 @@ async function renderClassifyPrintMode(an) {
          renderClassifySheetA4(currentClassifyPrintPage);
     });
 
+    // Event ปุ่มพิมพ์
+    document.getElementById("btn-print-classify-action").addEventListener("click", () => {
+        handleClassifyPrint();
+    });
+
     Swal.close();
   } catch (e) {
     Swal.close();
     showError("โหลดข้อมูลไม่สำเร็จ", e.message);
   }
 }
-function renderClassifySheetA4(page) {
-  const container = document.getElementById("classify-sheet-content");
+
+// ฟังก์ชันจัดการการพิมพ์ (สร้างทุกหน้าที่มีข้อมูล)
+function handleClassifyPrint() {
+    const printArea = document.getElementById("classify-print-area");
+    if (!printArea) return;
+    
+    printArea.innerHTML = ""; // เคลียร์ของเก่า
+
+    // คำนวณจำนวนหน้าทั้งหมดที่ต้องพิมพ์
+    // หา Date ล่าสุดที่มีข้อมูล
+    let maxPage = 1;
+    if (allClassifyDataCache.length > 0) {
+        // แปลงวันที่ใน cache เป็น Date Object
+        const dates = allClassifyDataCache.map(d => new Date(d.Date));
+        const maxDate = new Date(Math.max.apply(null, dates));
+        const admitDate = new Date(currentPatientData.AdmitDate);
+        
+        // คำนวณระยะห่างวัน
+        const diffTime = Math.abs(maxDate - admitDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        
+        // ทุก 5 วัน = 1 หน้า
+        maxPage = Math.max(1, Math.ceil(diffDays / 5));
+    }
+
+    // วนลูปสร้างหน้าทุกหน้า
+    for (let p = 1; p <= maxPage; p++) {
+        const pageContainer = document.createElement('div');
+        // กำหนด Style ให้เหมือนกระดาษ A4 และบังคับ Page Break
+        pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+        pageContainer.style.width = "210mm";
+        pageContainer.style.height = "297mm"; // Fix Height ตอนพิมพ์
+        pageContainer.style.padding = "10mm 15mm 25mm 15mm";
+        pageContainer.style.pageBreakAfter = "always";
+        
+        printArea.appendChild(pageContainer);
+        
+        // เรียกฟังก์ชัน Render ลงใน Container นี้
+        renderClassifySheetA4(p, pageContainer);
+    }
+
+    // สั่งพิมพ์
+    window.print();
+    
+    // ล้างข้อมูลหลังพิมพ์ (Optional) หรือปล่อยไว้ก็ได้เพราะ user มองไม่เห็น
+    // printArea.innerHTML = ""; 
+}
+
+// ฟังก์ชัน Render หน้ากระดาษ (ปรับปรุงให้รับ targetContainer ได้)
+function renderClassifySheetA4(page, targetContainer = null) {
+  // ถ้าไม่มี targetContainer ให้ใช้ตัว Default (หน้า Preview)
+  const container = targetContainer || document.getElementById("classify-sheet-content");
   const pageNumSpan = document.getElementById("print-classify-page-num");
   const btnPrev = document.getElementById("btn-prev-classify-sheet");
   
@@ -3429,7 +3486,6 @@ function renderClassifySheetA4(page) {
   
   // 2. เตรียมข้อความวันที่
   const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
-  
   let dischargeDateStr = "........................";
   if (currentPatientData.DischargeDate) {
       dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'});
@@ -3441,7 +3497,7 @@ function renderClassifySheetA4(page) {
   const wardName = currentPatientData.Ward || "........................"; 
 
   // =========================================================
-  // [ส่วนที่แก้ไข] ปรับ Layout ส่วนหัวให้สวยงามตามที่ขอ
+  // ส่วนหัวกระดาษ (Header)
   // =========================================================
   let html = `
     <div class="mb-4 text-black font-sarabun">
@@ -3463,12 +3519,14 @@ function renderClassifySheetA4(page) {
     </div>
   `;
 
-  // --- สร้างตาราง (Code ส่วนนี้คงเดิมเพื่อให้แสดงผลถูกต้องตาม Logic) ---
+  // =========================================================
+  // ส่วนตาราง (Table Body)
+  // =========================================================
   html += `
     <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
       <thead>
         <tr class="bg-gray-100">
-          <th rowspan="2" class="border border-black p-1 w-[160px] text-left align-middle font-bold">ว/ด/ป</th>
+          <th rowspan="2" class="border border-black p-1 w-[160px] text-left align-middle font-bold">รายการประเมิน</th>
   `;
 
   // Loop Header วันที่ (5 วัน)
@@ -3490,7 +3548,7 @@ function renderClassifySheetA4(page) {
   }
   html += `</tr></thead><tbody>`;
 
-  // --- กำหนดโครงสร้างแถว (มีหัวข้อคั่น I, II) ---
+  // กำหนดโครงสร้างแถว
   const tableStructure = [
     { type: 'header', text: 'I. สภาวะสุขภาพ' },
     { type: 'row', label: '1. สัญญาณชีพ', key: 'Score_1' },
@@ -3509,14 +3567,12 @@ function renderClassifySheetA4(page) {
 
   tableStructure.forEach(item => {
      if (item.type === 'header') {
-         // แถวหัวข้อใหญ่ (Bold & Background Color)
          html += `
             <tr class="bg-indigo-50/50">
                 <td class="border border-black p-1 text-left font-bold" colspan="16">${item.text}</td>
             </tr>
          `;
      } else {
-         // แถวข้อมูล
          let labelClass = "text-left pl-1";
          let rowBg = "";
          if (item.type === 'summary') {
@@ -3527,14 +3583,12 @@ function renderClassifySheetA4(page) {
          html += `<tr class="${rowBg}">
             <td class="border border-black p-1 ${labelClass}">${item.label}</td>`;
 
-         // Loop 5 วัน
          for (let i = 0; i < 5; i++) {
             const currDate = new Date(admitDate);
             currDate.setDate(admitDate.getDate() + startDayOffset + i);
             const dateKey = getISODate(currDate); 
             
             ['N', 'D', 'E'].forEach(shift => {
-               // ค้นหาข้อมูล
                const entry = allClassifyDataCache.find(d => {
                   let dStr = d.Date;
                   if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
@@ -3546,7 +3600,6 @@ function renderClassifySheetA4(page) {
                let val = entry ? entry[item.key] : "";
                
                if (item.type === 'text' && val) {
-                  // ตัดชื่อให้สั้นลงถ้าเป็นช่องผู้ประเมิน
                   val = `<span class="text-[7px] block leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[35px]" title="${val}">${val.split(' ')[0]}</span>`;
                } else if ((item.type === 'row' || item.type === 'summary') && val == 0) {
                   val = ""; 
@@ -3561,7 +3614,15 @@ function renderClassifySheetA4(page) {
 
   html += `</tbody></table>`;
 
-  // --- Footer Criteria (เกณฑ์การแบ่งประเภท - คงเดิมตามไฟล์ PDF) ---
+  // =========================================================
+  // ส่วนท้าย (Criteria & Footer)
+  // =========================================================
+  
+  // เตรียมข้อมูลวันที่เวลาปัจจุบันสำหรับ Footer
+  const now = new Date();
+  const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+
   html += `
     <div class="mt-4 text-[10px] text-gray-700">
        <div class="mb-1 font-bold underline">เกณฑ์การแบ่งประเภท: (นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8)</div>
@@ -3573,16 +3634,33 @@ function renderClassifySheetA4(page) {
             <div><b>ประเภทที่ 4:</b> ผู้ป่วยหนัก (คะแนน 21-26)</div>
             <div><b>ประเภทที่ 5:</b> ผู้ป่วยหนักมาก/วิกฤต (คะแนน 27-32)</div>
           </div>
-          <div class="space-y-0.5"
-            <div class="mt-2 text-right"><b>ชื่อผู้ประเมิน</b> (..................................................)</div>
+          <div class="space-y-0.5">
+             <div class="mt-2 text-right"><b>ชื่อผู้ประเมิน</b> (..................................................)</div>
           </div>
        </div>
+    </div>
+    
+    <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
+        <div class="flex justify-between items-end">
+            <div class="text-left leading-tight">
+                <div>ผู้พิมพ์ : (เจ้าหน้าที่)</div>
+                <div>พิมพ์จากเครื่อง : (ชื่อเครื่องคอมพิวเตอร์ที่ใช้งาน) วันที่ ${printDate} เวลา ${printTime} น.</div>
+            </div>
+            <div class="text-right leading-tight">
+                <div class="font-bold">โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>
     </div>
   `;
 
   container.innerHTML = html;
-  if(pageNumSpan) pageNumSpan.textContent = page;
-  if(btnPrev) btnPrev.disabled = (page <= 1);
+  
+  // Update เฉพาะถ้าเป็นหน้า Preview หลัก (ไม่ใช่หน้า Print จำลอง)
+  if(!targetContainer) {
+      if(pageNumSpan) pageNumSpan.textContent = page;
+      if(btnPrev) btnPrev.disabled = (page <= 1);
+  }
 }
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
