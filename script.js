@@ -4608,55 +4608,122 @@ function renderBradenPage2(container, data, options = {}) {
 let currentForm004Page = 1;
 
 async function renderForm004PrintMode(an) {
-  chartPreviewContent.innerHTML = "";
-  
-  // 1. สร้าง Controls
-  const controlDiv = document.createElement('div');
-  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
-  controlDiv.innerHTML = `
-      <div class="font-bold text-gray-700 flex items-center gap-2">
-        <span>มุมมองแบบพิมพ์ (2 หน้า) - หน้า <span id="print-004-page-num">1</span>/2</span>
-      </div>
-      <div class="flex gap-2">
-        <button id="btn-prev-004" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50" disabled>&lt; หน้าก่อนหน้า</button>
-        <button id="btn-next-004" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">หน้าถัดไป &gt;</button>
-        <button id="btn-print-004-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
-          <i class="fas fa-print"></i> พิมพ์เอกสาร
-        </button>
-      </div>
-  `;
-  chartPreviewContent.appendChild(controlDiv);
+  showLoading('กำลังสร้างแบบฟอร์ม 004...');
+  try {
+    // 1. ดึงข้อมูล
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
+    const result = await response.json();
+    if (!result.success) throw new Error(result.message);
+    const data = result.data;
 
-  // 2. สร้าง Container
-  const previewContainer = document.createElement('div');
-  previewContainer.id = "form004-preview-container";
-  previewContainer.className = "overflow-y-auto bg-gray-200 p-4 print:p-0";
-  previewContainer.style.maxHeight = "calc(100vh - 200px)";
-  chartPreviewContent.appendChild(previewContainer);
+    // 2. โหลดรายชื่อเจ้าหน้าที่ (ถ้ายังไม่มี)
+    if (globalStaffList.length === 0) {
+       await refreshStaffDatalists();
+    }
 
-  // 3. แสดงหน้าแรก (ใช้ข้อมูล currentPatientData ได้เลย เพราะโหลดมาแล้ว)
-  currentForm004Page = 1;
-  renderForm004SinglePage(1, previewContainer);
+    // 3. เตรียม Template
+    const template = document.getElementById("preview-template-004");
+    if (!template) throw new Error("ไม่พบ Template 004");
+    const clone = template.content.cloneNode(true);
+    const container = clone.querySelector('.print-container');
 
-  // Event Listeners
-  document.getElementById("btn-prev-004").addEventListener("click", () => {
-      if (currentForm004Page > 1) {
-          currentForm004Page--;
-          updateForm004Controls();
-          renderForm004SinglePage(currentForm004Page, previewContainer);
-      }
-  });
+    // 4. แปลงวันที่เป็น พ.ศ. (4 หลัก)
+    const formatDateTh = (dateStr) => {
+        if (!dateStr) return "-";
+        try {
+            const d = new Date(dateStr);
+            const day = d.getDate();
+            const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            const year = d.getFullYear() + 543; // พ.ศ. 4 ตัว
+            return `${day} ${monthNames[d.getMonth()]} ${year}`;
+        } catch(e) { return dateStr; }
+    };
+    data.AdmitDate_TH = formatDateTh(data.AdmitDate);
+    data.Sx_Date = formatDateTh(data.Sx_Date);
 
-  document.getElementById("btn-next-004").addEventListener("click", () => {
-      if (currentForm004Page < 2) {
-          currentForm004Page++;
-          updateForm004Controls();
-          renderForm004SinglePage(currentForm004Page, previewContainer);
-      }
-  });
+    // 5. Populate Data (เติมคำในช่องว่าง)
+    container.querySelectorAll('[data-field]').forEach(el => {
+        const key = el.dataset.field;
+        if (data[key]) el.textContent = data[key];
+    });
 
-  document.getElementById("btn-print-004-action").addEventListener("click", handleForm004Print);
-  Swal.close();
+    // 6. Populate Checkboxes (ติ๊กถูก)
+    container.querySelectorAll('.chk').forEach(el => {
+        const [key, val] = el.dataset.chk.split(':');
+        // Logic การเช็คค่า (รองรับทั้ง String และ Boolean)
+        let isChecked = false;
+        if (data[key] === val) isChecked = true;
+        if (val === 'true' && (data[key] === true || data[key] === 'true' || data[key] === 'on')) isChecked = true;
+        
+        if (isChecked) {
+            el.innerHTML = `<span class="chk-box chk-checked">✓</span>`;
+        } else {
+            el.innerHTML = `<span class="chk-box">&nbsp;</span>`;
+        }
+    });
+
+    // 7. จัดการตาราง Braden (Checkbox ในตาราง)
+    container.querySelectorAll('.chk-cell').forEach(td => {
+        const [key, score] = td.dataset.chk.split(':');
+        if (String(data[key]) === score) {
+            td.innerHTML = '<span class="font-bold text-lg">✓</span>';
+            td.style.backgroundColor = '#e0f2fe'; // ไฮไลท์สีฟ้าอ่อน
+        }
+    });
+    
+    // แปลผล Braden อัตโนมัติใน Preview
+    const totalBraden = parseInt(data.Braden_Total) || 0;
+    if(totalBraden > 0) {
+        let range = "No";
+        if(totalBraden <= 12) range = "High";
+        else if(totalBraden <= 14) range = "Moderate";
+        else if(totalBraden <= 18) range = "Low";
+        
+        const resChk = container.querySelector(`.chk[data-chk="Braden_Result_Range:${range}"]`);
+        if(resChk) resChk.innerHTML = `<span class="chk-box chk-checked">✓</span>`;
+    }
+
+    // 8. จัดการ Nurse Selection (ตัวเลือกชื่อพยาบาลก่อนพิมพ์)
+    const nurseSelect = clone.getElementById('print-nurse-select');
+    const sigName = clone.querySelector('.signature-name');
+    const sigPrint = clone.querySelector('.signature-name-print');
+
+    // เติมรายชื่อลง Dropdown
+    globalStaffList.forEach(staff => {
+        const opt = document.createElement('option');
+        opt.value = staff.fullName;
+        opt.textContent = staff.fullName;
+        nurseSelect.appendChild(opt);
+    });
+
+    // ตั้งค่า Default เป็นคนประเมินล่าสุด
+    if(data.Assessor_Name) {
+        nurseSelect.value = data.Assessor_Name;
+        sigName.textContent = data.Assessor_Name;
+        sigPrint.textContent = data.Assessor_Name;
+    }
+
+    // Event Listener เปลี่ยนชื่อในลายเซ็นเมื่อเลือก Dropdown
+    nurseSelect.addEventListener('change', (e) => {
+        const selectedName = e.target.value;
+        // อัปเดตใน DOM ที่แสดงอยู่จริง (ต้อง query จาก chartPreviewContent)
+        const activeContainer = document.getElementById('chart-preview-content');
+        if(activeContainer) {
+            activeContainer.querySelector('.signature-name').textContent = selectedName;
+            activeContainer.querySelector('.signature-name-print').textContent = selectedName;
+        }
+    });
+
+    // 9. แสดงผล
+    chartPreviewContent.innerHTML = "";
+    chartPreviewContent.appendChild(clone);
+    
+    Swal.close();
+
+  } catch (error) {
+    console.error(error);
+    showError('สร้างพรีวิวไม่สำเร็จ', error.message);
+  }
 }
 
 function updateForm004Controls() {
