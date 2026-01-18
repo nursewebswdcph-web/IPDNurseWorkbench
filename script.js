@@ -4232,24 +4232,53 @@ async function fetchAndRenderBradenSet(an, pageNum, container) {
     }
 }
 
-// --- ฟังก์ชันจัดการการพิมพ์ (Loop ทุกชุด) ---
+// --- ฟังก์ชันจัดการการพิมพ์ (Loop ทุกชุด) + ค้นหาชื่อพยาบาล ---
 async function handleBradenPrint() {
-    // Pop-up ตั้งค่าก่อนพิมพ์
+    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง ถ้าไม่มีให้โหลด
+    if (globalStaffList.length === 0) {
+        await refreshStaffDatalists();
+    }
+
+    // 2. สร้างตัวเลือกสำหรับ Datalist
+    let staffOptions = '';
+    globalStaffList.forEach(s => {
+        staffOptions += `<option value="${s.fullName}">`;
+    });
+
+    // 3. Pop-up ตั้งค่าก่อนพิมพ์ (เปลี่ยน Input เป็น Searchable List)
     const { value: formValues, isDismissed } = await Swal.fire({
         title: 'ตั้งค่าการพิมพ์เอกสาร',
         html: `
             <div class="text-left text-sm space-y-4">
                 <div class="bg-gray-50 p-3 rounded border">
                     <label class="block font-bold text-gray-700 mb-1">ชื่อผู้พิมพ์ (Footer)</label>
-                    <input type="text" id="print_user_name" class="w-full p-2 border rounded" placeholder="ระบุชื่อเจ้าหน้าที่..." value="(เจ้าหน้าที่)">
+                    <input type="text" id="print_user_name" list="print_staff_list" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+                    <datalist id="print_staff_list">
+                        ${staffOptions}
+                    </datalist>
+                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
                 </div>
             </div>`,
         focusConfirm: false,
         showCancelButton: true,
         confirmButtonText: 'พิมพ์เอกสาร',
         cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563EB',
         preConfirm: () => {
-            return { user: document.getElementById('print_user_name').value };
+            const name = document.getElementById('print_user_name').value;
+            if (!name) {
+                Swal.showValidationMessage('กรุณาระบุชื่อผู้พิมพ์');
+                return false;
+            }
+            
+            // ค้นหาตำแหน่งจากฐานข้อมูลเพื่อนำมาต่อท้าย
+            const staff = globalStaffList.find(s => s.fullName === name);
+            const position = staff ? staff.position : "";
+            
+            // สร้าง Format ชื่อ + ตำแหน่ง (ถ้ามี)
+            const finalName = position ? `${name}, ${position}` : name;
+
+            return { user: finalName };
         }
     });
 
@@ -4319,7 +4348,7 @@ function getSystemFooter(currentUser) {
     </div>`;
 }
 
-// === PAGE 1: Admission & Part 1 (แก้ไขส่วนหัวตามแบบฟอร์ม PDF) ===
+// === PAGE 1: Admission & Part 1 (แก้ไขส่วนหัวตามที่ระบุล่าสุด) ===
 function renderBradenPage1(container, data, options = {}) {
     const wardName = currentPatientData.Ward || "........................";
     const admitDate = data.AdmitDate_Braden ? new Date(data.AdmitDate_Braden).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) : "..................";
@@ -4331,7 +4360,7 @@ function renderBradenPage1(container, data, options = {}) {
     const isHasPU = (data.PressureUlcer_Adm_Status === 'มี') ? '✓' : '&nbsp;';
 
     // Helper สำหรับสร้างเส้นประรองรับข้อมูล
-    const dotted = (text, minW = "50px") => `<span class="border-b border-black border-dotted px-2 inline-block text-center font-bold text-blue-900" style="min-width:${minW};">${text || "&nbsp;"}</span>`;
+    const dotted = (text, minW = "50px") => `<span class="border-b border-black border-dotted px-2 inline-block text-center font-bold text-blue-900" style="min-width:${minW}; width: auto; flex-grow: 1;">${text || "&nbsp;"}</span>`;
 
     let html = `
     <div class="text-center mb-2">
@@ -4347,49 +4376,44 @@ function renderBradenPage1(container, data, options = {}) {
         </div>
     </div>
 
-    <div class="text-[11px] leading-loose mb-4 border border-black p-2">
+    <div class="text-[11px] leading-loose mb-4 border border-black p-2 font-sarabun text-black">
         
-        <div class="flex justify-between">
-            <div class="w-1/2 flex items-end">
-                <span>จาก Ward</span> ${dotted(data.FromWard, "100px")}
-            </div>
-            <div class="w-1/2 flex items-end">
-                <span>วันที่ประเมินครั้งแรก</span> ${dotted(firstAssessDate, "100px")}
-            </div>
+        <div class="flex justify-between items-end whitespace-nowrap gap-2">
+            <div class="flex items-end">วันที่ Admit: ${dotted(admitDate, "80px")}</div>
+            <div class="flex items-end">วันที่รับย้าย: ${dotted(transferDate, "80px")}</div>
+            <div class="flex items-end flex-grow">จาก Ward: ${dotted(data.FromWard, "100px")}</div>
+            <div class="flex items-end">วันที่ประเมินครั้งแรก: ${dotted(firstAssessDate, "80px")}</div>
         </div>
 
-        <div class="flex items-center gap-2 mt-1">
-            <span class="font-bold">แผลกดทับแรกรับ :</span>
-            <div class="flex items-center gap-1 border border-black px-1">
+        <div class="flex mt-1 items-end w-full">
+            <span class="whitespace-nowrap mr-1">Diagnosis/Operation:</span>
+            <div class="border-b border-black border-dotted px-2 w-full text-blue-900 font-bold relative top-1">${data.Dx_Op || currentPatientData.AdmittingDx || "&nbsp;"}</div>
+        </div>
+
+        <div class="flex items-center gap-2 mt-1 whitespace-nowrap">
+            <span class="font-bold">แผลกดทับแรกรับ:</span>
+            
+            <div class="flex items-center gap-1 border border-black px-1" style="height: 18px;">
                 <div class="w-3 h-3 border border-black text-[8px] flex items-center justify-center leading-none">${isNoPU}</div> ไม่มี
             </div>
-            <div class="flex items-center gap-1 border border-black px-1 ml-2">
+            
+            <div class="flex items-center gap-1 border border-black px-1 ml-2" style="height: 18px;">
                 <div class="w-3 h-3 border border-black text-[8px] flex items-center justify-center leading-none">${isHasPU}</div> มี
             </div>
-            <div class="ml-2 flex-grow flex items-end">
-                <span>ตำแหน่ง/ลักษณะ/ขนาด</span> ${dotted(data.PressureUlcer_Adm_Detail, "100%")}
+
+            <div class="flex items-end flex-grow ml-2">
+                <span class="mr-1">ตำแหน่ง/ลักษณะ/ขนาด:</span>
+                ${dotted(data.PressureUlcer_Adm_Detail, "100%")}
             </div>
         </div>
 
-        <div class="flex justify-between mt-1 items-end">
-            <div>Serum Albumin ${dotted(data.Albumin, "40px")} mg/dL</div>
-            <div>Hb ${dotted(data.Hb, "40px")} mg%</div>
-            <div>Hct ${dotted(data.Hct, "40px")} Vol%</div>
-            <div>BMI ${dotted(data.BMI, "40px")}</div>
+        <div class="flex justify-between mt-1 items-end whitespace-nowrap gap-4">
+            <div class="flex items-end">Serum Albumin ${dotted(data.Albumin, "40px")} mg/dL (3.5-5.4)</div>
+            <div class="flex items-end">Hb = ${dotted(data.Hb, "40px")} mg%</div>
+            <div class="flex items-end">Hct = ${dotted(data.Hct, "40px")} Vol%</div>
+            <div class="flex items-end">BMI = ${dotted(data.BMI, "40px")}</div>
         </div>
 
-        <div class="flex justify-between mt-1 items-end">
-            <div class="w-1/2">
-                <span>วันที่ Admit</span> ${dotted(admitDate, "100px")}
-            </div>
-            <div class="w-1/2">
-                <span>วันที่รับย้าย</span> ${dotted(transferDate, "100px")}
-            </div>
-        </div>
-
-        <div class="flex mt-1 items-end">
-            <span>Diagnosis/Operation</span> ${dotted(data.Dx_Op || currentPatientData.AdmittingDx, "80%")}
-        </div>
     </div>
 
     <div class="mb-2 font-bold text-sm">ส่วนที่ 1 การประเมินความเสี่ยงต่อการเกิดแผลกดทับ</div>
@@ -4444,7 +4468,6 @@ function renderBradenPage1(container, data, options = {}) {
     html += `<tr><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนรวม</td>`;
     for(let i=1; i<=10; i++) {
         let val = data[`Total_${i}`] || '';
-        // Highlight High Risk (<=16)
         let color = (val && parseInt(val) <= 16) ? 'text-red-600 font-bold' : '';
         html += `<td class="border border-black p-0.5 font-bold text-xs ${color}">${val}</td>`;
     }
