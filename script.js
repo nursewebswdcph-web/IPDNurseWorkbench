@@ -331,15 +331,15 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
-// ฟังก์ชันคำนวณ Braden Scale (Updated: Match User's HTML ID)
+// ฟังก์ชันคำนวณ Braden Scale (Fixed: Calculation & Display)
 function calcBraden() {
-    // ฟังก์ชันย่อยดึงค่า (ป้องกัน NaN)
+    // 1. ฟังก์ชันย่อยดึงค่า (ป้องกัน error ถ้ายังไม่เลือก)
     const getVal = (name) => {
         const el = document.querySelector(`input[name="${name}"]:checked`);
-        return el ? parseInt(el.value) : 0;
+        return el ? parseInt(el.value, 10) : 0; // parseInt ฐาน 10 เพื่อความชัวร์
     };
 
-    // ดึงคะแนนแต่ละข้อ
+    // 2. ดึงคะแนน
     const s1 = getVal("Braden_Sensory");
     const s2 = getVal("Braden_Moisture");
     const s3 = getVal("Braden_Activity");
@@ -347,30 +347,38 @@ function calcBraden() {
     const s5 = getVal("Braden_Nutrition");
     const s6 = getVal("Braden_Friction");
 
-    // คำนวณผลรวม
+    // 3. แสดงคะแนนรายข้อในช่องขวาสุด
+    document.getElementById("score_Braden_Sensory").innerText = s1 || '-';
+    document.getElementById("score_Braden_Moisture").innerText = s2 || '-';
+    document.getElementById("score_Braden_Activity").innerText = s3 || '-';
+    document.getElementById("score_Braden_Mobility").innerText = s4 || '-';
+    document.getElementById("score_Braden_Nutrition").innerText = s5 || '-';
+    document.getElementById("score_Braden_Friction").innerText = s6 || '-';
+
+    // 4. คำนวณผลรวม
     const total = s1 + s2 + s3 + s4 + s5 + s6;
 
-    // แปลผล
+    // 5. แปลผลตามเกณฑ์ใหม่
     let resultText = "";
-    let colorClass = "text-gray-800"; // สีเริ่มต้น
+    let colorClass = "text-gray-500";
 
-    if (total > 0) { // คำนวณเมื่อมีการเลือกอย่างน้อย 1 ข้อ
+    if (total > 0) {
         if (total <= 9) {
-            resultText = "Very high risk";
+            resultText = "Very high risk (เสี่ยงสูงมาก)";
             colorClass = "text-red-700";
-        } else if (total <= 12) {
-            resultText = "High risk";
+        } else if (total >= 10 && total <= 12) {
+            resultText = "High risk (เสี่ยงสูง)";
             colorClass = "text-red-500";
-        } else if (total <= 14) {
-            resultText = "Moderate risk";
+        } else if (total >= 13 && total <= 14) {
+            resultText = "Moderate risk (เสี่ยงปานกลาง)";
             colorClass = "text-orange-500";
-        } else {
-            resultText = "Low risk";
+        } else if (total >= 15) {
+            resultText = "Low risk (เสี่ยงต่ำ)";
             colorClass = "text-green-600";
         }
     }
 
-    // แสดงผลลงใน Input
+    // 6. อัปเดต UI (Input Value เพื่อให้บันทึกได้)
     const totalEl = document.getElementById("braden-total-score");
     const resultEl = document.getElementById("braden-result");
 
@@ -378,8 +386,7 @@ function calcBraden() {
     
     if (resultEl) {
         resultEl.value = resultText;
-        // ล้าง class สีเก่าออกแล้วใส่สีใหม่
-        resultEl.className = `w-full text-right text-xl font-black italic border-none bg-transparent focus:outline-none ${colorClass}`;
+        resultEl.className = `w-64 text-right text-lg font-black italic border-none bg-transparent focus:outline-none ${colorClass}`;
     }
 }
 
