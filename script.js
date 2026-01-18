@@ -4603,10 +4603,38 @@ function renderBradenPage2(container, data, options = {}) {
     container.innerHTML = html;
 }
 // =================================================================
-// FR-IPD-004 PRINT SYSTEM (REBUILT: 100% PDF MATCH)
+// FR-IPD-004 PRINT SYSTEM (REVISED: 100% PDF MATCH & REAL DATA)
 // =================================================================
 
-// --- 1. Main Entry Point: เรียกจาก showFormPreview ---
+// --- Helper Functions ---
+const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.4em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
+
+// Checkbox แบบ [ / ] ตามแบบฟอร์ม
+const box = (isChecked) => `<span class="inline-block font-sarabun text-[12px] font-bold mr-1">[ ${isChecked ? '/' : '&nbsp;'} ]</span>`;
+
+const chkGroup = (valArray, target, label) => {
+    let isChecked = false;
+    if (Array.isArray(valArray)) isChecked = valArray.includes(target);
+    else if (typeof valArray === 'string') isChecked = valArray === target;
+    return `<span class="inline-flex items-center mr-2">${box(isChecked)} ${label}</span>`;
+};
+
+// แปลงวันที่เป็น พ.ศ. 4 หลัก (เช่น 2569)
+const formatDateThai = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const formatTime = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+};
+
+// --- 1. Main Entry Point ---
 async function renderForm004PrintMode(an) {
     chartPreviewContent.innerHTML = "";
     
@@ -4614,7 +4642,7 @@ async function renderForm004PrintMode(an) {
     const controlDiv = document.createElement('div');
     controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
     controlDiv.innerHTML = `
-        <div class="font-bold text-gray-700">มุมมองแบบพิมพ์ (2 หน้า) - FR-IPD-004</div>
+        <div class="font-bold text-gray-700">มุมมองแบบพิมพ์ (FR-IPD-004)</div>
         <div class="flex gap-2">
             <button id="btn-print-004-action" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
             <i class="fas fa-print"></i> พิมพ์เอกสาร
@@ -4622,13 +4650,13 @@ async function renderForm004PrintMode(an) {
         </div>`;
     chartPreviewContent.appendChild(controlDiv);
 
-    // Scrollable Container for Preview
+    // Scrollable Preview Container
     const previewContainer = document.createElement('div');
     previewContainer.className = "overflow-y-auto bg-gray-300 p-4 print:p-0 flex flex-col items-center gap-4";
     previewContainer.style.maxHeight = "calc(100vh - 200px)";
     chartPreviewContent.appendChild(previewContainer);
 
-    // Render Page 1 (Preview)
+    // Render Preview Pages
     const p1 = document.createElement('div');
     p1.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
     p1.style.width = "210mm";
@@ -4637,7 +4665,6 @@ async function renderForm004PrintMode(an) {
     renderForm004Page1(p1, { isPreview: true });
     previewContainer.appendChild(p1);
 
-    // Render Page 2 (Preview)
     const p2 = document.createElement('div');
     p2.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
     p2.style.width = "210mm";
@@ -4646,12 +4673,12 @@ async function renderForm004PrintMode(an) {
     renderForm004Page2(p2, { isPreview: true });
     previewContainer.appendChild(p2);
 
-    // Event Listener
+    // Bind Print Button
     document.getElementById("btn-print-004-action").addEventListener("click", handleForm004Print);
     Swal.close();
 }
 
-// --- 2. Print Handler (Popup & Print) ---
+// --- 2. Print Handler ---
 async function handleForm004Print() {
     if (globalStaffList.length === 0) await refreshStaffDatalists();
     let staffOptions = '';
@@ -4674,7 +4701,6 @@ async function handleForm004Print() {
              const name = document.getElementById('print_user_004').value;
              const staff = globalStaffList.find(s => s.fullName === name);
              const position = staff ? staff.position : "";
-             // Format: ชื่อ (ตำแหน่ง)
              const finalName = position ? `${name} (${position})` : name;
              return { user: finalName };
         }
@@ -4714,81 +4740,55 @@ async function handleForm004Print() {
     setTimeout(() => { window.print(); }, 800);
 }
 
-// --- Helpers ---
-const dot004 = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.2em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
-const box004 = (isChecked) => `<span class="inline-block w-3.5 h-3.5 border border-black text-[10px] text-center leading-none mr-1 bg-white align-text-bottom font-bold" style="margin-bottom: 2px;">${isChecked ? '/' : '&nbsp;'}</span>`;
-const chk004 = (valArray, target, label) => {
-    let isChecked = false;
-    if (Array.isArray(valArray)) isChecked = valArray.includes(target);
-    else if (typeof valArray === 'string') isChecked = valArray === target;
-    return `<span class="inline-flex items-end mr-3">${box004(isChecked)} ${label}</span>`;
-};
-const formatDateThaiFull = (dateStr) => {
-    if (!dateStr) return "..................................";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "..................................";
-    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
-const formatTimeShort = (dateStr) => {
-    if (!dateStr) return "..........";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "..........";
-    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-};
-
 // =================================================================
-// PAGE 1 RENDERER
+// PAGE 1 RENDERER (ข้อมูลแรกรับ + ข้อ 1-6)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
-    const d = currentPatientData; // ข้อมูล
-    const admitDate = d.AdmitDate || d.AdmitDate_Braden; 
-    
-    // แยก Vital Signs
-    const vs = { 
-        T: d.T || '', 
-        P: d.P || '', 
-        R: d.R || '', 
-        BP: d.BP || '' 
-    };
+    const d = currentPatientData;
+    // วันที่ Admit: ถ้าไม่มีใน assessment ให้ใช้จาก profile
+    const admitDateStr = d.AdmitDate || d.AdmitDate_Braden; 
+    const dateText = formatDateThai(admitDateStr);
+    const timeText = formatTime(admitDateStr);
 
     let html = `
-    <div class="flex justify-between items-start mb-1 border-b-2 border-black pb-2 font-sarabun text-black">
-       <div class="w-[15%] text-[12px] text-center border border-black p-2 flex flex-col justify-center h-16">
-          <div class="font-bold text-xl">แบบ 004</div>
+    <div class="flex justify-between items-start mb-2 border-b-2 border-black pb-2 font-sarabun text-black">
+       <div class="w-[12%] text-[10px] text-center border border-black p-2 flex flex-col justify-center h-16">
+          <div class="font-bold text-lg">แบบ 004</div>
        </div>
-       <div class="text-center w-[70%] pt-1">
-          <h2 class="font-bold text-xl">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วยใน</h2>
+       <div class="text-center w-[76%] pt-1">
+          <h2 class="font-bold text-xl">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
           <h3 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
-       <div class="w-[15%] text-[9px] text-right flex flex-col justify-end">
+       <div class="w-[12%] text-[9px] text-right flex flex-col justify-end">
           <div class="font-bold text-sm">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
        </div>
     </div>
 
     <div class="text-[12px] leading-snug font-sarabun text-black">
+        
         <div class="flex flex-wrap items-end gap-1 mb-1">
-            <span>วันที่</span> ${dot004(formatDateThaiFull(admitDate), "100px")}
-            <span>เวลา</span> ${dot004(formatTimeShort(admitDate), "60px")} <span>น.</span>
-            <span class="ml-2">รับจาก</span> ${dot004(d.AdmitFrom, "150px")}
-            <span class="ml-2">รับ REFER จาก</span> ${dot004(d.ReferFrom, "150px")}
+            <span>วันที่</span> ${dot(dateText, "100px")}
+            <span>เวลา</span> ${dot(timeStr, "60px")} <span>น.</span>
+            <span class="ml-2">รับจาก</span> ${dot(d.AdmitFrom, "180px")}
+            <span class="ml-2">รับ REFER จาก</span> ${dot(d.ReferFrom, "180px")}
         </div>
 
         <div class="flex flex-wrap items-end gap-1 mb-1">
             <span class="font-bold mr-2">มาโดย :</span> 
-            ${chk004(d.ArrivalMethod, 'เดินมา', 'เดินมา')}
-            ${chk004(d.ArrivalMethod, 'รถนั่ง', 'รถนั่ง')}
-            ${chk004(d.ArrivalMethod, 'เปลนอน', 'เปลนอน')}
+            ${chkGroup(d.ArrivalMethod, 'เดินมา', 'เดินมา')}
+            ${chkGroup(d.ArrivalMethod, 'รถนั่ง', 'รถนั่ง')}
+            ${chkGroup(d.ArrivalMethod, 'เปลนอน', 'เปลนอน')}
             
             <span class="font-bold ml-6 mr-2">ผู้ให้ข้อมูล :</span>
-            ${chk004(d.Informant, 'ผู้ป่วย', 'ผู้ป่วย')}
-            ${chk004(d.Informant, 'ผู้นำส่ง', 'ผู้นำส่ง')}
-            ${chk004(d.Informant, 'ญาติ', 'ญาติ')}
+            ${chkGroup(d.Informant, 'ผู้ป่วย', 'ผู้ป่วย')}
+            ${chkGroup(d.Informant, 'ผู้นำส่ง', 'ผู้นำส่ง')}
+            ${chkGroup(d.Informant, 'ญาติ', 'ญาติ')}
         </div>
 
         <div class="flex flex-wrap items-end gap-1 mb-1">
-            <span class="font-bold mr-2">ผู้ดูแลหลักชื่อ</span> ${dot004(d.MainCaregiver, "200px")}
-            <span class="font-bold ml-2">ความสัมพันธ์กับผู้ป่วย</span> ${dot004(d.CaregiverRelation, "150px")}
+            <span class="font-bold mr-2">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver, "200px")}
+            <span class="font-bold ml-2">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.CaregiverRelation, "150px")}
         </div>
 
         <div class="border border-black p-2 mt-2 space-y-1">
@@ -4797,46 +4797,46 @@ function renderForm004Page1(container, options = {}) {
                 <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.ChiefComplaint || ''}</div>
             </div>
             <div class="flex items-end">
-                <span class="font-bold w-24 flex-shrink-0">ประวัติการเจ็บป่วย</span>
+                <span class="font-bold w-28 flex-shrink-0">ประวัติการเจ็บป่วย</span>
                 <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.PresentIllness || ''}</div>
             </div>
-            <div class="flex items-end">
-                <span class="font-bold w-36 flex-shrink-0">อาการและอาการแสดงแรกรับ</span>
+            <div class="flex items-end mt-1">
+                <span class="font-bold w-40 flex-shrink-0">อาการและอาการแสดงแรกรับ</span>
                 <div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.InitialSymptoms || ''}</div>
             </div>
             
             <div class="flex items-end mt-1">
                 <span class="font-bold mr-2">สัญญาณชีพแรกรับ</span>
-                BT ${dot004(vs.T, "40px")} °C 
-                <span class="ml-4">PR</span> ${dot004(vs.P, "40px")} /min
-                <span class="ml-4">RR</span> ${dot004(vs.R, "40px")} /min
-                <span class="ml-4">BP</span> ${dot004(vs.BP, "60px")} mmHg
+                BT ${dot(d.T, "40px")} °C 
+                <span class="ml-4">PR</span> ${dot(d.P, "40px")} /min
+                <span class="ml-4">RR</span> ${dot(d.R, "40px")} /min
+                <span class="ml-4">BP</span> ${dot(d.BP, "60px")} mmHg
             </div>
 
             <div class="flex flex-wrap items-start mt-2 border-t border-black pt-2">
                 <span class="font-bold mr-2 w-20">โรคประจำตัว</span>
                 <div class="flex flex-col flex-grow">
                     <div class="flex gap-4 mb-1">
-                        ${chk004(d.UD, 'ไม่มี', 'ไม่มี')}
-                        ${chk004(d.UD, 'ไม่ทราบ', 'ไม่ทราบ')}
-                        ${chk004(d.UD, 'ไม่เคยตรวจ', 'ไม่เคยตรวจ')}
+                        ${chkGroup(d.UD, 'ไม่มี', 'ไม่มี')}
+                        ${chkGroup(d.UD, 'ไม่ทราบ', 'ไม่ทราบ')}
+                        ${chkGroup(d.UD, 'ไม่เคยตรวจ', 'ไม่เคยตรวจ')}
                     </div>
                     <div class="flex flex-wrap gap-y-1 items-end">
-                        ${chk004(d.UD, 'มี', 'มี ได้แก่')}
+                        ${chkGroup(d.UD, 'มี', 'มี ได้แก่')}
                         <div class="ml-2 grid grid-cols-4 gap-x-1 gap-y-1 w-full">
-                            ${chk004(d.UD_List, 'HT', 'ความดันโลหิตสูง')}
-                            ${chk004(d.UD_List, 'Heart', 'โรคหัวใจ')}
-                            ${chk004(d.UD_List, 'Liver', 'โรคตับ')}
-                            ${chk004(d.UD_List, 'Kidney', 'โรคไต')}
-                            ${chk004(d.UD_List, 'DM', 'เบาหวาน')}
-                            ${chk004(d.UD_List, 'Asthma', 'หอบหืด')}
-                            ${chk004(d.UD_List, 'Epilepsy', 'ลมชัก')}
-                            ${chk004(d.UD_List, 'TB', 'วัณโรค')}
+                            ${chkGroup(d.UD_List, 'HT', 'ความดันโลหิตสูง')}
+                            ${chkGroup(d.UD_List, 'Heart', 'โรคหัวใจ')}
+                            ${chkGroup(d.UD_List, 'Liver', 'โรคตับ')}
+                            ${chkGroup(d.UD_List, 'Kidney', 'โรคไต')}
+                            ${chkGroup(d.UD_List, 'DM', 'เบาหวาน')}
+                            ${chkGroup(d.UD_List, 'Asthma', 'หอบหืด')}
+                            ${chkGroup(d.UD_List, 'Epilepsy', 'ลมชัก')}
+                            ${chkGroup(d.UD_List, 'TB', 'วัณโรค')}
                             <div class="col-span-2 flex items-end">
-                                ${chk004(d.UD_List, 'Cancer', 'มะเร็ง')} ${dot004(d.UD_Cancer_Detail, "100px")}
+                                ${chkGroup(d.UD_List, 'Cancer', 'มะเร็ง')} ${dot(d.UD_Cancer_Detail, "120px")}
                             </div>
                             <div class="col-span-4 flex items-end">
-                                <span>อื่นๆ : ${dot004(d.UD_Other, "300px")}</span>
+                                <span>อื่นๆ : ${dot(d.UD_Other, "300px")}</span>
                             </div>
                         </div>
                     </div>
@@ -4846,25 +4846,25 @@ function renderForm004Page1(container, options = {}) {
             <div class="grid grid-cols-1 gap-1 mt-1 border-t border-black pt-2">
                 <div class="flex items-end">
                     <span class="font-bold w-32">การแพ้ยา/สารต่าง ๆ :</span>
-                    ${chk004(d.Allergy, 'ไม่เคย', 'ไม่เคย')}
-                    ${chk004(d.Allergy, 'เคย', 'เคย (ระบุ)')} ${dot004(d.AllergyDetail, "100%")}
+                    ${chkGroup(d.Allergy, 'ไม่เคย', 'ไม่เคย')}
+                    ${chkGroup(d.Allergy, 'เคย', 'เคย (ระบุ)')} ${dot(d.AllergyDetail, "100%")}
                 </div>
                 <div class="flex items-end">
                     <span class="font-bold w-32">การรักษาตัวใน รพ. :</span>
-                    ${chk004(d.PrevAdmit, 'ไม่เคย', 'ไม่เคย')}
-                    ${chk004(d.PrevAdmit, 'เคย', 'เคย ด้วยโรค')} ${dot004(d.PrevAdmitDx, "150px")}
-                    <span class="ml-2">เมื่อ</span> ${dot004(d.PrevAdmitYear, "80px")}
+                    ${chkGroup(d.PrevAdmit, 'ไม่เคย', 'ไม่เคย')}
+                    ${chkGroup(d.PrevAdmit, 'เคย', 'เคย ด้วยโรค')} ${dot(d.PrevAdmitDx, "150px")}
+                    <span class="ml-2">เมื่อ</span> ${dot(d.PrevAdmitYear, "80px")}
                 </div>
                 <div class="flex items-end">
                     <span class="font-bold w-32">การผ่าตัด :</span>
-                    ${chk004(d.Surgery, 'ไม่เคย', 'ไม่เคย')}
-                    ${chk004(d.Surgery, 'เคย', 'เคย ผ่าตัด')} ${dot004(d.SurgeryDetail, "150px")}
-                    <span class="ml-2">เมื่อ</span> ${dot004(d.SurgeryYear, "80px")}
+                    ${chkGroup(d.Surgery, 'ไม่เคย', 'ไม่เคย')}
+                    ${chkGroup(d.Surgery, 'เคย', 'เคย ผ่าตัด')} ${dot(d.SurgeryDetail, "150px")}
+                    <span class="ml-2">เมื่อ</span> ${dot(d.SurgeryYear, "80px")}
                 </div>
                 <div class="flex items-end">
                     <span class="font-bold w-36">ประวัติเจ็บป่วยในครอบครัว :</span>
-                    ${chk004(d.FamilyHx, 'ไม่มี', 'ไม่มี')}
-                    ${chk004(d.FamilyHx, 'มี', 'มี (ระบุ)')} ${dot004(d.FamilyHxDetail, "100%")}
+                    ${chkGroup(d.FamilyHx, 'ไม่มี', 'ไม่มี')}
+                    ${chkGroup(d.FamilyHx, 'มี', 'มี (ระบุ)')} ${dot(d.FamilyHxDetail, "100%")}
                 </div>
             </div>
 
@@ -4873,29 +4873,29 @@ function renderForm004Page1(container, options = {}) {
                 <div class="flex-grow">
                     <div class="flex flex-wrap gap-4 mb-1">
                         <span class="font-bold">สุรา</span>
-                        ${chk004(d.Alcohol, 'ไม่ดื่ม', 'ไม่ดื่ม')}
-                        ${chk004(d.Alcohol, 'ดื่มนานๆครั้ง', 'ดื่มนานๆครั้ง')}
-                        ${chk004(d.Alcohol, 'ดื่มเป็นประจำ', 'ดื่มเป็นประจำ')}
-                        <span>ปริมาณ ${dot004(d.AlcoholAmount, "50px")} ต่อวัน</span>
+                        ${chkGroup(d.Alcohol, 'ไม่ดื่ม', 'ไม่ดื่ม')}
+                        ${chkGroup(d.Alcohol, 'ดื่มนานๆครั้ง', 'ดื่มนานๆครั้ง')}
+                        ${chkGroup(d.Alcohol, 'ดื่มเป็นประจำ', 'ดื่มเป็นประจำ')}
+                        <span>ปริมาณ ${dot(d.AlcoholAmount, "50px")} ต่อวัน</span>
                     </div>
                     <div class="flex flex-wrap gap-4 mb-1">
                         <span class="font-bold">บุหรี่</span>
-                        ${chk004(d.Smoking, 'ไม่สูบ', 'ไม่สูบ')}
-                        ${chk004(d.Smoking, 'สูบนานๆครั้ง', 'สูบนานๆครั้ง')}
-                        ${chk004(d.Smoking, 'สูบเป็นประจำ', 'สูบเป็นประจำ')}
-                        <span>ปริมาณ ${dot004(d.SmokingAmount, "50px")} มวน/วัน</span>
+                        ${chkGroup(d.Smoking, 'ไม่สูบ', 'ไม่สูบ')}
+                        ${chkGroup(d.Smoking, 'สูบนานๆครั้ง', 'สูบนานๆครั้ง')}
+                        ${chkGroup(d.Smoking, 'สูบเป็นประจำ', 'สูบเป็นประจำ')}
+                        <span>ปริมาณ ${dot(d.SmokingAmount, "50px")} มวน/วัน</span>
                     </div>
                     <div class="flex flex-wrap gap-4">
                         <span class="font-bold">ยาเสพติด/อื่น ๆ</span>
-                        ${chk004(d.Drugs, 'ไม่เคย', 'ไม่เคย')}
-                        ${chk004(d.Drugs, 'เคย', 'เคย (ระบุ)')} ${dot004(d.DrugsDetail, "150px")}
+                        ${chkGroup(d.Drugs, 'ไม่เคย', 'ไม่เคย')}
+                        ${chkGroup(d.Drugs, 'เคย', 'เคย (ระบุ)')} ${dot(d.DrugsDetail, "150px")}
                     </div>
                 </div>
             </div>
             
             <div class="flex items-end pt-2 border-t border-black">
                 <span class="font-bold w-40">ยาที่รับประทานปัจจุบัน :</span>
-                ${dot004(d.CurrentMeds, "100%")}
+                ${dot(d.CurrentMeds, "100%")}
             </div>
         </div>
 
@@ -4910,19 +4910,19 @@ function renderForm004Page1(container, options = {}) {
                 <div class="pl-2 space-y-1">
                     <div class="flex flex-wrap">
                         <span class="font-bold mr-2">ระดับความรู้สึกตัว:</span>
-                        ${chk004(d.Conscious, 'Alert', 'รู้สึกตัวดี')}
-                        ${chk004(d.Conscious, 'Drowsy', 'ซึม')}
-                        ${chk004(d.Conscious, 'Stupor', 'สับสน')}
-                        ${chk004(d.Conscious, 'Coma', 'ไม่รู้สึกตัว')}
+                        ${chkGroup(d.Conscious, 'Alert', 'รู้สึกตัวดี')}
+                        ${chkGroup(d.Conscious, 'Drowsy', 'ซึม')}
+                        ${chkGroup(d.Conscious, 'Stupor', 'สับสน')}
+                        ${chkGroup(d.Conscious, 'Coma', 'ไม่รู้สึกตัว')}
                     </div>
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">สภาวะจิตใจ:</span>
-                        ${chk004(d.Mental, 'Normal', 'ปกติ')}
-                        ${chk004(d.Mental, 'Anxious', 'วิตกกังวล')}
-                        ${chk004(d.Mental, 'Fear', 'กลัว')}
-                        ${chk004(d.Mental, 'Sad', 'ซึมเศร้า')}
-                        ${chk004(d.Mental, 'Agitated', 'ก้าวร้าว')}
-                        <span>อื่น ๆ ${dot004(d.MentalOther, "30px")}</span>
+                        ${chkGroup(d.Mental, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Mental, 'Anxious', 'วิตกกังวล')}
+                        ${chkGroup(d.Mental, 'Fear', 'กลัว')}
+                        ${chkGroup(d.Mental, 'Sad', 'ซึมเศร้า')}
+                        ${chkGroup(d.Mental, 'Agitated', 'ก้าวร้าว')}
+                        <span>อื่น ๆ ${dot(d.MentalOther, "30px")}</span>
                     </div>
                 </div>
             </div>
@@ -4931,16 +4931,16 @@ function renderForm004Page1(container, options = {}) {
                 <div class="font-bold mb-1">2. การสื่อสาร/ภาษา</div>
                 <div class="pl-2 space-y-1">
                     <div class="flex flex-wrap">
-                        ${chk004(d.Comm, 'Normal', 'ปกติ')}
-                        ${chk004(d.Comm, 'Aphasia', 'พูดไม่ชัด')}
-                        ${chk004(d.Comm, 'Mute', 'เป็นใบ้')}
-                        ${chk004(d.Comm, 'Tube', 'ใส่ท่อช่วยหายใจ')}
+                        ${chkGroup(d.Comm, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Comm, 'Aphasia', 'พูดไม่ชัด')}
+                        ${chkGroup(d.Comm, 'Mute', 'เป็นใบ้')}
+                        ${chkGroup(d.Comm, 'Tube', 'ใส่ท่อช่วยหายใจ')}
                     </div>
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">ภาษาที่ใช้:</span>
-                        ${chk004(d.Lang, 'Thai', 'ไทย')}
-                        ${chk004(d.Lang, 'Esan', 'อีสาน')}
-                        ${chk004(d.Lang, 'Other', 'อื่น ๆ')} ${dot004(d.LangOther, "50px")}
+                        ${chkGroup(d.Lang, 'Thai', 'ไทย')}
+                        ${chkGroup(d.Lang, 'Esan', 'อีสาน')}
+                        ${chkGroup(d.Lang, 'Other', 'อื่น ๆ')} ${dot(d.LangOther, "50px")}
                     </div>
                 </div>
             </div>
@@ -4950,19 +4950,19 @@ function renderForm004Page1(container, options = {}) {
                 <div class="pl-2 space-y-1">
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">ตา:</span>
-                        ${chk004(d.Vision, 'Normal', 'ปกติ')}
-                        ${chk004(d.Vision, 'Blur', 'ตามัว')}
-                        ${chk004(d.Vision, 'Blind', 'บอด')}
-                        <span>( ${chk004(d.VisionSide, 'L', 'ซ้าย')} ${chk004(d.VisionSide, 'R', 'ขวา')} )</span>
-                        ${chk004(d.Vision, 'Cataract', 'ต้อกระจก')}
-                        ${chk004(d.Vision, 'Glasses', 'แว่นตา')}
+                        ${chkGroup(d.Vision, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Vision, 'Blur', 'ตามัว')}
+                        ${chkGroup(d.Vision, 'Blind', 'บอด')}
+                        <span>( ${chkGroup(d.VisionSide, 'L', 'ซ้าย')} ${chkGroup(d.VisionSide, 'R', 'ขวา')} )</span>
+                        ${chkGroup(d.Vision, 'Cataract', 'ต้อกระจก')}
+                        ${chkGroup(d.Vision, 'Glasses', 'แว่นตา')}
                     </div>
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">หู:</span>
-                        ${chk004(d.Hearing, 'Normal', 'ปกติ')}
-                        ${chk004(d.Hearing, 'Deaf', 'ตึง/หนวก')}
-                        ${chk004(d.Hearing, 'Aid', 'เครื่องช่วยฟัง')}
-                        <span>( ${chk004(d.HearingSide, 'L', 'ซ้าย')} ${chk004(d.HearingSide, 'R', 'ขวา')} )</span>
+                        ${chkGroup(d.Hearing, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Hearing, 'Deaf', 'ตึง/หนวก')}
+                        ${chkGroup(d.Hearing, 'Aid', 'เครื่องช่วยฟัง')}
+                        <span>( ${chkGroup(d.HearingSide, 'L', 'ซ้าย')} ${chkGroup(d.HearingSide, 'R', 'ขวา')} )</span>
                     </div>
                 </div>
             </div>
@@ -4971,10 +4971,10 @@ function renderForm004Page1(container, options = {}) {
                 <div class="font-bold mb-1">4. ระบบหายใจ</div>
                 <div class="pl-2 space-y-1">
                     <div class="flex flex-wrap">
-                        ${chk004(d.Resp, 'Normal', 'ปกติ')}
-                        ${chk004(d.Resp, 'Dyspnea', 'หอบเหนื่อย')}
-                        ${chk004(d.Resp, 'Cough', 'ไอ')}
-                        ${chk004(d.Resp, 'Sputum', 'มีเสมหะ')}
+                        ${chkGroup(d.Resp, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Resp, 'Dyspnea', 'หอบเหนื่อย')}
+                        ${chkGroup(d.Resp, 'Cough', 'ไอ')}
+                        ${chkGroup(d.Resp, 'Sputum', 'มีเสมหะ')}
                     </div>
                 </div>
             </div>
@@ -4982,9 +4982,9 @@ function renderForm004Page1(container, options = {}) {
             <div class="border-r border-black p-2 col-span-2">
                 <div class="font-bold mb-1">5. ความสามารถในการปฏิบัติกิจวัตรประจำวัน (ADL)</div>
                 <div class="pl-2 flex gap-8">
-                    ${chk004(d.ADL, 'Independent', 'ทำได้เอง')}
-                    ${chk004(d.ADL, 'Partial', 'ช่วยเหลือบ้าง')}
-                    ${chk004(d.ADL, 'Dependent', 'ทำไม่ได้เลย (พึ่งพาผู้อื่น)')}
+                    ${chkGroup(d.ADL, 'Independent', 'ทำได้เอง')}
+                    ${chkGroup(d.ADL, 'Partial', 'ช่วยเหลือบ้าง')}
+                    ${chkGroup(d.ADL, 'Dependent', 'ทำไม่ได้เลย (พึ่งพาผู้อื่น)')}
                 </div>
             </div>
 
@@ -4993,52 +4993,52 @@ function renderForm004Page1(container, options = {}) {
                 <div class="pl-2 grid grid-cols-2 gap-2">
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">การกิน:</span>
-                        ${chk004(d.Diet, 'Normal', 'ปกติ')}
-                        ${chk004(d.Diet, 'Nausea', 'คลื่นไส้')}
-                        ${chk004(d.Diet, 'Vomit', 'อาเจียน')}
-                        ${chk004(d.Diet, 'Anorexia', 'เบื่ออาหาร')}
-                        ${chk004(d.Diet, 'Tube', 'สายยาง')}
+                        ${chkGroup(d.Diet, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Diet, 'Nausea', 'คลื่นไส้')}
+                        ${chkGroup(d.Diet, 'Vomit', 'อาเจียน')}
+                        ${chkGroup(d.Diet, 'Anorexia', 'เบื่ออาหาร')}
+                        ${chkGroup(d.Diet, 'Tube', 'สายยาง')}
                     </div>
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">ช่องปาก:</span>
-                        ${chk004(d.Oral, 'Normal', 'ปกติ')}
-                        ${chk004(d.Oral, 'Sore', 'มีแผล')}
-                        ${chk004(d.Oral, 'Denture', 'ฟันปลอม')}
-                        <span>( ${chk004(d.Denture, 'Upper', 'บน')} ${chk004(d.Denture, 'Lower', 'ล่าง')} )</span>
+                        ${chkGroup(d.Oral, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Oral, 'Sore', 'มีแผล')}
+                        ${chkGroup(d.Oral, 'Denture', 'ฟันปลอม')}
+                        <span>( ${chkGroup(d.Denture, 'Upper', 'บน')} ${chkGroup(d.Denture, 'Lower', 'ล่าง')} )</span>
                     </div>
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">การขับถ่าย:</span>
-                        ${chk004(d.Stool, 'Normal', 'ปกติ')}
-                        ${chk004(d.Stool, 'Constipation', 'ท้องผูก')}
-                        ${chk004(d.Stool, 'Diarrhea', 'ท้องเสีย')}
-                        ${chk004(d.Stool, 'Incontinence', 'กลั้นไม่ได้')}
+                        ${chkGroup(d.Stool, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Stool, 'Constipation', 'ท้องผูก')}
+                        ${chkGroup(d.Stool, 'Diarrhea', 'ท้องเสีย')}
+                        ${chkGroup(d.Stool, 'Incontinence', 'กลั้นไม่ได้')}
                     </div>
                     <div class="flex flex-wrap items-end">
                         <span class="font-bold mr-2">ปัสสาวะ:</span>
-                        ${chk004(d.Urine, 'Normal', 'ปกติ')}
-                        ${chk004(d.Urine, 'Dysuria', 'แสบขัด')}
-                        ${chk004(d.Urine, 'Retention', 'ไม่ออก')}
-                        ${chk004(d.Urine, 'Catheter', 'ใส่สายสวน')}
+                        ${chkGroup(d.Urine, 'Normal', 'ปกติ')}
+                        ${chkGroup(d.Urine, 'Dysuria', 'แสบขัด')}
+                        ${chkGroup(d.Urine, 'Retention', 'ไม่ออก')}
+                        ${chkGroup(d.Urine, 'Catheter', 'ใส่สายสวน')}
                     </div>
                 </div>
             </div>
 
         </div>
     </div>
-    <div class="text-right text-[10px] mt-1 font-bold font-sarabun text-black">- 1 -</div>
+    <div class="text-right text-[10px] mt-1 font-sarabun text-black font-bold">- 1 -</div>
     `;
 
     container.innerHTML = html;
 }
 
 // =================================================================
-// PAGE 2 RENDERER
+// PAGE 2 RENDERER (ข้อ 7-15 + Footer)
 // =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = currentPatientData;
     const currentUser = options.customUser || "(เจ้าหน้าที่)";
-    const printDate = formatDateThaiFull(new Date().toISOString());
-    const printTime = formatTimeShort(new Date().toISOString());
+    const printDate = formatDateThai(new Date().toISOString());
+    const printTime = formatTime(new Date().toISOString());
 
     let html = `
     <div class="text-[12px] leading-snug border border-black font-sarabun text-black h-full flex flex-col">
@@ -5048,20 +5048,20 @@ function renderForm004Page2(container, options = {}) {
             <div class="pl-2 space-y-1">
                 <div class="flex flex-wrap items-end">
                     <span class="font-bold mr-2">การเดิน:</span>
-                    ${chk004(d.Gait, 'Normal', 'ปกติ')}
-                    ${chk004(d.Gait, 'Unsteady', 'เซ')}
-                    ${chk004(d.Gait, 'Aid', 'ใช้อุปกรณ์ช่วย')}
-                    <span>( ${chk004(d.Aid, 'Cane', 'ไม้เท้า')} ${chk004(d.Aid, 'Walker', 'Walker')} ${chk004(d.Gait, 'Wheelchair', 'รถเข็น')} )</span>
+                    ${chkGroup(d.Gait, 'Normal', 'ปกติ')}
+                    ${chkGroup(d.Gait, 'Unsteady', 'เซ')}
+                    ${chkGroup(d.Gait, 'Aid', 'ใช้อุปกรณ์ช่วย')}
+                    <span>( ${chkGroup(d.Aid, 'Cane', 'ไม้เท้า')} ${chkGroup(d.Aid, 'Walker', 'Walker')} ${chkGroup(d.Gait, 'Wheelchair', 'รถเข็น')} )</span>
                 </div>
                 <div class="flex flex-wrap">
                     <span class="font-bold mr-2">ประวัติหกล้ม (ใน 6 เดือน):</span>
-                    ${chk004(d.FallHx, 'No', 'ไม่มี')}
-                    ${chk004(d.FallHx, 'Yes', 'มี')}
+                    ${chkGroup(d.FallHx, 'No', 'ไม่มี')}
+                    ${chkGroup(d.FallHx, 'Yes', 'มี')}
                 </div>
                 <div class="flex flex-wrap">
                     <span class="font-bold mr-2">ความเสี่ยงต่อการพลัดตกหกล้ม:</span>
-                    ${chk004(d.FallRisk, 'Low', 'ต่ำ')}
-                    ${chk004(d.FallRisk, 'High', 'สูง (ต้องประเมิน Morse Fall Scale)')}
+                    ${chkGroup(d.FallRisk, 'Low', 'ต่ำ')}
+                    ${chkGroup(d.FallRisk, 'High', 'สูง (ต้องประเมิน Morse Fall Scale)')}
                 </div>
             </div>
         </div>
@@ -5069,12 +5069,12 @@ function renderForm004Page2(container, options = {}) {
         <div class="border-b border-black p-2">
             <div class="font-bold mb-1">8. การพักผ่อนนอนหลับ</div>
             <div class="pl-2 flex flex-wrap items-end">
-                ${chk004(d.Sleep, 'Normal', 'ปกติ (6-8 ชม.)')}
-                ${chk004(d.Sleep, 'Insomnia', 'นอนไม่หลับ')}
-                ${chk004(d.Sleep, 'Wake', 'ตื่นบ่อย')}
+                ${chkGroup(d.Sleep, 'Normal', 'ปกติ (6-8 ชม.)')}
+                ${chkGroup(d.Sleep, 'Insomnia', 'นอนไม่หลับ')}
+                ${chkGroup(d.Sleep, 'Wake', 'ตื่นบ่อย')}
                 <span class="font-bold ml-6 mr-2">ยานอนหลับ:</span>
-                ${chk004(d.SleepMed, 'No', 'ไม่ใช้')}
-                ${chk004(d.SleepMed, 'Yes', 'ใช้')}
+                ${chkGroup(d.SleepMed, 'No', 'ไม่ใช้')}
+                ${chkGroup(d.SleepMed, 'Yes', 'ใช้')}
             </div>
         </div>
 
@@ -5083,19 +5083,19 @@ function renderForm004Page2(container, options = {}) {
             <div class="pl-2 space-y-1">
                 <div class="flex flex-wrap items-end">
                     <span class="font-bold mr-2">สถานภาพ:</span>
-                    ${chk004(d.Status, 'Single', 'โสด')}
-                    ${chk004(d.Status, 'Married', 'คู่')}
-                    ${chk004(d.Status, 'Widowed', 'หม้าย')}
-                    ${chk004(d.Status, 'Divorced', 'หย่า')}
-                    ${chk004(d.Status, 'Monk', 'สมณะ')}
+                    ${chkGroup(d.Status, 'Single', 'โสด')}
+                    ${chkGroup(d.Status, 'Married', 'คู่')}
+                    ${chkGroup(d.Status, 'Widowed', 'หม้าย')}
+                    ${chkGroup(d.Status, 'Divorced', 'หย่า')}
+                    ${chkGroup(d.Status, 'Monk', 'สมณะ')}
                     
-                    <span class="font-bold ml-6 mr-2">อาชีพ:</span> ${dot004(d.Occupation, "120px")}
-                    <span class="font-bold ml-4 mr-2">ศาสนา:</span> ${dot004(d.Religion, "80px")}
+                    <span class="font-bold ml-6 mr-2">อาชีพ:</span> ${dot(d.Occupation, "120px")}
+                    <span class="font-bold ml-4 mr-2">ศาสนา:</span> ${dot(d.Religion, "80px")}
                 </div>
                 <div class="flex flex-wrap items-end">
                     <span class="font-bold mr-2">ความเชื่อ/ข้อห้ามทางการแพทย์:</span>
-                    ${chk004(d.Belief, 'No', 'ไม่มี')}
-                    ${chk004(d.Belief, 'Yes', 'มี (ระบุ)')} ${dot004(d.BeliefDetail, "200px")}
+                    ${chkGroup(d.Belief, 'No', 'ไม่มี')}
+                    ${chkGroup(d.Belief, 'Yes', 'มี (ระบุ)')} ${dot(d.BeliefDetail, "200px")}
                 </div>
             </div>
         </div>
@@ -5103,12 +5103,12 @@ function renderForm004Page2(container, options = {}) {
         <div class="border-b border-black p-2">
             <div class="font-bold mb-1">10. ความต้องการเรียนรู้/สุขศึกษา</div>
             <div class="pl-2 flex flex-wrap items-end">
-                ${chk004(d.EduNeed, 'Disease', 'เรื่องโรค/การรักษา')}
-                ${chk004(d.EduNeed, 'Med', 'การใช้ยา')}
-                ${chk004(d.EduNeed, 'Diet', 'อาหาร')}
-                ${chk004(d.EduNeed, 'Rehab', 'การกายภาพ')}
-                ${chk004(d.EduNeed, 'Wound', 'การทำแผล')}
-                ${chk004(d.EduNeed, 'Other', 'อื่น ๆ')} ${dot004(d.EduOther, "80px")}
+                ${chkGroup(d.EduNeed, 'Disease', 'เรื่องโรค/การรักษา')}
+                ${chkGroup(d.EduNeed, 'Med', 'การใช้ยา')}
+                ${chkGroup(d.EduNeed, 'Diet', 'อาหาร')}
+                ${chkGroup(d.EduNeed, 'Rehab', 'การกายภาพ')}
+                ${chkGroup(d.EduNeed, 'Wound', 'การทำแผล')}
+                ${chkGroup(d.EduNeed, 'Other', 'อื่น ๆ')} ${dot(d.EduOther, "80px")}
             </div>
         </div>
 
@@ -5116,17 +5116,17 @@ function renderForm004Page2(container, options = {}) {
             <div class="font-bold mb-1">11. การวางแผนจำหน่าย (Discharge Planning)</div>
             <div class="pl-2 flex flex-wrap items-end">
                 <span class="font-bold mr-2">ความพร้อมของผู้ป่วย/ญาติ:</span>
-                ${chk004(d.DCReady, 'Ready', 'พร้อม')}
-                ${chk004(d.DCReady, 'NotReady', 'ไม่พร้อม เนื่องจาก')} ${dot004(d.DCProblem, "200px")}
+                ${chkGroup(d.DCReady, 'Ready', 'พร้อม')}
+                ${chkGroup(d.DCReady, 'NotReady', 'ไม่พร้อม เนื่องจาก')} ${dot(d.DCProblem, "200px")}
             </div>
         </div>
 
         <div class="border-b border-black p-2">
             <div class="font-bold mb-1">12. การรับทราบสิทธิผู้ป่วย</div>
             <div class="pl-2 flex flex-wrap">
-                ${chk004(d.Rights, 'Ack', 'รับทราบ')}
-                ${chk004(d.Rights, 'Wait', 'รอญาติ')}
-                ${chk004(d.Rights, 'Unconscious', 'ไม่รู้สึกตัว')}
+                ${chkGroup(d.Rights, 'Ack', 'รับทราบ')}
+                ${chkGroup(d.Rights, 'Wait', 'รอญาติ')}
+                ${chkGroup(d.Rights, 'Unconscious', 'ไม่รู้สึกตัว')}
             </div>
         </div>
 
@@ -5141,36 +5141,32 @@ function renderForm004Page2(container, options = {}) {
                         <span class="ml-2 text-[10px]">(0-10)</span>
                     </div>
                     <div class="space-y-1 text-[11px]">
-                        <div class="flex items-end"><span class="w-16 font-bold">ตำแหน่ง:</span> ${dot004(d.PainLoc, "150px")}</div>
-                        <div class="flex items-end"><span class="w-16 font-bold">ลักษณะ:</span> ${dot004(d.PainChar, "150px")}</div>
-                        <div class="flex items-end"><span class="w-16 font-bold">ระยะเวลา:</span> ${dot004(d.PainDur, "150px")}</div>
+                        <div class="flex items-end"><span class="w-16 font-bold">ตำแหน่ง:</span> ${dot(d.PainLoc, "150px")}</div>
+                        <div class="flex items-end"><span class="w-16 font-bold">ลักษณะ:</span> ${dot(d.PainChar, "150px")}</div>
+                        <div class="flex items-end"><span class="w-16 font-bold">ระยะเวลา:</span> ${dot(d.PainDur, "150px")}</div>
                         
                         <div class="mt-2">
                             <div class="font-bold">ผลกระทบ:</div>
                             <div class="flex flex-wrap ml-2">
-                                ${chk004(d.PainEffect, 'Sleep', 'การนอน')}
-                                ${chk004(d.PainEffect, 'Activity', 'กิจกรรม')}
-                                ${chk004(d.PainEffect, 'Emotion', 'อารมณ์')}
-                                ${chk004(d.PainEffect, 'Eat', 'การกิน')}
+                                ${chkGroup(d.PainEffect, 'Sleep', 'การนอน')}
+                                ${chkGroup(d.PainEffect, 'Activity', 'กิจกรรม')}
+                                ${chkGroup(d.PainEffect, 'Emotion', 'อารมณ์')}
+                                ${chkGroup(d.PainEffect, 'Eat', 'การกิน')}
                             </div>
                         </div>
                         <div class="mt-1">
                             <div class="font-bold">บรรเทาโดย:</div>
                             <div class="flex flex-wrap ml-2">
-                                ${chk004(d.PainRelief, 'Med', 'ยา')}
-                                ${chk004(d.PainRelief, 'Massage', 'นวด')}
-                                ${chk004(d.PainRelief, 'Rest', 'พัก')}
-                                ${chk004(d.PainRelief, 'Cold', 'เย็น/ร้อน')}
+                                ${chkGroup(d.PainRelief, 'Med', 'ยา')}
+                                ${chkGroup(d.PainRelief, 'Massage', 'นวด')}
+                                ${chkGroup(d.PainRelief, 'Rest', 'พัก')}
+                                ${chkGroup(d.PainRelief, 'Cold', 'เย็น/ร้อน')}
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="w-[45%] flex flex-col items-center justify-center p-2">
-                    
-
-[Image of Color Pain Scale with Faces]
-
                     <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" 
                          alt="Pain Scale" 
                          style="width: 100%; border: 1px solid #ccc; max-height: 120px; object-fit: contain;">
@@ -5209,8 +5205,8 @@ function renderForm004Page2(container, options = {}) {
                 <span class="font-bold mr-2">คะแนนรวม:</span> 
                 <span class="border border-black px-2 font-bold w-16 text-center mr-2 bg-white">${d.BradenScore || ''}</span>
                 <span class="font-bold mr-2">การแปลผล:</span>
-                ${chk004(d.BradenRisk, 'High', 'เสี่ยงสูง (≤ 16)')}
-                ${chk004(d.BradenRisk, 'Low', 'เสี่ยงต่ำ (> 16)')}
+                ${chkGroup(d.BradenRisk, 'High', 'เสี่ยงสูง (≤ 16)')}
+                ${chkGroup(d.BradenRisk, 'Low', 'เสี่ยงต่ำ (> 16)')}
             </div>
         </div>
 
@@ -5230,8 +5226,8 @@ function renderForm004Page2(container, options = {}) {
                 </div>
                 <div class="font-bold mb-1 text-sm">${currentUser}</div>
                 <div class="flex items-end justify-center">
-                    <span>วันที่</span> ${dot004(printDate, "100px")}
-                    <span>เวลา</span> ${dot004(printTime, "60px")} <span>น.</span>
+                    <span>วันที่</span> ${dot(printDate, "100px")}
+                    <span>เวลา</span> ${dot(printTime, "60px")} <span>น.</span>
                 </div>
             </div>
         </div>
