@@ -4514,10 +4514,8 @@ function renderBradenPage1(container, data, options = {}) {
 // === PAGE 2: Part 2, 3, 4 (Print Preview) ===
 function renderBradenPage2(container, data, options = {}) {
     let html = `
-    <div class="text-center mb-2">
-        <div class="font-bold text-lg">ส่วนที่ 2 การปฏิบัติเพื่อป้องกัน / ดูแลการเกิดแผลกดทับ</div>
-        <div class="text-xs">(โดยเฉพาะผู้ป่วยที่มีความเสี่ยงสูง Braden Score ≤ 16)</div>
-    </div>
+    <div class="mb-2 font-bold text-sm">ส่วนที่ 2 การปฏิบัติเพื่อป้องกัน / ดูแลการเกิดแผลกดทับ</div>
+    <div class="text-[9px] mb-1">(โดยเฉพาะผู้ป่วยที่มีความเสี่ยงสูง Braden Score ≤ 16)</div>
 
     <div class="grid grid-cols-2 gap-4 text-[10px] border border-black p-2 mb-4">
         <div class="border-r border-black pr-2">
