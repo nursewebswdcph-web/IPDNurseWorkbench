@@ -3511,4 +3511,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if(mNext) mNext.addEventListener("click", () => {
         currentMorsePage++; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
     });
+  // จัดการปุ่มเปลี่ยนหน้า Classification (จำแนกประเภทผู้ป่วย)
+    const classifyPrevBtn = document.getElementById("classify-prev-page-btn");
+    const classifyNextBtn = document.getElementById("classify-next-page-btn");
+    const classifyAddBtn = document.getElementById("classify-add-page-btn");
+
+    if (classifyPrevBtn) {
+        classifyPrevBtn.addEventListener("click", () => {
+            changeClassifyPage(-1); // ย้อนกลับ
+        });
+    }
+
+    if (classifyNextBtn) {
+        classifyNextBtn.addEventListener("click", () => {
+            changeClassifyPage(1); // ไปหน้าถัดไป
+        });
+    }
+
+    if (classifyAddBtn) {
+        classifyAddBtn.addEventListener("click", () => {
+            // การเพิ่มหน้าใหม่ ในเชิง Logic คือการขยับไปหน้าถัดไป (Page + 1)
+            // ระบบจะโหลดตารางเปล่าของหน้านั้นขึ้นมาให้เอง
+            changeClassifyPage(1); 
+        });
+    }
 }); // จบ DOMContentLoaded อย่างสมบูรณ์
