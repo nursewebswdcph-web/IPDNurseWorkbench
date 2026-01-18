@@ -2530,6 +2530,36 @@
   </div>
 </div>
 
+    <div id="printSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 font-sarabun">
+    <div class="bg-white rounded-lg shadow-lg w-[500px] p-6">
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">ตั้งค่าการพิมพ์เอกสาร</h2>
+        
+        <div class="mb-6 border border-gray-200 rounded p-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อผู้พิมพ์ (Footer)</label>
+            <div class="relative">
+                <input type="text" id="printerSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา..." 
+                       class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                       oninput="filterStaffList(this.value)">
+                <div id="staffDropdown" class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto hidden shadow-lg z-10">
+                    </div>
+            </div>
+            <div class="mt-2 text-xs text-gray-500">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
+            
+            <input type="hidden" id="selectedPrinterName">
+            <input type="hidden" id="selectedPrinterPosition">
+        </div>
+
+        <div class="flex justify-center gap-4">
+            <button onclick="executePrint004()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
+                พิมพ์เอกสาร
+            </button>
+            <button onclick="closePrintModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">
+                ยกเลิก
+            </button>
+        </div>
+    </div>
+</div>
+
   </main> <!-- (ย้าย </main> มาไว้ตรงนี้) -->
 
   <script src="script.js"></script>
