@@ -2529,36 +2529,84 @@
       </form>
   </div>
 </div>
+<div id="printArea" class="hidden-print-area"></div>
 
-    <div id="printSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 font-sarabun">
-    <div class="bg-white rounded-lg shadow-lg w-[500px] p-6">
-        <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">ตั้งค่าการพิมพ์เอกสาร</h2>
+<div id="printSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[9999] font-sarabun">
+    <div class="bg-white rounded-lg shadow-xl w-[500px] p-6 transform transition-all scale-100">
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-800 border-b pb-2">ตั้งค่าการพิมพ์เอกสาร</h2>
         
-        <div class="mb-6 border border-gray-200 rounded p-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อผู้พิมพ์ (Footer)</label>
+        <div class="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อผู้พิมพ์ (แสดงท้ายกระดาษ)</label>
             <div class="relative">
-                <input type="text" id="printerSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา..." 
-                       class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                <input type="text" id="printerSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา..." autocomplete="off"
+                       class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                        oninput="filterStaffList(this.value)">
-                <div id="staffDropdown" class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto hidden shadow-lg z-10">
+                
+                <div id="staffDropdown" class="absolute w-full bg-white border border-gray-300 mt-1 max-h-48 overflow-y-auto hidden shadow-lg z-50 rounded-md">
                     </div>
             </div>
-            <div class="mt-2 text-xs text-gray-500">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
+            <div class="mt-2 text-xs text-gray-500 flex items-center">
+                <i class="fas fa-info-circle mr-1"></i> ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติตามชื่อที่เลือก
+            </div>
             
             <input type="hidden" id="selectedPrinterName">
             <input type="hidden" id="selectedPrinterPosition">
         </div>
 
-        <div class="flex justify-center gap-4">
-            <button onclick="executePrint004()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded">
-                พิมพ์เอกสาร
-            </button>
-            <button onclick="closePrintModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded">
+        <div class="flex justify-end gap-3 pt-2">
+            <button onclick="closePrintModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded transition duration-200">
                 ยกเลิก
+            </button>
+            <button onclick="executePrint004()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow-md transition duration-200 flex items-center">
+                <i class="fas fa-print mr-2"></i> พิมพ์เอกสาร
             </button>
         </div>
     </div>
 </div>
+
+<style>
+    /* CSS สำหรับการพิมพ์ */
+    @media print {
+        body * {
+            visibility: hidden; /* ซ่อนทุกอย่าง */
+        }
+        #printArea, #printArea * {
+            visibility: visible; /* แสดงเฉพาะส่วนพิมพ์ */
+        }
+        #printArea {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        /* ซ่อน Modal ตอนพิมพ์ */
+        #printSettingsModal {
+            display: none !important;
+        }
+        /* จัดหน้ากระดาษ */
+        .page-break {
+            page-break-after: always;
+            page-break-inside: avoid;
+            min-height: 297mm; /* A4 height */
+            height: 297mm;
+            padding: 20px; /* ขอบกระดาษ */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+    }
+    
+    /* CSS ปกติสำหรับซ่อน Print Area */
+    .hidden-print-area {
+        display: none;
+    }
+    @media print {
+        .hidden-print-area {
+            display: block;
+        }
+    }
+</style>
 
   </main> <!-- (ย้าย </main> มาไว้ตรงนี้) -->
 
