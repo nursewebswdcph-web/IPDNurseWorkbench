@@ -1256,59 +1256,15 @@ async function showFormPreview(formType) {
   }
 
   // --- กรณี Morse Fall Scale / MAAS ---
+  // --- กรณี Morse Fall Scale / MAAS (Print View) ---
   else if (formType === 'morse_maas') {
-    chartPreviewTitle.textContent = "ประวัติการประเมินความเสี่ยง Morse / MAAS";
-    chartEditBtn.classList.remove("hidden");
+    chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
+    chartEditBtn.classList.remove("hidden"); // ปุ่มแก้ไขยังคงไว้เพื่อเปิด Modal กรอกข้อมูล
     chartEditBtn.dataset.form = "morse_maas";
-    chartAddNewBtn.classList.add("hidden");
+    chartAddNewBtn.classList.add("hidden"); // ซ่อนปุ่มเพิ่มใหม่ (ใช้ปุ่มแก้ไขแทน)
 
-    chartPreviewContent.innerHTML = document.getElementById("preview-template-morse").innerHTML;
-    const listContainer = document.getElementById("morse-summary-list");
-    const emptyState = document.getElementById("morse-empty-state");
-    const statusSpan = document.getElementById("last-updated-morse");
-
-    showLoading("กำลังโหลดประวัติ...");
-    try {
-        const response = await fetch(`${GAS_WEB_APP_URL}?action=getMorseMAASSummary&an=${currentPatientAN}`);
-        const result = await response.json();
-        if (!result.success) throw new Error(result.message);
-        const entries = result.data;
-        Swal.close();
-
-        if (entries.length > 0) {
-            const last = entries[0];
-            statusSpan.textContent = `ล่าสุด: ${new Date(last.date).toLocaleDateString('th-TH')} เวร${last.shift}`;
-            statusSpan.classList.add("text-green-600");
-            emptyState.classList.add("hidden");
-            
-            let html = "";
-            entries.forEach(item => {
-                const dateStr = new Date(item.date).toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'});
-                const shiftText = item.shift === 'N' ? 'ดึก' : (item.shift === 'D' ? 'เช้า' : 'บ่าย');
-                const shiftColor = item.shift === 'N' ? 'bg-indigo-100 text-indigo-800' : (item.shift === 'D' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800');
-                let riskBadge = `<span class="px-2 py-1 rounded text-xs font-bold ${item.morse_total >= 51 ? 'bg-red-100 text-red-800' : (item.morse_total >= 25 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800')}">${item.morse_total >= 51 ? 'High' : (item.morse_total >= 25 ? 'Low' : 'No')} Risk (${item.morse_total})</span>`;
-
-                html += `
-                <div class="bg-white border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex justify-between items-center" onclick="openMorseModal()">
-                    <div class="flex items-center space-x-3">
-                        <div class="text-center min-w-[60px]">
-                            <div class="text-sm font-bold text-gray-700">${dateStr}</div>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${shiftColor}">${shiftText}</span>
-                        </div>
-                        <div class="border-l pl-3">
-                            <div>${riskBadge}</div>
-                            <div class="text-xs mt-1">${item.maas_score !== "" ? `<span class="font-bold text-blue-600">MAAS: ${item.maas_score}</span>` : '-'}</div>
-                        </div>
-                    </div>
-                    <div class="text-right text-xs text-gray-500">${item.assessor || '-'}</div>
-                </div>`;
-            });
-            listContainer.innerHTML = html;
-        } else {
-            statusSpan.textContent = "ยังไม่เคยบันทึก";
-            emptyState.classList.remove("hidden");
-        }
-    } catch (error) { Swal.close(); showError("โหลดข้อมูลไม่สำเร็จ", error.message); }
+    // เรียกฟังก์ชันเรนเดอร์แบบ Print View
+    await renderMorsePrintMode(currentPatientAN);
   }
 
   // --- กรณีอื่นๆ (Generic) ---
@@ -3766,6 +3722,390 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
       }
       if(document.getElementById("btn-prev-classify-sheet")) {
           document.getElementById("btn-prev-classify-sheet").disabled = (page <= 1);
+      }
+  }
+}
+
+// =================================================================
+// (New) Morse/MAAS Print Preview Logic (A4 Portrait)
+// =================================================================
+let currentMorsePrintPage = 1;
+let allMorseDataCache = [];
+
+async function renderMorsePrintMode(an) {
+  chartPreviewContent.innerHTML = "";
+  
+  // 1. สร้าง Controls
+  const controlDiv = document.createElement('div');
+  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+  controlDiv.innerHTML = `
+      <div class="font-bold text-gray-700 flex items-center gap-2">
+        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-morse-page-num">1</span></span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-prev-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ก่อนหน้า</button>
+        <button id="btn-next-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ถัดไป &gt;</button>
+        <button id="btn-print-morse-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
+        </button>
+      </div>
+  `;
+  chartPreviewContent.appendChild(controlDiv);
+
+  // 2. สร้าง Sheet Container
+  const sheetDiv = document.createElement('div');
+  sheetDiv.id = "morse-sheet-content";
+  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden";
+  sheetDiv.style.width = "210mm";
+  sheetDiv.style.minHeight = "297mm";
+  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; 
+  chartPreviewContent.appendChild(sheetDiv);
+
+  // 3. โหลดข้อมูล
+  showLoading('กำลังโหลดข้อมูล...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllMorseData&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success && result.message) console.warn(result.message);
+    
+    allMorseDataCache = result.success ? result.data : []; 
+    currentMorsePrintPage = 1;
+    
+    // Render หน้าแรก
+    renderMorseSheetA4(currentMorsePrintPage);
+    
+    // Event Listeners
+    document.getElementById("btn-prev-morse-sheet").addEventListener("click", () => {
+       if(currentMorsePrintPage > 1) {
+         currentMorsePrintPage--;
+         renderMorseSheetA4(currentMorsePrintPage);
+       }
+    });
+    
+    document.getElementById("btn-next-morse-sheet").addEventListener("click", () => {
+         currentMorsePrintPage++;
+         renderMorseSheetA4(currentMorsePrintPage);
+    });
+
+    document.getElementById("btn-print-morse-action").addEventListener("click", handleMorsePrint);
+
+    Swal.close();
+  } catch (e) {
+    Swal.close();
+    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
+  }
+}
+
+// ฟังก์ชันจัดการการพิมพ์ Morse (Pop-up + Loop Pages)
+async function handleMorsePrint() {
+    // โหลดรายชื่อ
+    if (globalStaffList.length === 0) await refreshStaffDatalists();
+    let staffOptions = '';
+    globalStaffList.forEach(s => { staffOptions += `<option value="${s.fullName}">`; });
+
+    // Pop-up ตั้งค่า
+    const { value: formValues, isDismissed } = await Swal.fire({
+        title: 'ตั้งค่าการพิมพ์เอกสาร',
+        html: `
+            <div class="text-left text-sm space-y-4">
+                <div class="bg-gray-50 p-3 rounded border">
+                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้ประเมิน / ผู้พิมพ์</label>
+                    <input type="text" id="print_assessor_name" list="print_staff_list" class="w-full p-2 border rounded" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+                    <datalist id="print_staff_list">${staffOptions}</datalist>
+                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
+                </div>
+            </div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'พิมพ์เอกสาร',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#2563EB',
+        preConfirm: () => {
+            const assessor = document.getElementById('print_assessor_name').value;
+            if (!assessor) {
+                Swal.showValidationMessage('กรุณาระบุชื่อผู้พิมพ์');
+                return false;
+            }
+            const staffData = globalStaffList.find(s => s.fullName === assessor);
+            return {
+                assessorName: assessor,
+                assessorPosition: staffData ? staffData.position : ""
+            };
+        }
+    });
+
+    if (isDismissed || !formValues) return;
+
+    // เตรียมพื้นที่พิมพ์
+    const oldPrintArea = document.getElementById("morse-print-area");
+    if (oldPrintArea) oldPrintArea.remove();
+
+    const printArea = document.createElement('div');
+    printArea.id = "morse-print-area";
+    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
+    document.body.appendChild(printArea);
+
+    // คำนวณจำนวนหน้า
+    let maxPage = 1;
+    if (allMorseDataCache.length > 0) {
+        const dates = allMorseDataCache.map(d => new Date(d.Date));
+        const maxDate = new Date(Math.max.apply(null, dates));
+        const admitDate = new Date(currentPatientData.AdmitDate);
+        const diffTime = Math.abs(maxDate - admitDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+        maxPage = Math.max(1, Math.ceil(diffDays / 5));
+    }
+
+    // สร้างทุกหน้า
+    for (let p = 1; p <= maxPage; p++) {
+        const pageContainer = document.createElement('div');
+        pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+        pageContainer.style.width = "210mm";
+        pageContainer.style.height = "297mm";
+        pageContainer.style.padding = "10mm 15mm 25mm 15mm";
+        pageContainer.style.pageBreakAfter = "always";
+        
+        printArea.appendChild(pageContainer);
+        
+        renderMorseSheetA4(p, pageContainer, { 
+            customAssessor: formValues.assessorName,
+            customAssessorPosition: formValues.assessorPosition
+        });
+    }
+
+    setTimeout(() => { window.print(); }, 500);
+}
+
+// ฟังก์ชัน Render หน้ากระดาษ Morse A4
+function renderMorseSheetA4(page, targetContainer = null, options = {}) {
+  const container = targetContainer || document.getElementById("morse-sheet-content");
+  if(!container) return;
+
+  // Helper: ตัดชื่อ
+  const getShortName = (fullName) => {
+      if (!fullName) return "";
+      let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
+      return cleaned.split(/\s+/)[0]; 
+  };
+
+  const admitDate = new Date(currentPatientData.AdmitDate); 
+  const startDayOffset = (page - 1) * 5;
+  const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  
+  // วันที่จำหน่าย (ถ้ามี)
+  let dischargeDateStr = "........................";
+  if (currentPatientData.DischargeDate) {
+      dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+
+  const wardName = currentPatientData.Ward || "........................"; 
+  
+  // ข้อมูลผู้พิมพ์ (Footer)
+  const assessorNameVal = options.customAssessor || "";
+  const assessorPosVal = options.customAssessorPosition || "";
+  const currentUser = assessorNameVal ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` : "(เจ้าหน้าที่)";
+  
+  const now = new Date();
+  const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+
+  // --- HEADER ---
+  let html = `
+    <div class="mb-4 text-black font-sarabun">
+        <div class="text-center flex flex-col gap-1">
+            <h2 class="font-bold text-lg">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม (Morse) / การดึงอุปกรณ์ (MAAS)</h2>
+            <h3 class="font-bold text-md">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+            <div class="flex justify-center items-center gap-16 mt-1 text-sm font-bold">
+                <div>รับใหม่ ${admitDateStr}</div>
+                <div>จำหน่าย ${dischargeDateStr}</div>
+            </div>
+        </div>
+        <div class="flex justify-between items-end mt-4 px-1 text-[12px] font-bold border-b border-transparent">
+           <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
+           <div>AN: <span class="text-sm ml-1">${currentPatientData.AN}</span></div>
+           <div>HN: <span class="text-sm ml-1">${currentPatientData.HN}</span></div>
+           <div>ตึก: <span class="text-sm ml-1">${wardName}</span></div>
+        </div>
+    </div>
+  `;
+
+  // --- TABLE ---
+  html += `
+    <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
+      <thead>
+        <tr class="bg-gray-100">
+          <th rowspan="2" class="border border-black p-1 w-[180px] text-left align-middle font-bold">รายการประเมิน</th>
+  `;
+
+  // Header วันที่
+  for (let i = 0; i < 5; i++) {
+     const currDate = new Date(admitDate);
+     currDate.setDate(admitDate.getDate() + startDayOffset + i);
+     const dateStr = currDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+     html += `<th colspan="3" class="border border-black p-1 font-bold">${dateStr}</th>`;
+  }
+  html += `</tr><tr class="bg-gray-50">`;
+  
+  // Header เวร
+  for (let i = 0; i < 5; i++) {
+     html += `
+       <th class="border border-black p-0.5 w-[20px]">ด</th>
+       <th class="border border-black p-0.5 w-[20px]">ช</th>
+       <th class="border border-black p-0.5 w-[20px]">บ</th>
+     `;
+  }
+  html += `</tr></thead><tbody>`;
+
+  // ข้อมูลแถว
+  // 1. Morse Criteria (1-6)
+  const morseItems = [
+      { key: "Morse_1", label: "1. ประวัติการหกล้ม (3 เดือน)" },
+      { key: "Morse_2", label: "2. การวินิจฉัยโรค > 1 รายการ" },
+      { key: "Morse_3", label: "3. การช่วยในการเคลื่อนย้าย" },
+      { key: "Morse_4", label: "4. ให้สารน้ำ/Heparin lock" },
+      { key: "Morse_5", label: "5. การเดิน/การเคลื่อนย้าย" },
+      { key: "Morse_6", label: "6. สภาพจิตใจ" }
+  ];
+
+  morseItems.forEach(item => {
+      html += `<tr><td class="border border-black p-1 text-left">${item.label}</td>`;
+      for (let i = 0; i < 5; i++) {
+          const currDate = new Date(admitDate);
+          currDate.setDate(admitDate.getDate() + startDayOffset + i);
+          const dateKey = getISODate(currDate); 
+          ['N', 'D', 'E'].forEach(shift => {
+              const entry = allMorseDataCache.find(d => {
+                  let dStr = d.Date;
+                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
+                      dStr = getISODate(new Date(d.Date));
+                  }
+                  return dStr === dateKey && d.Shift === shift;
+              });
+              let val = entry ? entry[item.key] : "";
+              html += `<td class="border border-black p-0.5 text-center h-5">${val}</td>`;
+          });
+      }
+      html += `</tr>`;
+  });
+
+  // 2. Morse Total Score
+  html += `<tr class="bg-orange-50"><td class="border border-black p-1 text-right font-bold">รวมคะแนน Morse</td>`;
+  for (let i = 0; i < 5; i++) {
+      const currDate = new Date(admitDate);
+      currDate.setDate(admitDate.getDate() + startDayOffset + i);
+      const dateKey = getISODate(currDate); 
+      ['N', 'D', 'E'].forEach(shift => {
+          const entry = allMorseDataCache.find(d => {
+              let dStr = d.Date;
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
+                  dStr = getISODate(new Date(d.Date));
+              }
+              return dStr === dateKey && d.Shift === shift;
+          });
+          let val = entry ? entry.Morse_Total : "";
+          // Highlight High Risk
+          let style = "";
+          if (val >= 51) style = "font-bold text-red-600";
+          else if (val >= 25) style = "font-bold text-orange-600";
+          html += `<td class="border border-black p-0.5 text-center ${style}">${val}</td>`;
+      });
+  }
+  html += `</tr>`;
+
+  // 3. MAAS
+  html += `<tr class="bg-blue-50"><td class="border border-black p-1 text-left font-bold">MAAS Score (0-6)</td>`;
+  for (let i = 0; i < 5; i++) {
+      const currDate = new Date(admitDate);
+      currDate.setDate(admitDate.getDate() + startDayOffset + i);
+      const dateKey = getISODate(currDate); 
+      ['N', 'D', 'E'].forEach(shift => {
+          const entry = allMorseDataCache.find(d => {
+              let dStr = d.Date;
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
+                  dStr = getISODate(new Date(d.Date));
+              }
+              return dStr === dateKey && d.Shift === shift;
+          });
+          let val = entry ? entry.MAAS_Score : "";
+          // Highlight MAAS Risk (>=4 needs restraint)
+          let style = "";
+          if (val >= 4) style = "font-bold text-red-600";
+          html += `<td class="border border-black p-0.5 text-center ${style}">${val}</td>`;
+      });
+  }
+  html += `</tr>`;
+
+  // 4. Assessor Name (Short)
+  html += `<tr><td class="border border-black p-1 text-right font-bold">ผู้ประเมิน</td>`;
+  for (let i = 0; i < 5; i++) {
+      const currDate = new Date(admitDate);
+      currDate.setDate(admitDate.getDate() + startDayOffset + i);
+      const dateKey = getISODate(currDate); 
+      ['N', 'D', 'E'].forEach(shift => {
+          const entry = allMorseDataCache.find(d => {
+              let dStr = d.Date;
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
+                  dStr = getISODate(new Date(d.Date));
+              }
+              return dStr === dateKey && d.Shift === shift;
+          });
+          let val = entry ? entry.Assessor_Name : "";
+          let shortName = getShortName(val);
+          html += `<td class="border border-black p-0.5 text-center text-[8px] whitespace-nowrap overflow-hidden">${shortName}</td>`;
+      });
+  }
+  html += `</tr></tbody></table>`;
+
+  // --- FOOTER GUIDELINES (สรุปเกณฑ์) ---
+  html += `
+    <div class="mt-4 text-[10px] text-gray-700 border-t border-gray-300 pt-2">
+       <div class="grid grid-cols-2 gap-x-8">
+          <div>
+            <div class="font-bold underline mb-1">เกณฑ์ Morse Fall Scale</div>
+            <div class="flex gap-4">
+                <div><b>No Risk:</b> 0 - 24</div>
+                <div><b>Low Risk:</b> 25 - 50</div>
+                <div class="text-red-600"><b>High Risk:</b> ≥ 51</div>
+            </div>
+            <div class="mt-1 text-[9px] text-gray-500">* High Risk ต้องมีมาตรการป้องกันเข้มข้นและประเมินซ้ำทุกเวร</div>
+          </div>
+          <div>
+            <div class="font-bold underline mb-1">เกณฑ์ MAAS (การดึงสาย)</div>
+            <div class="flex gap-4">
+                <div><b>0 - 3:</b> ไม่ต้องผูกยึด</div>
+                <div class="text-red-600"><b>4 - 6:</b> ต้องผูกยึด</div>
+            </div>
+            <div class="mt-1 text-[9px] text-gray-500">* กรณีผูกยึดต้องแจ้งญาติและประเมินการไหลเวียนเลือดสม่ำเสมอ</div>
+          </div>
+       </div>
+    </div>
+  `;
+
+  // --- FOOTER INFO (ผู้พิมพ์) ---
+  html += `
+    <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm;" class="text-[10px] text-gray-600 font-sarabun border-t border-gray-300 pt-2">
+        <div class="flex justify-between items-end">
+            <div class="text-left leading-tight">
+                <div>ผู้พิมพ์ : ${currentUser}</div>
+                <div>วันที่พิมพ์ : ${printDate} เวลา ${printTime} น.</div>
+            </div>
+            <div class="text-right leading-tight">
+                <div class="font-bold">โปรแกรม IPD Nurse Workbench</div>
+                <div>ระบบบันทึกเวชระเบียนทางการพยาบาล งานการพยาบาลผู้ป่วยใน</div>
+            </div>
+        </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+  
+  if(!targetContainer) {
+      if(document.getElementById("print-morse-page-num")) {
+          document.getElementById("print-morse-page-num").textContent = page;
+      }
+      if(document.getElementById("btn-prev-morse-sheet")) {
+          document.getElementById("btn-prev-morse-sheet").disabled = (page <= 1);
       }
   }
 }
