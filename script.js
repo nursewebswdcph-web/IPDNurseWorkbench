@@ -3877,7 +3877,7 @@ async function handleMorsePrint() {
     setTimeout(() => { window.print(); }, 500);
 }
 
-// ฟังก์ชัน Render หน้ากระดาษ Morse A4 (แก้ไข: ส่วนหัวคลีน + แนวปฏิบัติแยกคอลัมน์ชัดเจน)
+// ฟังก์ชัน Render หน้ากระดาษ Morse A4 (แก้ไข: ตาราง Morse/MAAS แบบเดิม + แนวปฏิบัติแบบใหม่ + หัวกระดาษพอดี)
 function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("morse-sheet-content");
   if(!container) return;
@@ -3893,7 +3893,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   const admitDate = new Date(currentPatientData.AdmitDate); 
   const startDayOffset = (page - 1) * 5;
   
-  // ข้อมูลผู้พิมพ์ (Footer System)
+  // ข้อมูลผู้พิมพ์
   const assessorNameVal = options.customAssessor || "";
   const assessorPosVal = options.customAssessorPosition || "";
   const currentUser = assessorNameVal ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` : "(เจ้าหน้าที่)";
@@ -3905,15 +3905,15 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   const wardName = currentPatientData.Ward || "........................"; 
 
   // =========================================================
-  // 1. HEADER (ลบกลุ่มการพยาบาล และ รับใหม่/จำหน่าย ออกตามขอ)
+  // 1. HEADER (ปรับขนาดตัวอักษรให้พอดีบรรทัด ไม่ตกขอบ)
   // =========================================================
   let html = `
     <div class="mb-2 text-black font-sarabun">
-        <div class="text-center flex flex-col gap-1 mb-4">
-            <h2 class="font-bold text-xl">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h2>
-            <h3 class="font-bold text-lg">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / การดึงอุปกรณ์ที่สอดใส่ในร่างกาบผู้ป่วย (MAAS)</h3>
+        <div class="text-center mb-2">
+            <h2 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h2>
+            <h3 class="font-bold text-base whitespace-nowrap">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม Morse / การดึงอุปกรณ์ที่สอดใส่ในร่างกายผู้ป่วย (MAAS)</h3>
         </div>
-        <div class="flex justify-between items-end px-1 text-[12px] font-bold border-b border-transparent">
+        <div class="flex justify-between items-end px-1 text-[11px] font-bold border-b border-transparent">
            <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
            <div>AN: <span class="text-sm ml-1">${currentPatientData.AN}</span></div>
            <div>HN: <span class="text-sm ml-1">${currentPatientData.HN}</span></div>
@@ -3923,13 +3923,13 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   `;
 
   // =========================================================
-  // 2. MORSE TABLE (ข้อมูลคะแนน)
+  // 2. MORSE TABLE (กู้คืนรูปแบบตาม PDF 100%)
   // =========================================================
   html += `
     <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight mb-2">
       <thead>
         <tr class="bg-gray-100">
-          <th rowspan="2" class="border border-black p-1 w-[220px] text-left align-middle font-bold">ประเด็น</th>
+          <th rowspan="2" class="border border-black p-1 w-[240px] text-left align-middle font-bold">ประเด็น / คะแนน</th>
   `;
 
   // Header วันที่
@@ -3951,7 +3951,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   }
   html += `</tr></thead><tbody>`;
 
-  // --- ข้อมูล Morse (Rows) ---
+  // --- ข้อมูล Morse (ตาม PDF: มีคะแนนกำกับในข้อความ) ---
   const morseRows = [
       {
           label: "1. มีการหกล้มกะทันหัน หรือหกล้มช่วง 3 เดือนก่อนมา รพ.",
@@ -3966,9 +3966,9 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
       {
           label: "3. การช่วยในการเคลื่อนย้าย",
           sub: [
-              "- เดินได้เอง/รถเข็นนั่ง/นอนพักบนเตียง (0)",
-              "- ไม้ค้ำยัน/ไม้เท้า (15)",
-              "- เดินโดยการยึดเกาะเครื่องเรือน (30)"
+              "- เดินได้เองใช้/รถเข็นนั่ง/นอนพักบนเตียงหรือทำกิจกรรมบนเตียง (ใช่ = 0)",
+              "- ไม้ค้ำยัน/ไม้เท้า (ใช่ = 15)",
+              "เดิน- โดยการยึดเกาะไปตามเตียง / โต๊ะ / เก้าอี้ (ใช่ = 30)"
           ],
           key: "Morse_3"
       },
@@ -3980,17 +3980,17 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
       {
           label: "5. การเดิน / การเคลื่อนย้าย",
           sub: [
-              "- ปกติ / นอนพักบนเตียงไม่เคลื่อนไหว (0)",
-              "- อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (10)",
-              "- บกพร่อง/ลุกนั่งลำบาก/ต้องช่วยพยุง (20)"
+              "- ปกติ / นอนพักบนเตียงโดยไม่ให้ลุกจากเตียงไม่เคลื่อนไหว (ใช่ = 0)",
+              "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (ใช่ = 10)",
+              "- มีความบกพร่อง เช่น ลุกจากเก้าอี้ด้วยความลำบาก / ไม่สามารถเดินได้โดยปราศจากการช่วยเหลือ (ใช่ = 20)"
           ],
           key: "Morse_5"
       },
       {
           label: "6. สภาพจิตใจ",
           sub: [
-              "- รับรู้บุคคล เวลา สถานที่ (0)",
-              "- ไม่รับรู้ข้อจำกัดของตนเอง/ประเมินเกินจริง (15)"
+              "- รับรู้บุคคล เวลา สถานที่ (ใช่ = 0)",
+              "ตอบสนองไม่ตรงกับความเป็นจริง ไม่รับรู้ข้อจำกัดของตนเอง (ใช่ = 15)"
           ],
           key: "Morse_6"
       }
@@ -3999,7 +3999,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   morseRows.forEach((row) => {
       let labelHtml = `<div class="font-bold border-b border-gray-300 pb-1 mb-1">${row.label}</div>`;
       row.sub.forEach(txt => {
-          labelHtml += `<div class="pl-2 mb-0.5 text-[8px] leading-tight text-gray-700">- ${txt}</div>`;
+          labelHtml += `<div class="pl-2 mb-0.5 text-[8px] leading-tight text-gray-700 font-medium">${txt}</div>`;
       });
 
       html += `<tr><td class="border border-black p-1 text-left align-top bg-white">${labelHtml}</td>`;
@@ -4063,64 +4063,81 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   html += `</tr></tbody></table>`;
 
   // =========================================================
-  // 3. MAAS TABLE (ย่อส่วนนี้เล็กน้อย เพื่อให้พื้นที่ Footer พอ)
+  // 3. MAAS TABLE (กู้คืนรูปแบบเดิม: 0-6 เป็นแถวแยก)
   // =========================================================
   html += `
-    <div class="flex gap-2 mb-1 mt-2">
-      <div class="font-bold text-[10px] w-1/2">แบบประเมินความเสี่ยงต่อ การดึงอุปกรณ์ (MAAS)</div>
-    </div>
+    <div class="font-bold text-[10px] mb-1 mt-2">แบบประเมินความเสี่ยงต่อ การดึงอุปกรณ์ที่สอดใส่ในร่างกายผู้ป่วย (MAAS)</div>
     <table class="w-full border-collapse border border-black text-center text-[8px] leading-tight mb-2">
       <thead>
         <tr class="bg-gray-100">
-          <th class="border border-black p-1 text-left">ประเด็น MAAS</th>
-          <th class="border border-black p-1 w-[20px]">คะแนน</th>
+          <th class="border border-black p-1 text-left w-[200px]">ประเด็น</th>
+          <th class="border border-black p-1 w-[30px]">คะแนน</th>
   `;
   for (let i = 0; i < 5; i++) {
-     html += `<th colspan="3" class="border border-black p-0.5 text-[7px]">วันที่ ${i+1}</th>`;
+     html += `
+       <th class="border border-black p-0.5 w-[20px]">ด</th>
+       <th class="border border-black p-0.5 w-[20px]">ช</th>
+       <th class="border border-black p-0.5 w-[20px]">บ</th>
+     `;
   }
   html += `</tr></thead><tbody>`;
 
   const maasItems = [
-      { t: "0-ไม่ตอบสนอง / 1-ตอบสนองต่อการกระตุ้นแรง ๆ", s: "0/1" },
-      { t: "2-ตอบสนองสัมผัส/เรียกชื่อ / 3-สงบและร่วมมือ", s: "2/3" },
-      { t: "4-พักได้น้อย/ไม่ร่วมมือ / 5-ต่อต้านการรักษา", s: "4/5" },
-      { t: "6-ต่อต้านการรักษา/อันตรายต่อผู้อื่น", s: "6" },
+      { t: "ไม่ตอบสนอง", s: 0 },
+      { t: "ตอบสนองต่อการกระตุ้นแรง ๆ", s: 1 },
+      { t: "ตอบสนองต่อการสัมผัสและการเรียกชื่อ", s: 2 },
+      { t: "สงบและให้ความร่วมมือ", s: 3 },
+      { t: "พักได้น้อยและไม่ให้ความร่วมมือ", s: 4 },
+      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา", s: 5 },
+      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น", s: 6 },
   ];
 
   maasItems.forEach(item => {
       html += `<tr>
         <td class="border border-black p-0.5 text-left">${item.t}</td>
         <td class="border border-black p-0.5 font-bold">${item.s}</td>`;
+      
       for (let i = 0; i < 5; i++) {
           const currDate = new Date(admitDate);
           currDate.setDate(admitDate.getDate() + startDayOffset + i);
           const dateKey = getISODate(currDate); 
           ['N', 'D', 'E'].forEach(shift => {
-             const entry = allMorseDataCache.find(d => {
+              const entry = allMorseDataCache.find(d => {
                   let dStr = d.Date;
                   if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
                   return dStr === dateKey && d.Shift === shift;
               });
               let val = entry ? entry.MAAS_Score : "";
-              // เช็คว่าคะแนนอยู่ในช่วงของแถวนี้ไหม
-              let match = false;
-              if (val !== "") {
-                  if (item.s.includes("/")) {
-                      const parts = item.s.split("/");
-                      if (parts.includes(String(val))) match = true;
-                  } else {
-                      if (String(val) === item.s) match = true;
-                  }
-              }
-              html += `<td class="border border-black p-0.5 w-[12px]">${match ? val : ""}</td>`;
+              // ถ้าคะแนนตรงกับแถวนี้ ให้โชว์คะแนน
+              let mark = (val !== "" && parseInt(val) === item.s) ? val : "";
+              html += `<td class="border border-black p-0.5">${mark}</td>`;
           });
       }
       html += `</tr>`;
   });
+
+  // Row: คะแนนที่ได้ (สรุป)
+  html += `<tr class="bg-gray-50"><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนที่ได้</td>`;
+  for (let i = 0; i < 5; i++) {
+      const currDate = new Date(admitDate);
+      currDate.setDate(admitDate.getDate() + startDayOffset + i);
+      const dateKey = getISODate(currDate); 
+      ['N', 'D', 'E'].forEach(shift => {
+          const entry = allMorseDataCache.find(d => {
+              let dStr = d.Date;
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+              return dStr === dateKey && d.Shift === shift;
+          });
+          let val = entry ? entry.MAAS_Score : "";
+          let color = (val >= 4) ? "text-red-600 font-bold" : "";
+          html += `<td class="border border-black p-0.5 text-center ${color}">${val}</td>`;
+      });
+  }
+  html += `</tr>`;
   html += `</tbody></table>`;
 
   // =========================================================
-  // 4. FOOTER (แนวปฏิบัติแยก 3 คอลัมน์ ตามต้นฉบับ)
+  // 4. FOOTER (แนวปฏิบัติ 3 คอลัมน์ แบบใหม่)
   // =========================================================
   html += `
     <div class="mt-2 border border-black p-0 text-[8px] text-black">
