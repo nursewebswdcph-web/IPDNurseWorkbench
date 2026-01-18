@@ -1589,75 +1589,85 @@
       </fieldset>
 
       <fieldset class="border-2 border-orange-100 p-6 rounded-xl bg-orange-50/20">
-         <legend class="text-xl font-bold px-3 text-orange-800 bg-white border border-orange-100 rounded">14. Braden Scale (Predicting Pressure Sore Risk)</legend>
-         <div class="overflow-x-auto mt-4">
-            <table class="w-full border-collapse border border-gray-300 text-[10px] leading-tight text-center bg-white">
-               <thead class="bg-orange-100 font-bold">
-                  <tr>
-                     <th class="border border-gray-300 p-2 w-1/6">เกณฑ์ประเมิน</th>
-                     <th class="border border-gray-300 p-2 w-1/5">1 (เสี่ยงมาก)</th>
-                     <th class="border border-gray-300 p-2 w-1/5">2</th>
-                     <th class="border border-gray-300 p-2 w-1/5">3</th>
-                     <th class="border border-gray-300 p-2 w-1/5">4 (ปกติ)</th>
-                  </tr>
-               </thead>
-               <tbody id="braden-table-body">
-                    <tr class="hover:bg-orange-50 transition">
-                        <td class="border border-gray-300 p-2 text-left font-bold">1. การรับรู้/ความรู้สึก</td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="1" onclick="calcBraden()"> จำกัดทั้งหมด<br>(ไม่ตอบสนอง)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="2" onclick="calcBraden()"> จำกัดมาก<br>(ตอบสนองเฉพาะเจ็บ)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="3" onclick="calcBraden()"> จำกัดเล็กน้อย<br>(ตอบสนองต่อเสียงเรียก)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="4" onclick="calcBraden()"> ไม่บกพร่อง<br>(ปกติ)</label></td>
-                    </tr>
-                    <tr class="hover:bg-orange-50 transition">
-                        <td class="border border-gray-300 p-2 text-left font-bold">2. ความเปียกชื้น</td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="1" onclick="calcBraden()"> ตลอดเวลา<br>(เปียกชื้นตลอด)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="2" onclick="calcBraden()"> บ่อยมาก<br>(เปลี่ยนผ้าปู/แพมเพิสบ่อย)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="3" onclick="calcBraden()"> บางครั้ง<br>(วันละ 1 ครั้ง)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="4" onclick="calcBraden()"> น้อยมาก<br>(แห้งปกติ)</label></td>
-                    </tr>
-                    <tr class="hover:bg-orange-50 transition">
-                        <td class="border border-gray-300 p-2 text-left font-bold">3. กิจกรรม</td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="1" onclick="calcBraden()"> นอนติดเตียง<br>(Bedfast)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="2" onclick="calcBraden()"> นั่งรถเข็น<br>(Chairfast)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="3" onclick="calcBraden()"> เดินบ้าง<br>(Walks Occasionally)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="4" onclick="calcBraden()"> เดินบ่อย<br>(Walks Frequently)</label></td>
-                    </tr>
-                    <tr class="hover:bg-orange-50 transition">
-                        <td class="border border-gray-300 p-2 text-left font-bold">4. การเคลื่อนไหว</td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="1" onclick="calcBraden()"> ไม่ได้เลย<br>(Completely Immobile)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="2" onclick="calcBraden()"> จำกัดมาก<br>(Very Limited)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="3" onclick="calcBraden()"> จำกัดเล็กน้อย<br>(Slightly Limited)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="4" onclick="calcBraden()"> ไม่จำกัด<br>(No Limitation)</label></td>
-                    </tr>
-                    <tr class="hover:bg-orange-50 transition">
-                        <td class="border border-gray-300 p-2 text-left font-bold">5. โภชนาการ</td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="1" onclick="calcBraden()"> แย่มาก<br>(กินได้น้อยกว่า 1/3)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="2" onclick="calcBraden()"> ไม่เพียงพอ<br>(กินได้ประมาณ 1/2)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="3" onclick="calcBraden()"> เพียงพอ<br>(กินได้มากกว่า 1/2)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="4" onclick="calcBraden()"> ดีเยี่ยม<br>(กินได้หมด/เกือบหมด)</label></td>
-                    </tr>
-                    <tr class="hover:bg-orange-50 transition">
-                        <td class="border border-gray-300 p-2 text-left font-bold">6. แรงเสียดทาน</td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Friction" value="1" onclick="calcBraden()"> มีปัญหา<br>(ต้องการคนช่วยดึงตัว)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Friction" value="2" onclick="calcBraden()"> เสี่ยง<br>(ขยับตัวได้บ้างแต่อาจเสียดสี)</label></td>
-                        <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Friction" value="3" onclick="calcBraden()"> ไม่มีปัญหา<br>(ขยับตัวได้เองอิสระ)</label></td>
-                        <td class="bg-gray-100"></td> </tr>
-                </tbody>
-            </table>
-         </div>
-         <div class="mt-4 p-4 bg-white border-2 border-orange-200 rounded-lg flex justify-between items-center shadow-inner">
-            <div class="flex items-center gap-2">
-                <span class="text-lg font-bold">Total Score:</span>
-                <input type="text" id="braden-total-score" name="Braden_Total" readonly class="w-16 border-b-2 border-blue-500 font-bold text-blue-700 text-3xl text-center bg-transparent" value="0">
-            </div>
-            
-            <div class="text-right">
-                <input type="text" id="braden-result" name="Braden_Result" readonly class="w-full text-right text-xl font-black italic border-none bg-transparent focus:outline-none" placeholder="Interpretation">
-                <p class="text-[10px] text-gray-500 mt-1">( ≤ 9 Very high | 10-12 High | 13-14 Moderate | ≥ 15 Low )</p>
-            </div>
-        </div>
-      </fieldset>
+    <legend class="text-xl font-bold px-3 text-orange-800 bg-white border border-orange-100 rounded">14. Braden Scale (Predicting Pressure Sore Risk)</legend>
+    
+    <div class="overflow-x-auto mt-4">
+       <table class="w-full border-collapse border border-gray-300 text-[10px] leading-tight text-center bg-white">
+          <thead class="bg-orange-100 font-bold">
+             <tr>
+                <th class="border border-gray-300 p-2 w-[20%]">เกณฑ์ประเมิน</th>
+                <th class="border border-gray-300 p-2 w-[15%]">1</th>
+                <th class="border border-gray-300 p-2 w-[15%]">2</th>
+                <th class="border border-gray-300 p-2 w-[15%]">3</th>
+                <th class="border border-gray-300 p-2 w-[15%]">4</th>
+                <th class="border border-gray-300 p-2 w-[10%] bg-blue-50 text-blue-800">Score</th>
+             </tr>
+          </thead>
+          <tbody id="braden-table-body">
+             <tr class="hover:bg-orange-50 transition">
+                <td class="border border-gray-300 p-2 text-left font-bold">1. การรับรู้/ความรู้สึก</td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="1" onclick="calcBraden()"> จำกัดทั้งหมด<br>(ไม่ตอบสนอง)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="2" onclick="calcBraden()"> จำกัดมาก<br>(ตอบเฉพาะเจ็บ)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="3" onclick="calcBraden()"> จำกัดเล็กน้อย<br>(ตอบเสียงเรียก)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Sensory" value="4" onclick="calcBraden()"> ไม่บกพร่อง<br>(ปกติ)</label></td>
+                <td class="border border-gray-300 p-2 font-bold text-lg text-blue-600" id="score_Braden_Sensory">-</td>
+             </tr>
+             <tr class="hover:bg-orange-50 transition">
+                <td class="border border-gray-300 p-2 text-left font-bold">2. ความเปียกชื้น</td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="1" onclick="calcBraden()"> ตลอดเวลา<br>(เปียกชื้นตลอด)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="2" onclick="calcBraden()"> บ่อยมาก<br>(เปลี่ยนผ้าปูบ่อย)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="3" onclick="calcBraden()"> บางครั้ง<br>(วันละ 1 ครั้ง)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Moisture" value="4" onclick="calcBraden()"> น้อยมาก<br>(แห้งปกติ)</label></td>
+                <td class="border border-gray-300 p-2 font-bold text-lg text-blue-600" id="score_Braden_Moisture">-</td>
+             </tr>
+             <tr class="hover:bg-orange-50 transition">
+                <td class="border border-gray-300 p-2 text-left font-bold">3. กิจกรรม</td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="1" onclick="calcBraden()"> นอนติดเตียง<br>(Bedfast)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="2" onclick="calcBraden()"> นั่งรถเข็น<br>(Chairfast)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="3" onclick="calcBraden()"> เดินบ้าง<br>(Walks Occasionally)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Activity" value="4" onclick="calcBraden()"> เดินบ่อย<br>(Walks Frequently)</label></td>
+                <td class="border border-gray-300 p-2 font-bold text-lg text-blue-600" id="score_Braden_Activity">-</td>
+             </tr>
+             <tr class="hover:bg-orange-50 transition">
+                <td class="border border-gray-300 p-2 text-left font-bold">4. การเคลื่อนไหว</td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="1" onclick="calcBraden()"> ไม่ได้เลย<br>(Immobile)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="2" onclick="calcBraden()"> จำกัดมาก<br>(Very Limited)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="3" onclick="calcBraden()"> จำกัดเล็กน้อย<br>(Slightly Limited)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Mobility" value="4" onclick="calcBraden()"> ไม่จำกัด<br>(No Limitation)</label></td>
+                <td class="border border-gray-300 p-2 font-bold text-lg text-blue-600" id="score_Braden_Mobility">-</td>
+             </tr>
+             <tr class="hover:bg-orange-50 transition">
+                <td class="border border-gray-300 p-2 text-left font-bold">5. โภชนาการ</td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="1" onclick="calcBraden()"> แย่มาก<br>(กินได้น้อยกว่า 1/3)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="2" onclick="calcBraden()"> ไม่เพียงพอ<br>(กินได้ประมาณ 1/2)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="3" onclick="calcBraden()"> เพียงพอ<br>(กินได้มากกว่า 1/2)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Nutrition" value="4" onclick="calcBraden()"> ดีเยี่ยม<br>(กินได้หมด)</label></td>
+                <td class="border border-gray-300 p-2 font-bold text-lg text-blue-600" id="score_Braden_Nutrition">-</td>
+             </tr>
+             <tr class="hover:bg-orange-50 transition">
+                <td class="border border-gray-300 p-2 text-left font-bold">6. แรงเสียดทาน</td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Friction" value="1" onclick="calcBraden()"> มีปัญหา<br>(ต้องการคนช่วยดึงตัว)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Friction" value="2" onclick="calcBraden()"> เสี่ยง<br>(ขยับตัวได้บ้าง)</label></td>
+                <td class="border border-gray-300 p-2"><label class="cursor-pointer block"><input type="radio" name="Braden_Friction" value="3" onclick="calcBraden()"> ไม่มีปัญหา<br>(ขยับตัวได้อิสระ)</label></td>
+                <td class="bg-gray-100"></td> <td class="border border-gray-300 p-2 font-bold text-lg text-blue-600" id="score_Braden_Friction">-</td>
+             </tr>
+          </tbody>
+       </table>
+    </div>
+
+    <div class="mt-4 p-4 bg-white border-2 border-orange-200 rounded-lg flex justify-between items-center shadow-inner">
+       <div class="flex items-center gap-2">
+          <span class="text-lg font-bold">Total Score:</span>
+          <input type="text" id="braden-total-score" name="Braden_Total" readonly class="w-20 border-b-2 border-blue-500 font-bold text-blue-700 text-3xl text-center bg-transparent" value="0">
+       </div>
+       
+       <div class="text-right">
+          <span class="font-bold mr-2">ผลการประเมิน:</span>
+          <input type="text" id="braden-result" name="Braden_Result" readonly class="w-64 text-right text-lg font-black italic border-none bg-transparent focus:outline-none" placeholder="รอการประเมิน...">
+          <p class="text-[10px] text-gray-500 mt-1">( ≤ 9 Very high | 10-12 High | 13-14 Moderate | ≥ 15 Low )</p>
+       </div>
+    </div>
+</fieldset>
 
       <fieldset class="border p-4 rounded-lg shadow-sm">
   <legend class="text-lg font-semibold px-2">15. Fall risk assessment</legend>
