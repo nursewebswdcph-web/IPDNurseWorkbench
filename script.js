@@ -1572,9 +1572,10 @@ function renderClassifyTable(data, page) {
   }
   thead.innerHTML = "";
   
+  // --- 1. สร้างส่วนหัวตาราง (Header) ---
   const headerRow1 = document.createElement('tr');
   headerRow1.className = 'bg-gray-100';
-  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left text-sm font-semibold text-gray-700 w-1/4">หมวดการประเมิน</th>';
+  headerRow1.innerHTML = '<th rowspan="2" class="p-2 border text-left text-sm font-semibold text-gray-700 w-1/4 sticky left-0 bg-gray-100 z-10">หมวดการประเมิน</th>';
   
   const headerRow2 = document.createElement('tr');
   headerRow2.className = 'bg-gray-50';
@@ -1590,15 +1591,16 @@ function renderClassifyTable(data, page) {
     
     const dateHeader = document.createElement('th');
     dateHeader.colSpan = 3;
-    dateHeader.className = 'p-2 border text-center text-sm font-semibold text-gray-700';
+    dateHeader.className = 'p-2 border text-center text-sm font-semibold text-gray-700 border-l-2 border-gray-300';
     dateHeader.innerHTML = `<span class="classify-date-display" data-day-index="${i}">${currentDate.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                           <input type="hidden" value="${dateString}" class="classify-date-input" data-day-index="${i}">`;
     headerRow1.appendChild(dateHeader);
     
-    ['N', 'D', 'E'].forEach(shift => {
+    ['N', 'D', 'E'].forEach((shift, idx) => {
       const shiftHeader = document.createElement('th');
-      shiftHeader.className = 'p-1 border text-xs font-medium text-gray-600';
-      shiftHeader.textContent = shift === 'N' ? 'ดึก (N)' : (shift === 'D' ? 'เช้า (D)' : 'บ่าย (E)');
+      const borderClass = idx === 0 ? 'border-l-2 border-gray-300' : 'border';
+      shiftHeader.className = `p-1 ${borderClass} text-xs font-medium text-gray-600 min-w-[50px]`;
+      shiftHeader.textContent = shift === 'N' ? 'ดึก' : (shift === 'D' ? 'เช้า' : 'บ่าย');
       headerRow2.appendChild(shiftHeader);
     });
   }
@@ -1607,6 +1609,7 @@ function renderClassifyTable(data, page) {
   
   tbody.innerHTML = "";
   
+  // --- 2. สร้างแถวข้อมูล (Data Rows) ---
   const categories = [
     { name: 'I. สภาวะสุขภาพ', isHeader: true },
     { name: '1. สัญญาณชีพ', isHeader: false, scoreIndex: 1 },
@@ -1624,12 +1627,14 @@ function renderClassifyTable(data, page) {
     const row = document.createElement('tr');
     if (cat.isHeader) {
       row.className = 'bg-indigo-50';
-      row.innerHTML = `<td colspan="16" class="p-2 border font-bold text-indigo-800">${cat.name}</td>`;
+      row.innerHTML = `<td class="p-2 border font-bold text-indigo-800 sticky left-0 bg-indigo-50 z-10">${cat.name}</td>`;
+      // เติมช่องว่างให้เต็มแถว Header
+      for(let k=0; k<15; k++) { row.innerHTML += `<td class="bg-indigo-50 border"></td>`; }
     } else {
       row.innerHTML = `
-        <td class="p-2 border font-semibold">
+        <td class="p-2 border font-semibold sticky left-0 bg-white z-10 shadow-sm text-xs">
           ${cat.name}
-          <button type="button" class="classify-criteria-btn ml-2 text-blue-500 hover:text-blue-700" data-category-index="${cat.scoreIndex}">(?)</button>
+          <button type="button" class="classify-criteria-btn ml-1 text-blue-500 hover:text-blue-700" onclick="showCriteriaPopover(${cat.scoreIndex})">(?)</button>
         </td>`;
       
       const currentStartDate = new Date(admitDate);
@@ -1640,13 +1645,14 @@ function renderClassifyTable(data, page) {
         currentDate.setDate(currentStartDate.getDate() + i);
         const dateString = getISODate(currentDate);
 
-        ['N', 'D', 'E'].forEach(shift => {
+        ['N', 'D', 'E'].forEach((shift, idx) => {
           const entry = data.find(d => d.Date === dateString && d.Shift === shift);
           const score = (entry && entry[`Score_${cat.scoreIndex}`]) ? entry[`Score_${cat.scoreIndex}`] : 0;
+          const borderClass = idx === 0 ? 'border-l-2 border-gray-300' : 'border';
           
           row.innerHTML += `
-            <td class="p-1 border">
-              <select name="Score_${cat.scoreIndex}" class="w-full text-center p-1 border rounded classify-input" data-day-index="${i}" data-shift="${shift}">
+            <td class="p-1 ${borderClass}">
+              <select name="Score_${cat.scoreIndex}" class="w-full text-center p-1 border rounded classify-input text-xs" data-day-index="${i}" data-shift="${shift}">
                 <option value="0" ${score == 0 ? 'selected' : ''}></option>
                 <option value="1" ${score == 1 ? 'selected' : ''}>1</option>
                 <option value="2" ${score == 2 ? 'selected' : ''}>2</option>
@@ -1660,21 +1666,19 @@ function renderClassifyTable(data, page) {
     tbody.appendChild(row);
   });
 
+  // --- 3. สร้างแถวสรุป (Summary Rows) ---
   const summaryRows = [
-    { id: 'total-score', label: 'รวมคะแนน (Total Score)', class: 'bg-gray-50' },
-    { id: 'category', label: 'ประเภทผู้ป่วย (Category)', class: 'bg-gray-100' },
-    { id: 'assessor', label: 'ผู้ประเมิน (RN)', class: 'bg-gray-50' },
-    { id: 'save', label: 'บันทึกเวร', class: 'bg-white' }
+    { id: 'total-score', label: 'รวมคะแนน', class: 'bg-gray-50' },
+    { id: 'category', label: 'ประเภท', class: 'bg-gray-100' },
+    { id: 'assessor', label: 'ผู้ประเมิน', class: 'bg-gray-50' },
+    { id: 'save', label: '', class: 'bg-white' }
   ];
-
-  const summaryStartDate = new Date(admitDate);
-  summaryStartDate.setDate(summaryStartDate.getDate() + ((page - 1) * 5));
 
   summaryRows.forEach(sr => {
     const row = document.createElement('tr');
     row.className = sr.class;
     row.id = `classify-row-${sr.id}`;
-    row.innerHTML = `<td class="p-2 border font-bold text-right">${sr.label}</td>`;
+    row.innerHTML = `<td class="p-2 border font-bold text-right sticky left-0 ${sr.class} z-10 text-xs">${sr.label}</td>`;
     
     const currentStartDate = new Date(admitDate);
     currentStartDate.setDate(currentStartDate.getDate() + ((page - 1) * 5));
@@ -1684,13 +1688,14 @@ function renderClassifyTable(data, page) {
       currentDate.setDate(currentStartDate.getDate() + i);
       const dateString = getISODate(currentDate);
 
-      ['N', 'D', 'E'].forEach(shift => {
+      ['N', 'D', 'E'].forEach((shift, idx) => {
         const entry = data.find(d => d.Date === dateString && d.Shift === shift);
+        const borderClass = idx === 0 ? 'border-l-2 border-gray-300' : 'border';
         
         if (sr.id === 'save') {
           row.innerHTML += `
-            <td class="p-1 border text-center">
-              <button type="button" class="classify-save-btn bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-3 rounded" 
+            <td class="p-1 ${borderClass} text-center">
+              <button type="button" class="classify-save-btn bg-blue-500 hover:bg-blue-600 text-white text-[10px] py-1 px-2 rounded w-full shadow" 
                       data-day-index="${i}" data-shift="${shift}">
                 บันทึก
               </button>
@@ -1703,18 +1708,41 @@ function renderClassifyTable(data, page) {
           
           const inputType = (sr.id === 'assessor') ? `list="staff-list-datalist"` : 'text';
           const isReadonly = (sr.id !== 'assessor') ? 'readonly' : '';
-          const inputClass = (sr.id !== 'assessor') ? 'bg-gray-200' : 'classify-input';
+          const inputClass = (sr.id !== 'assessor') ? 'bg-gray-200 font-bold text-blue-600' : 'classify-assessor-input bg-white focus:ring-1 focus:ring-blue-500';
           
           row.innerHTML += `
-            <td class="p-1 border">
+            <td class="p-1 ${borderClass}">
               <input ${inputType} name="${sr.id}" 
-                     class="w-full text-center p-1 border rounded ${inputClass}" 
+                     class="w-full text-center p-1 border rounded text-xs ${inputClass}" 
                      data-day-index="${i}" data-shift="${shift}" value="${value}" ${isReadonly}>
             </td>`;
         }
       });
     }
     tbody.appendChild(row);
+  });
+
+  // ============================================================
+  // [สำคัญมาก] ส่วนที่เพิ่ม: ผูก Event Listener ให้ปุ่มทำงาน
+  // ============================================================
+
+  // 1. เมื่อเปลี่ยนคะแนนใน Dropdown -> คำนวณยอดรวมทันที
+  tbody.querySelectorAll('.classify-input').forEach(select => {
+    select.addEventListener('change', (e) => {
+        const day = e.target.dataset.dayIndex;
+        const shift = e.target.dataset.shift;
+        updateClassifyColumnTotals(day, shift);
+    });
+  });
+
+  // 2. เมื่อกดปุ่ม "บันทึก" -> เรียกฟังก์ชันบันทึก
+  tbody.querySelectorAll('.classify-save-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const day = e.target.dataset.dayIndex;
+        const shift = e.target.dataset.shift;
+        // เรียกฟังก์ชันบันทึก
+        saveClassificationShiftData(day, shift);
+    });
   });
 }
 
