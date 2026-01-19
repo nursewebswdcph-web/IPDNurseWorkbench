@@ -3513,11 +3513,8 @@ async function renderClassifyPrintMode(an) {
 
 // ฟังก์ชันจัดการการพิมพ์ (แก้ไข: ค้นหาตำแหน่งมาต่อท้ายชื่อ)
 async function handleClassifyPrint() {
-    // 1. เปิด Modal กลาง
     openPrintDialog(async (userInfo) => {
         showLoading("กำลังเตรียมเอกสาร...");
-        
-        // คำนวณจำนวนหน้า
         let maxPage = 1;
         if (allClassifyDataCache.length > 0) {
             const dates = allClassifyDataCache.map(d => new Date(d.Date));
@@ -3528,21 +3525,15 @@ async function handleClassifyPrint() {
         }
 
         const tempDiv = document.createElement('div');
-
-        // วนลูปสร้างทีละหน้า
         for (let p = 1; p <= maxPage; p++) {
             const pageContainer = document.createElement('div');
-            pageContainer.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
+            const breakStyle = (p < maxPage) ? "page-break-after: always;" : "";
+            pageContainer.style.cssText = `width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; position: relative; ${breakStyle}`;
             pageContainer.className = "bg-white font-sarabun";
             
-            // ใช้ Renderer เดิมที่มีอยู่แล้ว ส่งชื่อจาก Modal เข้าไป
-            renderClassifySheetA4(p, pageContainer, { 
-                customAssessor: userInfo.name,
-                customAssessorPosition: userInfo.position
-            });
+            renderClassifySheetA4(p, pageContainer, { customAssessor: userInfo.name, customAssessorPosition: userInfo.position });
             tempDiv.appendChild(pageContainer);
         }
-
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
     });
@@ -3833,34 +3824,45 @@ async function renderMorsePrintMode(an) {
 
 // ฟังก์ชันจัดการการพิมพ์ Morse (เรียก Modal กลาง)
 async function handleMorsePrint() {
+    // 1. เปิด Modal เพื่อขอชื่อ
     openPrintDialog(async (userInfo) => {
         showLoading("กำลังเตรียมเอกสาร...");
 
-        // คำนวณจำนวนหน้า
+        // 2. คำนวณจำนวนหน้า (Logic: 5 วันต่อ 1 หน้า)
         let maxPage = 1;
         if (allMorseDataCache.length > 0) {
+            // หาวันที่ล่าสุดที่มีข้อมูล
             const dates = allMorseDataCache.map(d => new Date(d.Date));
             const maxDate = new Date(Math.max.apply(null, dates));
             const admitDate = new Date(currentPatientData.AdmitDate);
+            // คำนวณส่วนต่างวัน
             const diffDays = Math.ceil(Math.abs(maxDate - admitDate) / (1000 * 60 * 60 * 24)) + 1;
             maxPage = Math.max(1, Math.ceil(diffDays / 5));
         }
 
         const tempDiv = document.createElement('div');
 
+        // 3. วนลูปสร้างทีละหน้า
         for (let p = 1; p <= maxPage; p++) {
             const pageContainer = document.createElement('div');
-            pageContainer.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
+            // กำหนด Style สำหรับ A4
+            pageContainer.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; position: relative;";
+            // ใส่ Class page-break เพื่อให้ขึ้นหน้าใหม่ตอนพิมพ์ (ยกเว้นหน้าสุดท้าย)
+            if (p < maxPage) {
+                pageContainer.style.pageBreakAfter = "always";
+            }
             pageContainer.className = "bg-white font-sarabun";
 
-            // ใช้ Renderer เดิม ส่งชื่อจาก Modal
+            // เรียก Renderer เดิมมาวาดลงใน container นี้
             renderMorseSheetA4(p, pageContainer, { 
                 customAssessor: userInfo.name,
                 customAssessorPosition: userInfo.position
             });
+            
             tempDiv.appendChild(pageContainer);
         }
 
+        // 4. ส่งเข้าโรงพิมพ์กลาง
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
     });
@@ -4272,6 +4274,7 @@ async function fetchAndRenderBradenSet(an, pageNum, container) {
 }
 
 async function handleBradenPrint() {
+    // 1. เปิด Modal เพื่อขอชื่อ
     openPrintDialog(async (userInfo) => {
         showLoading("กำลังเตรียมเอกสาร...");
         
@@ -4280,31 +4283,52 @@ async function handleBradenPrint() {
         // รวมชื่อและตำแหน่งสำหรับ Braden (เพราะ Layout เดิมรับเป็น string เดียว)
         const userStr = userInfo.position ? `${userInfo.name}, ${userInfo.position}` : userInfo.name;
 
-        // วนลูปสร้างทุกชุด (1 ชุดมี 2 หน้า)
-        for (const setItem of allBradenDataCache) {
+        // ตรวจสอบว่ามีข้อมูล Cache หรือไม่ ถ้าไม่มีให้ลองโหลดรายการมาก่อน
+        if (!allBradenDataCache || allBradenDataCache.length === 0) {
+             try {
+                const listResp = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${currentPatientAN}`);
+                const listRes = await listResp.json();
+                if(listRes.success) allBradenDataCache = listRes.data;
+             } catch(e) { console.error(e); }
+        }
+
+        if (allBradenDataCache.length === 0) {
+            Swal.close();
+            showError("ไม่พบข้อมูล", "ยังไม่มีการบันทึกข้อมูล Braden Scale");
+            return;
+        }
+
+        // 2. วนลูปสร้างทุกชุด (1 ชุดมี 2 หน้า)
+        for (let i = 0; i < allBradenDataCache.length; i++) {
+            const setItem = allBradenDataCache[i];
+            const isLastSet = (i === allBradenDataCache.length - 1);
+
             try {
                 // ดึงข้อมูลของหน้านั้นๆ มาใหม่เพื่อให้ชัวร์
                 const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${currentPatientAN}&page=${setItem.page}`);
                 const result = await response.json();
                 const data = result.data || {};
 
-                // หน้า 1
+                // --- หน้า 1 ---
                 const p1 = document.createElement('div');
                 p1.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
                 p1.className = "bg-white font-sarabun";
                 renderBradenPage1(p1, data, { customUser: userStr });
                 tempDiv.appendChild(p1);
 
-                // หน้า 2
+                // --- หน้า 2 ---
                 const p2 = document.createElement('div');
-                p2.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
+                // ถ้าไม่ใช่ชุดสุดท้าย ให้ break page ต่อท้ายด้วย
+                const breakStyle = isLastSet ? "" : "page-break-after: always;";
+                p2.style.cssText = `width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; position: relative; ${breakStyle}`;
                 p2.className = "bg-white font-sarabun";
                 renderBradenPage2(p2, data, { customUser: userStr });
                 tempDiv.appendChild(p2);
 
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Error rendering Braden page:", e); }
         }
 
+        // 3. ส่งเข้าโรงพิมพ์กลาง
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
     });
@@ -4839,34 +4863,27 @@ async function renderForm004PrintMode(an) {
 
 // --- Print Handler ---
 async function handleForm004Print(an, preloadedData) {
-    // 1. เปิด Modal กลาง เพื่อขอชื่อผู้พิมพ์
+    const dataToUse = preloadedData || normalizeData004(currentPatientData);
     openPrintDialog(async (userInfo) => {
         showLoading("กำลังเตรียมเอกสาร...");
         
-        // เตรียมข้อมูล
-        const dataToPrint = preloadedData || normalizeData004(currentPatientData);
-        // สร้างชื่อผู้พิมพ์ในรูปแบบที่ฟอร์ม 004 รองรับ
-        const userStr = userInfo.position ? `${userInfo.name} (${userInfo.position})` : userInfo.name;
-
-        // สร้าง Container ชั่วคราวเพื่อ Render เนื้อหา (ไม่แสดงบนจอ)
         const tempDiv = document.createElement('div');
-        
-        // Render หน้า 1
+        const footerConfig = { name: userInfo.name, position: userInfo.position, date: new Date().toLocaleString('th-TH') };
+
+        // หน้า 1
         const p1 = document.createElement('div');
-        // ใช้ Class ให้เหมือน wrapInA4 แต่เราจะใช้ Render เดิมที่สวยอยู่แล้ว
         p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
         p1.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 10mm; page-break-after: always;";
-        renderForm004Page1(p1, { data: dataToPrint, footer: { name: userInfo.name, position: userInfo.position, date: new Date().toLocaleString('th-TH') } });
+        renderForm004Page1(p1, { data: dataToUse, footer: footerConfig });
         tempDiv.appendChild(p1);
 
-        // Render หน้า 2
+        // หน้า 2
         const p2 = document.createElement('div');
-        p2.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+        p2.className = "bg-white overflow-hidden text-black font-sarabun relative";
         p2.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 10mm;";
-        renderForm004Page2(p2, { data: dataToPrint, footer: { name: userInfo.name, position: userInfo.position, date: new Date().toLocaleString('th-TH') } });
+        renderForm004Page2(p2, { data: dataToUse, footer: footerConfig });
         tempDiv.appendChild(p2);
 
-        // สั่งพิมพ์ผ่านระบบกลาง
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
     });
