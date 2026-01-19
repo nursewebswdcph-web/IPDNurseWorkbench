@@ -331,6 +331,28 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
+// --- ฟังก์ชันแจ้งเตือนโหลดแบบ Modern ---
+function showModernLoading(title = 'กำลังจัดเตรียมเอกสาร...') {
+    Swal.fire({
+        html: `
+            <div class="flex flex-col items-center justify-center py-8">
+                <div class="relative mb-4">
+                    <div class="animate-spin rounded-full h-20 w-20 border-4 border-indigo-100 border-b-indigo-600"></div>
+                    <i class="fas fa-print absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-indigo-600 text-2xl animate-pulse"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">${title}</h2>
+                <p class="text-sm text-gray-500 mt-2 px-6 text-center">ระบบกำลังประมวลผลข้อมูลและจัดรูปแบบหน้ากระดาษ A4<br>กรุณารอสักครู่...</p>
+            </div>
+        `,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        width: '420px',
+        padding: '0',
+        customClass: {
+            popup: 'rounded-3xl shadow-2xl border border-gray-100'
+        }
+    });
+}
 // =================================================================
 // == 3. CENTRAL PRINT SYSTEM & UTILITIES (ระบบพิมพ์และตั้งค่ากลาง) ==
 // =================================================================
@@ -1397,108 +1419,73 @@ function renderADLTable() {
 // ส่วนจัดการการแสดงผลหน้า Preview (แก้ไขให้ปุ่มพิมพ์ทำงาน)
 // =================================================================
 async function showFormPreview(formType) {
-    // 1. ซ่อน Placeholder และเคลียร์เนื้อหาเก่า
     chartPreviewPlaceholder.classList.add("hidden");
     chartPreviewContent.innerHTML = "";
 
-    // ----------------------------------------------------
-    // CASE 1: Classify (แบบจำแนก)
-    // ----------------------------------------------------
-    if (formType === 'classify') {
-        chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย (Print View)";
-        chartEditBtn.classList.add("hidden");
-        chartAddNewBtn.classList.remove("hidden");
-        chartAddNewBtn.dataset.form = "classify";
-        
-        // เรียกฟังก์ชันเรนเดอร์ (ฟังก์ชันนี้จะสร้างปุ่มและผูก Event ให้เองทันทีหลังโหลดเสร็จ)
-        await renderClassifyPrintMode(currentPatientAN);
-    }
+    // แสดง Loading สวยๆ ทันที
+    showModernLoading('กำลังเปิดตัวอย่างเอกสาร...');
 
-    // ----------------------------------------------------
-    // CASE 2: FR-IPD-004 (แบบประเมินแรกรับ)
-    // ----------------------------------------------------
-    else if (formType === '004') {
-        chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
-        chartEditBtn.classList.remove("hidden");
-        chartEditBtn.dataset.form = "004";
-        chartAddNewBtn.classList.add("hidden");
-
-        // เรียกฟังก์ชันเรนเดอร์
-        await renderForm004PrintMode(currentPatientAN);
-    }
-
-    // ----------------------------------------------------
-    // CASE 3: Advice (คำแนะนำ)
-    // ----------------------------------------------------
-    else if (formType === 'advice') {
-        chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัว";
-        chartEditBtn.classList.add("hidden");
-        chartAddNewBtn.classList.remove("hidden");
-        chartAddNewBtn.dataset.form = "advice";
-        await showAdvicePreview(currentPatientAN);
-    }
-
-    // ----------------------------------------------------
-    // CASE 4: Nursing Progress Note (006)
-    // ----------------------------------------------------
-    else if (formType === '006') {
-        chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล (Nursing Progress Note)";
-        chartEditBtn.classList.add("hidden");
-        chartAddNewBtn.classList.remove("hidden");
-        chartAddNewBtn.dataset.form = "006";
-        await showProgressNotePreview(currentPatientAN);
-    }
-
-    // ----------------------------------------------------
-    // CASE 5: Discharge Summary (007)
-    // ----------------------------------------------------
-    else if (formType === '007') {
-        chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)";
-        chartEditBtn.classList.add("hidden");
-        chartAddNewBtn.classList.remove("hidden");
-        chartAddNewBtn.dataset.form = "007";
-        await showDischargePreview(currentPatientAN);
-    }
-    
-    // ----------------------------------------------------
-    // CASE 6: Braden Scale
-    // ----------------------------------------------------
-    else if (formType === 'braden') {
-        chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale) - Print View";
-        chartEditBtn.classList.remove("hidden");
-        chartEditBtn.dataset.form = "braden"; 
-        chartAddNewBtn.classList.add("hidden");
-
-        // เรียกฟังก์ชันเรนเดอร์
-        await renderBradenPrintMode(currentPatientAN);
-    }
-
-    // ----------------------------------------------------
-    // CASE 7: Morse / MAAS
-    // ----------------------------------------------------
-    else if (formType === 'morse_maas') {
-        chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
-        chartEditBtn.classList.remove("hidden");
-        chartEditBtn.dataset.form = "morse_maas";
-        chartAddNewBtn.classList.add("hidden");
-
-        // เรียกฟังก์ชันเรนเดอร์
-        await renderMorsePrintMode(currentPatientAN);
-    }
-
-    // ----------------------------------------------------
-    // CASE 8: Generic (อื่นๆ)
-    // ----------------------------------------------------
-    else {
-        const formTitleItem = document.querySelector(`.chart-list-item[data-form="${formType}"] h3`);
-        const formTitle = formTitleItem ? formTitleItem.textContent : "รายละเอียด";
-        
-        chartPreviewTitle.textContent = formTitle;
-        chartEditBtn.classList.add("hidden");
-        chartAddNewBtn.classList.remove("hidden");
-        chartAddNewBtn.dataset.form = formType;
-
-        await showEntryList(formType, formTitle);
+    try {
+        if (formType === 'classify') {
+            chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย (Print View)";
+            chartEditBtn.classList.add("hidden");
+            chartAddNewBtn.classList.remove("hidden");
+            chartAddNewBtn.dataset.form = "classify";
+            await renderClassifyPrintMode(currentPatientAN);
+        }
+        else if (formType === '004') {
+            chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
+            chartEditBtn.classList.remove("hidden");
+            chartEditBtn.dataset.form = "004";
+            chartAddNewBtn.classList.add("hidden");
+            await renderForm004PrintMode(currentPatientAN);
+        }
+        else if (formType === 'braden') {
+            chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale) - Print View";
+            chartEditBtn.classList.remove("hidden");
+            chartEditBtn.dataset.form = "braden"; 
+            chartAddNewBtn.classList.add("hidden");
+            await renderBradenPrintMode(currentPatientAN);
+        }
+        else if (formType === 'morse_maas') {
+            chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
+            chartEditBtn.classList.remove("hidden");
+            chartEditBtn.dataset.form = "morse_maas";
+            chartAddNewBtn.classList.add("hidden");
+            await renderMorsePrintMode(currentPatientAN);
+        }
+        else if (formType === 'advice') {
+            chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัว";
+            chartEditBtn.classList.add("hidden");
+            chartAddNewBtn.classList.remove("hidden");
+            chartAddNewBtn.dataset.form = "advice";
+            await showAdvicePreview(currentPatientAN);
+        }
+        else if (formType === '006') {
+            chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล";
+            chartEditBtn.classList.add("hidden");
+            chartAddNewBtn.classList.remove("hidden");
+            chartAddNewBtn.dataset.form = "006";
+            await showProgressNotePreview(currentPatientAN);
+        }
+        else if (formType === '007') {
+            chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย";
+            chartEditBtn.classList.add("hidden");
+            chartAddNewBtn.classList.remove("hidden");
+            chartAddNewBtn.dataset.form = "007";
+            await showDischargePreview(currentPatientAN);
+        }
+        else {
+            const formTitleItem = document.querySelector(`.chart-list-item[data-form="${formType}"] h3`);
+            chartPreviewTitle.textContent = formTitleItem ? formTitleItem.textContent : "รายละเอียด";
+            chartEditBtn.classList.add("hidden");
+            chartAddNewBtn.classList.remove("hidden");
+            chartAddNewBtn.dataset.form = formType;
+            await showEntryList(formType, chartPreviewTitle.textContent);
+        }
+    } catch (err) {
+        Swal.close();
+        showError("เกิดข้อผิดพลาดในการโหลดพรีวิว", err.message);
     }
 }
 
@@ -3484,107 +3471,59 @@ let currentClassifyPrintPage = 1;
 let allClassifyDataCache = [];
 
 async function renderClassifyPrintMode(an) {
-  // 1. เตรียม Template
-  chartPreviewContent.innerHTML = "";
-  
-  // สร้าง Container สำหรับควบคุม (Control Panel)
-  const controlDiv = document.createElement('div');
-  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
-  controlDiv.innerHTML = `
-      <div class="font-bold text-gray-700 flex items-center gap-2">
-        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-classify-page-num">1</span></span>
-      </div>
-      <div class="flex gap-2">
-        <button id="btn-prev-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
-          &lt; ก่อนหน้า
-        </button>
-        <button id="btn-next-classify-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">
-          ถัดไป &gt;
-        </button>
+    chartPreviewContent.innerHTML = "";
+    const controlDiv = document.createElement('div');
+    controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow print:hidden";
+    controlDiv.innerHTML = `
+        <div class="font-bold text-gray-700">แบบบันทึกประเภทผู้ป่วย - หน้า <span id="print-classify-page-num">1</span></div>
+        <div class="flex gap-2">
+            <button id="btn-prev-classify-sheet" class="bg-gray-300 py-1 px-3 rounded text-sm">&lt;</button>
+            <button id="btn-next-classify-sheet" class="bg-gray-300 py-1 px-3 rounded text-sm">&gt;</button>
+            <button id="btn-print-classify-action" class="ml-4 bg-blue-600 text-white py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+                <i class="fas fa-print"></i> พิมพ์เอกสารทั้งหมด
+            </button>
+        </div>`;
+    chartPreviewContent.appendChild(controlDiv);
+
+    // ผูกปุ่มทันทีที่สร้างเสร็จ
+    document.getElementById("btn-print-classify-action").onclick = handleClassifyPrint;
+
+    const sheetDiv = document.createElement('div');
+    sheetDiv.id = "classify-sheet-content";
+    sheetDiv.className = "bg-white shadow-lg mx-auto print:hidden";
+    sheetDiv.style.cssText = "width: 210mm; min-height: 297mm; padding: 10mm 15mm;";
+    chartPreviewContent.appendChild(sheetDiv);
+
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllClassificationData&an=${an}`);
+        const result = await response.json();
+        allClassifyDataCache = result.success ? result.data : [];
+        renderClassifySheetA4(1);
         
-        <button id="btn-print-classify-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
-          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
-        </button>
-      </div>
-  `;
-  chartPreviewContent.appendChild(controlDiv);
-
-  // สร้างพื้นที่กระดาษ A4 สำหรับ Preview (หน้าเดียว)
-  const sheetDiv = document.createElement('div');
-  sheetDiv.id = "classify-sheet-content";
-  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden"; // ซ่อนตัวนี้ตอน Print จริง
-  sheetDiv.style.width = "210mm";
-  sheetDiv.style.minHeight = "297mm";
-  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; // เพิ่ม Padding ล่างเผื่อ Footer
-  chartPreviewContent.appendChild(sheetDiv);
-  
-  // สร้างพื้นที่สำหรับ Print (Print Area) - จะถูกเติมข้อมูลเมื่อกดพิมพ์
-  const printArea = document.createElement('div');
-  printArea.id = "classify-print-area";
-  printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
-  document.body.appendChild(printArea);
-
-  // 2. โหลดข้อมูล
-  showLoading('กำลังโหลดข้อมูล...');
-  try {
-    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllClassificationData&an=${an}`);
-    const result = await response.json();
-    
-    if (!result.success && result.message) console.warn(result.message);
-    
-    allClassifyDataCache = result.success ? result.data : []; 
-    currentClassifyPrintPage = 1;
-    
-    // Render หน้าแรกสำหรับ Preview
-    renderClassifySheetA4(currentClassifyPrintPage);
-    
-    // Event Listeners
-    document.getElementById("btn-prev-classify-sheet").addEventListener("click", () => {
-       if(currentClassifyPrintPage > 1) {
-         currentClassifyPrintPage--;
-         renderClassifySheetA4(currentClassifyPrintPage);
-       }
-    });
-    
-    document.getElementById("btn-next-classify-sheet").addEventListener("click", () => {
-         currentClassifyPrintPage++;
-         renderClassifySheetA4(currentClassifyPrintPage);
-    });
-
-    // Event ปุ่มพิมพ์
-    document.getElementById("btn-print-classify-action").addEventListener("click", () => {
-        handleClassifyPrint();
-    });
-
-    Swal.close();
-  } catch (e) {
-    Swal.close();
-    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
-  }
+        // ผูกปุ่มเปลี่ยนหน้า
+        document.getElementById("btn-prev-classify-sheet").onclick = () => { if(currentClassifyPrintPage > 1) renderClassifySheetA4(--currentClassifyPrintPage); };
+        document.getElementById("btn-next-classify-sheet").onclick = () => { renderClassifySheetA4(++currentClassifyPrintPage); };
+        
+        Swal.close();
+    } catch (e) { Swal.close(); showError("โหลดข้อมูลล้มเหลว", e.message); }
 }
 
 // ฟังก์ชันจัดการการพิมพ์ (แก้ไข: ค้นหาตำแหน่งมาต่อท้ายชื่อ)
 async function handleClassifyPrint() {
     openPrintDialog(async (userInfo) => {
-        showLoading("กำลังเตรียมเอกสาร...");
+        showModernLoading("กำลังจัดเตรียมหน้ากระดาษ Classify...");
         let maxPage = 1;
         if (allClassifyDataCache.length > 0) {
             const dates = allClassifyDataCache.map(d => new Date(d.Date));
-            const maxDate = new Date(Math.max.apply(null, dates));
-            const admitDate = new Date(currentPatientData.AdmitDate);
-            const diffDays = Math.ceil(Math.abs(maxDate - admitDate) / (1000 * 60 * 60 * 24)) + 1;
+            const diffDays = Math.ceil(Math.abs(new Date(Math.max(...dates)) - new Date(currentPatientData.AdmitDate)) / 86400000) + 1;
             maxPage = Math.max(1, Math.ceil(diffDays / 5));
         }
-
         const tempDiv = document.createElement('div');
         for (let p = 1; p <= maxPage; p++) {
-            const pageContainer = document.createElement('div');
-            const breakStyle = (p < maxPage) ? "page-break-after: always;" : "";
-            pageContainer.style.cssText = `width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; position: relative; ${breakStyle}`;
-            pageContainer.className = "bg-white font-sarabun";
-            
-            renderClassifySheetA4(p, pageContainer, { customAssessor: userInfo.name, customAssessorPosition: userInfo.position });
-            tempDiv.appendChild(pageContainer);
+            const pBox = document.createElement('div');
+            pBox.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm; page-break-after: always; position: relative;";
+            renderClassifySheetA4(p, pBox, { customAssessor: userInfo.name, customAssessorPosition: userInfo.position });
+            tempDiv.appendChild(pBox);
         }
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
@@ -3809,112 +3748,55 @@ let currentMorsePrintPage = 1;
 let allMorseDataCache = [];
 
 async function renderMorsePrintMode(an) {
-  chartPreviewContent.innerHTML = "";
-  
-  // 1. สร้างปุ่มควบคุม (Controls)
-  const controlDiv = document.createElement('div');
-  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
-  controlDiv.innerHTML = `
-      <div class="font-bold text-gray-700 flex items-center gap-2">
-        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-morse-page-num">1</span></span>
-      </div>
-      <div class="flex gap-2">
-        <button id="btn-prev-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ก่อนหน้า</button>
-        <button id="btn-next-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ถัดไป &gt;</button>
-        <button id="btn-print-morse-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
-          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
-        </button>
-      </div>
-  `;
-  chartPreviewContent.appendChild(controlDiv);
+    chartPreviewContent.innerHTML = "";
+    const controlDiv = document.createElement('div');
+    controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow print:hidden";
+    controlDiv.innerHTML = `
+        <div class="font-bold text-gray-700">แบบประเมิน Morse/MAAS - หน้า <span id="print-morse-page-num">1</span></div>
+        <div class="flex gap-2">
+            <button id="btn-prev-morse-sheet" class="bg-gray-300 py-1 px-3 rounded text-sm">&lt;</button>
+            <button id="btn-next-morse-sheet" class="bg-gray-300 py-1 px-3 rounded text-sm">&gt;</button>
+            <button id="btn-print-morse-action" class="ml-4 bg-blue-600 text-white py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+                <i class="fas fa-print"></i> พิมพ์เอกสารทั้งหมด
+            </button>
+        </div>`;
+    chartPreviewContent.appendChild(controlDiv);
 
-  // 2. สร้างพื้นที่แสดงผล (Sheet Container)
-  const sheetDiv = document.createElement('div');
-  sheetDiv.id = "morse-sheet-content";
-  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden";
-  sheetDiv.style.width = "210mm";
-  sheetDiv.style.minHeight = "297mm";
-  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; 
-  chartPreviewContent.appendChild(sheetDiv);
+    // ผูกปุ่มทันที
+    document.getElementById("btn-print-morse-action").onclick = handleMorsePrint;
 
-  // 3. โหลดข้อมูล
-  showLoading('กำลังโหลดข้อมูล...');
-  try {
-    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllMorseData&an=${an}`);
-    const result = await response.json();
-    
-    if (!result.success && result.message) console.warn(result.message);
-    
-    allMorseDataCache = result.success ? result.data : []; 
-    currentMorsePrintPage = 1;
-    
-    // Render หน้าแรก
-    renderMorseSheetA4(currentMorsePrintPage);
-    
-    // Event Listeners
-    document.getElementById("btn-prev-morse-sheet").addEventListener("click", () => {
-       if(currentMorsePrintPage > 1) {
-         currentMorsePrintPage--;
-         renderMorseSheetA4(currentMorsePrintPage);
-       }
-    });
-    
-    document.getElementById("btn-next-morse-sheet").addEventListener("click", () => {
-         currentMorsePrintPage++;
-         renderMorseSheetA4(currentMorsePrintPage);
-    });
+    const sheetDiv = document.createElement('div');
+    sheetDiv.id = "morse-sheet-content";
+    sheetDiv.className = "bg-white shadow-lg mx-auto print:hidden";
+    sheetDiv.style.cssText = "width: 210mm; min-height: 297mm; padding: 10mm 15mm;";
+    chartPreviewContent.appendChild(sheetDiv);
 
-    // เรียกฟังก์ชันพิมพ์ (ต้องมีฟังก์ชัน handleMorsePrint ด้านล่างด้วย)
-    document.getElementById("btn-print-morse-action").addEventListener("click", handleMorsePrint);
-
-    Swal.close();
-  } catch (e) {
-    Swal.close();
-    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
-  }
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllMorseData&an=${an}`);
+        const result = await response.json();
+        allMorseDataCache = result.success ? result.data : [];
+        renderMorseSheetA4(1);
+        Swal.close();
+    } catch (e) { Swal.close(); showError("โหลดไม่สำเร็จ", e.message); }
 }
 
 // ฟังก์ชันจัดการการพิมพ์ Morse (เรียก Modal กลาง)
 async function handleMorsePrint() {
-    // 1. เปิด Modal เพื่อขอชื่อ
     openPrintDialog(async (userInfo) => {
-        showLoading("กำลังเตรียมเอกสาร...");
-
-        // 2. คำนวณจำนวนหน้า (Logic: 5 วันต่อ 1 หน้า)
+        showModernLoading("กำลังเตรียมหน้าประเมินความเสี่ยง Morse...");
         let maxPage = 1;
         if (allMorseDataCache.length > 0) {
-            // หาวันที่ล่าสุดที่มีข้อมูล
             const dates = allMorseDataCache.map(d => new Date(d.Date));
-            const maxDate = new Date(Math.max.apply(null, dates));
-            const admitDate = new Date(currentPatientData.AdmitDate);
-            // คำนวณส่วนต่างวัน
-            const diffDays = Math.ceil(Math.abs(maxDate - admitDate) / (1000 * 60 * 60 * 24)) + 1;
+            const diffDays = Math.ceil(Math.abs(new Date(Math.max(...dates)) - new Date(currentPatientData.AdmitDate)) / 86400000) + 1;
             maxPage = Math.max(1, Math.ceil(diffDays / 5));
         }
-
         const tempDiv = document.createElement('div');
-
-        // 3. วนลูปสร้างทีละหน้า
         for (let p = 1; p <= maxPage; p++) {
-            const pageContainer = document.createElement('div');
-            // กำหนด Style สำหรับ A4
-            pageContainer.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; position: relative;";
-            // ใส่ Class page-break เพื่อให้ขึ้นหน้าใหม่ตอนพิมพ์ (ยกเว้นหน้าสุดท้าย)
-            if (p < maxPage) {
-                pageContainer.style.pageBreakAfter = "always";
-            }
-            pageContainer.className = "bg-white font-sarabun";
-
-            // เรียก Renderer เดิมมาวาดลงใน container นี้
-            renderMorseSheetA4(p, pageContainer, { 
-                customAssessor: userInfo.name,
-                customAssessorPosition: userInfo.position
-            });
-            
-            tempDiv.appendChild(pageContainer);
+            const pBox = document.createElement('div');
+            pBox.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm; page-break-after: always; position: relative;";
+            renderMorseSheetA4(p, pBox, { customAssessor: userInfo.name, customAssessorPosition: userInfo.position });
+            tempDiv.appendChild(pBox);
         }
-
-        // 4. ส่งเข้าโรงพิมพ์กลาง
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
     });
@@ -4215,79 +4097,37 @@ let currentBradenPrintSet = 1;
 let allBradenDataCache = []; // เก็บข้อมูลราย "ชุด" (Pages) ที่โหลดมา
 
 async function renderBradenPrintMode(an) {
-  chartPreviewContent.innerHTML = "";
-  
-  // 1. สร้าง Controls
-  const controlDiv = document.createElement('div');
-  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
-  controlDiv.innerHTML = `
-      <div class="font-bold text-gray-700 flex items-center gap-2">
-        <span>มุมมองแบบพิมพ์ (ชุดละ 2 หน้า) - ชุดที่ <span id="print-braden-set-num">1</span></span>
-      </div>
-      <div class="flex gap-2">
-        <button id="btn-prev-braden-set" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ชุดก่อนหน้า</button>
-        <button id="btn-next-braden-set" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ชุดถัดไป &gt;</button>
-        <button id="btn-print-braden-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
-          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
-        </button>
-      </div>
-  `;
-  chartPreviewContent.appendChild(controlDiv);
+    chartPreviewContent.innerHTML = "";
+    const controlDiv = document.createElement('div');
+    controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow print:hidden";
+    controlDiv.innerHTML = `
+        <div class="font-bold text-gray-700">แบบประเมินแผลกดทับ - ชุดที่ <span id="print-braden-set-num">1</span></div>
+        <div class="flex gap-2">
+            <button id="btn-prev-braden-set" class="bg-gray-300 py-1 px-3 rounded text-sm">&lt;</button>
+            <button id="btn-next-braden-set" class="bg-gray-300 py-1 px-3 rounded text-sm">&gt;</button>
+            <button id="btn-print-braden-action" class="ml-4 bg-blue-600 text-white py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+                <i class="fas fa-print"></i> พิมพ์เอกสารทั้งหมด
+            </button>
+        </div>`;
+    chartPreviewContent.appendChild(controlDiv);
 
-  // 2. สร้าง Container สำหรับแสดงผล (Scrollable)
-  const previewContainer = document.createElement('div');
-  previewContainer.id = "braden-preview-container";
-  previewContainer.className = "overflow-y-auto bg-gray-200 p-4 print:p-0";
-  previewContainer.style.maxHeight = "calc(100vh - 200px)";
-  chartPreviewContent.appendChild(previewContainer);
+    // ผูกปุ่มทันที
+    document.getElementById("btn-print-braden-action").onclick = handleBradenPrint;
 
-  // 3. โหลดข้อมูล (List รายการชุดที่มี)
-  showLoading('กำลังโหลดข้อมูล...');
-  try {
-    const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${an}`);
-    const result = await response.json();
-    
-    if (!result.success) throw new Error(result.message);
-    
-    // เก็บรายการชุดข้อมูล (เช่น Page 1, Page 2...)
-    allBradenDataCache = result.data || []; 
-    
-    if (allBradenDataCache.length === 0) {
-        previewContainer.innerHTML = `<div class="text-center text-gray-500 py-10">ยังไม่มีข้อมูลการประเมิน<br>กรุณากดปุ่ม "แก้ไข" เพื่อเริ่มประเมิน</div>`;
+    const previewContainer = document.createElement('div');
+    previewContainer.id = "braden-preview-container";
+    previewContainer.className = "overflow-y-auto bg-gray-200 p-4 print:p-0";
+    chartPreviewContent.appendChild(previewContainer);
+
+    try {
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${an}`);
+        const result = await response.json();
+        allBradenDataCache = result.data || [];
+        if (allBradenDataCache.length > 0) {
+            await fetchAndRenderBradenSet(an, allBradenDataCache[0].page, previewContainer);
+        }
         Swal.close();
-        return;
-    }
-
-    // เริ่มต้นแสดงชุดล่าสุด (หรือชุดที่ 1 ตามต้องการ)
-    currentBradenPrintSet = allBradenDataCache.length > 0 ? allBradenDataCache[allBradenDataCache.length - 1].page : 1;
-    
-    await fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
-    
-    // Event Listeners
-    document.getElementById("btn-prev-braden-set").addEventListener("click", () => {
-       // หาชุดก่อนหน้า
-       const currIdx = allBradenDataCache.findIndex(d => d.page == currentBradenPrintSet);
-       if(currIdx > 0) {
-           currentBradenPrintSet = allBradenDataCache[currIdx - 1].page;
-           fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
-       }
-    });
-    
-    document.getElementById("btn-next-braden-set").addEventListener("click", () => {
-         const currIdx = allBradenDataCache.findIndex(d => d.page == currentBradenPrintSet);
-         if(currIdx < allBradenDataCache.length - 1) {
-             currentBradenPrintSet = allBradenDataCache[currIdx + 1].page;
-             fetchAndRenderBradenSet(currentPatientAN, currentBradenPrintSet, previewContainer);
-         }
-    });
-
-    document.getElementById("btn-print-braden-action").addEventListener("click", handleBradenPrint);
-
-    Swal.close();
-  } catch (e) {
-    Swal.close();
-    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
-  }
+    } catch (e) { Swal.close(); showError("โหลดไม่สำเร็จ", e.message); }
 }
 
 // ฟังก์ชันโหลดข้อมูลและเรนเดอร์ 1 ชุด (2 หน้า) ลงใน Container
@@ -4326,61 +4166,22 @@ async function fetchAndRenderBradenSet(an, pageNum, container) {
 }
 
 async function handleBradenPrint() {
-    // 1. เปิด Modal เพื่อขอชื่อ
     openPrintDialog(async (userInfo) => {
-        showLoading("กำลังเตรียมเอกสาร...");
-        
-        const tempDiv = document.createElement('div');
-        
-        // รวมชื่อและตำแหน่งสำหรับ Braden (เพราะ Layout เดิมรับเป็น string เดียว)
+        showModernLoading("กำลังจัดชุดเอกสาร Braden Scale...");
         const userStr = userInfo.position ? `${userInfo.name}, ${userInfo.position}` : userInfo.name;
-
-        // ตรวจสอบว่ามีข้อมูล Cache หรือไม่ ถ้าไม่มีให้ลองโหลดรายการมาก่อน
-        if (!allBradenDataCache || allBradenDataCache.length === 0) {
-             try {
-                const listResp = await fetch(`${GAS_WEB_APP_URL}?action=getBradenList&an=${currentPatientAN}`);
-                const listRes = await listResp.json();
-                if(listRes.success) allBradenDataCache = listRes.data;
-             } catch(e) { console.error(e); }
+        const tempDiv = document.createElement('div');
+        for (let set of allBradenDataCache) {
+            const res = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${currentPatientAN}&page=${set.page}`);
+            const result = await res.json();
+            const data = result.data || {};
+            [1, 2].forEach(pNum => {
+                const pBox = document.createElement('div');
+                pBox.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm; page-break-after: always; position: relative;";
+                if(pNum === 1) renderBradenPage1(pBox, data, { customUser: userStr });
+                else renderBradenPage2(pBox, data, { customUser: userStr });
+                tempDiv.appendChild(pBox);
+            });
         }
-
-        if (allBradenDataCache.length === 0) {
-            Swal.close();
-            showError("ไม่พบข้อมูล", "ยังไม่มีการบันทึกข้อมูล Braden Scale");
-            return;
-        }
-
-        // 2. วนลูปสร้างทุกชุด (1 ชุดมี 2 หน้า)
-        for (let i = 0; i < allBradenDataCache.length; i++) {
-            const setItem = allBradenDataCache[i];
-            const isLastSet = (i === allBradenDataCache.length - 1);
-
-            try {
-                // ดึงข้อมูลของหน้านั้นๆ มาใหม่เพื่อให้ชัวร์
-                const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${currentPatientAN}&page=${setItem.page}`);
-                const result = await response.json();
-                const data = result.data || {};
-
-                // --- หน้า 1 ---
-                const p1 = document.createElement('div');
-                p1.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
-                p1.className = "bg-white font-sarabun";
-                renderBradenPage1(p1, data, { customUser: userStr });
-                tempDiv.appendChild(p1);
-
-                // --- หน้า 2 ---
-                const p2 = document.createElement('div');
-                // ถ้าไม่ใช่ชุดสุดท้าย ให้ break page ต่อท้ายด้วย
-                const breakStyle = isLastSet ? "" : "page-break-after: always;";
-                p2.style.cssText = `width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; position: relative; ${breakStyle}`;
-                p2.className = "bg-white font-sarabun";
-                renderBradenPage2(p2, data, { customUser: userStr });
-                tempDiv.appendChild(p2);
-
-            } catch (e) { console.error("Error rendering Braden page:", e); }
-        }
-
-        // 3. ส่งเข้าโรงพิมพ์กลาง
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
     });
@@ -4860,82 +4661,54 @@ const formatTime = (dateStr) => {
 // --- Main Entry Point ---
 async function renderForm004PrintMode(an) {
     chartPreviewContent.innerHTML = "";
-    showLoading("กำลังดึงข้อมูลล่าสุด...");
+    const controlDiv = document.createElement('div');
+    controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow print:hidden";
+    controlDiv.innerHTML = `
+        <div class="font-bold text-gray-700">แบบประเมินผู้ป่วยใน (FR-IPD-004)</div>
+        <button id="btn-print-004-action" class="bg-blue-600 text-white py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+            <i class="fas fa-print"></i> พิมพ์เอกสารทั้งหมด
+        </button>`;
+    chartPreviewContent.appendChild(controlDiv);
+
+    // ผูกปุ่มทันที
+    document.getElementById("btn-print-004-action").onclick = () => handleForm004Print(an);
+
+    const previewContainer = document.createElement('div');
+    previewContainer.className = "overflow-y-auto bg-gray-300 p-4 flex flex-col items-center gap-4 print:p-0";
+    chartPreviewContent.appendChild(previewContainer);
 
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
         const result = await response.json();
+        const freshData = normalizeData004(result.data || {});
         
-        // **หัวใจสำคัญ: แปลงข้อมูลดิบจาก Sheet ให้เป็น Format ที่พร้อมแสดงผล**
-        const rawData = result.success ? (result.data || {}) : {};
-        const freshData = normalizeData004(rawData);
-        
+        [1, 2].forEach(pNum => {
+            const page = document.createElement('div');
+            page.style.cssText = "width: 210mm; min-height: 297mm; background: white; padding: 10mm;";
+            if(pNum === 1) renderForm004Page1(page, { data: freshData });
+            else renderForm004Page2(page, { data: freshData });
+            previewContainer.appendChild(page);
+        });
         Swal.close();
-
-        // Controls
-        const controlDiv = document.createElement('div');
-        controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
-        controlDiv.innerHTML = `
-            <div class="font-bold text-gray-700">แบบประเมินผู้ป่วยใน (FR-IPD-004)</div>
-            <button id="btn-print-004-action" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
-                <i class="fas fa-print"></i> พิมพ์เอกสาร
-            </button>`;
-        chartPreviewContent.appendChild(controlDiv);
-
-        // Container
-        const previewContainer = document.createElement('div');
-        previewContainer.className = "overflow-y-auto bg-gray-300 p-4 print:p-0 flex flex-col items-center gap-4";
-        previewContainer.style.maxHeight = "calc(100vh - 200px)";
-        chartPreviewContent.appendChild(previewContainer);
-
-        // Render Pages
-        const p1 = document.createElement('div');
-        p1.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
-        p1.style.width = "210mm";
-        p1.style.minHeight = "297mm";
-        p1.style.padding = "10mm 10mm";
-        renderForm004Page1(p1, { data: freshData });
-        previewContainer.appendChild(p1);
-
-        const p2 = document.createElement('div');
-        p2.className = "bg-white shadow-lg overflow-hidden text-black font-sarabun relative";
-        p2.style.width = "210mm";
-        p2.style.minHeight = "297mm";
-        p2.style.padding = "10mm 10mm";
-        renderForm004Page2(p2, { data: freshData });
-        previewContainer.appendChild(p2);
-
-        document.getElementById("btn-print-004-action").addEventListener("click", () => handleForm004Print(an, freshData));
-
-    } catch (e) {
-        Swal.close();
-        showError("โหลดข้อมูลไม่สำเร็จ", e.message);
-    }
+    } catch (e) { Swal.close(); showError("โหลดไม่สำเร็จ", e.message); }
 }
 
 // --- Print Handler ---
-async function handleForm004Print(an, preloadedData) {
-    const dataToUse = preloadedData || normalizeData004(currentPatientData);
+async function handleForm004Print(an) {
     openPrintDialog(async (userInfo) => {
-        showLoading("กำลังเตรียมเอกสาร...");
-        
+        showModernLoading("กำลังสร้างเอกสาร FR-IPD-004...");
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
+        const result = await response.json();
+        const dataToUse = normalizeData004(result.data || {});
+        const footer = { name: userInfo.name, position: userInfo.position, date: new Date().toLocaleString('th-TH') };
         const tempDiv = document.createElement('div');
-        const footerConfig = { name: userInfo.name, position: userInfo.position, date: new Date().toLocaleString('th-TH') };
-
-        // หน้า 1
-        const p1 = document.createElement('div');
-        p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
-        p1.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 10mm; page-break-after: always;";
-        renderForm004Page1(p1, { data: dataToUse, footer: footerConfig });
-        tempDiv.appendChild(p1);
-
-        // หน้า 2
-        const p2 = document.createElement('div');
-        p2.className = "bg-white overflow-hidden text-black font-sarabun relative";
-        p2.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 10mm;";
-        renderForm004Page2(p2, { data: dataToUse, footer: footerConfig });
-        tempDiv.appendChild(p2);
-
+        [1, 2].forEach(pNum => {
+            const pBox = document.createElement('div');
+            pBox.style.cssText = "width: 210mm; height: 297mm; padding: 10mm; page-break-after: always; position: relative;";
+            if(pNum === 1) renderForm004Page1(pBox, { data: dataToUse, footer: footer });
+            else renderForm004Page2(pBox, { data: dataToUse, footer: footer });
+            tempDiv.appendChild(pBox);
+        });
         PrintSystem.print(tempDiv.innerHTML);
         Swal.close();
     });
