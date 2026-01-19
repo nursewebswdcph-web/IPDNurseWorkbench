@@ -449,13 +449,6 @@ function openPrintDialog(callbackFunction) {
     document.getElementById('staffDropdown').classList.add('hidden');
 }
 
-// 3. ปิด Modal
-function closePrintModal() {
-    const modal = document.getElementById('printSettingsModal');
-    if (modal) modal.classList.add('hidden');
-    _pendingPrintCallback = null; // เคลียร์ callback ทิ้งป้องกันการเรียกซ้ำผิดที่
-}
-
 // 4. ค้นหารายชื่อ (Filter)
 function filterStaffList(keyword) {
     const dropdown = document.getElementById('staffDropdown');
@@ -493,30 +486,45 @@ function selectStaff(staff) {
     
     document.getElementById('staffDropdown').classList.add('hidden');
 }
+// =================================================================
+// ส่วนจัดการ Modal และ Print Logic (แก้ไขบั๊กปุ่มกดไม่ทำงาน)
+// =================================================================
 
-// 6. [สำคัญ] ปุ่มยืนยันใน Modal เรียกฟังก์ชันนี้
+// ฟังก์ชันปิด Modal
+function closePrintModal() {
+    const modal = document.getElementById('printSettingsModal');
+    if (modal) modal.classList.add('hidden');
+    // หมายเหตุ: เราจะไม่เคลียร์ callback ที่นี่ทันที เพื่อให้ฟังก์ชัน confirm ทำงานได้
+}
+
+// ฟังก์ชันยืนยันการพิมพ์ (แก้ไขแล้ว)
 function confirmPrintExecution() {
-    // พยายามดึงค่าจาก Hidden Field ก่อน, ถ้าไม่มีเอาจาก Input ตรงๆ
+    // 1. ดึงชื่อผู้พิมพ์จาก Input
     let pName = document.getElementById('selectedPrinterName')?.value;
     let pPos = document.getElementById('selectedPrinterPosition')?.value;
-
-    // กรณีพิมพ์ชื่อเอง (ไม่ได้เลือกจาก Dropdown)
-    const manualName = document.getElementById('printerSearch').value;
+    const manualName = document.getElementById('printerSearch')?.value;
+    
+    // ถ้าไม่ได้เลือกจาก Dropdown ให้ใช้ชื่อที่พิมพ์เอง
     if (!pName || pName !== manualName) {
         pName = manualName || '-';
         pPos = '';
     }
 
-    // ปิด Modal
-    const modal = document.getElementById('printSettingsModal');
-    if (modal) modal.classList.add('hidden');
+    // 2. ปิด Modal
+    closePrintModal();
 
-    // เรียกกลับไปหาฟังก์ชันของฟอร์มต้นทาง
+    // 3. สั่งพิมพ์ (เรียก Callback ที่เก็บไว้)
     if (_pendingPrintCallback) {
+        // เรียกฟังก์ชันพิมพ์ของฟอร์มนั้นๆ
         _pendingPrintCallback({ name: pName, position: pPos });
-        _pendingPrintCallback = null; // Reset
+        
+        // 4. ล้างค่า Callback ทิ้งหลังจากสั่งพิมพ์เสร็จแล้วเท่านั้น
+        _pendingPrintCallback = null;
+    } else {
+        console.error("Error: ไม่พบคำสั่งพิมพ์ (_pendingPrintCallback is null)");
     }
 }
+
 // =================================================================
 // ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
 // =================================================================
