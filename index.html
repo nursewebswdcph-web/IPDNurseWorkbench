@@ -24,8 +24,100 @@
     .hidden {
       display: none;
     }
+    /* ========================================= */
+    /* === GLOBAL PRINT STYLES (ระบบพิมพ์กลาง) === */
+    /* ========================================= */
+    
+    /* ตั้งค่าหน้ากระดาษ A4 */
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    /* คลาสสำหรับหน้ากระดาษ A4 */
+    .a4-page {
+        width: 210mm;
+        min-height: 297mm;
+        background: white;
+        padding: 20mm; /* ระยะขอบมาตรฐาน */
+        position: relative;
+        box-sizing: border-box;
+        margin: 0 auto 10px auto; /* เว้นระยะตอนดูหน้าจอ */
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        font-family: 'Sarabun', sans-serif;
+        font-size: 14px;
+        line-height: 1.4;
+        page-break-after: always; /* ขึ้นหน้าใหม่เสมอ */
+    }
+    
+    /* ซ่อน Container สำหรับพิมพ์เมื่ออยู่หน้าจอปกติ */
+    #print-master-container {
+        display: none;
+    }
+
+    /* CSS สำหรับตอนสั่งพิมพ์ (Printer Only) */
+    @media print {
+        /* ซ่อนทุกอย่างใน Body */
+        body > * {
+            display: none !important;
+        }
+
+        /* แสดงเฉพาะ Container พิมพ์ */
+        #print-master-container {
+            display: block !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+        
+        /* ให้ลูกๆ ของ Container พิมพ์แสดงผลได้ */
+        #print-master-container * {
+            visibility: visible;
+        }
+
+        /* ปรับ A4 ให้เต็มหน้ากระดาษจริง */
+        .a4-page {
+            box-shadow: none;
+            margin: 0;
+            width: 100%;
+            height: auto;
+            page-break-after: always;
+        }
+        
+        /* ป้องกันหน้าสุดท้ายกระโดด */
+        .a4-page:last-child {
+            page-break-after: auto;
+        }
+    }
+
+    /* Standard Header/Footer Classes */
+    .form-header {
+        border-bottom: 2px solid black;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+    }
+    
+    /* พื้นที่เนื้อหา ขยายให้เต็มพื้นที่ที่เหลือ */
+    .form-content {
+        flex-grow: 1; 
+    }
+
+    /* Footer กลาง */
+    .form-footer {
+        border-top: 1px solid black;
+        padding-top: 5px;
+        margin-top: 10px;
+        font-size: 10px;
+        color: #555;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
   </style>
-</head>
+  </head>
 
 <body class="bg-gray-100">
 
@@ -2557,8 +2649,8 @@
             <button onclick="closePrintModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded transition duration-200">
                 ยกเลิก
             </button>
-            <button onclick="executePrint004()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow-md transition duration-200 flex items-center">
-                <i class="fas fa-print mr-2"></i> พิมพ์เอกสาร
+            <button onclick="confirmPrintExecution()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">
+                พิมพ์เอกสาร
             </button>
         </div>
     </div>
@@ -2611,5 +2703,6 @@
   </main> <!-- (ย้าย </main> มาไว้ตรงนี้) -->
 
   <script src="script.js"></script>
+  <div id="print-master-container"></div>
 </body>
 </html>
