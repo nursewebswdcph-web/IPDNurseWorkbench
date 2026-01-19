@@ -1396,26 +1396,13 @@ function renderADLTable() {
 // =================================================================
 // ส่วนจัดการการแสดงผลหน้า Preview (แก้ไขให้ปุ่มพิมพ์ทำงาน)
 // =================================================================
-
 async function showFormPreview(formType) {
     // 1. ซ่อน Placeholder และเคลียร์เนื้อหาเก่า
     chartPreviewPlaceholder.classList.add("hidden");
     chartPreviewContent.innerHTML = "";
 
-    // ตัวแปรสำหรับจัดการ Timeout
-    const bindPrintButton = (btnId, handlerFunc) => {
-        setTimeout(() => {
-            const btn = document.getElementById(btnId);
-            if (btn) {
-                // ล้าง Event เก่า (กันเบิ้ล) แล้วใส่ใหม่
-                btn.onclick = null;
-                btn.onclick = handlerFunc;
-                console.log(`✅ Bound print event to ${btnId}`);
-            } else {
-                console.warn(`⚠️ Button ${btnId} not found`);
-            }
-        }, 300); // รอ 300ms ให้ HTML วาดเสร็จชัวร์ๆ
-    };
+    // *** ลบตัวแปร bindPrintButton และ setTimeout ออกทั้งหมด ***
+    // เพราะเราจะให้ฟังก์ชัน render จัดการ event listener เองโดยตรง เพื่อความชัวร์
 
     // ----------------------------------------------------
     // CASE 1: Classify (แบบจำแนก)
@@ -1426,11 +1413,8 @@ async function showFormPreview(formType) {
         chartAddNewBtn.classList.remove("hidden");
         chartAddNewBtn.dataset.form = "classify";
         
-        // เรียกฟังก์ชันเรนเดอร์
+        // เรียกฟังก์ชันเรนเดอร์ (ฟังก์ชันนี้จะสร้างปุ่มและผูก Event ให้เองทันที)
         await renderClassifyPrintMode(currentPatientAN);
-        
-        // *** แก้ไข: ผูกปุ่มพิมพ์ ***
-        bindPrintButton("btn-print-classify-action", handleClassifyPrint);
     }
 
     // ----------------------------------------------------
@@ -1444,11 +1428,6 @@ async function showFormPreview(formType) {
 
         // เรียกฟังก์ชันเรนเดอร์
         await renderForm004PrintMode(currentPatientAN);
-        
-        // *** แก้ไข: ผูกปุ่มพิมพ์ (ต้องส่ง AN เข้าไป) ***
-        bindPrintButton("btn-print-004-action", function() { 
-            handleForm004Print(currentPatientAN); 
-        });
     }
 
     // ----------------------------------------------------
@@ -1478,7 +1457,7 @@ async function showFormPreview(formType) {
     // ----------------------------------------------------
     else if (formType === '007') {
         chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)";
-        chartEditBtn.classList.add("hidden"); // ปกติ 007 อาจจะแก้ไขผ่าน Entry list หรือปุ่มอื่น
+        chartEditBtn.classList.add("hidden");
         chartAddNewBtn.classList.remove("hidden");
         chartAddNewBtn.dataset.form = "007";
         await showDischargePreview(currentPatientAN);
@@ -1495,9 +1474,6 @@ async function showFormPreview(formType) {
 
         // เรียกฟังก์ชันเรนเดอร์
         await renderBradenPrintMode(currentPatientAN);
-
-        // *** แก้ไข: ผูกปุ่มพิมพ์ ***
-        bindPrintButton("btn-print-braden-action", handleBradenPrint);
     }
 
     // ----------------------------------------------------
@@ -1511,9 +1487,6 @@ async function showFormPreview(formType) {
 
         // เรียกฟังก์ชันเรนเดอร์
         await renderMorsePrintMode(currentPatientAN);
-
-        // *** แก้ไข: ผูกปุ่มพิมพ์ ***
-        bindPrintButton("btn-print-morse-action", handleMorsePrint);
     }
 
     // ----------------------------------------------------
