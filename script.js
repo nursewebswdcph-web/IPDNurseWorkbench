@@ -332,7 +332,193 @@ const BRADEN_CRITERIA = [
 // (5) Utility Functions
 // ----------------------------------------------------------------
 // =================================================================
-// 1. ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
+// == 3. CENTRAL PRINT SYSTEM & UTILITIES (ระบบพิมพ์และตั้งค่ากลาง) ==
+// =================================================================
+
+// --- ส่วนจัดการหน้ากระดาษและสั่งพิมพ์ ---
+const PrintSystem = {
+    // 1. สั่งพิมพ์เนื้อหา HTML
+    print: function(htmlContent) {
+        const container = document.getElementById('print-master-container');
+        if (!container) return alert("Error: ไม่พบ <div id='print-master-container'> ใน index.html");
+        
+        // ล้างค่าเก่าและใส่ค่าใหม่
+        container.innerHTML = '';
+        container.innerHTML = htmlContent;
+        
+        // สั่ง Browser พิมพ์
+        window.print();
+        
+        // (Optional) คืนค่าว่างหลังจากพิมพ์เสร็จ (ถ้าต้องการ)
+        // setTimeout(() => { container.innerHTML = ''; }, 1000);
+    },
+
+    // 2. สร้าง Header มาตรฐาน (ถ้าต้องการใช้)
+    generateHeader: function(title, subTitle, rightTopText) {
+        return `
+        <div class="form-header flex justify-between items-start mb-4 border-b-2 border-black pb-2">
+            <div class="flex items-center gap-3">
+                <img src="https://swdcph.moph.go.th/intranet/login/images/logo_swd.png" class="h-12 w-12 grayscale opacity-80">
+                <div>
+                    <h1 class="text-xl font-bold leading-tight">${title}</h1>
+                    <p class="font-bold text-gray-600 text-sm">${subTitle || 'โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน'}</p>
+                </div>
+            </div>
+            <div class="text-right text-xs">
+                ${rightTopText || ''}
+            </div>
+        </div>`;
+    },
+
+    // 3. หุ้มเนื้อหาด้วยขนาด A4 และเติม Footer อัตโนมัติ
+    wrapInA4: function(contentHtml, footerConfig = {}) {
+        // สร้าง Footer
+        const dateStr = new Date().toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+        const docId = footerConfig.docId || '';
+        const user = footerConfig.user || '-';
+        const pageInfo = footerConfig.pageInfo || '';
+
+        const footerHtml = `
+            <div class="form-footer flex justify-between items-end border-t border-black pt-2 mt-auto text-[10px] text-gray-600">
+                <div class="font-bold">${docId}</div>
+                <div class="text-center">
+                    <div>ผู้พิมพ์: ${user}</div>
+                    <div>วันที่: ${dateStr}</div>
+                </div>
+                <div class="text-right">
+                    <div>SDDH-IPD-SYS</div>
+                    <div>${pageInfo}</div>
+                </div>
+            </div>`;
+            
+        // คืนค่า HTML ที่หุ้มด้วย CSS Class A4
+        // ใช้ min-h-[297mm] เพื่อดัน Footer ไปล่างสุดเสมอ
+        return `
+        <div class="a4-page relative bg-white p-8 mx-auto my-4 shadow flex flex-col min-h-[297mm] w-[210mm] box-border" style="page-break-after: always;">
+            <div class="form-content flex-grow">
+                ${contentHtml}
+            </div>
+            ${footerHtml}
+        </div>`;
+    }
+};
+
+// --- ส่วนจัดการ Modal และรายชื่อเจ้าหน้าที่ ---
+
+let _pendingPrintCallback = null; // ตัวแปรพัก เก็บฟังก์ชันที่จะทำงานต่อ
+let staffListCache = []; // ตัวแปรพัก เก็บรายชื่อเจ้าหน้าที่
+
+// 1. โหลดรายชื่อเมื่อเริ่ม (เรียกอัตโนมัติ)
+function loadStaffData() {
+    if (typeof google === 'undefined') {
+        console.warn("⚠️ Offline Mode: Using Mock Staff Data");
+        staffListCache = [
+            { name: "พยาบาล ทดสอบ", position: "พยาบาลวิชาชีพ" },
+            { name: "Admin Test", position: "System Admin" }
+        ];
+        return;
+    }
+    
+    google.script.run
+        .withSuccessHandler(data => {
+            staffListCache = data || [];
+            console.log("✅ Staff list loaded:", staffListCache.length);
+        })
+        .withFailureHandler(err => console.error("❌ Failed load staff:", err))
+        .getStaffList();
+}
+// สั่งให้โหลดทันทีเมื่อไฟล์ JS นี้ถูกอ่าน
+window.addEventListener('load', loadStaffData);
+
+// 2. เปิด Modal ตั้งค่าการพิมพ์
+// callbackFunction: ฟังก์ชันที่จะถูกเรียกเมื่อผู้ใช้กดยืนยัน (ส่งค่า {name, position} กลับไป)
+function openPrintDialog(callbackFunction) {
+    _pendingPrintCallback = callbackFunction; // จำไว้ว่าใครเรียก
+
+    const modal = document.getElementById('printSettingsModal');
+    if (!modal) return alert("Error: ไม่พบ Modal id='printSettingsModal' ใน index.html");
+
+    modal.classList.remove('hidden');
+
+    // Reset ค่าในฟอร์ม
+    const searchInput = document.getElementById('printerSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        setTimeout(() => searchInput.focus(), 100);
+    }
+    document.getElementById('staffDropdown').classList.add('hidden');
+}
+
+// 3. ปิด Modal
+function closePrintModal() {
+    const modal = document.getElementById('printSettingsModal');
+    if (modal) modal.classList.add('hidden');
+    _pendingPrintCallback = null; // เคลียร์ callback ทิ้งป้องกันการเรียกซ้ำผิดที่
+}
+
+// 4. ค้นหารายชื่อ (Filter)
+function filterStaffList(keyword) {
+    const dropdown = document.getElementById('staffDropdown');
+    dropdown.innerHTML = '';
+    
+    if (!keyword) {
+        dropdown.classList.add('hidden');
+        return;
+    }
+
+    const filtered = staffListCache.filter(s => s.name.includes(keyword));
+    
+    if (filtered.length > 0) {
+        dropdown.classList.remove('hidden');
+        filtered.forEach(staff => {
+            const div = document.createElement('div');
+            div.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100';
+            div.innerHTML = `<span class="font-bold">${staff.name}</span> <span class="text-xs text-gray-500">(${staff.position})</span>`;
+            div.onclick = () => selectStaff(staff);
+            dropdown.appendChild(div);
+        });
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+// 5. เลือกรายชื่อจาก Dropdown
+function selectStaff(staff) {
+    document.getElementById('printerSearch').value = staff.name;
+    // อัปเดต Hidden Fields (ถ้ามี)
+    const nameField = document.getElementById('selectedPrinterName');
+    const posField = document.getElementById('selectedPrinterPosition');
+    if(nameField) nameField.value = staff.name;
+    if(posField) posField.value = staff.position;
+    
+    document.getElementById('staffDropdown').classList.add('hidden');
+}
+
+// 6. [สำคัญ] ปุ่มยืนยันใน Modal เรียกฟังก์ชันนี้
+function confirmPrintExecution() {
+    // พยายามดึงค่าจาก Hidden Field ก่อน, ถ้าไม่มีเอาจาก Input ตรงๆ
+    let pName = document.getElementById('selectedPrinterName')?.value;
+    let pPos = document.getElementById('selectedPrinterPosition')?.value;
+
+    // กรณีพิมพ์ชื่อเอง (ไม่ได้เลือกจาก Dropdown)
+    const manualName = document.getElementById('printerSearch').value;
+    if (!pName || pName !== manualName) {
+        pName = manualName || '-';
+        pPos = '';
+    }
+
+    // ปิด Modal
+    const modal = document.getElementById('printSettingsModal');
+    if (modal) modal.classList.add('hidden');
+
+    // เรียกกลับไปหาฟังก์ชันของฟอร์มต้นทาง
+    if (_pendingPrintCallback) {
+        _pendingPrintCallback({ name: pName, position: pPos });
+        _pendingPrintCallback = null; // Reset
+    }
+}
+// =================================================================
+// ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
 // =================================================================
 function calcBraden() {
     // Helper: แปลงค่าเป็นตัวเลข (Base 10) ป้องกันการต่อ String
@@ -3327,138 +3513,41 @@ async function renderClassifyPrintMode(an) {
 
 // ฟังก์ชันจัดการการพิมพ์ (แก้ไข: ค้นหาตำแหน่งมาต่อท้ายชื่อ)
 async function handleClassifyPrint() {
-    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง
-    if (globalStaffList.length === 0) {
-        await refreshStaffDatalists();
-    }
-
-    // สร้างตัวเลือกสำหรับ Datalist
-    let staffOptions = '';
-    globalStaffList.forEach(s => {
-        staffOptions += `<option value="${s.fullName}">`;
-    });
-
-    // 2. แสดง Pop-up ตั้งค่าการพิมพ์
-    const { value: formValues, isDismissed } = await Swal.fire({
-        title: 'ตั้งค่าการพิมพ์เอกสาร',
-        html: `
-            <div class="text-left text-sm space-y-4">
-                <div class="bg-gray-50 p-3 rounded border">
-                    <label class="block font-bold text-gray-700 mb-2">ต้องการลงวันที่จำหน่ายหรือไม่?</label>
-                    <div class="flex items-center gap-4 mb-2">
-                        <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="print_discharge_opt" value="no" class="mr-2" checked>
-                            ไม่ลงวันที่ (เว้นว่างไว้เขียนเอง)
-                        </label>
-                        <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="print_discharge_opt" value="yes" class="mr-2">
-                            ลงวันที่จำหน่าย
-                        </label>
-                    </div>
-                    <input type="date" id="print_discharge_date" class="w-full p-2 border rounded hidden focus:ring-2 focus:ring-blue-500">
-                </div>
-
-                <div class="bg-gray-50 p-3 rounded border">
-                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้ประเมิน (ที่จะปรากฏท้ายกระดาษ)</label>
-                    <input type="text" id="print_assessor_name" list="print_staff_list" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
-                    <datalist id="print_staff_list">
-                        ${staffOptions}
-                    </datalist>
-                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติเมื่อสั่งพิมพ์</div>
-                </div>
-            </div>
-        `,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'พิมพ์เอกสาร',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#2563EB',
-        didOpen: () => {
-            const popup = Swal.getPopup();
-            const dateInput = popup.querySelector('#print_discharge_date');
-            const radios = popup.querySelectorAll('input[name="print_discharge_opt"]');
-            
-            radios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    if (e.target.value === 'yes') {
-                        dateInput.classList.remove('hidden');
-                    } else {
-                        dateInput.classList.add('hidden');
-                        dateInput.value = ''; 
-                    }
-                });
-            });
-        },
-        preConfirm: () => {
-            const opt = document.querySelector('input[name="print_discharge_opt"]:checked').value;
-            const dateVal = document.getElementById('print_discharge_date').value;
-            const assessor = document.getElementById('print_assessor_name').value;
-
-            if (opt === 'yes' && !dateVal) {
-                Swal.showValidationMessage('กรุณาเลือกวันที่จำหน่าย');
-                return false;
-            }
-            if (!assessor) {
-                Swal.showValidationMessage('กรุณาระบุชื่อผู้ประเมิน');
-                return false;
-            }
-
-            // [ค้นหาตำแหน่ง] จาก globalStaffList
-            const staffData = globalStaffList.find(s => s.fullName === assessor);
-            const position = staffData ? staffData.position : ""; 
-
-            return {
-                dischargeDate: opt === 'yes' ? dateVal : null,
-                assessorName: assessor,
-                assessorPosition: position // ส่งตำแหน่งไปด้วย
-            };
+    // 1. เปิด Modal กลาง
+    openPrintDialog(async (userInfo) => {
+        showLoading("กำลังเตรียมเอกสาร...");
+        
+        // คำนวณจำนวนหน้า
+        let maxPage = 1;
+        if (allClassifyDataCache.length > 0) {
+            const dates = allClassifyDataCache.map(d => new Date(d.Date));
+            const maxDate = new Date(Math.max.apply(null, dates));
+            const admitDate = new Date(currentPatientData.AdmitDate);
+            const diffDays = Math.ceil(Math.abs(maxDate - admitDate) / (1000 * 60 * 60 * 24)) + 1;
+            maxPage = Math.max(1, Math.ceil(diffDays / 5));
         }
+
+        const tempDiv = document.createElement('div');
+
+        // วนลูปสร้างทีละหน้า
+        for (let p = 1; p <= maxPage; p++) {
+            const pageContainer = document.createElement('div');
+            pageContainer.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
+            pageContainer.className = "bg-white font-sarabun";
+            
+            // ใช้ Renderer เดิมที่มีอยู่แล้ว ส่งชื่อจาก Modal เข้าไป
+            renderClassifySheetA4(p, pageContainer, { 
+                customAssessor: userInfo.name,
+                customAssessorPosition: userInfo.position
+            });
+            tempDiv.appendChild(pageContainer);
+        }
+
+        PrintSystem.print(tempDiv.innerHTML);
+        Swal.close();
     });
-
-    if (isDismissed || !formValues) return;
-
-    // --- เริ่มกระบวนการพิมพ์ ---
-    const oldPrintArea = document.getElementById("classify-print-area");
-    if (oldPrintArea) oldPrintArea.remove();
-
-    const printArea = document.createElement('div');
-    printArea.id = "classify-print-area";
-    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
-    document.body.appendChild(printArea);
-
-    let maxPage = 1;
-    if (allClassifyDataCache.length > 0) {
-        const dates = allClassifyDataCache.map(d => new Date(d.Date));
-        const maxDate = new Date(Math.max.apply(null, dates));
-        const admitDate = new Date(currentPatientData.AdmitDate);
-        const diffTime = Math.abs(maxDate - admitDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-        maxPage = Math.max(1, Math.ceil(diffDays / 5));
-    }
-
-    for (let p = 1; p <= maxPage; p++) {
-        const pageContainer = document.createElement('div');
-        pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
-        pageContainer.style.width = "210mm";
-        pageContainer.style.height = "297mm";
-        pageContainer.style.padding = "10mm 15mm 25mm 15mm";
-        pageContainer.style.pageBreakAfter = "always";
-        
-        printArea.appendChild(pageContainer);
-        
-        renderClassifySheetA4(p, pageContainer, { 
-            customDischargeDate: formValues.dischargeDate,
-            customAssessor: formValues.assessorName,
-            customAssessorPosition: formValues.assessorPosition // ส่งตำแหน่งไป Render
-        });
-    }
-
-    setTimeout(() => {
-        window.print();
-    }, 500);
 }
 
-// ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: แสดงตำแหน่งท้ายชื่อ)
 // ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: ปี พ.ศ. เต็ม + ตัดคำนำหน้าชื่อในตาราง)
 function renderClassifySheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("classify-sheet-content");
@@ -3677,149 +3766,38 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
 let currentMorsePrintPage = 1;
 let allMorseDataCache = [];
 
-async function renderMorsePrintMode(an) {
-  chartPreviewContent.innerHTML = "";
-  
-  // 1. สร้าง Controls
-  const controlDiv = document.createElement('div');
-  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
-  controlDiv.innerHTML = `
-      <div class="font-bold text-gray-700 flex items-center gap-2">
-        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-morse-page-num">1</span></span>
-      </div>
-      <div class="flex gap-2">
-        <button id="btn-prev-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ก่อนหน้า</button>
-        <button id="btn-next-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ถัดไป &gt;</button>
-        <button id="btn-print-morse-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
-          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
-        </button>
-      </div>
-  `;
-  chartPreviewContent.appendChild(controlDiv);
-
-  // 2. สร้าง Sheet Container
-  const sheetDiv = document.createElement('div');
-  sheetDiv.id = "morse-sheet-content";
-  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden";
-  sheetDiv.style.width = "210mm";
-  sheetDiv.style.minHeight = "297mm";
-  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; 
-  chartPreviewContent.appendChild(sheetDiv);
-
-  // 3. โหลดข้อมูล
-  showLoading('กำลังโหลดข้อมูล...');
-  try {
-    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllMorseData&an=${an}`);
-    const result = await response.json();
-    
-    if (!result.success && result.message) console.warn(result.message);
-    
-    allMorseDataCache = result.success ? result.data : []; 
-    currentMorsePrintPage = 1;
-    
-    // Render หน้าแรก
-    renderMorseSheetA4(currentMorsePrintPage);
-    
-    // Event Listeners
-    document.getElementById("btn-prev-morse-sheet").addEventListener("click", () => {
-       if(currentMorsePrintPage > 1) {
-         currentMorsePrintPage--;
-         renderMorseSheetA4(currentMorsePrintPage);
-       }
-    });
-    
-    document.getElementById("btn-next-morse-sheet").addEventListener("click", () => {
-         currentMorsePrintPage++;
-         renderMorseSheetA4(currentMorsePrintPage);
-    });
-
-    document.getElementById("btn-print-morse-action").addEventListener("click", handleMorsePrint);
-
-    Swal.close();
-  } catch (e) {
-    Swal.close();
-    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
-  }
-}
-
-// ฟังก์ชันจัดการการพิมพ์ Morse (Pop-up + Loop Pages)
 async function handleMorsePrint() {
-    // โหลดรายชื่อ
-    if (globalStaffList.length === 0) await refreshStaffDatalists();
-    let staffOptions = '';
-    globalStaffList.forEach(s => { staffOptions += `<option value="${s.fullName}">`; });
+    openPrintDialog(async (userInfo) => {
+        showLoading("กำลังเตรียมเอกสาร...");
 
-    // Pop-up ตั้งค่า
-    const { value: formValues, isDismissed } = await Swal.fire({
-        title: 'ตั้งค่าการพิมพ์เอกสาร',
-        html: `
-            <div class="text-left text-sm space-y-4">
-                <div class="bg-gray-50 p-3 rounded border">
-                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้ประเมิน / ผู้พิมพ์</label>
-                    <input type="text" id="print_assessor_name" list="print_staff_list" class="w-full p-2 border rounded" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
-                    <datalist id="print_staff_list">${staffOptions}</datalist>
-                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
-                </div>
-            </div>`,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'พิมพ์เอกสาร',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#2563EB',
-        preConfirm: () => {
-            const assessor = document.getElementById('print_assessor_name').value;
-            if (!assessor) {
-                Swal.showValidationMessage('กรุณาระบุชื่อผู้พิมพ์');
-                return false;
-            }
-            const staffData = globalStaffList.find(s => s.fullName === assessor);
-            return {
-                assessorName: assessor,
-                assessorPosition: staffData ? staffData.position : ""
-            };
+        // คำนวณจำนวนหน้า
+        let maxPage = 1;
+        if (allMorseDataCache.length > 0) {
+            const dates = allMorseDataCache.map(d => new Date(d.Date));
+            const maxDate = new Date(Math.max.apply(null, dates));
+            const admitDate = new Date(currentPatientData.AdmitDate);
+            const diffDays = Math.ceil(Math.abs(maxDate - admitDate) / (1000 * 60 * 60 * 24)) + 1;
+            maxPage = Math.max(1, Math.ceil(diffDays / 5));
         }
+
+        const tempDiv = document.createElement('div');
+
+        for (let p = 1; p <= maxPage; p++) {
+            const pageContainer = document.createElement('div');
+            pageContainer.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
+            pageContainer.className = "bg-white font-sarabun";
+
+            // ใช้ Renderer เดิม ส่งชื่อจาก Modal
+            renderMorseSheetA4(p, pageContainer, { 
+                customAssessor: userInfo.name,
+                customAssessorPosition: userInfo.position
+            });
+            tempDiv.appendChild(pageContainer);
+        }
+
+        PrintSystem.print(tempDiv.innerHTML);
+        Swal.close();
     });
-
-    if (isDismissed || !formValues) return;
-
-    // เตรียมพื้นที่พิมพ์
-    const oldPrintArea = document.getElementById("morse-print-area");
-    if (oldPrintArea) oldPrintArea.remove();
-
-    const printArea = document.createElement('div');
-    printArea.id = "morse-print-area";
-    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
-    document.body.appendChild(printArea);
-
-    // คำนวณจำนวนหน้า
-    let maxPage = 1;
-    if (allMorseDataCache.length > 0) {
-        const dates = allMorseDataCache.map(d => new Date(d.Date));
-        const maxDate = new Date(Math.max.apply(null, dates));
-        const admitDate = new Date(currentPatientData.AdmitDate);
-        const diffTime = Math.abs(maxDate - admitDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-        maxPage = Math.max(1, Math.ceil(diffDays / 5));
-    }
-
-    // สร้างทุกหน้า
-    for (let p = 1; p <= maxPage; p++) {
-        const pageContainer = document.createElement('div');
-        pageContainer.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
-        pageContainer.style.width = "210mm";
-        pageContainer.style.height = "297mm";
-        pageContainer.style.padding = "10mm 15mm 25mm 15mm";
-        pageContainer.style.pageBreakAfter = "always";
-        
-        printArea.appendChild(pageContainer);
-        
-        renderMorseSheetA4(p, pageContainer, { 
-            customAssessor: formValues.assessorName,
-            customAssessorPosition: formValues.assessorPosition
-        });
-    }
-
-    setTimeout(() => { window.print(); }, 500);
 }
 
 // ฟังก์ชัน Render หน้ากระดาษ Morse A4 (แก้ไข: ตาราง Morse/MAAS แบบเดิม + แนวปฏิบัติแบบใหม่ + หัวกระดาษพอดี)
@@ -4281,101 +4259,44 @@ async function fetchAndRenderBradenSet(an, pageNum, container) {
     }
 }
 
-// --- ฟังก์ชันจัดการการพิมพ์ (Loop ทุกชุด) + ค้นหาชื่อพยาบาล ---
 async function handleBradenPrint() {
-    // 1. ตรวจสอบว่ามีรายชื่อพยาบาลหรือยัง ถ้าไม่มีให้โหลด
-    if (globalStaffList.length === 0) {
-        await refreshStaffDatalists();
-    }
+    openPrintDialog(async (userInfo) => {
+        showLoading("กำลังเตรียมเอกสาร...");
+        
+        const tempDiv = document.createElement('div');
+        
+        // รวมชื่อและตำแหน่งสำหรับ Braden (เพราะ Layout เดิมรับเป็น string เดียว)
+        const userStr = userInfo.position ? `${userInfo.name}, ${userInfo.position}` : userInfo.name;
 
-    // 2. สร้างตัวเลือกสำหรับ Datalist
-    let staffOptions = '';
-    globalStaffList.forEach(s => {
-        staffOptions += `<option value="${s.fullName}">`;
-    });
+        // วนลูปสร้างทุกชุด (1 ชุดมี 2 หน้า)
+        for (const setItem of allBradenDataCache) {
+            try {
+                // ดึงข้อมูลของหน้านั้นๆ มาใหม่เพื่อให้ชัวร์
+                const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${currentPatientAN}&page=${setItem.page}`);
+                const result = await response.json();
+                const data = result.data || {};
 
-    // 3. Pop-up ตั้งค่าก่อนพิมพ์ (เปลี่ยน Input เป็น Searchable List)
-    const { value: formValues, isDismissed } = await Swal.fire({
-        title: 'ตั้งค่าการพิมพ์เอกสาร',
-        html: `
-            <div class="text-left text-sm space-y-4">
-                <div class="bg-gray-50 p-3 rounded border">
-                    <label class="block font-bold text-gray-700 mb-1">ชื่อผู้พิมพ์ (Footer)</label>
-                    <input type="text" id="print_user_name" list="print_staff_list" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
-                    <datalist id="print_staff_list">
-                        ${staffOptions}
-                    </datalist>
-                    <div class="text-xs text-gray-500 mt-1">* ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติ</div>
-                </div>
-            </div>`,
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'พิมพ์เอกสาร',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#2563EB',
-        preConfirm: () => {
-            const name = document.getElementById('print_user_name').value;
-            if (!name) {
-                Swal.showValidationMessage('กรุณาระบุชื่อผู้พิมพ์');
-                return false;
-            }
-            
-            // ค้นหาตำแหน่งจากฐานข้อมูลเพื่อนำมาต่อท้าย
-            const staff = globalStaffList.find(s => s.fullName === name);
-            const position = staff ? staff.position : "";
-            
-            // สร้าง Format ชื่อ + ตำแหน่ง (ถ้ามี)
-            const finalName = position ? `${name}, ${position}` : name;
+                // หน้า 1
+                const p1 = document.createElement('div');
+                p1.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
+                p1.className = "bg-white font-sarabun";
+                renderBradenPage1(p1, data, { customUser: userStr });
+                tempDiv.appendChild(p1);
 
-            return { user: finalName };
+                // หน้า 2
+                const p2 = document.createElement('div');
+                p2.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 15mm 25mm 15mm; page-break-after: always; position: relative;";
+                p2.className = "bg-white font-sarabun";
+                renderBradenPage2(p2, data, { customUser: userStr });
+                tempDiv.appendChild(p2);
+
+            } catch (e) { console.error(e); }
         }
+
+        PrintSystem.print(tempDiv.innerHTML);
+        Swal.close();
     });
-
-    if (isDismissed) return;
-
-    // เตรียมพื้นที่พิมพ์
-    const oldPrintArea = document.getElementById("braden-print-area");
-    if (oldPrintArea) oldPrintArea.remove();
-
-    const printArea = document.createElement('div');
-    printArea.id = "braden-print-area";
-    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
-    document.body.appendChild(printArea);
-
-    showLoading("กำลังเตรียมเอกสาร...");
-
-    // Loop สร้างทุกชุดที่มี
-    for (const setItem of allBradenDataCache) {
-        try {
-            const response = await fetch(`${GAS_WEB_APP_URL}?action=getBradenPage&an=${currentPatientAN}&page=${setItem.page}`);
-            const result = await response.json();
-            const data = result.data || {};
-
-            // สร้าง Page 1
-            const p1 = document.createElement('div');
-            p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
-            p1.style.width = "210mm";
-            p1.style.height = "297mm";
-            p1.style.padding = "10mm 15mm 25mm 15mm";
-            renderBradenPage1(p1, data, { customUser: formValues.user });
-            printArea.appendChild(p1);
-
-            // สร้าง Page 2
-            const p2 = document.createElement('div');
-            p2.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
-            p2.style.width = "210mm";
-            p2.style.height = "297mm";
-            p2.style.padding = "10mm 15mm 25mm 15mm";
-            renderBradenPage2(p2, data, { customUser: formValues.user });
-            printArea.appendChild(p2);
-
-        } catch (e) { console.error(e); }
-    }
-
-    Swal.close();
-    setTimeout(() => { window.print(); }, 500);
 }
-
 // --- Helper Functions สำหรับ Render เนื้อหาแต่ละหน้า ---
 
 function getSystemFooter(currentUser) {
@@ -4906,63 +4827,37 @@ async function renderForm004PrintMode(an) {
 
 // --- Print Handler ---
 async function handleForm004Print(an, preloadedData) {
-    // ถ้าไม่มีข้อมูล ให้ใช้ current (แต่ปกติจะมีส่งมาจากปุ่มพรีวิว)
-    const dataToPrint = preloadedData || normalizeData004(currentPatientData);
+    // 1. เปิด Modal กลาง เพื่อขอชื่อผู้พิมพ์
+    openPrintDialog(async (userInfo) => {
+        showLoading("กำลังเตรียมเอกสาร...");
+        
+        // เตรียมข้อมูล
+        const dataToPrint = preloadedData || normalizeData004(currentPatientData);
+        // สร้างชื่อผู้พิมพ์ในรูปแบบที่ฟอร์ม 004 รองรับ
+        const userStr = userInfo.position ? `${userInfo.name} (${userInfo.position})` : userInfo.name;
 
-    if (globalStaffList.length === 0) await refreshStaffDatalists();
-    let staffOptions = '';
-    globalStaffList.forEach(s => { staffOptions += `<option value="${s.fullName}">`; });
+        // สร้าง Container ชั่วคราวเพื่อ Render เนื้อหา (ไม่แสดงบนจอ)
+        const tempDiv = document.createElement('div');
+        
+        // Render หน้า 1
+        const p1 = document.createElement('div');
+        // ใช้ Class ให้เหมือน wrapInA4 แต่เราจะใช้ Render เดิมที่สวยอยู่แล้ว
+        p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+        p1.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 10mm; page-break-after: always;";
+        renderForm004Page1(p1, { data: dataToPrint, footer: { name: userInfo.name, position: userInfo.position, date: new Date().toLocaleString('th-TH') } });
+        tempDiv.appendChild(p1);
 
-    const { value: formValues, isDismissed } = await Swal.fire({
-        title: 'ตั้งค่าการพิมพ์',
-        html: `
-            <div class="text-left text-sm space-y-4">
-                <div class="bg-gray-50 p-3 rounded border">
-                    <label class="block font-bold text-gray-700 mb-1">พยาบาลผู้ประเมิน</label>
-                    <input type="text" id="print_user_004" list="print_staff_list_004" class="w-full p-2 border rounded" placeholder="ระบุชื่อ..." value="(เจ้าหน้าที่)">
-                    <datalist id="print_staff_list_004">${staffOptions}</datalist>
-                </div>
-            </div>`,
-        showCancelButton: true,
-        confirmButtonText: 'พิมพ์',
-        preConfirm: () => {
-             const name = document.getElementById('print_user_004').value;
-             const staff = globalStaffList.find(s => s.fullName === name);
-             const position = staff ? staff.position : "";
-             return { user: position ? `${name} (${position})` : name };
-        }
+        // Render หน้า 2
+        const p2 = document.createElement('div');
+        p2.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
+        p2.style.cssText = "width: 210mm; height: 297mm; padding: 10mm 10mm;";
+        renderForm004Page2(p2, { data: dataToPrint, footer: { name: userInfo.name, position: userInfo.position, date: new Date().toLocaleString('th-TH') } });
+        tempDiv.appendChild(p2);
+
+        // สั่งพิมพ์ผ่านระบบกลาง
+        PrintSystem.print(tempDiv.innerHTML);
+        Swal.close();
     });
-
-    if (isDismissed) return;
-
-    const oldPrintArea = document.getElementById("form004-print-area");
-    if (oldPrintArea) oldPrintArea.remove();
-
-    const printArea = document.createElement('div');
-    printArea.id = "form004-print-area";
-    printArea.className = "hidden print:block absolute top-0 left-0 w-full bg-white z-50";
-    document.body.appendChild(printArea);
-
-    showLoading("กำลังเตรียมเอกสาร...");
-
-    const p1 = document.createElement('div');
-    p1.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
-    p1.style.width = "210mm";
-    p1.style.height = "297mm";
-    p1.style.padding = "10mm 10mm";
-    renderForm004Page1(p1, { data: dataToPrint, customUser: formValues.user });
-    printArea.appendChild(p1);
-
-    const p2 = document.createElement('div');
-    p2.className = "bg-white overflow-hidden text-black font-sarabun relative page-break";
-    p2.style.width = "210mm";
-    p2.style.height = "297mm";
-    p2.style.padding = "10mm 10mm";
-    renderForm004Page2(p2, { data: dataToPrint, customUser: formValues.user });
-    printArea.appendChild(p2);
-
-    Swal.close();
-    setTimeout(() => { window.print(); }, 800);
 }
 
 // =================================================================
@@ -5558,164 +5453,7 @@ function renderForm004Page2(container, options = {}) {
         </div>
     `;
 }
-// =================================================================
-// SYSTEM UTILITIES & PRINT SETTINGS (Fixed: Google Check & Footer Logic)
-// =================================================================
 
-// --- Global Staff Data ---
-let staffListCache = [];
-
-// 1. โหลดรายชื่อเมื่อเปิดเว็บ (แก้ไข: เพิ่มการตรวจสอบ google object เพื่อกัน Error)
-function loadStaffData() {
-    // ตรวจสอบว่ามี object 'google' หรือไม่ (ถ้า Test บนเครื่องตัวเองจะไม่มี)
-    if (typeof google === 'undefined') {
-        console.warn("⚠️ Google Apps Script environment not found. Using Mock Data.");
-        // ใช้ข้อมูลจำลองเพื่อให้ระบบทำงานต่อได้ ไม่ Error
-        staffListCache = [
-            { name: "พยาบาล ทดสอบ1", position: "พยาบาลวิชาชีพ" },
-            { name: "นายแพทย์ ทดสอบ2", position: "นายแพทย์" },
-            { name: "นายนัทธ์นรินทร คำนาโฮม", position: "พยาบาลวิชาชีพปฏิบัติการ" }
-        ];
-        return;
-    }
-
-    // ถ้ารันบน Google Apps Script ให้ดึงข้อมูลจริง
-    google.script.run
-        .withSuccessHandler(data => {
-            staffListCache = data || [];
-            console.log("✅ Staff list loaded:", staffListCache.length);
-        })
-        .withFailureHandler(err => {
-            console.error("❌ Failed to load staff list:", err);
-        })
-        .getStaffList();
-}
-
-// เรียกใช้ตอนโหลดหน้าเว็บ
-window.addEventListener('load', loadStaffData);
-
-// 2. เปิด Modal ตั้งค่าการพิมพ์
-function openPrintSettings004() {
-    const modal = document.getElementById('printSettingsModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        // เคลียร์ค่าเก่า
-        const searchInput = document.getElementById('printerSearch');
-        if(searchInput) {
-            searchInput.value = '';
-            setTimeout(() => searchInput.focus(), 100);
-        }
-        document.getElementById('staffDropdown').innerHTML = '';
-        document.getElementById('staffDropdown').classList.add('hidden');
-    } else {
-        console.error("❌ Element #printSettingsModal not found in HTML");
-        alert("ไม่พบหน้าต่างตั้งค่าการพิมพ์ กรุณาตรวจสอบไฟล์ index.html");
-    }
-}
-
-// 3. ปิด Modal
-function closePrintModal() {
-    const modal = document.getElementById('printSettingsModal');
-    if (modal) modal.classList.add('hidden');
-}
-
-// 4. ค้นหารายชื่อ (Filter List)
-function filterStaffList(keyword) {
-    const dropdown = document.getElementById('staffDropdown');
-    dropdown.innerHTML = '';
-    
-    if (!keyword) {
-        dropdown.classList.add('hidden');
-        return;
-    }
-
-    const filtered = staffListCache.filter(s => s.name.includes(keyword));
-    
-    if (filtered.length > 0) {
-        dropdown.classList.remove('hidden');
-        filtered.forEach(staff => {
-            const div = document.createElement('div');
-            div.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 text-left';
-            div.innerHTML = `<span class="font-bold text-gray-800">${staff.name}</span> <span class="text-gray-500 text-xs">(${staff.position})</span>`;
-            div.onclick = () => selectStaff(staff);
-            dropdown.appendChild(div);
-        });
-    } else {
-        dropdown.classList.add('hidden');
-    }
-}
-
-// 5. เลือกรายชื่อจาก Dropdown
-function selectStaff(staff) {
-    document.getElementById('printerSearch').value = staff.name;
-    document.getElementById('selectedPrinterName').value = staff.name;
-    document.getElementById('selectedPrinterPosition').value = staff.position;
-    document.getElementById('staffDropdown').classList.add('hidden');
-}
-
-// 6. สั่งพิมพ์จริง (แก้ไข: ส่ง Footer Data ไปยัง Render Functions)
-function executePrint004() {
-    // ดึงค่าจาก Hidden Input หรือช่องค้นหาถ้าไม่ได้เลือกจาก List
-    let printerName = document.getElementById('selectedPrinterName').value;
-    let printerPos = document.getElementById('selectedPrinterPosition').value;
-    
-    // กรณีพิมพ์ชื่อเองโดยไม่เลือกจาก Dropdown
-    if (!printerName) {
-        printerName = document.getElementById('printerSearch').value || '-';
-        printerPos = ''; // ไม่ทราบตำแหน่ง
-    }
-    
-    // สร้างวันที่ไทย
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const timeStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    const printDate = `${dateStr} เวลา ${timeStr} น.`;
-
-    // เตรียมข้อมูล Footer
-    const footerData = {
-        name: printerName,
-        position: printerPos,
-        date: printDate
-    };
-
-    // เตรียมพื้นที่พิมพ์
-    const printArea = document.getElementById('printArea'); // ต้องมี <div id="printArea"></div> ใน index.html
-    if(!printArea) {
-        console.error("❌ Element #printArea not found! Creating one...");
-        const newPrintArea = document.createElement('div');
-        newPrintArea.id = 'printArea';
-        document.body.appendChild(newPrintArea);
-        // เรียกตัวเองใหม่
-        setTimeout(executePrint004, 50);
-        return;
-    }
-
-    printArea.innerHTML = ''; // เคลียร์ของเก่า
-    
-    // สร้างหน้า 1
-    const page1 = document.createElement('div');
-    page1.className = 'page-break print-page'; // ใช้ class print-page เพื่อคุม CSS ตอนพิมพ์
-    // page1.style.height = "297mm"; // ใช้ CSS คุมดีกว่า
-    page1.style.position = "relative";
-    // *** ส่ง footerData ไปด้วย ***
-    renderForm004Page1(page1, { data: currentFormData, footer: footerData });
-    printArea.appendChild(page1);
-
-    // สร้างหน้า 2
-    const page2 = document.createElement('div');
-    page2.className = 'page-break print-page';
-    // page2.style.height = "297mm";
-    page2.style.position = "relative";
-    // *** ส่ง footerData ไปด้วย ***
-    renderForm004Page2(page2, { data: currentFormData, footer: footerData });
-    printArea.appendChild(page2);
-
-    // ปิด Modal และสั่งพิมพ์
-    closePrintModal();
-    setTimeout(() => {
-        window.print();
-    }, 500); // รอ Render เสร็จนิดนึง
-}
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (The Only DOMContentLoaded)
 // ----------------------------------------------------------------
