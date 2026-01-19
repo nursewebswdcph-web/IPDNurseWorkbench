@@ -3759,13 +3759,79 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
       }
   }
 }
-
 // =================================================================
 // (New) Morse/MAAS Print Preview Logic (A4 Portrait)
 // =================================================================
 let currentMorsePrintPage = 1;
 let allMorseDataCache = [];
 
+async function renderMorsePrintMode(an) {
+  chartPreviewContent.innerHTML = "";
+  
+  // 1. สร้างปุ่มควบคุม (Controls)
+  const controlDiv = document.createElement('div');
+  controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow shrink-0 print:hidden";
+  controlDiv.innerHTML = `
+      <div class="font-bold text-gray-700 flex items-center gap-2">
+        <span>มุมมองแบบพิมพ์ (A4 แนวตั้ง) - หน้า <span id="print-morse-page-num">1</span></span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-prev-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">&lt; ก่อนหน้า</button>
+        <button id="btn-next-morse-sheet" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded text-sm disabled:opacity-50">ถัดไป &gt;</button>
+        <button id="btn-print-morse-action" class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded text-sm shadow flex items-center gap-2">
+          <i class="fas fa-print"></i> พิมพ์เอกสาร (ทั้งหมด)
+        </button>
+      </div>
+  `;
+  chartPreviewContent.appendChild(controlDiv);
+
+  // 2. สร้างพื้นที่แสดงผล (Sheet Container)
+  const sheetDiv = document.createElement('div');
+  sheetDiv.id = "morse-sheet-content";
+  sheetDiv.className = "bg-white shadow-lg mx-auto overflow-hidden text-black font-sarabun relative print:hidden";
+  sheetDiv.style.width = "210mm";
+  sheetDiv.style.minHeight = "297mm";
+  sheetDiv.style.padding = "10mm 15mm 25mm 15mm"; 
+  chartPreviewContent.appendChild(sheetDiv);
+
+  // 3. โหลดข้อมูล
+  showLoading('กำลังโหลดข้อมูล...');
+  try {
+    const response = await fetch(`${GAS_WEB_APP_URL}?action=getAllMorseData&an=${an}`);
+    const result = await response.json();
+    
+    if (!result.success && result.message) console.warn(result.message);
+    
+    allMorseDataCache = result.success ? result.data : []; 
+    currentMorsePrintPage = 1;
+    
+    // Render หน้าแรก
+    renderMorseSheetA4(currentMorsePrintPage);
+    
+    // Event Listeners
+    document.getElementById("btn-prev-morse-sheet").addEventListener("click", () => {
+       if(currentMorsePrintPage > 1) {
+         currentMorsePrintPage--;
+         renderMorseSheetA4(currentMorsePrintPage);
+       }
+    });
+    
+    document.getElementById("btn-next-morse-sheet").addEventListener("click", () => {
+         currentMorsePrintPage++;
+         renderMorseSheetA4(currentMorsePrintPage);
+    });
+
+    // เรียกฟังก์ชันพิมพ์ (ต้องมีฟังก์ชัน handleMorsePrint ด้านล่างด้วย)
+    document.getElementById("btn-print-morse-action").addEventListener("click", handleMorsePrint);
+
+    Swal.close();
+  } catch (e) {
+    Swal.close();
+    showError("โหลดข้อมูลไม่สำเร็จ", e.message);
+  }
+}
+
+// ฟังก์ชันจัดการการพิมพ์ Morse (เรียก Modal กลาง)
 async function handleMorsePrint() {
     openPrintDialog(async (userInfo) => {
         showLoading("กำลังเตรียมเอกสาร...");
@@ -3800,7 +3866,7 @@ async function handleMorsePrint() {
     });
 }
 
-// ฟังก์ชัน Render หน้ากระดาษ Morse A4 (แก้ไข: ตาราง Morse/MAAS แบบเดิม + แนวปฏิบัติแบบใหม่ + หัวกระดาษพอดี)
+// ฟังก์ชัน Render หน้ากระดาษ Morse A4
 function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("morse-sheet-content");
   if(!container) return;
@@ -3811,6 +3877,12 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
       let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
       return cleaned.split(/\s+/)[0]; 
   };
+  
+  // Helper: สร้างจุดไข่ปลา
+  const getISODate = (date) => {
+      const offsetDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+      return offsetDate.toISOString().split('T')[0];
+  };
 
   // 1. เตรียมข้อมูลวันที่
   const admitDate = new Date(currentPatientData.AdmitDate); 
@@ -3819,7 +3891,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   // ข้อมูลผู้พิมพ์
   const assessorNameVal = options.customAssessor || "";
   const assessorPosVal = options.customAssessorPosition || "";
-  const currentUser = assessorNameVal ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` : "(เจ้าหน้าที่)";
+  const currentUser = assessorNameVal ? `${assessorNameVal}${assessorPosVal ? ' (' + assessorPosVal + ')' : ''}` : "(เจ้าหน้าที่)";
   
   const now = new Date();
   const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
@@ -3828,7 +3900,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   const wardName = currentPatientData.Ward || "........................"; 
 
   // =========================================================
-  // 1. HEADER (ปรับขนาดตัวอักษรให้พอดีบรรทัด ไม่ตกขอบ)
+  // HEADER
   // =========================================================
   let html = `
     <div class="mb-2 text-black font-sarabun">
@@ -3846,7 +3918,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   `;
 
   // =========================================================
-  // 2. MORSE TABLE (กู้คืนรูปแบบตาม PDF 100%)
+  // MORSE TABLE
   // =========================================================
   html += `
     <div class="font-bold text-[10px] mb-1 mt-2">แบบประเมินความเสี่ยงต่อการพลัดตกหกล้ม (Morse)</div>
@@ -3875,56 +3947,18 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   }
   html += `</tr></thead><tbody>`;
 
-  // --- ข้อมูล Morse (ตาม PDF: มีคะแนนกำกับในข้อความ) ---
   const morseRows = [
-      {
-          label: "1. มีการหกล้มกะทันหัน หรือหกล้มช่วง 3 เดือนก่อนมา รพ.",
-          sub: ["ไม่ใช่ = 0", "ใช่ = 25"],
-          key: "Morse_1"
-      },
-      {
-          label: "2. มีการวินิจฉัยโรคมากกว่า 1 รายการ",
-          sub: ["ไม่ใช่ = 0", "ใช่ = 15"],
-          key: "Morse_2"
-      },
-      {
-          label: "3. การช่วยในการเคลื่อนย้าย",
-          sub: [
-              "- เดินได้เองใช้/รถเข็นนั่ง/นอนพักบนเตียงหรือทำกิจกรรมบนเตียง (ใช่ = 0)",
-              "- ไม้ค้ำยัน/ไม้เท้า (ใช่ = 15)",
-              "เดิน- โดยการยึดเกาะไปตามเตียง / โต๊ะ / เก้าอี้ (ใช่ = 30)"
-          ],
-          key: "Morse_3"
-      },
-      {
-          label: "4. ให้สารละลายทางหลอดเลือด/คา Heparin lock",
-          sub: ["ไม่ใช่ = 0", "ใช่ = 20"],
-          key: "Morse_4"
-      },
-      {
-          label: "5. การเดิน / การเคลื่อนย้าย",
-          sub: [
-              "- ปกติ / นอนพักบนเตียงโดยไม่ให้ลุกจากเตียงไม่เคลื่อนไหว (ใช่ = 0)",
-              "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (ใช่ = 10)",
-              "- มีความบกพร่อง เช่น ลุกจากเก้าอี้ด้วยความลำบาก / ไม่สามารถเดินได้โดยปราศจากการช่วยเหลือ (ใช่ = 20)"
-          ],
-          key: "Morse_5"
-      },
-      {
-          label: "6. สภาพจิตใจ",
-          sub: [
-              "- รับรู้บุคคล เวลา สถานที่ (ใช่ = 0)",
-              "ตอบสนองไม่ตรงกับความเป็นจริง ไม่รับรู้ข้อจำกัดของตนเอง (ใช่ = 15)"
-          ],
-          key: "Morse_6"
-      }
+      { label: "1. มีการหกล้มกะทันหัน หรือหกล้มช่วง 3 เดือนก่อนมา รพ.", sub: ["ไม่ใช่ = 0", "ใช่ = 25"], key: "Morse_1" },
+      { label: "2. มีการวินิจฉัยโรคมากกว่า 1 รายการ", sub: ["ไม่ใช่ = 0", "ใช่ = 15"], key: "Morse_2" },
+      { label: "3. การช่วยในการเคลื่อนย้าย", sub: ["- เดินได้เองใช้/รถเข็นนั่ง/นอนพักบนเตียงหรือทำกิจกรรมบนเตียง (ใช่ = 0)", "- ไม้ค้ำยัน/ไม้เท้า (ใช่ = 15)", "เดิน- โดยการยึดเกาะไปตามเตียง / โต๊ะ / เก้าอี้ (ใช่ = 30)"], key: "Morse_3" },
+      { label: "4. ให้สารละลายทางหลอดเลือด/คา Heparin lock", sub: ["ไม่ใช่ = 0", "ใช่ = 20"], key: "Morse_4" },
+      { label: "5. การเดิน / การเคลื่อนย้าย", sub: ["- ปกติ / นอนพักบนเตียงโดยไม่ให้ลุกจากเตียงไม่เคลื่อนไหว (ใช่ = 0)", "อ่อนแรงเล็กน้อยหรืออ่อนเพลีย (ใช่ = 10)", "- มีความบกพร่อง เช่น ลุกจากเก้าอี้ด้วยความลำบาก / ไม่สามารถเดินได้โดยปราศจากการช่วยเหลือ (ใช่ = 20)"], key: "Morse_5" },
+      { label: "6. สภาพจิตใจ", sub: ["- รับรู้บุคคล เวลา สถานที่ (ใช่ = 0)", "ตอบสนองไม่ตรงกับความเป็นจริง ไม่รับรู้ข้อจำกัดของตนเอง (ใช่ = 15)"], key: "Morse_6" }
   ];
 
   morseRows.forEach((row) => {
       let labelHtml = `<div class="font-bold border-b border-gray-300 pb-1 mb-1">${row.label}</div>`;
-      row.sub.forEach(txt => {
-          labelHtml += `<div class="pl-2 mb-0.5 text-[8px] leading-tight text-gray-700 font-medium">${txt}</div>`;
-      });
+      row.sub.forEach(txt => { labelHtml += `<div class="pl-2 mb-0.5 text-[8px] leading-tight text-gray-700 font-medium">${txt}</div>`; });
 
       html += `<tr><td class="border border-black p-1 text-left align-top bg-white">${labelHtml}</td>`;
       
@@ -3935,9 +3969,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
           ['N', 'D', 'E'].forEach(shift => {
               const entry = allMorseDataCache.find(d => {
                   let dStr = d.Date;
-                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) {
-                      dStr = getISODate(new Date(d.Date));
-                  }
+                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) dStr = getISODate(new Date(d.Date));
                   return dStr === dateKey && d.Shift === shift;
               });
               let val = entry ? entry[row.key] : "";
@@ -3956,13 +3988,11 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
       ['N', 'D', 'E'].forEach(shift => {
           const entry = allMorseDataCache.find(d => {
               let dStr = d.Date;
-              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) dStr = getISODate(new Date(d.Date));
               return dStr === dateKey && d.Shift === shift;
           });
           let val = entry ? entry.Morse_Total : "";
-          let color = "";
-          if(val >= 51) color = "text-red-600 font-bold";
-          else if(val >= 25) color = "text-orange-600 font-bold";
+          let color = (val >= 51) ? "text-red-600 font-bold" : ((val >= 25) ? "text-orange-600 font-bold" : "");
           html += `<td class="border border-black p-0.5 text-center ${color}">${val}</td>`;
       });
   }
@@ -3977,7 +4007,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
       ['N', 'D', 'E'].forEach(shift => {
           const entry = allMorseDataCache.find(d => {
               let dStr = d.Date;
-              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) dStr = getISODate(new Date(d.Date));
               return dStr === dateKey && d.Shift === shift;
           });
           let val = entry ? entry.Assessor_Name : "";
@@ -3987,7 +4017,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
   html += `</tr></tbody></table>`;
 
   // =========================================================
-  // 3. MAAS TABLE (กู้คืนรูปแบบเดิม: 0-6 เป็นแถวแยก)
+  // MAAS TABLE
   // =========================================================
   html += `
     <div class="font-bold text-[10px] mb-1 mt-2">แบบประเมินความเสี่ยงต่อ การดึงอุปกรณ์ที่สอดใส่ในร่างกายผู้ป่วย (MAAS)</div>
@@ -3998,29 +4028,18 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
           <th class="border border-black p-1 w-[30px]">คะแนน</th>
   `;
   for (let i = 0; i < 5; i++) {
-     html += `
-       <th class="border border-black p-0.5 w-[20px]">ด</th>
-       <th class="border border-black p-0.5 w-[20px]">ช</th>
-       <th class="border border-black p-0.5 w-[20px]">บ</th>
-     `;
+     html += `<th class="border border-black p-0.5 w-[20px]">ด</th><th class="border border-black p-0.5 w-[20px]">ช</th><th class="border border-black p-0.5 w-[20px]">บ</th>`;
   }
   html += `</tr></thead><tbody>`;
 
   const maasItems = [
-      { t: "ไม่ตอบสนอง", s: 0 },
-      { t: "ตอบสนองต่อการกระตุ้นแรง ๆ", s: 1 },
-      { t: "ตอบสนองต่อการสัมผัสและการเรียกชื่อ", s: 2 },
-      { t: "สงบและให้ความร่วมมือ", s: 3 },
-      { t: "พักได้น้อยและไม่ให้ความร่วมมือ", s: 4 },
-      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา", s: 5 },
-      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น", s: 6 },
+      { t: "ไม่ตอบสนอง", s: 0 }, { t: "ตอบสนองต่อการกระตุ้นแรง ๆ", s: 1 }, { t: "ตอบสนองต่อการสัมผัสและการเรียกชื่อ", s: 2 },
+      { t: "สงบและให้ความร่วมมือ", s: 3 }, { t: "พักได้น้อยและไม่ให้ความร่วมมือ", s: 4 },
+      { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษา", s: 5 }, { t: "ไม่ให้ความร่วมมือในการรักษา/ต่อต้านการรักษาซึ่งก่อให้เกิดอันตรายต่อผู้อื่น", s: 6 },
   ];
 
   maasItems.forEach(item => {
-      html += `<tr>
-        <td class="border border-black p-0.5 text-left">${item.t}</td>
-        <td class="border border-black p-0.5 font-bold">${item.s}</td>`;
-      
+      html += `<tr><td class="border border-black p-0.5 text-left">${item.t}</td><td class="border border-black p-0.5 font-bold">${item.s}</td>`;
       for (let i = 0; i < 5; i++) {
           const currDate = new Date(admitDate);
           currDate.setDate(admitDate.getDate() + startDayOffset + i);
@@ -4028,11 +4047,10 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
           ['N', 'D', 'E'].forEach(shift => {
               const entry = allMorseDataCache.find(d => {
                   let dStr = d.Date;
-                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+                  if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) dStr = getISODate(new Date(d.Date));
                   return dStr === dateKey && d.Shift === shift;
               });
               let val = entry ? entry.MAAS_Score : "";
-              // ถ้าคะแนนตรงกับแถวนี้ ให้โชว์คะแนน
               let mark = (val !== "" && parseInt(val) === item.s) ? val : "";
               html += `<td class="border border-black p-0.5">${mark}</td>`;
           });
@@ -4040,7 +4058,6 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
       html += `</tr>`;
   });
 
-  // Row: คะแนนที่ได้ (สรุป)
   html += `<tr class="bg-gray-50"><td class="border border-black p-1 text-right font-bold" colspan="2">คะแนนที่ได้</td>`;
   for (let i = 0; i < 5; i++) {
       const currDate = new Date(admitDate);
@@ -4049,7 +4066,7 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
       ['N', 'D', 'E'].forEach(shift => {
           const entry = allMorseDataCache.find(d => {
               let dStr = d.Date;
-              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) { dStr = getISODate(new Date(d.Date)); }
+              if (d.Date instanceof Date || (typeof d.Date === 'string' && d.Date.includes('T'))) dStr = getISODate(new Date(d.Date));
               return dStr === dateKey && d.Shift === shift;
           });
           let val = entry ? entry.MAAS_Score : "";
@@ -4057,11 +4074,10 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
           html += `<td class="border border-black p-0.5 text-center ${color}">${val}</td>`;
       });
   }
-  html += `</tr>`;
-  html += `</tbody></table>`;
+  html += `</tr></tbody></table>`;
 
   // =========================================================
-  // 4. FOOTER (แนวปฏิบัติ 3 คอลัมน์ แบบใหม่)
+  // FOOTER (Guidelines)
   // =========================================================
   html += `
     <div class="mt-2 border border-black p-0 text-[8px] text-black">
@@ -4070,7 +4086,6 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
            <div class="border-r border-black p-1">Low Risk (25-50)</div>
            <div class="p-1 text-red-700">High Risk (≥ 51)</div>
        </div>
-       
        <div class="grid grid-cols-3 text-left leading-snug">
            <div class="border-r border-black p-1 space-y-1">
                <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
@@ -4081,7 +4096,6 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
                <div>6. ยกเหล็กกั้นเตียง</div>
                <div class="font-bold">7. ตรวจเยี่ยมผู้ป่วย (เวรละ 1 ครั้ง)</div>
            </div>
-
            <div class="border-r border-black p-1 space-y-1">
                <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
                <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
@@ -4094,7 +4108,6 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
                <div>9. ผูกมัดผู้ป่วยตามสภาพ</div>
                <div>10. ส่งเวรเกี่ยวกับอาการผู้ป่วย</div>
            </div>
-
            <div class="p-1 space-y-1">
                <div>1. จัดเตียงให้เหมาะสมกับสภาพผู้ป่วย</div>
                <div>2. ประเมินความสามารถในการช่วยเหลือตนเอง การทรงตัว</div>
@@ -4109,7 +4122,6 @@ function renderMorseSheetA4(page, targetContainer = null, options = {}) {
                <div>11. ปรึกษาสหวิชาชีพ</div>
            </div>
        </div>
-
        <div class="border-t border-black p-1 bg-gray-50 flex gap-4 items-center">
           <div class="font-bold underline">เกณฑ์ MAAS:</div>
           <div>0-3: ไม่ต้องผูกยึด</div>
