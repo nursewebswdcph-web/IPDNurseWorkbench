@@ -2621,8 +2621,6 @@
       </form>
   </div>
 </div>
-<div id="printArea" class="hidden-print-area"></div>
-
 <div id="printSettingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[9999] font-sarabun">
     <div class="bg-white rounded-lg shadow-xl w-[500px] p-6 transform transition-all scale-100">
         <h2 class="text-2xl font-bold text-center mb-6 text-gray-800 border-b pb-2">ตั้งค่าการพิมพ์เอกสาร</h2>
@@ -2635,7 +2633,7 @@
                        oninput="filterStaffList(this.value)">
                 
                 <div id="staffDropdown" class="absolute w-full bg-white border border-gray-300 mt-1 max-h-48 overflow-y-auto hidden shadow-lg z-50 rounded-md">
-                    </div>
+                </div>
             </div>
             <div class="mt-2 text-xs text-gray-500 flex items-center">
                 <i class="fas fa-info-circle mr-1"></i> ระบบจะดึงตำแหน่งมาแสดงให้อัตโนมัติตามชื่อที่เลือก
@@ -2656,47 +2654,54 @@
     </div>
 </div>
 
+<div id="print-master-container"></div>
+
 <style>
-    /* CSS สำหรับการพิมพ์ */
+    /* === CSS สำหรับจัดการการพิมพ์ (Print System Style) === */
     @media print {
-        body * {
-            visibility: hidden; /* ซ่อนทุกอย่าง */
+        /* ซ่อนทุกอย่างใน Body */
+        body > * {
+            display: none !important;
         }
-        #printArea, #printArea * {
-            visibility: visible; /* แสดงเฉพาะส่วนพิมพ์ */
-        }
-        #printArea {
+
+        /* แสดงเฉพาะ Container พิมพ์ */
+        #print-master-container {
+            display: block !important;
             position: absolute;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
+            height: auto;
+            z-index: 9999;
+            background: white;
         }
-        /* ซ่อน Modal ตอนพิมพ์ */
+        
+        /* บังคับให้ลูกๆ ของ Container แสดงผล */
+        #print-master-container * {
+            visibility: visible;
+        }
+
+        /* ตั้งค่าหน้ากระดาษ */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        /* ป้องกันหน้าว่างและจัด Page Break */
+        .a4-page, .bg-white { 
+            break-after: page; 
+            page-break-after: always;
+        }
+        
+        /* ซ่อน Modal ตอนพิมพ์เผื่อพลาด */
         #printSettingsModal {
             display: none !important;
         }
-        /* จัดหน้ากระดาษ */
-        .page-break {
-            page-break-after: always;
-            page-break-inside: avoid;
-            min-height: 297mm; /* A4 height */
-            height: 297mm;
-            padding: 20px; /* ขอบกระดาษ */
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
     }
-    
-    /* CSS ปกติสำหรับซ่อน Print Area */
-    .hidden-print-area {
+
+    /* ซ่อน Container พิมพ์ในหน้าจอปกติ */
+    #print-master-container {
         display: none;
-    }
-    @media print {
-        .hidden-print-area {
-            display: block;
-        }
     }
 </style>
 
