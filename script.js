@@ -1401,9 +1401,6 @@ async function showFormPreview(formType) {
     chartPreviewPlaceholder.classList.add("hidden");
     chartPreviewContent.innerHTML = "";
 
-    // *** ลบตัวแปร bindPrintButton และ setTimeout ออกทั้งหมด ***
-    // เพราะเราจะให้ฟังก์ชัน render จัดการ event listener เองโดยตรง เพื่อความชัวร์
-
     // ----------------------------------------------------
     // CASE 1: Classify (แบบจำแนก)
     // ----------------------------------------------------
@@ -1413,7 +1410,7 @@ async function showFormPreview(formType) {
         chartAddNewBtn.classList.remove("hidden");
         chartAddNewBtn.dataset.form = "classify";
         
-        // เรียกฟังก์ชันเรนเดอร์ (ฟังก์ชันนี้จะสร้างปุ่มและผูก Event ให้เองทันที)
+        // เรียกฟังก์ชันเรนเดอร์ (ฟังก์ชันนี้จะสร้างปุ่มและผูก Event ให้เองทันทีหลังโหลดเสร็จ)
         await renderClassifyPrintMode(currentPatientAN);
     }
 
