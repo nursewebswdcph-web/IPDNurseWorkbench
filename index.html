@@ -2624,7 +2624,7 @@
         <h2 class="text-2xl font-bold text-center mb-6 text-gray-800 border-b pb-2">ตั้งค่าการพิมพ์เอกสาร</h2>
         
         <div class="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อผู้พิมพ์ (แสดงท้ายกระดาษ)</label>
+            <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อผู้พิมพ์</label>
             <div class="relative">
                 <input type="text" id="printerSearch" placeholder="พิมพ์ชื่อเพื่อค้นหา..." autocomplete="off"
                        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -2642,11 +2642,11 @@
         </div>
 
         <div class="flex justify-end gap-3 pt-2">
-            <button onclick="closePrintModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded transition duration-200">
+            <button id="btn-cancel-print" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded transition duration-200">
                 ยกเลิก
             </button>
-            <button onclick="confirmPrintExecution()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">
-                พิมพ์เอกสาร
+            <button id="btn-confirm-print" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 font-bold">
+                ยืนยันและพิมพ์
             </button>
         </div>
     </div>
