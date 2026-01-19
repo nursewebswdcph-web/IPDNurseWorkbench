@@ -1393,143 +1393,217 @@ function renderADLTable() {
     tbody.innerHTML += row;
   });
 }
+// =================================================================
+// ส่วนจัดการการแสดงผลหน้า Preview (แก้ไขให้ปุ่มพิมพ์ทำงาน)
+// =================================================================
+
 async function showFormPreview(formType) {
-  // 1. ซ่อน Placeholder และเคลียร์เนื้อหาเก่า
-  chartPreviewPlaceholder.classList.add("hidden");
-  chartPreviewContent.innerHTML = "";
+    // 1. ซ่อน Placeholder และเคลียร์เนื้อหาเก่า
+    chartPreviewPlaceholder.classList.add("hidden");
+    chartPreviewContent.innerHTML = "";
 
-  // --- กรณี Classify (เปลี่ยนจาก showEntryList เป็น renderClassifyPrintMode) ---
-  if (formType === 'classify') {
-    chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย (Print View)";
-    // ซ่อนปุ่มแก้ไข (Edit) เพราะหน้า Print View เน้นดูภาพรวม
-    chartEditBtn.classList.add("hidden"); 
-    // แสดงปุ่มเพิ่มใหม่ (Add New)
-    chartAddNewBtn.classList.remove("hidden");
-    chartAddNewBtn.dataset.form = "classify";
-    
-    // เรียกฟังก์ชันเรนเดอร์แบบใหม่ (เสมือนพิมพ์)
-    await renderClassifyPrintMode(currentPatientAN);
-  }
+    // ตัวแปรสำหรับจัดการ Timeout
+    const bindPrintButton = (btnId, handlerFunc) => {
+        setTimeout(() => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                // ล้าง Event เก่า (กันเบิ้ล) แล้วใส่ใหม่
+                btn.onclick = null;
+                btn.onclick = handlerFunc;
+                console.log(`✅ Bound print event to ${btnId}`);
+            } else {
+                console.warn(`⚠️ Button ${btnId} not found`);
+            }
+        }, 300); // รอ 300ms ให้ HTML วาดเสร็จชัวร์ๆ
+    };
 
-  // --- กรณีแบบประเมินแรกรับ FR-IPD-004 (เวอร์ชันเสมือนพิมพ์) ---
-  // --- กรณีแบบประเมินแรกรับ FR-IPD-004 (Print View 2 หน้า) ---
-  if (formType === '004') {
-    chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
-    chartEditBtn.classList.remove("hidden"); // ปุ่มแก้ไขข้อมูล
-    chartEditBtn.dataset.form = "004";
-    chartAddNewBtn.classList.add("hidden");
-
-    // เรียกฟังก์ชันเรนเดอร์แบบ Print Mode
-    await renderForm004PrintMode(currentPatientAN);
-  }
-
-  // --- กรณีคำแนะนำการปฏิบัติตัว (Advice) ---
-  else if (formType === 'advice') {
-    chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัว";
-    await showAdvicePreview(currentPatientAN);
-  }
-
-  // --- กรณีบันทึกทางการพยาบาล (Focus Note 006) ---
-  else if (formType === '006') {
-    chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล (Nursing Progress Note)";
-    chartEditBtn.classList.add("hidden");
-    chartAddNewBtn.classList.remove("hidden");
-    chartAddNewBtn.dataset.form = "006";
-    await showProgressNotePreview(currentPatientAN);
-  }
-
-  // --- กรณีใบบันทึกจำหน่าย (Discharge 007) ---
-  else if (formType === '007') {
-     chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)";
-     await showDischargePreview(currentPatientAN);
-  }
-  
-  // --- กรณี Braden Scale (Print View) ---
-  else if (formType === 'braden') {
-    chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale) - Print View";
-    // แสดงปุ่มแก้ไข เพื่อให้ User กดเข้าไปกรอกข้อมูลได้
-    chartEditBtn.classList.remove("hidden");
-    chartEditBtn.dataset.form = "braden"; 
-    chartAddNewBtn.classList.add("hidden");
-
-    // เรียกฟังก์ชันเรนเดอร์แบบ Print Mode
-    await renderBradenPrintMode(currentPatientAN);
-  }
-  // --- กรณี Morse Fall Scale / MAAS (Print View) ---
-  else if (formType === 'morse_maas') {
-    chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
-    chartEditBtn.classList.remove("hidden"); // ปุ่มแก้ไขยังคงไว้เพื่อเปิด Modal กรอกข้อมูล
-    chartEditBtn.dataset.form = "morse_maas";
-    chartAddNewBtn.classList.add("hidden"); // ซ่อนปุ่มเพิ่มใหม่ (ใช้ปุ่มแก้ไขแทน)
-
-    // เรียกฟังก์ชันเรนเดอร์แบบ Print View
-    await renderMorsePrintMode(currentPatientAN);
-  }
-
-  // --- กรณีอื่นๆ (Generic) ---
-  else {
-    const formTitleItem = chartPage.querySelector(`.chart-list-item[data-form="${formType}"] h3`);
-    const formTitle = formTitleItem ? formTitleItem.textContent : "รายละเอียด";
-    
-    chartPreviewTitle.textContent = formTitle;
-    await showEntryList(formType, formTitle);
-    
-    chartEditBtn.classList.add("hidden");
-    chartAddNewBtn.classList.remove("hidden");
-    chartAddNewBtn.dataset.form = formType;
-  }
-}
-async function showEntryList(formType, formTitle) { 
-  const template = document.getElementById("template-entry-list");
-  if (!template) return;
-  
-  const preview = template.content.cloneNode(true);
-  let entries = [];
-  showLoading('กำลังโหลดรายการที่บันทึก...');
-  
-  try {
+    // ----------------------------------------------------
+    // CASE 1: Classify (แบบจำแนก)
+    // ----------------------------------------------------
     if (formType === 'classify') {
-      const response = await fetch(`${GAS_WEB_APP_URL}?action=getClassificationSummary&an=${currentPatientAN}`);
-      const result = await response.json();
-      if (!result.success) throw new Error(result.message);
-      entries = result.data;
-    } 
-    Swal.close();
-  } catch (error) {
-    showError('โหลดข้อมูลไม่สำเร็จ', error.message);
-    return;
-  }
+        chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย (Print View)";
+        chartEditBtn.classList.add("hidden");
+        chartAddNewBtn.classList.remove("hidden");
+        chartAddNewBtn.dataset.form = "classify";
+        
+        // เรียกฟังก์ชันเรนเดอร์
+        await renderClassifyPrintMode(currentPatientAN);
+        
+        // *** แก้ไข: ผูกปุ่มพิมพ์ ***
+        bindPrintButton("btn-print-classify-action", handleClassifyPrint);
+    }
 
-  const header = document.createElement('div');
-  header.className = 'p-4 flex justify-between items-center';
-  header.innerHTML = `<p class="text-sm text-gray-500">พบ ${entries.length} รายการ</p>`;
-  preview.prepend(header);
+    // ----------------------------------------------------
+    // CASE 2: FR-IPD-004 (แบบประเมินแรกรับ)
+    // ----------------------------------------------------
+    else if (formType === '004') {
+        chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
+        chartEditBtn.classList.remove("hidden");
+        chartEditBtn.dataset.form = "004";
+        chartAddNewBtn.classList.add("hidden");
 
-  if (entries.length === 0) {
-      const noEntryDiv = document.createElement('div');
-      noEntryDiv.className = 'p-6 text-center text-gray-400';
-      noEntryDiv.innerHTML = `<p>-- ยังไม่มีการบันทึก --</p><p>กรุณากดปุ่ม "+ เพิ่มใหม่"</p>`;
-      preview.appendChild(noEntryDiv);
-  } else {
-    entries.forEach(entry => {
-      const entryDiv = document.createElement('div');
-      entryDiv.className = 'p-4 hover:bg-gray-100 cursor-pointer entry-list-item border-b';
-      
-      const entryDate = new Date(entry.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const shift = entry.shift === 'N' ? 'ดึก' : (entry.shift === 'D' ? 'เช้า' : 'บ่าย');
-      
-      entryDiv.innerHTML = `
-        <p class="font-semibold text-blue-600">${entryDate} (เวร ${shift})</p>
-        <p class="text-sm text-gray-600">ผู้บันทึก: ${entry.user || 'N/A'}</p>
-      `;
-      
-      entryDiv.onclick = () => { openClassifyModal(); };
-      preview.appendChild(entryDiv);
-    });
-  }
-  
-  chartPreviewContent.innerHTML = ""; 
-  chartPreviewContent.appendChild(preview);
+        // เรียกฟังก์ชันเรนเดอร์
+        await renderForm004PrintMode(currentPatientAN);
+        
+        // *** แก้ไข: ผูกปุ่มพิมพ์ (ต้องส่ง AN เข้าไป) ***
+        bindPrintButton("btn-print-004-action", function() { 
+            handleForm004Print(currentPatientAN); 
+        });
+    }
+
+    // ----------------------------------------------------
+    // CASE 3: Advice (คำแนะนำ)
+    // ----------------------------------------------------
+    else if (formType === 'advice') {
+        chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัว";
+        chartEditBtn.classList.add("hidden");
+        chartAddNewBtn.classList.remove("hidden");
+        chartAddNewBtn.dataset.form = "advice";
+        await showAdvicePreview(currentPatientAN);
+    }
+
+    // ----------------------------------------------------
+    // CASE 4: Nursing Progress Note (006)
+    // ----------------------------------------------------
+    else if (formType === '006') {
+        chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล (Nursing Progress Note)";
+        chartEditBtn.classList.add("hidden");
+        chartAddNewBtn.classList.remove("hidden");
+        chartAddNewBtn.dataset.form = "006";
+        await showProgressNotePreview(currentPatientAN);
+    }
+
+    // ----------------------------------------------------
+    // CASE 5: Discharge Summary (007)
+    // ----------------------------------------------------
+    else if (formType === '007') {
+        chartPreviewTitle.textContent = "แบบบันทึกการพยาบาลผู้ป่วยจำหน่าย (PR-IPD-007)";
+        chartEditBtn.classList.add("hidden"); // ปกติ 007 อาจจะแก้ไขผ่าน Entry list หรือปุ่มอื่น
+        chartAddNewBtn.classList.remove("hidden");
+        chartAddNewBtn.dataset.form = "007";
+        await showDischargePreview(currentPatientAN);
+    }
+    
+    // ----------------------------------------------------
+    // CASE 6: Braden Scale
+    // ----------------------------------------------------
+    else if (formType === 'braden') {
+        chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale) - Print View";
+        chartEditBtn.classList.remove("hidden");
+        chartEditBtn.dataset.form = "braden"; 
+        chartAddNewBtn.classList.add("hidden");
+
+        // เรียกฟังก์ชันเรนเดอร์
+        await renderBradenPrintMode(currentPatientAN);
+
+        // *** แก้ไข: ผูกปุ่มพิมพ์ ***
+        bindPrintButton("btn-print-braden-action", handleBradenPrint);
+    }
+
+    // ----------------------------------------------------
+    // CASE 7: Morse / MAAS
+    // ----------------------------------------------------
+    else if (formType === 'morse_maas') {
+        chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
+        chartEditBtn.classList.remove("hidden");
+        chartEditBtn.dataset.form = "morse_maas";
+        chartAddNewBtn.classList.add("hidden");
+
+        // เรียกฟังก์ชันเรนเดอร์
+        await renderMorsePrintMode(currentPatientAN);
+
+        // *** แก้ไข: ผูกปุ่มพิมพ์ ***
+        bindPrintButton("btn-print-morse-action", handleMorsePrint);
+    }
+
+    // ----------------------------------------------------
+    // CASE 8: Generic (อื่นๆ)
+    // ----------------------------------------------------
+    else {
+        const formTitleItem = document.querySelector(`.chart-list-item[data-form="${formType}"] h3`);
+        const formTitle = formTitleItem ? formTitleItem.textContent : "รายละเอียด";
+        
+        chartPreviewTitle.textContent = formTitle;
+        chartEditBtn.classList.add("hidden");
+        chartAddNewBtn.classList.remove("hidden");
+        chartAddNewBtn.dataset.form = formType;
+
+        await showEntryList(formType, formTitle);
+    }
+}
+
+// ฟังก์ชันแสดงรายการบันทึก (สำหรับเคส Generic)
+async function showEntryList(formType, formTitle) { 
+    const template = document.getElementById("template-entry-list");
+    if (!template) return;
+    
+    // สร้าง Loader ชั่วคราว
+    chartPreviewContent.innerHTML = '<div class="flex justify-center items-center h-40"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
+    
+    let entries = [];
+    
+    try {
+        if (formType === 'classify') {
+            // กรณีนี้อาจจะไม่ถูกเรียกใช้แล้วเพราะมี renderClassifyPrintMode แต่ใส่กันไว้
+            const response = await fetch(`${GAS_WEB_APP_URL}?action=getClassificationSummary&an=${currentPatientAN}`);
+            const result = await response.json();
+            if (result.success) entries = result.data;
+        } 
+        // เพิ่ม case อื่นๆ ที่ต้องการดึงข้อมูลแบบ List ได้ที่นี่
+        
+    } catch (error) {
+        console.error('โหลดข้อมูลไม่สำเร็จ', error);
+        chartPreviewContent.innerHTML = `<div class="text-red-500 p-4 text-center">โหลดข้อมูลไม่สำเร็จ: ${error.message}</div>`;
+        return;
+    }
+
+    // เตรียม HTML
+    const preview = template.content.cloneNode(true);
+    const container = document.createElement('div'); // Wrapper
+
+    const header = document.createElement('div');
+    header.className = 'p-4 flex justify-between items-center bg-gray-50 border-b';
+    header.innerHTML = `<p class="text-sm text-gray-500 font-bold">พบ ${entries.length} รายการ</p>`;
+    container.appendChild(header);
+
+    if (entries.length === 0) {
+        const noEntryDiv = document.createElement('div');
+        noEntryDiv.className = 'p-10 text-center text-gray-400 flex flex-col items-center';
+        noEntryDiv.innerHTML = `<i class="fas fa-file-alt text-4xl mb-2"></i><p>-- ยังไม่มีการบันทึก --</p><p class="text-sm mt-1">กดปุ่ม "+ เพิ่มใหม่" เพื่อเริ่มบันทึก</p>`;
+        container.appendChild(noEntryDiv);
+    } else {
+        entries.forEach(entry => {
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'p-4 hover:bg-blue-50 cursor-pointer border-b transition duration-150 ease-in-out';
+            
+            const entryDate = new Date(entry.date).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const shift = entry.shift === 'N' ? 'ดึก' : (entry.shift === 'D' ? 'เช้า' : 'บ่าย');
+            
+            entryDiv.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-blue-700 text-lg">${entryDate}</p>
+                        <p class="text-sm text-gray-600"><span class="font-semibold">เวร:</span> ${shift}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500">ผู้บันทึก</p>
+                        <p class="text-sm font-medium text-gray-800">${entry.user || 'N/A'}</p>
+                    </div>
+                </div>
+            `;
+            
+            // Logic การคลิกรายการ
+            entryDiv.onclick = () => { 
+                if(formType === 'classify') openClassifyModal(entry); // ส่งข้อมูลไปเพื่อแก้ไข (ถ้ามีฟังก์ชันรองรับ)
+            };
+            container.appendChild(entryDiv);
+        });
+    }
+    
+    // แสดงผล
+    chartPreviewContent.innerHTML = ""; 
+    chartPreviewContent.appendChild(preview); // Append template structure first
+    chartPreviewContent.appendChild(container); // Append Data
 }
 
 // --- ASSESSMENT FORM LOGIC (FR-004) ---
