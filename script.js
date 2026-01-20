@@ -4340,9 +4340,9 @@ function renderForm004Page1(container, options = {}) {
                     <div class="font-bold underline mb-1">2) โภชนาการและการเผาผลาญ</div>
                     <div class="space-y-0.5">
                         <div class="flex items-end whitespace-nowrap">รับประทานอาหาร ${dot(d.Nutri_Meals, "20px")} มื้อ/วัน</div>
-                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารธรรมดา', 'ธรรมดา')} ${chk(d.Nutri_Type, 'อาหารอ่อน', 'อ่อน')}</div>
-                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารทางสายยาง', 'สายยาง')}</div>
-                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารเฉพาะโรค', 'เฉพาะโรค:')} ${dot(d.Nutri_Type_Detail, "30px")}</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารธรรมดา', 'อาหารธรรมดา')} ${chk(d.Nutri_Type, 'อาหารอ่อน', 'อาหารอ่อน')}</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารทางสายยาง', 'อาหารสายยาง')}</div>
+                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารเฉพาะโรค', 'อาหารเฉพาะโรค:')} ${dot(d.Nutri_Type_Detail, "30px")}</div>
                         <div class="flex flex-wrap items-end whitespace-nowrap">ปัญหาการกิน: ${chk(d.Nutri_Problem, 'ไม่มี', 'ไม่มี')} ${chk(d.Nutri_Problem, 'มี', 'มี:')} ${dot(d.Nutri_Problem_Detail, "30px")}</div>
                     </div>
                 </div>
@@ -4640,7 +4640,7 @@ function renderForm004Page2(container, options = {}) {
                 ${[
                     ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด', 'มีความจำกัดมาก', 'มีความจำกัดเล็กน้อย', 'ไม่บกพร่อง', d.Braden_Sensory],
                     ['ความเปียกชื้น', 'เปียกชื้นตลอดเวลา', 'เปียกชื้นมาก', 'เปียกชื้นบางคาั้ง', 'เปียกชื้นน้อยมาก', d.Braden_Moisture],
-                    ['กิจกรรม', 'นอนอยู่กับที่ตลอดเวลา', 'เดินไม่ได้/นั่งรถเข็น', 'เดินได้เป็นบาง', 'เดินปกติ<br>(Walks Frequently)', d.Braden_Activity],
+                    ['กิจกรรม', 'นอนอยู่กับที่ตลอดเวลา', 'เดินไม่ได้/นั่งรถเข็น', 'เดินได้เป็นบาง', 'เดินปกติ<br>', d.Braden_Activity],
                     ['การเคลื่อนไหว', 'เคลื่อนไหวเองไม่ได้', 'เคลื่อนไหวเองได้น้อย', 'เคลื่อนไหวเองได้บ้าง', 'เคลื่อนไหวเองได้ปกติ', d.Braden_Mobility],
                     ['โภชนาการ', 'ไม่เพียงพอ', 'อาจไม่เพียงพอเกือบทุกมื้อ', 'เพียงพอ', 'ดีเยี่ยม)', d.Braden_Nutrition],
                     ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยงต่อการเกิดปัญหา', 'ไม่มีปัญหา', '', d.Braden_Friction]
@@ -4673,7 +4673,6 @@ function renderForm004Page2(container, options = {}) {
                     <span class="border border-black px-2 py-1 w-12 text-center font-bold bg-white text-[16px]">${totalBraden || 0}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="font-bold">การแปลผล:</span>
                     ${chkRisk(isRisk(totalBraden, 0, 9))} ≤ 9 Very high
                     ${chkRisk(isRisk(totalBraden, 10, 12))} 10-12 High
                     ${chkRisk(isRisk(totalBraden, 13, 14))} 13-14 Moderate
