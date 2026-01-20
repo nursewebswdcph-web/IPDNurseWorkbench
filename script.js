@@ -4259,15 +4259,65 @@ function normalizeData004(raw) {
     const d = {};
     Object.assign(d, raw); 
     
-    // แปลงข้อมูล Checkbox ที่เป็น String/Boolean ให้เป็น Array สำหรับฟังก์ชัน chk
-    d.Hx_List = [];
-    const pushHx = (key, val) => { 
-        if(String(raw[key]).toLowerCase() === 'true' || raw[key] === true || raw[key] === 'on') d.Hx_List.push(val); 
+    // Helper เช็คค่า True/False/On
+    const isTrue = (val) => {
+        if (!val) return false;
+        const s = String(val).toLowerCase();
+        return s === 'true' || s === 'on';
     };
+
+    // 1. ประวัติเจ็บป่วย (Hx_List)
+    d.Hx_List = [];
+    const pushHx = (key, val) => { if(isTrue(raw[key])) d.Hx_List.push(val); };
     pushHx('Hx_HT', 'ความดันโลหิตสูง'); pushHx('Hx_Heart', 'โรคหัวใจ'); pushHx('Hx_Liver', 'โรคตับ');
     pushHx('Hx_Kidney', 'โรคไต'); pushHx('Hx_DM', 'เบาหวาน'); pushHx('Hx_Asthma', 'หอบหืด');
     pushHx('Hx_Epilepsy', 'ลมชัก'); pushHx('Hx_TB', 'วัณโรค'); pushHx('Hx_Cancer', 'มะเร็ง');
     
+    // 2. สาเหตุความเครียด (Stress_Causes) -> หน้า 2 ข้อ 8
+    d.Stress_Causes = [];
+    const pushStress = (key, val) => { if(isTrue(raw[key])) d.Stress_Causes.push(val); };
+    pushStress('Cope_Stress_Fear', 'กลัวไม่หาย');
+    pushStress('Cope_Stress_Cost', 'ค่ารักษาพยาบาล');
+    pushStress('Cope_Stress_Work', 'ขาดงาน/รายได้');
+    pushStress('Cope_Stress_Family', 'ครอบครัว');
+    if(raw['Cope_Stress_Other']) d.Stress_Causes.push('อื่นๆ');
+
+    // 3. บทบาท (Roles) -> หน้า 2 ข้อ 9
+    d.Roles = [];
+    const pushRole = (key, val) => { if(isTrue(raw[key])) d.Roles.push(val); };
+    pushRole('Role_Effect_Family', 'ครอบครัว');
+    pushRole('Role_Effect_Career', 'อาชีพ');
+    pushRole('Role_Effect_Education', 'การศึกษา');
+    pushRole('Role_Effect_Relationship', 'สัมพันธภาพในครอบครัวและผู้อื่น');
+
+    // 4. การมีส่วนร่วม (Partic_Needs) -> หน้า 2 ข้อ 12
+    d.Partic_Needs = [];
+    const pushPartic = (key, val) => { if(isTrue(raw[key])) d.Partic_Needs.push(val); };
+    pushPartic('Partic_Info', 'Info');
+    pushPartic('Partic_Skill', 'Skill');
+    pushPartic('Partic_Team', 'Team');
+
+    // 5. ผลกระทบความปวด (Pain_Effects) -> หน้า 2 ข้อ 13
+    d.Pain_Effects = [];
+    const pushPainEff = (key, val) => { if(isTrue(raw[key])) d.Pain_Effects.push(val); };
+    pushPainEff('Pain_Effect_Eat', 'Eat');
+    pushPainEff('Pain_Effect_Sleep', 'Sleep');
+    pushPainEff('Pain_Effect_Activity', 'Activity');
+    pushPainEff('Pain_Effect_Mood', 'Mood');
+    pushPainEff('Pain_Effect_Elim', 'Elim');
+    pushPainEff('Pain_Effect_Sex', 'Sex');
+
+    // 6. การบรรเทาปวด (Pain_Relief) -> หน้า 2 ข้อ 13
+    d.Pain_Relief = [];
+    const pushPainRel = (key, val) => { if(isTrue(raw[key])) d.Pain_Relief.push(val); };
+    pushPainRel('Pain_Relief_Cold', 'Cold');
+    pushPainRel('Pain_Relief_Hot', 'Hot');
+    pushPainRel('Pain_Relief_Massage', 'Massage');
+    pushPainRel('Pain_Relief_Relax', 'Relax');
+    pushPainRel('Pain_Relief_Repo', 'Repo');
+    pushPainRel('Pain_Relief_Rest', 'Rest');
+    pushPainRel('Pain_Relief_Meds', 'Meds');
+
     return d;
 }
 
@@ -4283,6 +4333,8 @@ async function renderForm004PrintMode(an) {
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
         const result = await response.json();
+        
+        // เรียกใช้ฟังก์ชัน Normalize ที่แก้ไขแล้วตรงนี้
         const freshData = normalizeData004(result.data || {}); 
         
         // Clear Loading
