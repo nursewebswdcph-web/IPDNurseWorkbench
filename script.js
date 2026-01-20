@@ -4220,11 +4220,13 @@ function renderForm004Page1(container, options = {}) {
        </div>
     </div>
     
-    <div class="font-bold text-[12px]">
-        <span>ชื่อ-สกุล: ${p.Name || '-'}</span>
-        <span>HN: ${p.HN || '-'}</span>
-        <span>AN: ${p.AN || d.AN || '-'}</span>
-        <span>หอผู้ป่วย: ${p.Ward || '-'}</span>
+    <div class="flex justify-between items-end mb-2 px-1 text-[11px] font-bold border-b border-transparent">
+        <div>ชื่อ-สกุล: ${currentPatientData.Name}</div>
+        <div class="flex gap-4">
+             <span>HN: ${currentPatientData.HN}</span>
+             <span>AN: ${currentPatientData.AN}</span>
+	     <span>หอผู้ป่วย: ${p.Ward || '-'}</span>
+        </div>
     </div>
 
     <div class="font-sarabun text-black text-[12px] leading-tight mt-2">
