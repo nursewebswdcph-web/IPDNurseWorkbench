@@ -683,172 +683,218 @@
   </div>
 
   <!-- 12. Modal: Advice (Discharge Plan) - กู้คืนฟอร์มเต็มรูปแบบ -->
-  <div id="advice-form-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-start justify-center pt-10 overflow-y-auto">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-7xl m-4 mb-20 animate-fade-in">
+  <div id="advice-form-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-start justify-center pt-5 overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-6xl m-4 mb-20 animate-fade-in">
         <form id="advice-form">
             <div class="flex justify-between items-center p-4 border-b bg-teal-50 rounded-t-xl">
                 <h3 class="text-xl font-bold text-teal-800">การให้คำแนะนำการปฏิบัติตัว (Discharge Plan: D-M-E-T-H-O-D)</h3>
                 <button id="close-advice-modal-btn" type="button" class="text-gray-500 text-2xl hover:text-red-500">&times;</button>
             </div>
             
-            <div class="p-6 overflow-x-auto">
-                <p class="text-sm text-gray-500 mb-4">* กรอกข้อมูลให้ครบถ้วน ห้ามตัดทอนข้อความสำคัญ</p>
+            <div class="p-6 space-y-6 font-sarabun text-sm text-gray-800">
                 
-                <!-- Table Structure mimicking the Form -->
-                <table class="w-full border-collapse border border-gray-300 min-w-[1000px] text-sm">
-                     <thead class="bg-gray-100 text-gray-700">
-                         <tr>
-                             <th class="border p-3 w-[15%] text-left">เรื่อง (Topic)</th>
-                             <th class="border p-3 text-left">รายละเอียดคำแนะนำ / กิจกรรม (Description)</th>
-                             <th class="border p-3 w-[130px] text-center">วันที่ (Date)</th>
-                             <th class="border p-3 w-[120px] text-center">ผู้ให้ (Giver)</th>
-                             <th class="border p-3 w-[120px] text-center">ผู้รับ (Receiver)</th>
-                         </tr>
-                     </thead>
-                     <tbody class="align-top">
-                         <!-- D: Diagnosis -->
-                         <tr>
-                             <td class="border p-3 font-bold bg-gray-50 text-center align-top">
-                                 <span class="text-2xl text-teal-700 block">D</span>
-                                 Diagnosis<br>
-                                 <span class="text-xs font-normal">ความรู้เรื่องโรค</span>
-                             </td>
-                             <td class="border p-3">
-                                 <label class="block mb-1 font-bold">ความรู้เรื่องโรค สาเหตุ อาการ และการปฏิบัติตัว:</label>
-                                 <textarea name="D_Detail" rows="4" class="w-full p-2 border rounded focus:ring-2 focus:ring-teal-500" placeholder="ระบุรายละเอียดโรคและอาการ..."></textarea>
-                             </td>
-                             <td class="border p-3"><input type="date" name="D_Date" class="w-full border rounded p-1 text-sm"></td>
-                             <td class="border p-3"><input type="text" name="D_Giver" class="w-full border rounded p-1 text-center" list="staff-list-datalist"></td>
-                             <td class="border p-3"><input type="text" name="D_Receiver" class="w-full border rounded p-1 text-center"></td>
-                         </tr>
+                <div class="border rounded p-4 border-l-4 border-l-teal-500 bg-white shadow-sm">
+                    <h4 class="font-bold text-lg text-teal-700 mb-2">D=Diagnosis การให้ความรู้เรื่องโรค</h4>
+                    <div class="pl-4">
+                        <label class="block font-bold mb-1">- ให้ความรู้เรื่องโรคที่เป็นอยู่ถึงสาเหตุ อาการ การปฏิบัติตัว ระบุ</label>
+                        <textarea name="D_Detail" rows="2" class="w-full border border-gray-300 rounded p-2 focus:ring-1 focus:ring-teal-500 outline-none"></textarea>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex gap-4 bg-gray-50 p-2 rounded">
+                        <input type="date" name="D_Date" class="border rounded p-1 text-xs">
+                        <input type="text" name="D_Giver" list="staff-list-datalist" placeholder="ผู้ให้คำแนะนำ" class="border rounded p-1 text-xs w-32">
+                        <input type="text" name="D_Receiver" placeholder="ผู้รับคำแนะนำ" class="border rounded p-1 text-xs w-32">
+                    </div>
+                </div>
 
-                         <!-- M: Medicine -->
-                         <tr>
-                             <td class="border p-3 font-bold bg-gray-50 text-center align-top">
-                                 <span class="text-2xl text-teal-700 block">M</span>
-                                 Medicine<br>
-                                 <span class="text-xs font-normal">ความรู้เรื่องยา</span>
-                             </td>
-                             <td class="border p-3 space-y-3">
-                                 <div>
-                                     <label class="block mb-1 font-bold">รายการยา / สรรพคุณ / วิธีใช้:</label>
-                                     <textarea name="M_Detail" rows="4" class="w-full p-2 border rounded focus:ring-2 focus:ring-teal-500" placeholder="ระบุรายการยา..."></textarea>
-                                 </div>
-                                 <div>
-                                     <label class="block mb-1 font-bold">ผลข้างเคียง / ข้อควรระวัง:</label>
-                                     <textarea name="M_SideEffect" rows="2" class="w-full p-2 border rounded focus:ring-2 focus:ring-teal-500" placeholder="ระบุผลข้างเคียง..."></textarea>
-                                 </div>
-                             </td>
-                             <td class="border p-3"><input type="date" name="M_Date" class="w-full border rounded p-1 text-sm"></td>
-                             <td class="border p-3"><input type="text" name="M_Giver" class="w-full border rounded p-1 text-center" list="staff-list-datalist"></td>
-                             <td class="border p-3"><input type="text" name="M_Receiver" class="w-full border rounded p-1 text-center"></td>
-                         </tr>
+                <div class="border rounded p-4 border-l-4 border-l-teal-500 bg-white shadow-sm">
+                    <h4 class="font-bold text-lg text-teal-700 mb-2">M=Medicine การให้ความรู้เรื่องยา</h4>
+                    <div class="pl-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold mb-1">- ชนิดของยา</label>
+                            <textarea name="M_Detail" rows="2" class="w-full border border-gray-300 rounded p-2 outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ฤทธิ์ของยา / ผลข้างเคียง</label>
+                            <textarea name="M_SideEffect" rows="2" class="w-full border border-gray-300 rounded p-2 outline-none"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex gap-4 bg-gray-50 p-2 rounded">
+                        <input type="date" name="M_Date" class="border rounded p-1 text-xs">
+                        <input type="text" name="M_Giver" list="staff-list-datalist" placeholder="ผู้ให้คำแนะนำ" class="border rounded p-1 text-xs w-32">
+                        <input type="text" name="M_Receiver" placeholder="ผู้รับคำแนะนำ" class="border rounded p-1 text-xs w-32">
+                    </div>
+                </div>
 
-                         <!-- E: Environment -->
-                         <tr>
-                             <td class="border p-3 font-bold bg-gray-50 text-center align-top">
-                                 <span class="text-2xl text-teal-700 block">E</span>
-                                 Environment<br>
-                                 <span class="text-xs font-normal">สิ่งแวดล้อม</span>
-                             </td>
-                             <td class="border p-3">
-                                 <div class="grid grid-cols-2 gap-2 mb-2">
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="E_Meds" value="on" class="w-4 h-4 text-teal-600 rounded"> การจัดการยา (E_Meds)</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="E_Complication" value="on" class="w-4 h-4 text-teal-600 rounded"> ป้องกันภาวะแทรกซ้อน</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="E_Nutrition" value="on" class="w-4 h-4 text-teal-600 rounded"> โภชนาการ</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="E_Exercise" value="on" class="w-4 h-4 text-teal-600 rounded"> การออกกำลังกาย</label>
-                                 </div>
-                                 <textarea name="E_Detail_Other" rows="2" class="w-full p-2 border rounded mt-1" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
-                             </td>
-                             <td class="border p-3"><input type="date" name="E_Date" class="w-full border rounded p-1 text-sm"></td>
-                             <td class="border p-3"><input type="text" name="E_Giver" class="w-full border rounded p-1 text-center" list="staff-list-datalist"></td>
-                             <td class="border p-3"><input type="text" name="E_Receiver" class="w-full border rounded p-1 text-center"></td>
-                         </tr>
+                <div class="border rounded p-4 border-l-4 border-l-teal-500 bg-white shadow-sm">
+                    <h4 class="font-bold text-lg text-teal-700 mb-2">E=Environment & Economic การให้ความรู้ด้านสิ่งแวดล้อมและสภาวะเศรษฐกิจ</h4>
+                    <div class="pl-4 space-y-3">
+                        <div>
+                            <label class="block font-bold mb-1">- การดำรงชีวิตที่เหมาะสมกับสภาวะของโรค:</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="E_Nutrition"> การจัดการโภชนาการที่เหมาะสม</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="E_Exercise"> การออกกำลังกายที่สม่ำเสมอ</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="E_Meds"> การใช้ยาและการปฏิบัติตามแผนการรักษา</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="E_Mood"> การจัดการอารมณ์และความเครียด</label>
+                                <label class="flex items-center gap-2 col-span-2"><input type="checkbox" name="E_Complication"> การป้องกันภาวะแทรกซ้อนและการดูแลตนเอง</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">- ผู้ป่วยจำเป็นที่จะต้องได้รับการดูแลช่วยเหลือในเรื่อง:</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="E_Family"> การสนับสนุนการมีส่วนร่วมของครอบครัวในการดูแลผู้ป่วย</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="E_Economic"> การช่วยเหลือด้านสภาวะเศรษฐกิจ ปัญหาด้านสิทธิ์การรักษา</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex gap-4 bg-gray-50 p-2 rounded">
+                        <input type="date" name="E_Date" class="border rounded p-1 text-xs">
+                        <input type="text" name="E_Giver" list="staff-list-datalist" placeholder="ผู้ให้คำแนะนำ" class="border rounded p-1 text-xs w-32">
+                        <input type="text" name="E_Receiver" placeholder="ผู้รับคำแนะนำ" class="border rounded p-1 text-xs w-32">
+                    </div>
+                </div>
 
-                         <!-- T: Treatment -->
-                         <tr>
-                             <td class="border p-3 font-bold bg-gray-50 text-center align-top">
-                                 <span class="text-2xl text-teal-700 block">T</span>
-                                 Treatment<br>
-                                 <span class="text-xs font-normal">การรักษา/ทักษะ</span>
-                             </td>
-                             <td class="border p-3">
-                                 <div class="grid grid-cols-2 gap-2 mb-2">
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="T_MedTreatment" value="on" class="w-4 h-4 text-teal-600 rounded"> การรักษาด้วยยา (Med)</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="T_IV" value="on" class="w-4 h-4 text-teal-600 rounded"> การให้สารน้ำ (IV)</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="T_WoundCare" value="on" class="w-4 h-4 text-teal-600 rounded"> การดูแลแผล (Wound Care)</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="T_CorrectMeds" value="on" class="w-4 h-4 text-teal-600 rounded"> การใช้ยาถูกต้อง</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="T_ObserveWound" value="on" class="w-4 h-4 text-teal-600 rounded"> สังเกตแผล/อาการ</label>
-                                 </div>
-                                 <div class="space-y-2 mt-2 border-t pt-2">
-                                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-24">ผ่าตัด/หัตถการ:</span> <input type="text" name="T_Surgery_Text" class="flex-1 border-b border-gray-300 focus:outline-none p-1"></div>
-                                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-24">อื่นๆ:</span> <input type="text" name="T_Other_Text" class="flex-1 border-b border-gray-300 focus:outline-none p-1"></div>
-                                    <div class="flex items-center gap-2"><span class="font-bold text-xs w-24">การดูแลตนเอง:</span> <input type="text" name="T_SelfCare_Other_Text" class="flex-1 border-b border-gray-300 focus:outline-none p-1"></div>
-                                 </div>
-                             </td>
-                             <td class="border p-3"><input type="date" name="T_Date" class="w-full border rounded p-1 text-sm"></td>
-                             <td class="border p-3"><input type="text" name="T_Giver" class="w-full border rounded p-1 text-center" list="staff-list-datalist"></td>
-                             <td class="border p-3"><input type="text" name="T_Receiver" class="w-full border rounded p-1 text-center"></td>
-                         </tr>
+                <div class="border rounded p-4 border-l-4 border-l-teal-500 bg-white shadow-sm">
+                    <h4 class="font-bold text-lg text-teal-700 mb-2">T=Treatment แนวทางการรักษาพยาบาล</h4>
+                    <div class="pl-4 space-y-3">
+                        <div>
+                            <label class="block font-bold mb-1">- แนวทางการรักษาพยาบาล:</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_MedTreatment"> การรักษาด้วยยา</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_IV"> การให้สารน้ำ</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_Blood"> ให้เลือด</label>
+                                <div class="flex items-center gap-2 col-span-2">
+                                    <input type="checkbox" name="T_Surgery_Text_Check"> <span>การผ่าตัด/หัตถการ ระบุ</span>
+                                    <input type="text" name="T_Surgery_Text" class="border-b border-gray-400 outline-none w-full">
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" name="T_Other_Text_Check"> <span>อื่นๆ ระบุ</span>
+                                    <input type="text" name="T_Other_Text" class="border-b border-gray-400 outline-none w-full">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">- สาธิตวิธีการดูแลตนเองในเรื่อง:</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_NG"> การให้อาหารทางสายยาง</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_WoundCare"> การดูแลแผล</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" name="T_SelfCare_Other_Check"> <span>อื่นๆ ระบุ</span>
+                                    <input type="text" name="T_SelfCare_Other_Text" class="border-b border-gray-400 outline-none w-full">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">- ความสำคัญในการดูแลสุขภาพและการปฏิบัติตัวที่ถูกต้อง:</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_CorrectMeds"> รับประทานยาให้ถูกขนาด ถูกเวลา และต่อเนื่อง</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_Diet"> ควบคุมและเลือกทานอาหารตามคำแนะนำเฉพาะโรค</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_Exercise_Do"> ออกกำลังกายอย่างสม่ำเสมอและเหมาะสมกับสภาพร่างกาย</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_Monitor"> ตรวจวัด น้ำตาล ความดัน และ สังเกตอาการผิดปกติ</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_NoSmoking"> งด การสูบบุหรี่ และเครื่องดื่มแอลกอฮอล์ทุกชนิด</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="T_ObserveWound"> สังเกตและ ดูแลบาดแผลหรืออาการผิดปกติ</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex gap-4 bg-gray-50 p-2 rounded">
+                        <input type="date" name="T_Date" class="border rounded p-1 text-xs">
+                        <input type="text" name="T_Giver" list="staff-list-datalist" placeholder="ผู้ให้คำแนะนำ" class="border rounded p-1 text-xs w-32">
+                        <input type="text" name="T_Receiver" placeholder="ผู้รับคำแนะนำ" class="border rounded p-1 text-xs w-32">
+                    </div>
+                </div>
 
-                         <!-- H: Health -->
-                         <tr>
-                             <td class="border p-3 font-bold bg-gray-50 text-center align-top">
-                                 <span class="text-2xl text-teal-700 block">H</span>
-                                 Health<br>
-                                 <span class="text-xs font-normal">ส่งเสริมสุขภาพ</span>
-                             </td>
-                             <td class="border p-3">
-                                 <div class="grid grid-cols-2 gap-2 mb-2">
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="H_MedsPlan" value="on" class="w-4 h-4 text-teal-600 rounded"> ปฏิบัติตามแผนยา</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="H_Infection" value="on" class="w-4 h-4 text-teal-600 rounded"> ป้องกันการติดเชื้อ</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="H_Emp_Knowledge" value="on" class="w-4 h-4 text-teal-600 rounded"> มีความรู้ (Knowledge)</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="H_Emp_Skill" value="on" class="w-4 h-4 text-teal-600 rounded"> มีทักษะ (Skill)</label>
-                                     <label class="flex items-center gap-2"><input type="checkbox" name="H_Emp_Goal" value="on" class="w-4 h-4 text-teal-600 rounded"> มีเป้าหมาย (Goal)</label>
-                                 </div>
-                             </td>
-                             <td class="border p-3"><input type="date" name="H_Date" class="w-full border rounded p-1 text-sm"></td>
-                             <td class="border p-3"><input type="text" name="H_Giver" class="w-full border rounded p-1 text-center" list="staff-list-datalist"></td>
-                             <td class="border p-3"><input type="text" name="H_Receiver" class="w-full border rounded p-1 text-center"></td>
-                         </tr>
+                <div class="border rounded p-4 border-l-4 border-l-teal-500 bg-white shadow-sm">
+                    <h4 class="font-bold text-lg text-teal-700 mb-2">H=Health ภาวะสุขภาพ โรคที่เจ็บป่วย การส่งเสริมสุขภาพด้านร่างกาย จิตใจ</h4>
+                    <div class="pl-4 space-y-3">
+                        <div>
+                            <label class="block font-bold mb-1">- ความรู้เรื่องการลดปัจจัยเสี่ยงต่อการเกิดโรคของผู้ป่วย:</label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_Diet"> ควบคุมอาหารตามหลักโภชนาการ</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_Exercise"> ออกกำลังกายสม่ำเสมอ</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_NoSmoking"> งด การสูบบุหรี่ และเครื่องดื่มแอลกอฮอล์ทุกชนิด</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_Stress"> จัดการความเครียด/พักผ่อนให้เพียงพอ</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_MedsPlan"> ใช้ยาตามแผนการรักษา อย่างเคร่งครัด</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_Infection"> หลีกเลี่ยงความเสี่ยงต่อการติดเชื้อ</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">- Empowerment การดูแลสุขภาพที่เหมาะสม เรื่อง:</label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_Emp_Knowledge"> ความรู้ที่ถูกต้องเกี่ยวกับโรค</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_Emp_Skill"> ทักษะในการจัดการตนเอง</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="H_Emp_Goal"> การตั้งเป้าหมายการดูแลสุขภาพ</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex gap-4 bg-gray-50 p-2 rounded">
+                        <input type="date" name="H_Date" class="border rounded p-1 text-xs">
+                        <input type="text" name="H_Giver" list="staff-list-datalist" placeholder="ผู้ให้คำแนะนำ" class="border rounded p-1 text-xs w-32">
+                        <input type="text" name="H_Receiver" placeholder="ผู้รับคำแนะนำ" class="border rounded p-1 text-xs w-32">
+                    </div>
+                </div>
 
-                         <!-- O: Outpatient -->
-                         <tr>
-                             <td class="border p-3 font-bold bg-gray-50 text-center align-top">
-                                 <span class="text-2xl text-teal-700 block">O</span>
-                                 Outpatient<br>
-                                 <span class="text-xs font-normal">นัดตรวจ</span>
-                             </td>
-                             <td class="border p-3 space-y-2">
-                                 <div class="flex gap-2 items-center"><label class="font-bold w-20">วันนัด:</label><input type="text" name="O_AppointDate" class="flex-1 border rounded p-1" placeholder="วว/ดด/ปปปป"></div>
-                                 <div class="flex gap-2 items-center"><label class="font-bold w-20">สถานที่:</label><input type="text" name="O_AppointPlace" class="flex-1 border rounded p-1"></div>
-                                 <div class="flex gap-2 items-center"><label class="font-bold w-20">การเตรียมตัว:</label><input type="text" name="O_Prep" class="flex-1 border rounded p-1"></div>
-                                 <div class="flex gap-2 items-center"><label class="font-bold w-20">แหล่งสนับสุน:</label><input type="text" name="O_SupportOther_Text" class="flex-1 border rounded p-1" placeholder="เช่น 1669, รพ.สต."></div>
-                             </td>
-                             <td class="border p-3"><input type="date" name="O_Date" class="w-full border rounded p-1 text-sm"></td>
-                             <td class="border p-3"><input type="text" name="O_Giver" class="w-full border rounded p-1 text-center" list="staff-list-datalist"></td>
-                             <td class="border p-3"><input type="text" name="O_Receiver" class="w-full border rounded p-1 text-center"></td>
-                         </tr>
+                <div class="border rounded p-4 border-l-4 border-l-teal-500 bg-white shadow-sm">
+                    <h4 class="font-bold text-lg text-teal-700 mb-2">O=Out Patient การดูแลต่อเนื่อง</h4>
+                    <div class="pl-4 space-y-3">
+                        <div class="flex flex-wrap gap-4 items-center">
+                            <div class="flex items-center gap-2">
+                                <label class="font-bold">- การมาตรวจตามนัด วันที่</label>
+                                <input type="text" name="O_AppointDate" class="border-b border-gray-400 outline-none w-32">
+                            </div>
+                            <div class="flex items-center gap-2 flex-grow">
+                                <label class="font-bold">สถานที่</label>
+                                <input type="text" name="O_AppointPlace" class="border-b border-gray-400 outline-none w-full">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="font-bold">การเตรียมตัว</label>
+                            <input type="text" name="O_Prep" class="border-b border-gray-400 outline-none w-full">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">- แหล่งข้อมูลเครือข่ายหรือแหล่งสนับสนุนทางสังคมที่ผู้ป่วยสามารถเข้าถึงบริการ:</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 ml-2">
+                                <label class="flex items-center gap-2"><input type="checkbox" name="O_Net_Leader"> ผู้นำชุมชน</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="O_Net_VHV"> อสม</label>
+                                <label class="flex items-center gap-2"><input type="checkbox" name="O_Net_HPH"> รพ.สต.</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" name="O_Net_Other_Check"> <span>อื่นๆ</span>
+                                    <input type="text" name="O_Net_Other_Text" class="border-b border-gray-400 outline-none w-full">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold">- การขอความช่วยเหลือ 1669</label>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex gap-4 bg-gray-50 p-2 rounded">
+                        <input type="date" name="O_Date" class="border rounded p-1 text-xs">
+                        <input type="text" name="O_Giver" list="staff-list-datalist" placeholder="ผู้ให้คำแนะนำ" class="border rounded p-1 text-xs w-32">
+                        <input type="text" name="O_Receiver" placeholder="ผู้รับคำแนะนำ" class="border rounded p-1 text-xs w-32">
+                    </div>
+                </div>
 
-                         <!-- D: Diet -->
-                         <tr>
-                             <td class="border p-3 font-bold bg-gray-50 text-center align-top">
-                                 <span class="text-2xl text-teal-700 block">D</span>
-                                 Diet<br>
-                                 <span class="text-xs font-normal">อาหาร</span>
-                             </td>
-                             <td class="border p-3 space-y-2">
-                                 <div class="flex gap-2 items-center"><label class="font-bold w-28">อาหารเฉพาะโรค:</label><input type="text" name="D_Diet_Specific" class="flex-1 border rounded p-1"></div>
-                                 <div class="flex gap-2 items-center"><label class="font-bold w-28">อาหารที่งด:</label><input type="text" name="D_Diet_Avoid" class="flex-1 border rounded p-1"></div>
-                                 <div class="flex gap-2 items-center"><label class="font-bold w-28">อื่นๆ:</label><input type="text" name="D_Diet_Other" class="flex-1 border rounded p-1"></div>
-                             </td>
-                             <td class="border p-3"><input type="date" name="D_Diet_Date" class="w-full border rounded p-1 text-sm"></td>
-                             <td class="border p-3"><input type="text" name="D_Diet_Giver" class="w-full border rounded p-1 text-center" list="staff-list-datalist"></td>
-                             <td class="border p-3"><input type="text" name="D_Diet_Receiver" class="w-full border rounded p-1 text-center"></td>
-                         </tr>
+                <div class="border rounded p-4 border-l-4 border-l-teal-500 bg-white shadow-sm">
+                    <h4 class="font-bold text-lg text-teal-700 mb-2">D=Diet การเลือกรับประทานอาหารความรู้ความเข้าใจด้านอาหารที่เหมาะสม กับสภาวะของโรคและสร้างเสริมสุขภาพ</h4>
+                    <div class="pl-4 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <label class="font-bold">- อาหารเฉพาะโรค ระบุ</label>
+                            <input type="text" name="D_Diet_Specific" class="border-b border-gray-400 outline-none w-full">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="font-bold">- อาหารที่ควรหลีกเลี่ยง</label>
+                            <input type="text" name="D_Diet_Avoid" class="border-b border-gray-400 outline-none w-full">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="font-bold">- อื่นๆ</label>
+                            <input type="text" name="D_Diet_Other" class="border-b border-gray-400 outline-none w-full">
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t flex gap-4 bg-gray-50 p-2 rounded">
+                        <input type="date" name="D_Diet_Date" class="border rounded p-1 text-xs">
+                        <input type="text" name="D_Diet_Giver" list="staff-list-datalist" placeholder="ผู้ให้คำแนะนำ" class="border rounded p-1 text-xs w-32">
+                        <input type="text" name="D_Diet_Receiver" placeholder="ผู้รับคำแนะนำ" class="border rounded p-1 text-xs w-32">
+                    </div>
+                </div>
 
-                     </tbody>
-                </table>
             </div>
             
             <div class="flex justify-end p-4 border-t bg-gray-50 rounded-b-xl gap-3">
@@ -859,54 +905,47 @@
     </div>
   </div>
 
-  <!-- Preview Template: Advice (D-M-E-T-H-O-D) -->
   <template id="preview-template-advice">
       <div class="a4-preview font-sarabun text-sm text-black relative p-8">
-          <!-- Header -->
-          <div class="text-center mb-6">
-              <h2 class="text-xl font-bold">การให้คำแนะนำการปฏิบัติตัวระหว่างเข้ารับการรักษาในโรงพยาบาลและเมื่อผู้ป่วยกลับบ้าน</h2>
-              <h3 class="font-bold text-lg">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
-          </div>
           
-          <!-- Content Table -->
-          <table class="w-full border-collapse border border-black text-left">
+          <div class="text-center font-bold text-lg mb-4">การให้คำแนะนำการปฏิบัติตัวระหว่างเข้ารับการรักษาในโรงพยาบาลและเมื่อผู้ป่วยกลับบ้าน</div>
+
+          <table class="w-full border-collapse border border-black text-left align-top">
               <thead>
-                  <tr class="bg-gray-100">
-                      <th class="border border-black p-2 w-[10%] text-center align-middle">หัวข้อ</th>
-                      <th class="border border-black p-2 text-center align-middle">รายละเอียดคำแนะนำ / กิจกรรม</th>
-                      <th class="border border-black p-2 w-[12%] text-center align-middle">ว/ด/ป</th>
-                      <th class="border border-black p-2 w-[12%] text-center align-middle">ผู้ให้</th>
-                      <th class="border border-black p-2 w-[12%] text-center align-middle">ผู้รับ</th>
+                  <tr class="bg-white">
+                      <th class="border border-black p-2 text-center w-[150px]">เรื่อง</th>
+                      <th class="border border-black p-2 text-center">คำแนะนำ</th>
+                      <th class="border border-black p-2 text-center w-[80px]">ว/ด/ป<br>ที่ให้<br>คำแนะนำ</th>
+                      <th class="border border-black p-2 text-center w-[100px]">ผู้ให้<br>คำแนะนำ</th>
+                      <th class="border border-black p-2 text-center w-[100px]">ผู้รับ<br>คำแนะนำ</th>
                   </tr>
               </thead>
               <tbody>
-                  <!-- D: Diagnosis -->
                   <tr>
-                      <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
-                          <span class="text-lg">D</span><br>Diagnosis<br><span class="font-normal text-xs">เรื่องโรค</span>
+                      <td class="border border-black p-2 align-top">
+                          <div>D=Diagnosis การให้ความรู้เรื่องโรค</div>
                       </td>
                       <td class="border border-black p-2 align-top">
-                          <div class="font-bold mb-1">ความรู้เรื่องโรค สาเหตุ อาการ และการปฏิบัติตัว:</div>
-                          <div class="whitespace-pre-wrap break-words pl-2" data-field="D_Detail"></div>
+                          <div>-ให้ความรู้เรื่องโรคที่เป็นอยู่ถึงสาเหตุ อาการ การปฏิบัติตัว ระบุ</div>
+                          <div class="border-b border-black border-dotted min-h-[20px]" data-field="D_Detail"></div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Receiver"></td>
                   </tr>
 
-                  <!-- M: Medicine -->
                   <tr>
-                      <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
-                          <span class="text-lg">M</span><br>Medicine<br><span class="font-normal text-xs">เรื่องยา</span>
+                      <td class="border border-black p-2 align-top">
+                          <div>M=Medicine การให้ความรู้เรื่องยา</div>
                       </td>
                       <td class="border border-black p-2 align-top">
-                          <div class="mb-2">
-                              <span class="font-bold underline">รายการยา / สรรพคุณ / วิธีใช้:</span><br>
-                              <div class="whitespace-pre-wrap break-words pl-2" data-field="M_Detail"></div>
+                          <div class="flex gap-1">
+                              <span>-ชนิดของยา</span>
+                              <span class="border-b border-black border-dotted flex-grow" data-field="M_Detail"></span>
                           </div>
-                          <div>
-                              <span class="font-bold underline">ผลข้างเคียง / ข้อควรระวัง:</span><br>
-                              <div class="whitespace-pre-wrap break-words pl-2" data-field="M_SideEffect"></div>
+                          <div class="flex gap-1 mt-1">
+                              <span>ฤทธิ์ของยา / ผลข้างเคียง</span>
+                              <span class="border-b border-black border-dotted flex-grow" data-field="M_SideEffect"></span>
                           </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="M_Date"></td>
@@ -914,44 +953,59 @@
                       <td class="border border-black p-2 text-center align-top" data-field="M_Receiver"></td>
                   </tr>
 
-                  <!-- E: Environment -->
                   <tr>
-                      <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
-                          <span class="text-lg">E</span><br>Environment<br><span class="font-normal text-xs">สิ่งแวดล้อม</span>
+                      <td class="border border-black p-2 align-top">
+                          <div>E=Environment & Economic การให้ความรู้ด้านสิ่งแวดล้อมและสภาวะเศรษฐกิจ</div>
                       </td>
                       <td class="border border-black p-2 align-top">
-                         <div class="grid grid-cols-2 gap-x-2 gap-y-1 mb-2 font-medium text-sm">
-                             <div data-chk="E_Meds" data-label="การจัดการยา (E_Meds)"></div>
-                             <div data-chk="E_Complication" data-label="ป้องกันภาวะแทรกซ้อน"></div>
-                             <div data-chk="E_Nutrition" data-label="โภชนาการ"></div>
-                             <div data-chk="E_Exercise" data-label="การออกกำลังกาย"></div>
-                         </div>
-                         <div class="border-t border-dotted border-gray-400 pt-1 mt-1">
-                             <span class="font-bold">อื่นๆ:</span> <span class="whitespace-pre-wrap break-words" data-field="E_Detail_Other"></span>
-                         </div>
+                          <div class="font-bold">- การดำรงชีวิตที่เหมาะสมกับสภาวะของโรค</div>
+                          <div class="leading-relaxed">
+                              <span data-chk="E_Nutrition"></span> การจัดการโภชนาการที่เหมาะสม 
+                              <span data-chk="E_Exercise"></span> การออกกำลังกายที่สม่ำเสมอ <br>
+                              <span data-chk="E_Meds"></span> การใช้ยาและการปฏิบัติตามแผนการรักษา 
+                              <span data-chk="E_Mood"></span> การจัดการอารมณ์และความเครียด <br>
+                              <span data-chk="E_Complication"></span> การป้องกันภาวะแทรกซ้อนและการดูแลตนเอง
+                          </div>
+                          <div class="font-bold mt-1">- ผู้ป่วยจำเป็นที่จะต้องได้รับการดูแลช่วยเหลือในเรื่อง</div>
+                          <div>
+                              <span data-chk="E_Family"></span> การสนับสนุนการมีส่วนร่วมของครอบครัวในการดูแลผู้ป่วย <br>
+                              <span data-chk="E_Economic"></span> การช่วยเหลือด้านสภาวะเศรษฐกิจ ปัญหาด้านสิทธิ์การรักษา
+                          </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="E_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="E_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="E_Receiver"></td>
                   </tr>
 
-                  <!-- T: Treatment -->
                   <tr>
-                      <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
-                          <span class="text-lg">T</span><br>Treatment<br><span class="font-normal text-xs">การรักษา</span>
+                      <td class="border border-black p-2 align-top">
+                          <div>T=Treatment แนวทางการรักษาพยาบาล</div>
                       </td>
                       <td class="border border-black p-2 align-top">
-                          <div class="grid grid-cols-2 gap-x-2 gap-y-1 mb-2 font-medium text-sm">
-                             <div data-chk="T_MedTreatment" data-label="การรักษาด้วยยา (Med)"></div>
-                             <div data-chk="T_IV" data-label="การให้สารน้ำ (IV)"></div>
-                             <div data-chk="T_WoundCare" data-label="การดูแลแผล (Wound Care)"></div>
-                             <div data-chk="T_CorrectMeds" data-label="การใช้ยาถูกต้อง"></div>
-                             <div data-chk="T_ObserveWound" data-label="สังเกตแผล/อาการ"></div>
+                          <div class="font-bold">- แนวทางการรักษาพยาบาล</div>
+                          <div>
+                              <span data-chk="T_MedTreatment"></span> การรักษาด้วยยา 
+                              <span data-chk="T_IV"></span> การให้สารน้ำ 
+                              <span data-chk="T_Blood"></span> ให้เลือด <br>
+                              <span data-chk="T_Surgery_Text_Check"></span> การผ่าตัด/หัตถการ ระบุ <span class="border-b border-black border-dotted px-1" data-field="T_Surgery_Text"></span> 
+                              <span data-chk="T_Other_Text_Check"></span> อื่นๆ ระบุ <span class="border-b border-black border-dotted px-1" data-field="T_Other_Text"></span>
                           </div>
-                          <div class="text-sm space-y-1 border-t border-dotted border-gray-400 pt-1">
-                              <div><b>ผ่าตัด/หัตถการ:</b> <span data-field="T_Surgery_Text"></span></div>
-                              <div><b>การดูแลตนเองอื่นๆ:</b> <span data-field="T_SelfCare_Other_Text"></span></div>
-                              <div><b>อื่นๆ:</b> <span data-field="T_Other_Text"></span></div>
+                          
+                          <div class="font-bold mt-1">- สาธิตวิธีการดูแลตนเองในเรื่อง</div>
+                          <div>
+                              <span data-chk="T_NG"></span> การให้อาหารทางสายยาง 
+                              <span data-chk="T_WoundCare"></span> การดูแลแผล 
+                              <span data-chk="T_SelfCare_Other_Check"></span> อื่นๆ ระบุ <span class="border-b border-black border-dotted px-1" data-field="T_SelfCare_Other_Text"></span>
+                          </div>
+
+                          <div class="font-bold mt-1">- ความสำคัญในการดูแลสุขภาพและการปฏิบัติตัวที่ถูกต้อง</div>
+                          <div class="leading-relaxed">
+                              <span data-chk="T_CorrectMeds"></span> รับประทานยาให้ถูกขนาด ถูกเวลา และต่อเนื่อง <br>
+                              <span data-chk="T_Diet"></span> ควบคุมและเลือกทานอาหารตามคำแนะนำเฉพาะโรค <br>
+                              <span data-chk="T_Exercise_Do"></span> ออกกำลังกายอย่างสม่ำเสมอและเหมาะสมกับสภาพร่างกาย <br>
+                              <span data-chk="T_Monitor"></span> ตรวจวัด น้ำตาล ความดัน และ สังเกตอาการผิดปกติ <br>
+                              <span data-chk="T_NoSmoking"></span> งด การสูบบุหรี่ และเครื่องดื่มแอลกอฮอล์ทุกชนิด <br>
+                              <span data-chk="T_ObserveWound"></span> สังเกตและ ดูแลบาดแผลหรืออาการผิดปกติ
                           </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="T_Date"></td>
@@ -959,18 +1013,25 @@
                       <td class="border border-black p-2 text-center align-top" data-field="T_Receiver"></td>
                   </tr>
 
-                  <!-- H: Health -->
                   <tr>
-                      <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
-                          <span class="text-lg">H</span><br>Health<br><span class="font-normal text-xs">สุขภาพ</span>
+                      <td class="border border-black p-2 align-top">
+                          <div>H=Health ภาวะสุขภาพ โรคที่เจ็บป่วย การส่งเสริมสุขภาพด้านร่างกาย จิตใจ</div>
                       </td>
                       <td class="border border-black p-2 align-top">
-                          <div class="grid grid-cols-1 gap-y-1 font-medium text-sm">
-                             <div data-chk="H_MedsPlan" data-label="ปฏิบัติตามแผนยา"></div>
-                             <div data-chk="H_Infection" data-label="ป้องกันการติดเชื้อ"></div>
-                             <div data-chk="H_Emp_Knowledge" data-label="มีความรู้ (Knowledge)"></div>
-                             <div data-chk="H_Emp_Skill" data-label="มีทักษะ (Skill)"></div>
-                             <div data-chk="H_Emp_Goal" data-label="มีเป้าหมาย (Goal)"></div>
+                          <div class="font-bold">- ความรู้เรื่องการลดปัจจัยเสี่ยงต่อการเกิดโรคของผู้ป่วย</div>
+                          <div class="leading-relaxed">
+                              <span data-chk="H_Diet"></span> ควบคุมอาหารตามหลักโภชนาการ 
+                              <span data-chk="H_Exercise"></span> ออกกำลังกายสม่ำเสมอ <br>
+                              <span data-chk="H_NoSmoking"></span> งด การสูบบุหรี่ และเครื่องดื่มแอลกอฮอล์ทุกชนิด <br>
+                              <span data-chk="H_Stress"></span> จัดการความเครียด/พักผ่อนให้เพียงพอ <br>
+                              <span data-chk="H_MedsPlan"></span> ใช้ยาตามแผนการรักษา อย่างเคร่งครัด <br>
+                              <span data-chk="H_Infection"></span> หลีกเลี่ยงความเสี่ยงต่อการติดเชื้อ
+                          </div>
+                          <div class="font-bold mt-1">- Empowerment การดูแลสุขภาพที่เหมาะสม เรื่อง</div>
+                          <div>
+                              <span data-chk="H_Emp_Knowledge"></span> ความรู้ที่ถูกต้องเกี่ยวกับโรค 
+                              <span data-chk="H_Emp_Skill"></span> ทักษะในการจัดการตนเอง <br>
+                              <span data-chk="H_Emp_Goal"></span> การตั้งเป้าหมายการดูแลสุขภาพ
                           </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="H_Date"></td>
@@ -978,31 +1039,49 @@
                       <td class="border border-black p-2 text-center align-top" data-field="H_Receiver"></td>
                   </tr>
 
-                  <!-- O: Outpatient -->
                   <tr>
-                      <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
-                          <span class="text-lg">O</span><br>Outpatient<br><span class="font-normal text-xs">นัดตรวจ</span>
+                      <td class="border border-black p-2 align-top">
+                          <div>O=Out Patient การดูแลต่อเนื่อง</div>
                       </td>
-                      <td class="border border-black p-2 align-top text-sm space-y-1">
-                          <div><b>วันนัด:</b> <span data-field="O_AppointDate"></span></div>
-                          <div><b>สถานที่:</b> <span data-field="O_AppointPlace"></span></div>
-                          <div><b>การเตรียมตัว:</b> <span data-field="O_Prep"></span></div>
-                          <div><b>แหล่งสนับสนุน:</b> <span data-field="O_SupportOther_Text"></span></div>
+                      <td class="border border-black p-2 align-top">
+                          <div>
+                              - การมาตรวจตามนัด วันที่ <span class="border-b border-black border-dotted px-1 min-w-[50px] inline-block" data-field="O_AppointDate"></span> 
+                              สถานที่ <span class="border-b border-black border-dotted px-1 min-w-[80px] inline-block" data-field="O_AppointPlace"></span>
+                          </div>
+                          <div>
+                              การเตรียมตัว <span class="border-b border-black border-dotted px-1 w-full inline-block" data-field="O_Prep"></span>
+                          </div>
+                          <div class="mt-1">
+                              - แหล่งข้อมูลเครือข่ายหรือแหล่งสนับสนุนทางสังคมที่ผู้ป่วยสามารถเข้าถึงบริการ 
+                              <span data-chk="O_Net_Leader"></span> ผู้นำชุมชน 
+                              <span data-chk="O_Net_VHV"></span> อสม 
+                              <span data-chk="O_Net_HPH"></span> รพ.สต. 
+                              <span data-chk="O_Net_Other_Check"></span> อื่นๆ <span class="border-b border-black border-dotted px-1" data-field="O_Net_Other_Text"></span>
+                          </div>
+                          <div>- การขอความช่วยเหลือ 1669</div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="O_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="O_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="O_Receiver"></td>
                   </tr>
 
-                   <!-- D (Diet) -->
-                   <tr>
-                      <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
-                          <span class="text-lg">D</span><br>Diet<br><span class="font-normal text-xs">อาหาร</span>
+                  <tr>
+                      <td class="border border-black p-2 align-top">
+                          <div>D=Diet การเลือกรับประทานอาหารความรู้ความเข้าใจด้านอาหารที่เหมาะสม กับสภาวะของโรคและสร้างเสริมสุขภาพ</div>
                       </td>
-                      <td class="border border-black p-2 align-top text-sm space-y-1">
-                          <div><b>อาหารเฉพาะโรค:</b> <span data-field="D_Diet_Specific"></span></div>
-                          <div><b>อาหารที่งด:</b> <span data-field="D_Diet_Avoid"></span></div>
-                          <div><b>อื่นๆ:</b> <span data-field="D_Diet_Other"></span></div>
+                      <td class="border border-black p-2 align-top">
+                          <div class="flex gap-1">
+                              <span>- อาหารเฉพาะโรค ระบุ</span>
+                              <span class="border-b border-black border-dotted flex-grow" data-field="D_Diet_Specific"></span>
+                          </div>
+                          <div class="flex gap-1 mt-1">
+                              <span>- อาหารที่ควรหลีกเลี่ยง</span>
+                              <span class="border-b border-black border-dotted flex-grow" data-field="D_Diet_Avoid"></span>
+                          </div>
+                          <div class="flex gap-1 mt-1">
+                              <span>- อื่นๆ</span>
+                              <span class="border-b border-black border-dotted flex-grow" data-field="D_Diet_Other"></span>
+                          </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Diet_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Diet_Giver"></td>
@@ -1010,9 +1089,6 @@
                   </tr>
               </tbody>
           </table>
-          <div class="mt-4 text-xs text-right text-gray-500">
-             SDDH-Advice-Form
-          </div>
       </div>
   </template>
 
