@@ -4162,7 +4162,7 @@ function renderBradenPage1(container, data, options = {}) {
             <div>10)ผู้ป่วยเรื้อรังที่ต้องนอนพักบนเตียงตลอด </div>
         </div>
     </div>
-    <div class="text-right text-[10px] mt-2 font-bold">- 1 -</div>
+    <div class="text-right text-[10px] mt-2 font-bold">Braden Scale Form Page 1/2</div>
     `;
 
     container.innerHTML = html;
@@ -4249,7 +4249,7 @@ function renderBradenPage2(container, data, options = {}) {
             </div>
         </div>
     </div>
-    <div class="text-right text-[10px] mt-4 font-bold">- 2 -</div>
+    <div class="text-right text-[10px] mt-4 font-bold">Braden Scale Form Page 2/2</div>
     `;
 
     container.innerHTML = html;
