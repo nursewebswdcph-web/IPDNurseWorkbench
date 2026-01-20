@@ -1271,42 +1271,42 @@ async function showFormPreview(formType) {
 
     try {
         if (formType === 'classify') {
-            chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย (Print View)";
+            chartPreviewTitle.textContent = "แบบบันทึกการจำแนกประเภทผู้ป่วย)";
             chartEditBtn.classList.add("hidden");
             chartAddNewBtn.classList.remove("hidden");
             chartAddNewBtn.dataset.form = "classify";
             await renderClassifyPrintMode(currentPatientAN);
         }
         else if (formType === '004') {
-            chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วย (FR-IPD-004)";
+            chartPreviewTitle.textContent = "แบบประเมินประวัติและสมรรถนะผู้ป่วยแรกรับ";
             chartEditBtn.classList.remove("hidden");
             chartEditBtn.dataset.form = "004";
             chartAddNewBtn.classList.add("hidden");
             await renderForm004PrintMode(currentPatientAN);
         }
         else if (formType === 'braden') {
-            chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale) - Print View";
+            chartPreviewTitle.textContent = "แบบประเมินแผลกดทับ (Braden Scale)";
             chartEditBtn.classList.remove("hidden");
             chartEditBtn.dataset.form = "braden"; 
             chartAddNewBtn.classList.add("hidden");
             await renderBradenPrintMode(currentPatientAN);
         }
         else if (formType === 'morse_maas') {
-            chartPreviewTitle.textContent = "แบบประเมินความเสี่ยง Morse / MAAS (Print View)";
+            chartPreviewTitle.textContent = "แบบประเมินความเสี่ยงพลัดตกหกล้ม Morse / MAAS";
             chartEditBtn.classList.remove("hidden");
             chartEditBtn.dataset.form = "morse_maas";
             chartAddNewBtn.classList.add("hidden");
             await renderMorsePrintMode(currentPatientAN);
         }
         else if (formType === 'advice') {
-            chartPreviewTitle.textContent = "การให้คำแนะนำการปฏิบัติตัว";
+            chartPreviewTitle.textContent = "แบบบันทึกการให้คำแนะนำผู้ป่วย (Discharge Planing)";
             chartEditBtn.classList.add("hidden");
             chartAddNewBtn.classList.remove("hidden");
             chartAddNewBtn.dataset.form = "advice";
             await showAdvicePreview(currentPatientAN);
         }
         else if (formType === '006') {
-            chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล";
+            chartPreviewTitle.textContent = "บันทึกความก้าวหน้าทางการพยาบาล Nursing Progress Note";
             chartEditBtn.classList.add("hidden");
             chartAddNewBtn.classList.remove("hidden");
             chartAddNewBtn.dataset.form = "006";
@@ -1448,70 +1448,60 @@ function closeAssessmentModal() {
 
 function populateAssessmentForm(data, targetForm) {
   if (!targetForm) return;
-  targetForm.reset(); // ล้างค่าเก่าออกก่อนเสมอ
+  targetForm.reset(); 
 
-  // 1. แสดง AN และ ชื่อผู้ป่วย (ส่วน Header ของ Modal)
-  if (targetForm.id === 'assessment-form') {
-    const anDisplay = targetForm.querySelector('#assess-an-display');
-    const nameDisplay = targetForm.querySelector('#assess-name-display');
-    if (anDisplay) anDisplay.textContent = data.AN || '';
-    if (nameDisplay) nameDisplay.textContent = data.Name || '';
-  }
-
-  // 2. แมพฟิลด์พิเศษที่ใช้ ID (ส่วนใหญ่เป็นฟิลด์ Readonly จากหน้าแรกรับ)
-  const fieldsById = {
-    'AdmitDate': 'assess-admit-date',
-    'AdmitTime': 'assess-admit-time',
-    'AdmittedFrom': 'assess-admit-from',
-    'Refer': 'assess-refer-from',
-    'ChiefComplaint': 'assess-cc',
-    'PresentIllness': 'assess-pi'
+  // --- 1. Auto-Populate Logic (ดึงข้อมูลแรกรับมาใส่) ---
+  // ถ้าใน data (ที่ดึงมาจากชีต Assessment) ไม่มีค่า ให้ใช้ค่าจาก currentPatientData (ที่มาจากชีต Patients)
+  const admitDate = data.AdmitDate || currentPatientData.AdmitDate || "";
+  const admitTime = data.AdmitTime || currentPatientData.AdmitTime || "";
+  const admitFrom = data.AdmittedFrom || currentPatientData.AdmittedFrom || "";
+  const refer = data.Refer || currentPatientData.Refer || "";
+  const cc = data.ChiefComplaint || currentPatientData.ChiefComplaint || "";
+  const pi = data.PresentIllness || currentPatientData.PresentIllness || "";
+  
+  // ใส่ค่าลงใน Input (ใช้ ID ที่เรากำหนดใน HTML ใหม่)
+  const setVal = (id, val) => { 
+      const el = targetForm.querySelector(`#${id}`); 
+      if(el) el.value = val; 
   };
 
-  for (const [key, id] of Object.entries(fieldsById)) {
-    const el = targetForm.querySelector(`#${id}`);
-    if (el) el.value = data[key] || '';
-  }
+  setVal('assess-admit-date', getISODate(new Date(admitDate))); // แปลงวันที่ให้ถูก Format input type=date
+  setVal('assess-admit-time', admitTime);
+  setVal('assess-admit-from', admitFrom);
+  setVal('assess-refer-from', refer);
+  setVal('assess-cc', cc);
+  setVal('assess-pi', pi);
 
-  // 3. วนลูปจัดการฟิลด์อื่นๆ ตาม "name" (Radio, Checkbox, Text, Select)
+  // --- 2. Map General Fields (ข้อมูลที่เคยบันทึกไว้) ---
   Object.keys(data).forEach(key => {
+    // ข้ามฟิลด์ที่เราจัดการไปแล้วด้านบน เพื่อไม่ให้ค่าว่างมาทับ
+    if(['AdmitDate','AdmitTime','AdmittedFrom','Refer','ChiefComplaint','PresentIllness'].includes(key)) return;
+
     const value = data[key];
     const inputs = targetForm.querySelectorAll(`[name="${key}"]`);
-
+    
     inputs.forEach(input => {
       if (input.type === 'radio') {
-        // ถ้าค่าใน data ตรงกับ value ของ radio ให้ติ๊กเลือก
-        if (String(input.value) === String(value)) {
-          input.checked = true;
-        }
+        if (String(input.value) === String(value)) input.checked = true;
       } else if (input.type === 'checkbox') {
-        // จัดการ Checkbox (รองรับทั้งค่า boolean และ string "true")
-        input.checked = (value === true || value === 'true' || value === 'on');
-      } else if (input.tagName === 'SELECT' || input.tagName === 'TEXTAREA' || input.type === 'text' || input.type === 'number') {
-        // ฟิลด์ทั่วไป
+        if (value === true || value === 'true' || value === 'on') input.checked = true;
+      } else {
         input.value = value || '';
       }
     });
   });
 
-  // 4. สั่งให้ระบบ Toggle (ซ่อน/แสดงช่องระบุเพิ่มเติม) ทำงานทันที
-  // วนลูปหา Input ที่เป็นตัวควบคุมการเปิด-ปิดช่องพิเศษ
-  targetForm.querySelectorAll('.assessment-radio-toggle').forEach(el => {
-    if (el.tagName === 'SELECT' || (el.type === 'radio' && el.checked)) {
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  });
-
-  // 5. จัดการข้อมูลผู้ประเมิน (Datalist/Position)
-  const assessorNameEl = targetForm.querySelector("#assessor-name");
-  const assessorPosEl = targetForm.querySelector("#assessor-position");
-  if (assessorNameEl) assessorNameEl.value = data.Assessor_Name || "";
-  if (assessorPosEl) assessorPosEl.value = data.Assessor_Position || "";
-
-  // 6. คำนวณคะแนน Braden ใหม่ตามข้อมูลที่ถูกติ๊ก
+  // --- 3. Trigger Calculations ---
+  // คำนวณ Braden Scale
   if (typeof calculateBradenScore === "function") {
-    calculateBradenScore(targetForm);
+      calculateBradenScore(targetForm);
   }
+  
+  // Trigger การแสดงผลช่องกรอกเพิ่มเติม (ถ้ามี radio ที่เลือกอยู่)
+  targetForm.querySelectorAll('.assessment-radio-toggle:checked').forEach(el => {
+      const targetId = el.dataset.controls;
+      if(targetId) targetForm.querySelector(`#${targetId}`)?.classList.remove('hidden');
+  });
 }
 
 async function handleSaveAssessment(event) {
