@@ -332,24 +332,45 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
-// --- ฟังก์ชันแจ้งเตือนโหลดแบบ Modern ---
-function showModernLoading(title = 'กำลังจัดเตรียมเอกสาร...') {
+function showLoading(title = 'กำลังประมวลผล...') {
     Swal.fire({
         html: `
-            <div class="flex flex-col items-center justify-center py-8">
-                <div class="relative mb-4">
-                    <div class="animate-spin rounded-full h-20 w-20 border-4 border-indigo-100 border-b-indigo-600"></div>
-                    <i class="fas fa-file-alt absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-indigo-600 text-2xl animate-pulse"></i>
+            <div class="flex flex-col items-center justify-center py-8 px-4">
+                <div class="relative mb-6">
+                    <div class="animate-spin rounded-full h-20 w-20 border-[6px] border-indigo-50 border-b-indigo-600 shadow-sm"></div>
+                    
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <i class="fas fa-notes-medical text-indigo-600 text-2xl animate-pulse"></i>
+                    </div>
                 </div>
-                <h2 class="text-xl font-bold text-gray-800">${title}</h2>
-                <p class="text-sm text-gray-500 mt-2 px-6 text-center">กำลังโหลดข้อมูลและจัดรูปแบบเอกสาร<br>กรุณารอสักครู่...</p>
+                
+                <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">${title}</h2>
+                
+                <div class="flex items-center gap-2 mt-3 text-sm text-slate-400 bg-slate-50 px-4 py-1.5 rounded-full">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                    </span>
+                    กำลังเชื่อมต่อฐานข้อมูล...
+                </div>
             </div>
         `,
         showConfirmButton: false,
         allowOutsideClick: false,
-        width: '420px',
+        width: '400px',
         padding: '0',
-        customClass: { popup: 'rounded-3xl shadow-2xl border border-gray-100' }
+        background: '#ffffff',
+        backdrop: `
+            rgba(255,255,255,0.6)
+            left top
+            no-repeat
+        `,
+        customClass: {
+            popup: 'rounded-3xl shadow-2xl border border-slate-100 overflow-hidden'
+        },
+        didOpen: () => {
+            // ไม่ต้องเรียก Swal.showLoading() ของเดิม
+        }
     });
 }
 
