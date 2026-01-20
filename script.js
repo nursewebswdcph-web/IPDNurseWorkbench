@@ -4984,4 +4984,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (adviceForm) {
         adviceForm.addEventListener("submit", handleSaveAdvice);
     }
+	// 14. Sidebar Toggle Logic (เพิ่มใหม่)
+    const sidebarBtn = document.getElementById('sidebar-toggle-btn');
+    const sidebarList = document.getElementById('chart-menu-list');
+    const sidebarArrow = document.getElementById('sidebar-arrow-icon');
+
+    if (sidebarBtn && sidebarList && sidebarArrow) {
+        sidebarBtn.addEventListener('click', () => {
+            // สลับสถานะแสดง/ซ่อน
+            if (sidebarList.classList.contains('hidden')) {
+                sidebarList.classList.remove('hidden');
+                sidebarArrow.innerHTML = '<i class="fas fa-chevron-up"></i>'; // เปลี่ยนไอคอนชี้ขึ้น
+            } else {
+                sidebarList.classList.add('hidden');
+                sidebarArrow.innerHTML = '<i class="fas fa-chevron-down"></i>'; // เปลี่ยนไอคอนชี้ลง
+            }
+        });
+    }
 });
