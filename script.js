@@ -2518,6 +2518,18 @@ async function showAdvicePreview(an) {
 }
 
 
+       chartPreviewContent.appendChild(clone);
+       chartEditBtn.classList.remove("hidden");
+       chartEditBtn.dataset.form = "advice";
+       chartAddNewBtn.classList.add("hidden"); 
+    }
+  } catch (e) {
+    Swal.close();
+    showError('โหลดข้อมูลไม่สำเร็จ', e.message);
+  }
+}
+
+
 // 4. ฟังก์ชัน openAdviceModal (เวอร์ชันแก้ไข: รวมเป็นอันเดียว)
 async function openAdviceModal(editData = null) {
     // 1. รีเซ็ตฟอร์มให้ว่างก่อนเสมอ
