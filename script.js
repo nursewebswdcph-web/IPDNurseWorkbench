@@ -1450,8 +1450,8 @@ function populateAssessmentForm(data, targetForm) {
   if (!targetForm) return;
   targetForm.reset(); 
 
-  // --- 1. Auto-Populate Logic (ดึงข้อมูลแรกรับมาใส่) ---
-  // ถ้าใน data (ที่ดึงมาจากชีต Assessment) ไม่มีค่า ให้ใช้ค่าจาก currentPatientData (ที่มาจากชีต Patients)
+  // --- 1. Auto-Populate from Registry (ดึงข้อมูลแรกรับ) ---
+  // เช็คว่ามีข้อมูลใน data (ที่ดึงมาจากชีต Assessment) หรือไม่ ถ้าไม่มีให้ใช้ข้อมูลจาก Patient Registry
   const admitDate = data.AdmitDate || currentPatientData.AdmitDate || "";
   const admitTime = data.AdmitTime || currentPatientData.AdmitTime || "";
   const admitFrom = data.AdmittedFrom || currentPatientData.AdmittedFrom || "";
@@ -1459,22 +1459,25 @@ function populateAssessmentForm(data, targetForm) {
   const cc = data.ChiefComplaint || currentPatientData.ChiefComplaint || "";
   const pi = data.PresentIllness || currentPatientData.PresentIllness || "";
   
-  // ใส่ค่าลงใน Input (ใช้ ID ที่เรากำหนดใน HTML ใหม่)
+  // ใส่ค่าลงใน Input ตาม ID ที่กำหนดใหม่ใน HTML
   const setVal = (id, val) => { 
       const el = targetForm.querySelector(`#${id}`); 
       if(el) el.value = val; 
   };
 
-  setVal('assess-admit-date', getISODate(new Date(admitDate))); // แปลงวันที่ให้ถูก Format input type=date
+  // แปลงวันที่สำหรับ input type="date" (YYYY-MM-DD)
+  const isoDate = admitDate ? getISODate(new Date(admitDate)) : "";
+
+  setVal('assess-admit-date', isoDate);
   setVal('assess-admit-time', admitTime);
   setVal('assess-admit-from', admitFrom);
   setVal('assess-refer-from', refer);
   setVal('assess-cc', cc);
   setVal('assess-pi', pi);
 
-  // --- 2. Map General Fields (ข้อมูลที่เคยบันทึกไว้) ---
+  // --- 2. Map General Fields (ข้อมูลอื่นๆ ที่เคยบันทึกไว้ในชีต Assessment) ---
   Object.keys(data).forEach(key => {
-    // ข้ามฟิลด์ที่เราจัดการไปแล้วด้านบน เพื่อไม่ให้ค่าว่างมาทับ
+    // ข้ามฟิลด์ที่เราจัดการไปแล้วด้านบน เพื่อป้องกันค่าว่างจากชีตมาทับข้อมูล Registry
     if(['AdmitDate','AdmitTime','AdmittedFrom','Refer','ChiefComplaint','PresentIllness'].includes(key)) return;
 
     const value = data[key];
@@ -1482,22 +1485,25 @@ function populateAssessmentForm(data, targetForm) {
     
     inputs.forEach(input => {
       if (input.type === 'radio') {
+        // เปรียบเทียบค่า Radio
         if (String(input.value) === String(value)) input.checked = true;
       } else if (input.type === 'checkbox') {
+        // ตรวจสอบค่า Checkbox (รองรับ true, 'true', 'on')
         if (value === true || value === 'true' || value === 'on') input.checked = true;
       } else {
+        // Text inputs
         input.value = value || '';
       }
     });
   });
 
   // --- 3. Trigger Calculations ---
-  // คำนวณ Braden Scale
+  // คำนวณคะแนน Braden
   if (typeof calculateBradenScore === "function") {
       calculateBradenScore(targetForm);
   }
   
-  // Trigger การแสดงผลช่องกรอกเพิ่มเติม (ถ้ามี radio ที่เลือกอยู่)
+  // แสดงผลช่องกรอกเพิ่มเติม (ถ้า Radio ถูกเลือกอยู่)
   targetForm.querySelectorAll('.assessment-radio-toggle:checked').forEach(el => {
       const targetId = el.dataset.controls;
       if(targetId) targetForm.querySelector(`#${targetId}`)?.classList.remove('hidden');
@@ -4323,6 +4329,9 @@ async function renderForm004PrintMode(an) {
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
         const result = await response.json();
+		// ผสานข้อมูล: เอาข้อมูลจาก Assessment มาทับ Registry (แต่ถ้า Assessment ว่าง ให้ใช้ Registry)
+        const combinedData = { ...currentPatientData, ...result.data }; 
+        const freshData = normalizeData004(combinedData); // ใช้ข้อมูลที่ผสานแล้ว
         
         // เรียกใช้ฟังก์ชัน Normalize ที่แก้ไขแล้วตรงนี้
         const freshData = normalizeData004(result.data || {}); 
