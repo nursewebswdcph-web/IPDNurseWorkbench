@@ -4321,7 +4321,7 @@ function normalizeData004(raw) {
 async function renderForm004PrintMode(an) {
     chartPreviewContent.innerHTML = "";
     
-    // Loading State
+    // แสดงสถานะกำลังโหลด
     const loadingDiv = document.createElement('div');
     loadingDiv.innerHTML = `<div class="text-center p-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div><p>กำลังโหลดแบบประเมิน...</p></div>`;
     chartPreviewContent.appendChild(loadingDiv);
@@ -4329,17 +4329,18 @@ async function renderForm004PrintMode(an) {
     try {
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getAssessmentData&an=${an}`);
         const result = await response.json();
-		// ผสานข้อมูล: เอาข้อมูลจาก Assessment มาทับ Registry (แต่ถ้า Assessment ว่าง ให้ใช้ Registry)
+
+        // แก้ไข: ผสานข้อมูลจาก Registry (Patient Data) และ Assessment Data เข้าด้วยกัน
+        // เพื่อให้ข้อมูลแรกรับดึงมาแสดงในหน้าพรีวิวได้ครบถ้วน
         const combinedData = { ...currentPatientData, ...result.data }; 
-        const freshData = normalizeData004(combinedData); // ใช้ข้อมูลที่ผสานแล้ว
         
-        // เรียกใช้ฟังก์ชัน Normalize ที่แก้ไขแล้วตรงนี้
-        const freshData = normalizeData004(result.data || {}); 
+        // ประกาศ freshData เพียงครั้งเดียวโดยใช้ข้อมูลที่ผสานแล้ว [cite: 29]
+        const freshData = normalizeData004(combinedData); 
         
-        // Clear Loading
+        // ล้างสถานะ Loading
         chartPreviewContent.innerHTML = "";
 
-        // Control Bar
+        // แถบควบคุม (Control Bar)
         const controlDiv = document.createElement('div');
         controlDiv.className = "flex justify-between items-center mb-4 bg-gray-100 p-2 rounded shadow print:hidden";
         controlDiv.innerHTML = `
@@ -4351,14 +4352,14 @@ async function renderForm004PrintMode(an) {
         previewContainer.className = "overflow-y-auto bg-gray-300 p-4 flex flex-col items-center gap-4 print:p-0 print:bg-white";
         chartPreviewContent.appendChild(previewContainer);
 
-        // Render Page 1
+        // แสดงผลหน้า 1 
         const page1 = document.createElement('div');
         page1.className = "bg-white shadow-lg print:shadow-none mx-auto overflow-hidden text-black font-sarabun relative mb-4 print:mb-0 print:break-after-page";
         page1.style.cssText = "width: 210mm; min-height: 297mm; padding: 10mm;";
         renderForm004Page1(page1, { data: freshData });
         previewContainer.appendChild(page1);
 
-        // Render Page 2
+        // แสดงผลหน้า 2 
         const page2 = document.createElement('div');
         page2.className = "bg-white shadow-lg print:shadow-none mx-auto overflow-hidden text-black font-sarabun relative";
         page2.style.cssText = "width: 210mm; min-height: 297mm; padding: 10mm;";
