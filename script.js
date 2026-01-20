@@ -4485,14 +4485,14 @@ function renderForm004Page1(container, options = {}) {
                 <div>
                     <div class="font-bold underline mb-1">1) การรับรู้เกี่ยวกับสุขภาพและการดูแล</div>
                     <div class="space-y-0.5">
-                        <div class="flex flex-wrap items-end whitespace-nowrap">ก่อนป่วย: ${chk(d.HP_Before, 'ดี', 'ดี')} ${chk(d.HP_Before, 'ไม่ดี', 'ไม่ดี:')} ${dot(d.HP_Before_Detail, "30px")}</div>
-                        <div class="flex flex-wrap items-end whitespace-nowrap">ป่วยครั้งนี้: ${chk(d.HP_Current, 'รุนแรง', 'รุนแรง')} ${chk(d.HP_Current, 'ไม่รุนแรง', 'ไม่รุนแรง')}</div>
+                        <div class="flex flex-wrap items-end whitespace-nowrap">ก่อนการเจ็บป่วย: ${chk(d.HP_Before, 'ดี', 'ดี')} ${chk(d.HP_Before, 'ไม่ดี', 'ไม่ดี:')} ${dot(d.HP_Before_Detail, "30px")}</div>
+                        <div class="flex flex-wrap items-end whitespace-nowrap">เจ็บป่วยครั้งนี้: ${chk(d.HP_Current, 'รุนแรง', 'รุนแรง')} ${chk(d.HP_Current, 'ไม่รุนแรง', 'ไม่รุนแรง')}</div>
                         <div class="flex flex-wrap whitespace-nowrap">การดูแล: ${chk(d.HP_Care, 'ไปรพ./คลินิก', 'ไปรพ./คลินิก')}</div>
                         <div class="flex flex-wrap whitespace-nowrap pl-4">${chk(d.HP_Care, 'ซื้อยารับประทาน', 'ซื้อยา')}</div>
                         <div class="whitespace-nowrap pl-4 flex items-center">${chk(d.HP_Care, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.HP_Care_Other, "60px")}</div>
                     </div>
                 </div>
-                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ความคาดหวัง: ${chk(d.HP_Expect, 'หาย', 'หาย')} ${chk(d.HP_Expect, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.HP_Expect, 'ไม่หาย', 'ไม่หาย')}</div>
+                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ความคาดหวังในการรักษาครั้งนี้: ${chk(d.HP_Expect, 'หาย', 'หาย')} ${chk(d.HP_Expect, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.HP_Expect, 'ไม่หาย', 'ไม่หาย')}</div>
             </div>
 
             <div class="p-1 flex flex-col justify-between">
@@ -4676,10 +4676,10 @@ function renderForm004Page2(container, options = {}) {
         
         <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
             <div class="p-1">
-                <div class="font-bold underline mb-1">7) การรับรู้ตนเองและอัตมโนทัศน์:</div>
+                <div class="font-bold underline mb-1">7) การรับรู้ตนเองและอัตมโนทัศน์:<span class="font-normal">การเจ็บป่วยมีผลกระทบต่อ</span></div>
                 <div class="space-y-1">
                     <div class="flex flex-wrap items-end">ภาพลักษณ์: ${chk(d.Self_Image, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Image, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Image, 'มี', 'มี:')} ${dot(d.Self_Image_Detail, "50px")}</div>
-                    <div class="flex flex-wrap items-end">อารมณ์: ${chk(d.Self_Mood, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Mood, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Mood, 'มี', 'มี:')} ${dot(d.Self_Mood_Detail, "50px")}</div>
+                    <div class="flex flex-wrap items-end">อารมณ์และจิตใจ: ${chk(d.Self_Mood, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Mood, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Mood, 'มี', 'มี:')} ${dot(d.Self_Mood_Detail, "50px")}</div>
                     <div class="flex flex-wrap items-end">ความสามารถดูแลตนเอง: ${chk(d.Self_Ability, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Ability, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Ability, 'มี', 'มี:')} ${dot(d.Self_Ability_Detail, "50px")}</div>
                 </div>
             </div>
@@ -4688,20 +4688,37 @@ function renderForm004Page2(container, options = {}) {
                 <div class="space-y-1">
                     <div class="flex flex-wrap">สิ่งที่ทำให้ไม่สบายใจ: ${chk(d.Stress_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Stress_Status, 'มี', 'มี')}</div>
                     <div class="pl-4 flex flex-wrap gap-y-0.5">
-                        ${chk(d.Stress_Causes, 'กลัวไม่หาย', 'กลัวไม่หาย')} ${chk(d.Stress_Causes, 'ค่ารักษาพยาบาล', 'ค่ารักษา')}
-                        ${chk(d.Stress_Causes, 'ขาดงาน/รายได้', 'ขาดรายได้')} ${chk(d.Stress_Causes, 'ครอบครัว', 'ครอบครัว')}
+                        ${chk(d.Stress_Causes, 'กลัวไม่หาย', 'กลัวไม่หาย')} ${chk(d.Stress_Causes, 'ค่ารักษาพยาบาล', 'ค่ารักษาพยาบาล')}
+                        ${chk(d.Stress_Causes, 'ขาดงาน/รายได้', 'ขาดงาน/รายได้')} ${chk(d.Stress_Causes, 'ครอบครัว', 'ครอบครัว')}
                         ${chk(d.Stress_Causes, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Stress_Cause_Other, "50px")}
                     </div>
-                    <div class="flex flex-wrap items-end">การแสดงออก: ${chk(d.Stress_Express, 'สีหน้าเรียบเฉย', 'เรียบเฉย')} ${chk(d.Stress_Express, 'วิตกกังวล', 'กังวล')} ${chk(d.Stress_Express, 'กลัว', 'กลัว')}</div>
-                    <div class="pl-4 flex flex-wrap items-end">${chk(d.Stress_Express, 'ซึมเศร้า', 'ซึมเศร้า')} ${chk(d.Stress_Express, 'หงุดหงิด', 'หงุดหงิด')} ${chk(d.Stress_Express, 'อื่นๆ', 'อื่น:')} ${dot(d.Stress_Express_Other, "50px")}</div>
-                    <div class="flex flex-wrap items-end">วิธีแก้ไข: ${chk(d.Cope_Method, 'ปรึกษาผู้อื่น', 'ปรึกษาผู้อื่น')} ${chk(d.Cope_Method, 'แยกตัวเอง', 'แยกตัว')} ${chk(d.Cope_Method, 'อื่นๆ', 'อื่นๆ')} ${dot(d.Cope_Method_Other, "30px")}</div>
+                    
+                    <div class="flex flex-wrap items-end gap-x-1">
+                        การแสดงออก: 
+                        ${chk(d.Stress_Express, 'สีหน้าเรียบเฉย', 'สีหน้าเรียบเฉย')} 
+                        ${chk(d.Stress_Express, 'วิตกกังวล', 'วิตกกังวล')} 
+                        ${chk(d.Stress_Express, 'กลัว', 'กลัว')}
+                    </div>
+                    <div class="pl-4 flex flex-wrap items-end gap-x-1">
+                        ${chk(d.Stress_Express, 'ซึมเศร้า', 'ซึมเศร้า')} 
+                        ${chk(d.Stress_Express, 'เอะอะโวยวาย', 'เอะอะโวยวาย')}
+                        ${chk(d.Stress_Express, 'หงุดหงิด', 'หงุดหงิด')} 
+                        ${chk(d.Stress_Express, 'อื่นๆ', 'อื่น:')} ${dot(d.Stress_Express_Other, "50px")}
+                    </div>
+
+                    <div class="flex flex-wrap items-end gap-x-1">
+                        แก้ไขความไม่สบายใจ: 
+                        ${chk(d.Cope_Method, 'ปรึกษาผู้อื่น', 'ปรึกษาผู้อื่น')} 
+                        ${chk(d.Cope_Method, 'แยกตัวเอง', 'แยกตัวเอง')} 
+                        ${chk(d.Cope_Method, 'ใช้ยา', 'ใช้ยา')} 
+                        ${chk(d.Cope_Method, 'อื่นๆ', 'อื่นๆ')} ${dot(d.Cope_Method_Other, "30px")}
+                    </div>
                 </div>
             </div>
-        </div>
 
         <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
             <div class="p-1">
-                <div class="font-bold underline mb-1">9) บทบาทและสัมพันธภาพ: <span class="font-normal">กระทบต่อ</span></div>
+                <div class="font-bold underline mb-1">9) บทบาทและสัมพันธภาพ: <span class="font-normal">การเจ็บป่วยมีผลกระทบต่อบทบาท</span></div>
                 <div class="flex flex-wrap gap-2">
                     ${chk(d.Roles, 'ครอบครัว', 'ครอบครัว')} ${chk(d.Roles, 'อาชีพ', 'อาชีพ')} ${chk(d.Roles, 'การศึกษา', 'การศึกษา')}
                 </div>
@@ -4721,21 +4738,21 @@ function renderForm004Page2(container, options = {}) {
             <div class="p-1">
                 <div class="font-bold underline mb-1">11) คุณค่าและความเชื่อ</div>
                 <div class="space-y-1">
-                    <div class="flex flex-wrap items-end">เชื่อว่าป่วยเพราะ: ${chk(d.Belief_Cause, 'การปฏิบัติตัวไม่ถูกต้อง', 'ทำตัวผิด')} ${chk(d.Belief_Cause, 'เคราะห์กรรม', 'เคราะห์กรรม')}</div>
+                    <div class="flex flex-wrap items-end">เจ็บป่วยครั้งนี้เชื่อว่า: ${chk(d.Belief_Cause, 'การปฏิบัติตัวไม่ถูกต้อง', 'ปฏิบัติตัวไม่ถูกต้อง')} ${chk(d.Belief_Cause, 'เคราะห์กรรม', 'เคราะห์กรรม')}</div>
                     <div class="pl-4 flex flex-wrap items-end">${chk(d.Belief_Cause, 'ตามวัย', 'ตามวัย')} ${chk(d.Belief_Cause, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Belief_Cause_Detail, "50px")}</div>
-                    <div class="flex flex-wrap items-end">ปฏิบัติศาสนกิจ: ${chk(d.Religion_Practice, 'ไม่มี', 'ไม่มี')} ${chk(d.Religion_Practice, 'ต้องการ', 'ต้องการ:')} ${dot(d.Religion_Practice_Detail, "80px")}</div>
-                    <div class="flex flex-wrap items-end">สิ่งยึดเหนี่ยว: ${chk(d.Belief_Anchor_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Belief_Anchor_Status, 'มี', 'มี:')} ${dot(d.Belief_Anchor_Detail, "80px")}</div>
+                    <div class="flex flex-wrap items-end">ต้องการปฏิบัติศาสนกิจ: ${chk(d.Religion_Practice, 'ไม่มี', 'ไม่มี')} ${chk(d.Religion_Practice, 'ต้องการ', 'ต้องการ:')} ${dot(d.Religion_Practice_Detail, "80px")}</div>
+                    <div class="flex flex-wrap items-end">สิ่งยึดเหนี่ยวทางจิตใจ: ${chk(d.Belief_Anchor_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Belief_Anchor_Status, 'มี', 'มี:')} ${dot(d.Belief_Anchor_Detail, "80px")}</div>
                 </div>
             </div>
             <div class="p-1">
-                <div class="font-bold underline mb-1">12) การมีส่วนร่วมของผู้ป่วย/ญาติ</div>
+                <div class="font-bold underline mb-1">12) การมีส่วนร่วมของผู้ป่วยและญาติในการรักษาพยาบาล</div>
                 <div>${chk(d.Partic_Status, 'ไม่ต้องการ', 'ไม่ต้องการ')}</div>
                 <div class="flex flex-wrap items-start">
                     ${chk(d.Partic_Status, 'ต้องการ', 'ต้องการ:')} 
                     <div class="flex flex-col ml-1">
-                        ${chk(d.Partic_Needs, 'Info', 'ทราบข้อมูลโรค/การรักษา')}
-                        ${chk(d.Partic_Needs, 'Skill', 'เรียนรู้ทักษะดูแลตนเอง')}
-                        ${chk(d.Partic_Needs, 'Team', 'ร่วมกับทีมสุขภาพในการดูแล')}
+                        ${chk(d.Partic_Needs, 'Info', 'ทราบข้อมูลเรื่องโรคและแนวทางการรักษา')}
+                        ${chk(d.Partic_Needs, 'Skill', 'เรียนรู้ทักษะดูแลตนเอง/ผู้ป่วย')}
+                        ${chk(d.Partic_Needs, 'Team', 'ร่วมกับทีมสุขภาพในการดูแลผู้ป่วยระหว่างอยู่ในโรงพยาบาล')}
                         <div class="flex items-end">${chk(d.Partic_Other, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Partic_Other, "80px")}</div>
                     </div>
                 </div>
@@ -4751,9 +4768,9 @@ function renderForm004Page2(container, options = {}) {
             </div>
             <div class="flex flex-wrap items-end gap-4 mt-1">
                 <div>ลักษณะ: ${chk(d.Pain_Pattern, 'ครั้งคราว', 'ครั้งคราว')} ${chk(d.Pain_Pattern, 'ตลอดเวลา', 'ตลอดเวลา')}</div>
-                <div class="flex items-center">
+                <div class="flex items-center flex-wrap">
                     <span class="mr-2">Pain Scale:</span>
-                    <span class="font-bold border border-black px-2 rounded bg-gray-50">${d.Pain_Scale_Score !== undefined ? d.Pain_Scale_Score : '-'}</span>
+                    ${[0,1,2,3,4,5,6,7,8,9,10].map(n => chk(String(d.Pain_Scale_Score), String(n), n)).join(' ')}
                 </div>
             </div>
             
@@ -4763,15 +4780,22 @@ function renderForm004Page2(container, options = {}) {
 
             <div class="flex flex-wrap mt-1 gap-2">
                 <span class="font-bold">กระทบต่อ:</span>
-                ${chk(d.Pain_Effects, 'Eat', 'การกิน')} ${chk(d.Pain_Effects, 'Sleep', 'การนอน')}
-                ${chk(d.Pain_Effects, 'Activity', 'กิจกรรม')} ${chk(d.Pain_Effects, 'Mood', 'อารมณ์')}
-                ${chk(d.Pain_Effects, 'Elim', 'ขับถ่าย')}
+                ${chk(d.Pain_Effects, 'Eat', 'การกิน')} 
+                ${chk(d.Pain_Effects, 'Sleep', 'การนอน')}
+                ${chk(d.Pain_Effects, 'Activity', 'การทำกิจกรรม')} 
+                ${chk(d.Pain_Effects, 'Mood', 'อารมณ์ /สังคม')}
+                ${chk(d.Pain_Effects, 'Elim', 'การขับถ่าย')} 
+                ${chk(d.Pain_Effects, 'Sex', 'เพศสัมพันธุ์')}
             </div>
             <div class="flex flex-wrap mt-1 gap-2">
                 <span class="font-bold">บรรเทาปวด:</span>
-                ${chk(d.Pain_Relief, 'Cold', 'ประคบเย็น')} ${chk(d.Pain_Relief, 'Hot', 'ประคบร้อน')}
-                ${chk(d.Pain_Relief, 'Massage', 'นวด')} ${chk(d.Pain_Relief, 'Relax', 'ผ่อนคลาย')}
-                ${chk(d.Pain_Relief, 'Repo', 'จัดท่า')} ${chk(d.Pain_Relief, 'Meds', 'ยา')}
+                ${chk(d.Pain_Relief, 'Cold', 'Cold compression')} 
+                ${chk(d.Pain_Relief, 'Hot', 'Hot compression')}
+                ${chk(d.Pain_Relief, 'Massage', 'Massage')} 
+                ${chk(d.Pain_Relief, 'Relax', 'Relaxation')}
+                ${chk(d.Pain_Relief, 'Repo', 'Reposition')} 
+                ${chk(d.Pain_Relief, 'Rest', 'Rest/Sleep')}
+                ${chk(d.Pain_Relief, 'Meds', 'Medication')}
             </div>
         </div>
 
@@ -4792,11 +4816,11 @@ function renderForm004Page2(container, options = {}) {
                 <tbody>
                 ${[
                     ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด', 'จำกัดมาก', 'จำกัดเล็กน้อย', 'ไม่บกพร่อง', d.Braden_Sensory],
-                    ['ความเปียกชื้น', 'ตลอดเวลา', 'มาก', 'บางครั้ง', 'น้อยมาก', d.Braden_Moisture],
-                    ['กิจกรรม', 'บนเตียงตลอด', 'นั่งรถเข็น', 'เดินบ้าง', 'เดินปกติ', d.Braden_Activity],
-                    ['การเคลื่อนไหว', 'ไม่ได้เลย', 'ได้น้อย', 'ได้บ้าง', 'ปกติ', d.Braden_Mobility],
-                    ['โภชนาการ', 'ไม่เพียงพอ', 'อาจไม่พอ', 'เพียงพอ', 'ดีเยี่ยม', d.Braden_Nutrition],
-                    ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยง', 'ไม่มี', '', d.Braden_Friction]
+                    ['ความเปียกชื้น', 'เปียกชื้นตลอดเวลา', 'เปียกชื้นมาก', 'เปียกชื้นเป็นบางครั้ง', 'เปียกชื้นน้อยมาก', d.Braden_Moisture],
+                    ['กิจกรรม', 'นอนอยู่กับที่ตลอดเวลา', 'ใช้นั่งรถเข็น', 'เดินได้บ้าง', 'เดินได้ปกติ', d.Braden_Activity],
+                    ['การเคลื่อนไหว', 'ไม่ได้เลย', 'ได้น้อยต้องมีผู้ช่วยเหลือ', 'เคลื่อนไหวเองได้บ้าง', 'เคลื่อนไหวได้ปกติ', d.Braden_Mobility],
+                    ['โภชนาการ', 'ไม่เพียงพอ', 'อาจไม่เพียงพอเกือบทุกมื้อ', 'เพียงพอ', 'ดีเยี่ยม', d.Braden_Nutrition],
+                    ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยงต่อการเกิดปัญหา', 'ไม่มีปัญหา', '', d.Braden_Friction]
                 ].map((row, idx) => {
                     const score = getBScore(row[5]);
                     const b1 = score == 1 ? 'font-bold bg-gray-200' : '';
@@ -4841,12 +4865,12 @@ function renderForm004Page2(container, options = {}) {
                 ${chk(String(d.Fall_Age_Elder).toLowerCase(), 'true', 'ผู้สูงอายุ > 65 ปี')}
             </div>
             <div class="grid grid-cols-2 gap-x-4 mt-1">
-                <div class="flex justify-between"><span>สมอง/จิตผิดปกติ</span> <div>${chk(d.Fall_Mental, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Mental, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>ปัญหาการมองเห็น</span> <div>${chk(d.Fall_Vision, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Vision, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>ประวัติพลัดตกหกล้ม</span> <div>${chk(d.Fall_History, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_History, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>การเดิน/ทรงตัว</span> <div>${chk(d.Fall_Gait, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Gait, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>ยานอนหลับ/Psychotropics</span> <div>${chk(d.Fall_Meds, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Meds, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between font-bold"><span>ต้องเฝ้าระวัง</span> <div>${chk(d.Fall_Prevention, 'จำเป็น', 'จำเป็น')} ${chk(d.Fall_Prevention, 'ไม่จำเป็น', 'ไม่จำเป็น')}</div></div>
+                <div class="flex justify-between"><span>สภาวะทางสมอง/จิตผิดปกติ</span> <div>${chk(d.Fall_Mental, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Mental, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>มีปัญหาการมองเห็น</span> <div>${chk(d.Fall_Vision, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Vision, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>มีประวัติพลัดตกหกล้ม/ชัก</span> <div>${chk(d.Fall_History, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_History, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>มีปัญหาในการเดิน/ทรงตัว</span> <div>${chk(d.Fall_Gait, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Gait, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between"><span>ใช้ยานอนหลับ/Psychotropics/Sedative</span> <div>${chk(d.Fall_Meds, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Meds, 'มี', 'มี')}</div></div>
+                <div class="flex justify-between font-bold"><span>จำเป็นต้องได้รับการป้องกัน</span> <div>${chk(d.Fall_Prevention, 'จำเป็น', 'จำเป็น')} ${chk(d.Fall_Prevention, 'ไม่จำเป็น', 'ไม่จำเป็น')}</div></div>
             </div>
         </div>
 
