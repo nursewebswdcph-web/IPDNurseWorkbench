@@ -4457,7 +4457,9 @@ function renderForm004Page1(container, options = {}) {
         </div>
 
     </div>
+    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">FR-IPD-004 Page 1/2</div>
     `;
+    
 
     // Assembly without Footer
     container.innerHTML = `
@@ -4708,7 +4710,7 @@ function renderForm004Page2(container, options = {}) {
         </div>
     </div>
     
-    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 2 -</div>
+    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">FR-IPD-004 Page 2/2</div>
     `;
 
     container.innerHTML = `
