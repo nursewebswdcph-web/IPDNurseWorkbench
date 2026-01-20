@@ -844,9 +844,9 @@
     </div>
   </div>
 
-  <!-- Preview Template: Advice (D-M-E-T-H-O-D) - พรีวิวแบบเต็มรูปแบบ -->
+  <!-- Preview Template: Advice (D-M-E-T-H-O-D) -->
   <template id="preview-template-advice">
-      <div class="a4-preview font-sarabun text-sm text-black relative">
+      <div class="a4-preview font-sarabun text-sm text-black relative p-8">
           <!-- Header -->
           <div class="text-center mb-6">
               <h2 class="text-xl font-bold">การให้คำแนะนำการปฏิบัติตัวระหว่างเข้ารับการรักษาในโรงพยาบาลและเมื่อผู้ป่วยกลับบ้าน</h2>
@@ -857,71 +857,85 @@
           <table class="w-full border-collapse border border-black text-left">
               <thead>
                   <tr class="bg-gray-100">
-                      <th class="border border-black p-2 w-[15%] text-center align-middle">เรื่อง</th>
-                      <th class="border border-black p-2 text-center align-middle">คำแนะนำ / การปฏิบัติ</th>
+                      <th class="border border-black p-2 w-[10%] text-center align-middle">หัวข้อ</th>
+                      <th class="border border-black p-2 text-center align-middle">รายละเอียดคำแนะนำ / กิจกรรม</th>
                       <th class="border border-black p-2 w-[12%] text-center align-middle">ว/ด/ป</th>
                       <th class="border border-black p-2 w-[12%] text-center align-middle">ผู้ให้</th>
                       <th class="border border-black p-2 w-[12%] text-center align-middle">ผู้รับ</th>
                   </tr>
               </thead>
               <tbody>
-                  <!-- D -->
+                  <!-- D: Diagnosis -->
                   <tr>
                       <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
                           <span class="text-lg">D</span><br>Diagnosis<br><span class="font-normal text-xs">เรื่องโรค</span>
                       </td>
-                      <td class="border border-black p-2 align-top text-wrap-full" data-field="D_Detail"></td>
+                      <td class="border border-black p-2 align-top">
+                          <div class="font-bold mb-1">ความรู้เรื่องโรค สาเหตุ อาการ และการปฏิบัติตัว:</div>
+                          <div class="whitespace-pre-wrap break-words pl-2" data-field="D_Detail"></div>
+                      </td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="D_Receiver"></td>
                   </tr>
-                  <!-- M -->
+
+                  <!-- M: Medicine -->
                   <tr>
                       <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
                           <span class="text-lg">M</span><br>Medicine<br><span class="font-normal text-xs">เรื่องยา</span>
                       </td>
                       <td class="border border-black p-2 align-top">
-                          <div class="mb-2"><span class="font-bold underline">รายการยา/สรรพคุณ:</span><br><span class="text-wrap-full" data-field="M_Detail"></span></div>
-                          <div><span class="font-bold underline">ผลข้างเคียง:</span><br><span class="text-wrap-full" data-field="M_SideEffect"></span></div>
+                          <div class="mb-2">
+                              <span class="font-bold underline">รายการยา / สรรพคุณ / วิธีใช้:</span><br>
+                              <div class="whitespace-pre-wrap break-words pl-2" data-field="M_Detail"></div>
+                          </div>
+                          <div>
+                              <span class="font-bold underline">ผลข้างเคียง / ข้อควรระวัง:</span><br>
+                              <div class="whitespace-pre-wrap break-words pl-2" data-field="M_SideEffect"></div>
+                          </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="M_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="M_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="M_Receiver"></td>
                   </tr>
-                  <!-- E -->
+
+                  <!-- E: Environment -->
                   <tr>
                       <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
                           <span class="text-lg">E</span><br>Environment<br><span class="font-normal text-xs">สิ่งแวดล้อม</span>
                       </td>
                       <td class="border border-black p-2 align-top">
-                         <div class="flex flex-wrap gap-x-4 gap-y-1 mb-2 font-bold text-xs">
-                             <span data-chk="E_Meds">จัดการยา</span>
-                             <span data-chk="E_Complication">ป้องกันภาวะแทรกซ้อน</span>
-                             <span data-chk="E_Nutrition">โภชนาการ</span>
-                             <span data-chk="E_Exercise">ออกกำลังกาย</span>
+                         <div class="grid grid-cols-2 gap-x-2 gap-y-1 mb-2 font-medium text-sm">
+                             <div data-chk="E_Meds" data-label="การจัดการยา (E_Meds)"></div>
+                             <div data-chk="E_Complication" data-label="ป้องกันภาวะแทรกซ้อน"></div>
+                             <div data-chk="E_Nutrition" data-label="โภชนาการ"></div>
+                             <div data-chk="E_Exercise" data-label="การออกกำลังกาย"></div>
                          </div>
-                         <div class="text-wrap-full" data-field="E_Detail_Other"></div>
+                         <div class="border-t border-dotted border-gray-400 pt-1 mt-1">
+                             <span class="font-bold">อื่นๆ:</span> <span class="whitespace-pre-wrap break-words" data-field="E_Detail_Other"></span>
+                         </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="E_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="E_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="E_Receiver"></td>
                   </tr>
-                  <!-- T -->
+
+                  <!-- T: Treatment -->
                   <tr>
                       <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
                           <span class="text-lg">T</span><br>Treatment<br><span class="font-normal text-xs">การรักษา</span>
                       </td>
                       <td class="border border-black p-2 align-top">
-                          <div class="flex flex-wrap gap-x-4 gap-y-1 mb-2 font-bold text-xs">
-                             <span data-chk="T_MedTreatment">ให้ยา</span>
-                             <span data-chk="T_IV">ให้สารน้ำ</span>
-                             <span data-chk="T_WoundCare">ทำแผล</span>
-                             <span data-chk="T_CorrectMeds">ใช้ยาถูกวิธี</span>
-                             <span data-chk="T_ObserveWound">สังเกตแผล</span>
+                          <div class="grid grid-cols-2 gap-x-2 gap-y-1 mb-2 font-medium text-sm">
+                             <div data-chk="T_MedTreatment" data-label="การรักษาด้วยยา (Med)"></div>
+                             <div data-chk="T_IV" data-label="การให้สารน้ำ (IV)"></div>
+                             <div data-chk="T_WoundCare" data-label="การดูแลแผล (Wound Care)"></div>
+                             <div data-chk="T_CorrectMeds" data-label="การใช้ยาถูกต้อง"></div>
+                             <div data-chk="T_ObserveWound" data-label="สังเกตแผล/อาการ"></div>
                           </div>
-                          <div class="text-xs space-y-1">
+                          <div class="text-sm space-y-1 border-t border-dotted border-gray-400 pt-1">
                               <div><b>ผ่าตัด/หัตถการ:</b> <span data-field="T_Surgery_Text"></span></div>
-                              <div><b>ดูแลตนเองอื่นๆ:</b> <span data-field="T_SelfCare_Other_Text"></span></div>
+                              <div><b>การดูแลตนเองอื่นๆ:</b> <span data-field="T_SelfCare_Other_Text"></span></div>
                               <div><b>อื่นๆ:</b> <span data-field="T_Other_Text"></span></div>
                           </div>
                       </td>
@@ -929,30 +943,32 @@
                       <td class="border border-black p-2 text-center align-top" data-field="T_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="T_Receiver"></td>
                   </tr>
-                  <!-- H -->
+
+                  <!-- H: Health -->
                   <tr>
                       <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
                           <span class="text-lg">H</span><br>Health<br><span class="font-normal text-xs">สุขภาพ</span>
                       </td>
                       <td class="border border-black p-2 align-top">
-                          <div class="flex flex-wrap gap-x-4 gap-y-1 font-bold text-xs">
-                             <span data-chk="H_MedsPlan">ปฏิบัติตามแผนยา</span>
-                             <span data-chk="H_Infection">ป้องกันการติดเชื้อ</span>
-                             <span data-chk="H_Emp_Knowledge">มีความรู้ (Knowledge)</span>
-                             <span data-chk="H_Emp_Skill">มีทักษะ (Skill)</span>
-                             <span data-chk="H_Emp_Goal">มีเป้าหมาย (Goal)</span>
+                          <div class="grid grid-cols-1 gap-y-1 font-medium text-sm">
+                             <div data-chk="H_MedsPlan" data-label="ปฏิบัติตามแผนยา"></div>
+                             <div data-chk="H_Infection" data-label="ป้องกันการติดเชื้อ"></div>
+                             <div data-chk="H_Emp_Knowledge" data-label="มีความรู้ (Knowledge)"></div>
+                             <div data-chk="H_Emp_Skill" data-label="มีทักษะ (Skill)"></div>
+                             <div data-chk="H_Emp_Goal" data-label="มีเป้าหมาย (Goal)"></div>
                           </div>
                       </td>
                       <td class="border border-black p-2 text-center align-top" data-field="H_Date"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="H_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="H_Receiver"></td>
                   </tr>
-                  <!-- O -->
+
+                  <!-- O: Outpatient -->
                   <tr>
                       <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
                           <span class="text-lg">O</span><br>Outpatient<br><span class="font-normal text-xs">นัดตรวจ</span>
                       </td>
-                      <td class="border border-black p-2 align-top text-xs space-y-1">
+                      <td class="border border-black p-2 align-top text-sm space-y-1">
                           <div><b>วันนัด:</b> <span data-field="O_AppointDate"></span></div>
                           <div><b>สถานที่:</b> <span data-field="O_AppointPlace"></span></div>
                           <div><b>การเตรียมตัว:</b> <span data-field="O_Prep"></span></div>
@@ -962,12 +978,13 @@
                       <td class="border border-black p-2 text-center align-top" data-field="O_Giver"></td>
                       <td class="border border-black p-2 text-center align-top" data-field="O_Receiver"></td>
                   </tr>
+
                    <!-- D (Diet) -->
                    <tr>
                       <td class="border border-black p-2 font-bold bg-gray-50 align-top text-center">
                           <span class="text-lg">D</span><br>Diet<br><span class="font-normal text-xs">อาหาร</span>
                       </td>
-                      <td class="border border-black p-2 align-top text-xs space-y-1">
+                      <td class="border border-black p-2 align-top text-sm space-y-1">
                           <div><b>อาหารเฉพาะโรค:</b> <span data-field="D_Diet_Specific"></span></div>
                           <div><b>อาหารที่งด:</b> <span data-field="D_Diet_Avoid"></span></div>
                           <div><b>อื่นๆ:</b> <span data-field="D_Diet_Other"></span></div>
@@ -978,6 +995,9 @@
                   </tr>
               </tbody>
           </table>
+          <div class="mt-4 text-xs text-right text-gray-500">
+             SDDH-Advice-Form
+          </div>
       </div>
   </template>
 
