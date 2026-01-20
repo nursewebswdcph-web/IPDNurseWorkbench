@@ -2415,8 +2415,7 @@ dischargeForm.querySelector('[name="Nurse_Name"]').addEventListener('change', (e
     }
 });
 
-// 3. สร้างฟังก์ชัน showAdvicePreview (วางไว้ใกล้ๆ showDischargePreview)
-// ฟังก์ชันแสดง Preview การให้คำแนะนำ (แก้ไขเรื่องซ่อน Checkbox และปุ่ม Edit)
+// 3. ฟังก์ชัน showAdvicePreview (ปรับปรุงใหม่ แสดงข้อมูลครบถ้วน 100%)
 async function showAdvicePreview(an) {
   showLoading('กำลังโหลดคำแนะนำ...');
   try {
@@ -2425,7 +2424,7 @@ async function showAdvicePreview(an) {
     Swal.close();
     
     const data = result.data;
-    currentAdviceData = data; // เก็บข้อมูลไว้ใช้ตอนกดปุ่มแก้ไข
+    currentAdviceData = data; 
 
     const spanStatus = document.getElementById('last-updated-advice');
     if (spanStatus) spanStatus.textContent = data ? "บันทึกแล้ว" : "ยังไม่บันทึก";
@@ -2433,7 +2432,6 @@ async function showAdvicePreview(an) {
     chartPreviewContent.innerHTML = "";
 
     if (!data) {
-       // กรณีไม่มีข้อมูล
        chartPreviewContent.innerHTML = `
          <div class="text-center py-10 text-gray-400">
             <p>-- ยังไม่มีการบันทึกคำแนะนำ --</p>
@@ -2443,60 +2441,58 @@ async function showAdvicePreview(an) {
        chartEditBtn.classList.add("hidden");
        chartAddNewBtn.classList.add("hidden");
     } else {
-       // กรณีมีข้อมูล
        const template = document.getElementById("preview-template-advice");
-       if (!template) {
-           console.error("ไม่พบ Template: preview-template-advice");
-           return;
-       }
+       if (!template) return;
+       
        const clone = template.content.cloneNode(true);
        
-       // วนลูปใส่ข้อมูล
-       for (const key in data) {
-           const el = clone.querySelector(`[data-field="${key}"]`);
-           if (el) {
+       // Helper Format Date
+       const fmtDate = (dStr) => {
+           if(!dStr) return "";
+           try {
+               const d = new Date(dStr);
+               return d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
+           } catch(e) { return dStr; }
+       };
+
+       // === วนลูปเพื่อ Map ข้อมูลลงใน Template ===
+       
+       // 1. จัดการข้อมูล Text และ Date ทั่วไป (data-field)
+       const fieldEls = clone.querySelectorAll('[data-field]');
+       fieldEls.forEach(el => {
+           const key = el.getAttribute('data-field');
+           if (data[key]) {
                let val = data[key];
-
-               // 1. จัดการวันที่ (Format Date เป็นไทยย่อ)
-               if (key.includes('Date') && val && !key.includes('Appoint')) {
-                   try { 
-                     let dateObj = new Date(val);
-                     let yearBE = (dateObj.getFullYear() + 543).toString().slice(-2);
-                     let month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-                     let day = dateObj.getDate().toString().padStart(2, '0');
-                     val = `${day}/${month}/${yearBE}`;
-                   } catch(e){}
-               }
-
-               // 2. Logic ซ่อน Checkbox ที่ไม่ได้เลือก
-               // หา Parent Element ที่เป็นบรรทัดของ Checkbox นั้น
-               const parent = el.parentElement; 
-               // ตรวจสอบว่าเป็นบรรทัด Checkbox จริงหรือไม่ (ดูจากวงเล็บ [ )
-               const isCheckboxLine = parent && (parent.innerText.includes('['));
-
-               if (val === 'on' || val === true || val === 'true') {
-                   // ถ้าเลือก: ใส่เครื่องหมายถูก และแสดงบรรทัดนั้น
-                   el.innerHTML = '<b class="text-green-600 font-bold">/</b>'; 
-                   if(isCheckboxLine) parent.style.display = ""; 
-               } else if (!val || val === 'false') {
-                   // ถ้าไม่เลือก: ลบข้อความ และสั่งซ่อนบรรทัด (display: none)
-                   el.textContent = ''; 
-                   if(isCheckboxLine) {
-                      parent.style.display = "none"; 
-                   }
-               } else {
-                   // ถ้าเป็น Text ธรรมดา
-                   el.textContent = val;
-               }
+               // ถ้าเป็นฟิลด์วันที่ ให้แปลงฟอร์แมต
+               if (key.includes('Date') && !key.includes('Appoint')) val = fmtDate(val);
+               el.textContent = val;
+           } else {
+               el.textContent = "-"; 
            }
-       }
+       });
+
+       // 2. จัดการข้อมูล Checkbox (data-chk) ให้แสดง [ ] หรือ [ / ]
+       const chkEls = clone.querySelectorAll('[data-chk]');
+       chkEls.forEach(chk => {
+           const key = chk.getAttribute('data-chk');
+           const label = chk.getAttribute('data-label') || ""; // ดึงข้อความกำกับจาก HTML
+           
+           let symbol = "[&nbsp;&nbsp;&nbsp;]"; // ค่าเริ่มต้น: กล่องว่าง
+           let textClass = "";
+
+           // ตรวจสอบว่าในฐานข้อมูลมีค่าเป็น 'on', 'true', หรือ true หรือไม่
+           if (data[key] === 'on' || data[key] === true || data[key] === 'true') {
+               symbol = "[ / ]"; // ถ้าเลือก: ใส่เครื่องหมาย /
+               textClass = "font-bold text-black"; // เน้นข้อความ
+           }
+
+           // สร้าง HTML ใส่กลับเข้าไป
+           chk.innerHTML = `<span class="font-mono text-sm mr-1">${symbol}</span> <span class="${textClass}">${label}</span>`;
+       });
 
        chartPreviewContent.appendChild(clone);
-       
-       // **จุดสำคัญที่แก้ปัญหาปุ่มแก้ไข:**
        chartEditBtn.classList.remove("hidden");
-       chartEditBtn.dataset.form = "advice"; // กำหนดค่านี้ เพื่อให้ Event Listener รู้ว่าต้องเปิดฟอร์มไหน
-       
+       chartEditBtn.dataset.form = "advice";
        chartAddNewBtn.classList.add("hidden"); 
     }
   } catch (e) {
@@ -2505,6 +2501,30 @@ async function showAdvicePreview(an) {
   }
 }
 
+// 4. ฟังก์ชัน openAdviceModal (ปรับให้ดึงค่ามาใส่ฟอร์มได้ถูกต้อง)
+function openAdviceModal(editData = null) {
+    adviceForm.reset();
+    if (editData) {
+        for (const key in editData) {
+            const input = adviceForm.querySelector(`[name="${key}"]`);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    // ตรวจสอบค่า 'on', 'true', true สำหรับ Checkbox
+                    input.checked = (editData[key] === 'on' || editData[key] === true || editData[key] === 'true');
+                } else if (input.type === 'date') {
+                     try { input.value = getISODate(new Date(editData[key])); } catch(e){}
+                } else {
+                    input.value = editData[key];
+                }
+            }
+        }
+    } else {
+        const now = new Date();
+        const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        adviceForm.querySelectorAll('input[type="date"]').forEach(inp => inp.value = localDate);
+    }
+    adviceModal.classList.remove("hidden");
+}
 // 4. สร้างฟังก์ชัน openAdviceModal
 function openAdviceModal(editData = null) {
     adviceForm.reset();
