@@ -4758,7 +4758,7 @@ function renderForm004Page2(container, options = {}) {
             </div>
             
             <div class="my-1 flex justify-center">
-                <div class="h-8 bg-gradient-to-r from-green-300 via-yellow-300 to-red-500 w-64 rounded-full border border-gray-400"></div>
+                <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" style="height: 60px; max-width: 100%;" alt="Pain Scale">
             </div>
 
             <div class="flex flex-wrap mt-1 gap-2">
