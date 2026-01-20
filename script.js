@@ -4160,7 +4160,7 @@ async function renderForm004PrintMode(an) {
 }
 
 // =================================================================
-// PAGE 1 RENDERER (สมบูรณ์ 100% - แสดงเนื้อหาครบถ้วน)
+// PAGE 1 RENDERER (แก้ไข: ดึง V/S และ ADL ให้ถูกต้อง 100%)
 // =================================================================
 function renderForm004Page1(container, options = {}) {
     const d = options.data || {};
@@ -4197,12 +4197,13 @@ function renderForm004Page1(container, options = {}) {
         return dt.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }) + "/" + y;
     };
 
+    // แก้ไข Logic การเช็ค ADL ให้ตรงกับค่าใน Dropdown ("ทำได้เอง", "บางส่วน", "ไม่ได้เลย")
     const checkADL = (val, target) => {
         if (!val) return '';
         const v = String(val).trim();
-        if (target === 'Independent' && (v === 'Independent' || v === 'ทำได้เอง')) return '/';
-        if (target === 'Partial' && (v === 'Partial' || v === 'ช่วยเหลือบ้าง' || v === 'บางส่วน')) return '/';
-        if (target === 'Dependent' && (v === 'Dependent' || v === 'ไม่ได้เลย' || v === 'พึ่งพาผู้อื่น')) return '/';
+        if (target === 'Independent' && (v === 'ทำได้เอง' || v === 'Independent')) return '/';
+        if (target === 'Partial' && (v === 'บางส่วน' || v === 'Partial')) return '/';
+        if (target === 'Dependent' && (v === 'ไม่ได้เลย' || v === 'Dependent' || v === 'ใช้อุปกรณ์')) return '/';
         return '';
     };
 
@@ -4257,10 +4258,12 @@ function renderForm004Page1(container, options = {}) {
             <div class="flex items-end"><span class="font-bold w-24">อาการสำคัญ</span><div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.ChiefComplaint || ''}</div></div>
             <div class="flex items-end"><span class="font-bold w-32">ประวัติการเจ็บป่วย</span><div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.PresentIllness || ''}</div></div>
             <div class="flex items-end"><span class="font-bold w-48">อาการและอาการแสดงแรกรับ</span><div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.AdmitSymptoms || ''}</div></div>
+            
+            <!-- แก้ไขจุดที่ 1: ดึงข้อมูล V/S จากคอลัมน์ Admit_xx ให้ถูกต้อง -->
             <div class="flex items-end mt-1">
                 <span class="font-bold mr-2">สัญญาณชีพแรกรับ</span>
-                BT ${dot(d.BT, "40px")} (°C) <span class="ml-4">PR</span> ${dot(d.PR, "40px")} (/min)
-                <span class="ml-4">RR</span> ${dot(d.RR, "40px")} (/min) <span class="ml-4">BP</span> ${dot(d.BP, "80px")} (mmHg)
+                BT ${dot(d.Admit_BT, "40px")} (°C) <span class="ml-4">PR</span> ${dot(d.Admit_PR, "40px")} (/min)
+                <span class="ml-4">RR</span> ${dot(d.Admit_RR, "40px")} (/min) <span class="ml-4">BP</span> ${dot(d.Admit_BP, "80px")} (mmHg)
             </div>
 
             <!-- History -->
@@ -4378,8 +4381,11 @@ function renderForm004Page1(container, options = {}) {
                 </tr>
                 ${['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'].map((act, i) => {
                     const label = ['รับประทานอาหาร', 'ทำความสะอาดปาก/ฟัน', 'การแต่งตัว', 'การเดิน', 'การขับถ่าย', 'การอาบน้ำ'][i];
-                    const b = d.ADL?.[`${act}_Before`];
-                    const c = d.ADL?.[`${act}_Current`];
+                    
+                    // แก้ไขจุดที่ 2: ดึงข้อมูล ADL โดยตรงจากคอลัมน์ ADL_xx_Before/Current
+                    const b = d['ADL_' + act + '_Before'];
+                    const c = d['ADL_' + act + '_Current'];
+
                     return `
                     <tr>
                         <td class="border border-black text-left pl-2">${label}</td>
@@ -4458,12 +4464,11 @@ function renderForm004Page1(container, options = {}) {
         <div class="flex flex-col justify-between h-full">
             <div>${contentHtml}</div>
             <div>
-                <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">- 1 -</div>
+                 <!-- No Print Footer Here -->
             </div>
         </div>
     `;
 }
-
 // =================================================================
 // PAGE 2 RENDERER (สมบูรณ์ 100% - แสดงเนื้อหาครบถ้วน)
 // =================================================================
