@@ -4313,7 +4313,7 @@ function renderBradenPage1(container, data, options = {}) {
     const p = currentPatientData || {}; 
     const d = data || {};
     
-    const wardName = p.Ward || "........................"; [cite_start]// [cite: 3]
+    const wardName = p.Ward || "........................";
     
     // --- Helpers ---
     const formatDateFull = (dateStr) => {
@@ -4322,15 +4322,15 @@ function renderBradenPage1(container, data, options = {}) {
         if (isNaN(dt.getTime())) return dateStr;
         let y = dt.getFullYear();
         if (y < 2400) y += 543;
-        return dt.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }) + "/" + y; [cite_start]// [cite: 8, 9]
+        return dt.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }) + "/" + y;
     };
     
-    const admitDate = formatDateFull(d.AdmitDate_Braden || p.AdmitDate); [cite_start]// [cite: 8]
-    const firstAssessDate = formatDateFull(d.FirstAssessDate); [cite_start]// [cite: 4]
-    const transferDate = formatDateFull(d.TransferDate); [cite_start]// [cite: 9]
+    const admitDate = formatDateFull(d.AdmitDate_Braden || p.AdmitDate);
+    const firstAssessDate = formatDateFull(d.FirstAssessDate);
+    const transferDate = formatDateFull(d.TransferDate);
     
-    const isNoPU = (d.PressureUlcer_Adm_Status === 'ไม่มี') ? '✓' : '&nbsp;'; [cite_start]// [cite: 5]
-    const isHasPU = (d.PressureUlcer_Adm_Status === 'มี') ? '✓' : '&nbsp;'; [cite_start]// [cite: 5]
+    const isNoPU = (d.PressureUlcer_Adm_Status === 'ไม่มี') ? '✓' : '&nbsp;';
+    const isHasPU = (d.PressureUlcer_Adm_Status === 'มี') ? '✓' : '&nbsp;';
     
     const dotted = (text, minW = "50px") => `<span class="border-b border-black border-dotted px-1 inline-block text-center font-bold text-blue-900 whitespace-nowrap overflow-hidden align-bottom" style="min-width:${minW}; height: 1.4em;">${text || "&nbsp;"}</span>`;
     const getISODate = (date) => {
@@ -4391,7 +4391,7 @@ function renderBradenPage1(container, data, options = {}) {
     html += `</tr></thead><tbody>`;
 
     const getBScore = (val) => parseInt(val, 10) || 0;
-    [cite_start]// Data Structure for Table Rows [cite: 14]
+    // Data Structure for Table Rows [cite: 14]
     const criteria = [
         { name: "1. การรับความรู้สึก", items: ["1.1 ไม่ตอบสนอง (1)", "1.2 มี Pain Stimuli (2)", "1.3 สับสน สื่อไม่ได้ทุกครั้ง (3)", "1.4 ไม่มีความบกพร่อง ปกติ (4)"], id: "Sensory" },
         { name: "2. การเปียกชื้นของผิวหนัง", items: ["2.1 เปียกชุ่มตลอดเวลา Diarrhea (1)", "2.2 ปัสสาวะราด / อุจจาระราดบ่อยครั้ง (2)", "2.3 ปัสสาวะราด / อุจจาระราดบางครั้ง (3)", "2.4 ไม่เปียก/กลั้นปัสสาวะและอุจจาระได้/Retain Cath (4)"], id: "Moisture" },
