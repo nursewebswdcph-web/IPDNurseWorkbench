@@ -2501,6 +2501,7 @@ async function showAdvicePreview(an) {
   }
 }
 
+
 // 4. ฟังก์ชัน openAdviceModal (ปรับให้ดึงค่ามาใส่ฟอร์มได้ถูกต้อง)
 function openAdviceModal(editData = null) {
     adviceForm.reset();
