@@ -3901,6 +3901,7 @@ function renderBradenPage1(container, data, options = {}) {
         <div class="flex gap-4">
              <span>HN: ${currentPatientData.HN}</span>
              <span>AN: ${currentPatientData.AN}</span>
+			 <span>หอผู้ป่วย: ${p.Ward || '-'}</span>
         </div>
     </div>
     <div class="text-[11px] leading-loose mb-4 border border-black p-2 font-sarabun text-black">
