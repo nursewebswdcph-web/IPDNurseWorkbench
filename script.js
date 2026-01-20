@@ -2502,10 +2502,20 @@ async function showAdvicePreview(an) {
 }
 
 
-// 4. ฟังก์ชัน openAdviceModal (ปรับให้ดึงค่ามาใส่ฟอร์มได้ถูกต้อง)
-function openAdviceModal(editData = null) {
+// 4. ฟังก์ชัน openAdviceModal (เวอร์ชันแก้ไข: รวมเป็นอันเดียว)
+async function openAdviceModal(editData = null) {
+    // 1. รีเซ็ตฟอร์มให้ว่างก่อนเสมอ
     adviceForm.reset();
+
+    // 2. โหลดรายชื่อพยาบาลเข้า Datalist (เพื่อให้ช่องกรอกชื่อพยาบาลมีตัวเลือก)
+    // (เรียกใช้ฟังก์ชันที่มีอยู่แล้วใน script.js)
+    if (typeof refreshStaffDatalists === 'function') {
+        await refreshStaffDatalists();
+    }
+
     if (editData) {
+        // === โหมดแก้ไข (Edit Mode) ===
+        // วนลูปข้อมูลที่ส่งมา แล้วนำไปใส่ใน Input ตาม attribute "name"
         for (const key in editData) {
             const input = adviceForm.querySelector(`[name="${key}"]`);
             if (input) {
@@ -2513,44 +2523,77 @@ function openAdviceModal(editData = null) {
                     // ตรวจสอบค่า 'on', 'true', true สำหรับ Checkbox
                     input.checked = (editData[key] === 'on' || editData[key] === true || editData[key] === 'true');
                 } else if (input.type === 'date') {
-                     try { input.value = getISODate(new Date(editData[key])); } catch(e){}
+                    // แปลงวันที่ให้เป็น YYYY-MM-DD เพื่อแสดงผลใน input type="date"
+                    try { 
+                        if(editData[key]) {
+                            input.value = getISODate(new Date(editData[key])); 
+                        }
+                    } catch(e){}
                 } else {
+                    // ข้อมูล Text ทั่วไป
                     input.value = editData[key];
                 }
             }
         }
     } else {
+        // === โหมดเพิ่มใหม่ (New Mode) ===
+        // ตั้งค่าวันที่เริ่มต้นเป็น "วันนี้" ให้กับทุกช่องวันที่ในฟอร์มเพื่อความสะดวก
         const now = new Date();
+        // ปรับ Timezone เพื่อให้ได้วันที่ปัจจุบันของไทย (Local)
         const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-        adviceForm.querySelectorAll('input[type="date"]').forEach(inp => inp.value = localDate);
+        
+        adviceForm.querySelectorAll('input[type="date"]').forEach(inp => {
+            inp.value = localDate;
+        });
     }
+
+    // 3. แสดง Modal
     adviceModal.classList.remove("hidden");
 }
-// 4. สร้างฟังก์ชัน openAdviceModal
-function openAdviceModal(editData = null) {
-    adviceForm.reset();
-    
-    if (editData) {
-        // กรณีแก้ไข: เติมข้อมูลเดิม
-        for (const key in editData) {
-            const input = adviceForm.querySelector(`[name="${key}"]`);
-            if (input) {
-                if (input.type === 'checkbox') {
-                    if (editData[key] === 'on' || editData[key] === true || editData[key] === 'true') input.checked = true;
-                } else if (input.type === 'date') {
-                     try { input.value = getISODate(new Date(editData[key])); } catch(e){}
-                } else {
-                    input.value = editData[key];
-                }
-            }
-        }
-    } else {
-        // กรณีเพิ่มใหม่: ใส่วันที่ปัจจุบัน
-        const now = new Date();
-        const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-        adviceForm.querySelectorAll('input[type="date"]').forEach(inp => inp.value = localDate);
+
+async function handleSaveAdvice(event) {
+    event.preventDefault(); // <--- หัวใจสำคัญ: หยุดการรีโหลดหน้าจอ
+    showLoading('กำลังบันทึกคำแนะนำ...');
+
+    // ตรวจสอบ AN
+    if (!currentPatientAN) {
+        showError('ข้อผิดพลาด', 'ไม่พบข้อมูลผู้ป่วย (AN) กรุณาโหลดหน้าใหม่');
+        return;
     }
-    adviceModal.classList.remove("hidden");
+
+    const formData = new FormData(adviceForm);
+    const data = Object.fromEntries(formData.entries());
+    
+    // เพิ่ม AN ลงไปในข้อมูลที่จะส่ง
+    data.AN = currentPatientAN;
+
+    // (Option) จัดการ Checkbox ที่ไม่ได้ติ๊กให้เป็นค่าว่างหรือ false (ถ้าจำเป็น)
+    // แต่ Code.gs รองรับค่าว่างอยู่แล้ว จึงส่งไปตามปกติได้เลย
+
+    try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({ 
+                action: "saveAdviceFormData", 
+                formData: data 
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showSuccess('บันทึกสำเร็จ!', 'ข้อมูลคำแนะนำถูกบันทึกเรียบร้อยแล้ว');
+            closeModal('advice-form-modal'); // ปิด Modal
+            
+            // รีโหลดหน้าแสดงผลตัวอย่าง (Preview)
+            showAdvicePreview(currentPatientAN);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error("Save Advice Error:", error);
+        showError('บันทึกไม่สำเร็จ', error.message);
+    }
 }
 
 // 2. แสดง Preview (007)
@@ -4748,13 +4791,14 @@ function renderForm004Page2(container, options = {}) {
 }
 
 // ----------------------------------------------------------------
-// (10) MAIN EVENT LISTENERS
+// (10) MAIN EVENT LISTENERS (Updated)
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
     updateClock(); 
     setInterval(updateClock, 1000);
     loadWards();
 
+    // 1. Close Buttons for Modals
     const closeButtons = [
         { btn: "close-admit-modal-btn", modal: "admit-modal" },
         { btn: "cancel-admit-btn", modal: "admit-modal" },
@@ -4777,16 +4821,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // 2. Handle Click Outside Modal to Close
     window.addEventListener("click", (e) => {
         if (e.target.classList.contains('fixed') && e.target.classList.contains('bg-black')) {
             e.target.classList.add("hidden");
         }
     });
 
+    // 3. Ward Selection
     if (wardSwitcher) {
         wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
     }
 
+    // 4. Patient Table Interaction (Details & Chart)
     patientTableBody.addEventListener('click', (e) => {
         const target = e.target;
         if (target.tagName === 'A' && target.dataset.an) {
@@ -4799,6 +4846,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // 5. Admit Form Logic
     if (openAdmitModalBtn) openAdmitModalBtn.addEventListener("click", openAdmitModal);
     if (closeAdmitModalBtn) closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
     if (admitForm) admitForm.addEventListener("submit", handleAdmitSubmit);
@@ -4808,6 +4856,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (admitAgeInput) admitAgeInput.value = calculateAge(beDate);
     });
 
+    // 6. Details Form Logic
     if (closeDetailsModalBtn) closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
     if (editPatientBtn) editPatientBtn.addEventListener("click", enableEditMode);
     if (detailsForm) detailsForm.addEventListener("submit", handleUpdateSubmit);
@@ -4817,6 +4866,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (detailsAgeInput) detailsAgeInput.value = calculateAge(beDate);
     });
 
+    // 7. Chart Navigation
     if (closeChartBtn) closeChartBtn.addEventListener("click", closeChart);
 
     chartPage.addEventListener('click', (e) => {
@@ -4846,9 +4896,11 @@ document.addEventListener("DOMContentLoaded", () => {
         else showComingSoon(); 
     });
 
+    // 8. Assessment Form Logic (004)
     if (assessmentForm) {
         assessmentForm.addEventListener("submit", handleSaveAssessment);
         assessmentForm.addEventListener('change', (e) => {
+            // Auto Calculate Braden
             if (e.target.classList.contains('braden-score')) {
                 let total = 0;
                 assessmentForm.querySelectorAll('.braden-score:checked').forEach(r => total += parseInt(r.value));
@@ -4858,6 +4910,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateBradenResult(total); 
                 }
             }
+            // Auto Toggle Fields
             if (e.target.classList.contains('assessment-radio-toggle')) {
                 const groupName = e.target.name;
                 const form = e.target.closest('form');
@@ -4873,6 +4926,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // 9. Staff Datalist Auto-fill Position
     document.body.addEventListener('input', (e) => {
         if (e.target.list && e.target.list.id === 'staff-list-datalist') {
             const staff = globalStaffList.find(s => s.fullName === e.target.value.trim());
@@ -4887,16 +4941,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // 10. Braden Form
     const bForm = document.getElementById("braden-form");
     if (bForm) {
         bForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             if (typeof handleSaveBradenMonitoring === "function") {
                 handleSaveBradenMonitoring();
+            } else if (typeof saveBradenPage === "function") {
+                 // Fallback if handleSaveBradenMonitoring name changed
+                 // Assuming you have a handler function
             }
         });
     }
 
+    // 11. Morse Pagination
     const mPrev = document.getElementById("morse-prev-page-btn");
     const mNext = document.getElementById("morse-next-page-btn");
     if(mPrev) mPrev.addEventListener("click", () => {
@@ -4906,6 +4965,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentMorsePage++; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
     });
 
+    // 12. Classification Pagination
     const classifyPrevBtn = document.getElementById("classify-prev-page-btn");
     const classifyNextBtn = document.getElementById("classify-next-page-btn");
     const classifyAddBtn = document.getElementById("classify-add-page-btn");
@@ -4918,5 +4978,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (classifyAddBtn) {
         classifyAddBtn.addEventListener("click", () => { changeClassifyPage(1); });
+    }
+
+    // 13. Advice Form (Added)
+    if (adviceForm) {
+        adviceForm.addEventListener("submit", handleSaveAdvice);
     }
 });
