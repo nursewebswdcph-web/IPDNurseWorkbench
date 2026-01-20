@@ -2431,7 +2431,7 @@ dischargeForm.querySelector('[name="Nurse_Name"]').addEventListener('change', (e
     }
 });
 
-// 3. ฟังก์ชัน showAdvicePreview (ปรับปรุงใหม่ แสดงข้อมูลครบถ้วน 100%)
+// 3. ฟังก์ชัน showAdvicePreview (แก้ไขใหม่สมบูรณ์: ใช้ไอคอน Checkbox)
 async function showAdvicePreview(an) {
   showLoading('กำลังโหลดคำแนะนำ...');
   try {
@@ -2471,39 +2471,34 @@ async function showAdvicePreview(an) {
            } catch(e) { return dStr; }
        };
 
-       // === วนลูปเพื่อ Map ข้อมูลลงใน Template ===
-       
-       // 1. จัดการข้อมูล Text และ Date ทั่วไป (data-field)
+       // 1. Map Data Fields (Text) - จัดการช่องว่างให้สวยงาม
        const fieldEls = clone.querySelectorAll('[data-field]');
        fieldEls.forEach(el => {
            const key = el.getAttribute('data-field');
            if (data[key]) {
                let val = data[key];
-               // ถ้าเป็นฟิลด์วันที่ ให้แปลงฟอร์แมต
                if (key.includes('Date') && !key.includes('Appoint')) val = fmtDate(val);
                el.textContent = val;
            } else {
-               el.textContent = "-"; 
+               // ใส่ช่องว่างเพื่อให้เส้นประแสดงผลแม้ไม่มีข้อมูล
+               el.innerHTML = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"; 
            }
        });
 
-       // 2. จัดการข้อมูล Checkbox (data-chk) ให้แสดง [ ] หรือ [ / ]
+       // 2. Map Checkboxes (ใช้ไอคอนสี่เหลี่ยมแทน text)
        const chkEls = clone.querySelectorAll('[data-chk]');
        chkEls.forEach(chk => {
            const key = chk.getAttribute('data-chk');
-           const label = chk.getAttribute('data-label') || ""; // ดึงข้อความกำกับจาก HTML
+           // ตรวจสอบค่า (รองรับทั้ง 'on', true, 'true')
+           const isChecked = (data[key] === 'on' || data[key] === true || data[key] === 'true');
            
-           let symbol = "[&nbsp;&nbsp;&nbsp;]"; // ค่าเริ่มต้น: กล่องว่าง
-           let textClass = "";
-
-           // ตรวจสอบว่าในฐานข้อมูลมีค่าเป็น 'on', 'true', หรือ true หรือไม่
-           if (data[key] === 'on' || data[key] === true || data[key] === 'true') {
-               symbol = "[ / ]"; // ถ้าเลือก: ใส่เครื่องหมาย /
-               textClass = "font-bold text-black"; // เน้นข้อความ
+           if (isChecked) {
+               // กรณีเลือก: แสดงกล่องมีเครื่องหมายถูก
+               chk.innerHTML = `<i class="far fa-check-square"></i>`; 
+           } else {
+               // กรณีไม่เลือก: แสดงกล่องเปล่า
+               chk.innerHTML = `<i class="far fa-square"></i>`;
            }
-
-           // สร้าง HTML ใส่กลับเข้าไป
-           chk.innerHTML = `<span class="font-mono text-sm mr-1">${symbol}</span> <span class="${textClass}">${label}</span>`;
        });
 
        chartPreviewContent.appendChild(clone);
@@ -2516,19 +2511,6 @@ async function showAdvicePreview(an) {
     showError('โหลดข้อมูลไม่สำเร็จ', e.message);
   }
 }
-
-
-       chartPreviewContent.appendChild(clone);
-       chartEditBtn.classList.remove("hidden");
-       chartEditBtn.dataset.form = "advice";
-       chartAddNewBtn.classList.add("hidden"); 
-    }
-  } catch (e) {
-    Swal.close();
-    showError('โหลดข้อมูลไม่สำเร็จ', e.message);
-  }
-}
-
 
 // 4. ฟังก์ชัน openAdviceModal (เวอร์ชันแก้ไข: รวมเป็นอันเดียว)
 async function openAdviceModal(editData = null) {
