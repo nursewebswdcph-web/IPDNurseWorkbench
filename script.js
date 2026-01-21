@@ -1448,66 +1448,43 @@ function closeAssessmentModal() {
 
 function populateAssessmentForm(data, targetForm) {
   if (!targetForm) return;
-  targetForm.reset(); 
+  targetForm.reset();
 
-  // --- 1. Auto-Populate from Registry (ดึงข้อมูลแรกรับ) ---
-  // เช็คว่ามีข้อมูลใน data (ที่ดึงมาจากชีต Assessment) หรือไม่ ถ้าไม่มีให้ใช้ข้อมูลจาก Patient Registry
-  const admitDate = data.AdmitDate || currentPatientData.AdmitDate || "";
-  const admitTime = data.AdmitTime || currentPatientData.AdmitTime || "";
-  const admitFrom = data.AdmittedFrom || currentPatientData.AdmittedFrom || "";
-  const refer = data.Refer || currentPatientData.Refer || "";
-  const cc = data.ChiefComplaint || currentPatientData.ChiefComplaint || "";
-  const pi = data.PresentIllness || currentPatientData.PresentIllness || "";
-  
-  // ใส่ค่าลงใน Input ตาม ID ที่กำหนดใหม่ใน HTML
-  const setVal = (id, val) => { 
-      const el = targetForm.querySelector(`#${id}`); 
-      if(el) el.value = val; 
-  };
+  // ดึงข้อมูลผู้ป่วยปัจจุบันจากทะเบียนผู้ป่วยมาใส่ในหน้าจอ (Header)
+  document.getElementById('assess-bed-display').textContent = currentPatientData.Bed || '-';
+  document.getElementById('assess-name-display').textContent = currentPatientData.Name || '-';
+  document.getElementById('assess-hn-display').textContent = currentPatientData.HN || '-';
+  document.getElementById('assess-an-display').textContent = currentPatientData.AN || '-';
+  document.getElementById('assess-doctor-display').textContent = currentPatientData.Doctor || '-';
 
-  // แปลงวันที่สำหรับ input type="date" (YYYY-MM-DD)
-  const isoDate = admitDate ? getISODate(new Date(admitDate)) : "";
+  // ตั้งค่าข้อมูลแรกรับอัตโนมัติ (Registry Info)
+  const setVal = (id, val) => { const el = targetForm.querySelector(`#${id}`); if(el) el.value = val; };
+  setVal('assess-admit-date', currentPatientData.AdmitDate ? getISODate(new Date(currentPatientData.AdmitDate)) : "");
+  setVal('assess-admit-time', currentPatientData.AdmitTime || "");
+  setVal('assess-admit-from', currentPatientData.AdmittedFrom || "");
+  setVal('assess-refer-from', currentPatientData.Refer || "");
+  setVal('assess-cc', currentPatientData.ChiefComplaint || "");
+  setVal('assess-pi', currentPatientData.PresentIllness || "");
 
-  setVal('assess-admit-date', isoDate);
-  setVal('assess-admit-time', admitTime);
-  setVal('assess-admit-from', admitFrom);
-  setVal('assess-refer-from', refer);
-  setVal('assess-cc', cc);
-  setVal('assess-pi', pi);
-
-  // --- 2. Map General Fields (ข้อมูลอื่นๆ ที่เคยบันทึกไว้ในชีต Assessment) ---
+  // บรรจุข้อมูลเดิมที่เคยบันทึกไว้ใน Assessment Sheet (ถ้ามี)
   Object.keys(data).forEach(key => {
-    // ข้ามฟิลด์ที่เราจัดการไปแล้วด้านบน เพื่อป้องกันค่าว่างจากชีตมาทับข้อมูล Registry
+    // ข้ามฟิลด์ที่ดึงมาจาก Registry แล้ว
     if(['AdmitDate','AdmitTime','AdmittedFrom','Refer','ChiefComplaint','PresentIllness'].includes(key)) return;
-
+    
     const value = data[key];
     const inputs = targetForm.querySelectorAll(`[name="${key}"]`);
-    
     inputs.forEach(input => {
       if (input.type === 'radio') {
-        // เปรียบเทียบค่า Radio
         if (String(input.value) === String(value)) input.checked = true;
       } else if (input.type === 'checkbox') {
-        // ตรวจสอบค่า Checkbox (รองรับ true, 'true', 'on')
         if (value === true || value === 'true' || value === 'on') input.checked = true;
       } else {
-        // Text inputs
         input.value = value || '';
       }
     });
   });
-
-  // --- 3. Trigger Calculations ---
-  // คำนวณคะแนน Braden
-  if (typeof calculateBradenScore === "function") {
-      calculateBradenScore(targetForm);
-  }
   
-  // แสดงผลช่องกรอกเพิ่มเติม (ถ้า Radio ถูกเลือกอยู่)
-  targetForm.querySelectorAll('.assessment-radio-toggle:checked').forEach(el => {
-      const targetId = el.dataset.controls;
-      if(targetId) targetForm.querySelector(`#${targetId}`)?.classList.remove('hidden');
-  });
+  // หมายเหตุ: ไม่ต้องเรียก calculateBradenScore แล้ว เนื่องจากต้องการยกเลิกการรวมคะแนน
 }
 
 async function handleSaveAssessment(event) {
