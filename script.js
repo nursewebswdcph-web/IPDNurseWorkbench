@@ -396,6 +396,43 @@ window.addEventListener('load', loadStaffData);
 // =================================================================
 // ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
 // =================================================================
+// ฟังก์ชันคำนวณคะแนน Braden ในฟอร์มบันทึกแบบ Real-time
+function calculateBradenInForm() {
+    let total = 0;
+    // รายชื่อ Parameter ทั้ง 6 ข้อ
+    const params = ['Sensory', 'Moisture', 'Activity', 'Mobility', 'Nutrition', 'Friction'];
+    
+    params.forEach(p => {
+        const selected = document.querySelector(`input[name="Braden_${p}"]:checked`);
+        if (selected) {
+            total += parseInt(selected.value);
+        }
+    });
+
+    // แสดงผลคะแนนบนหน้าจอ
+    const display = document.getElementById('braden-total-display');
+    const hiddenInp = document.getElementById('braden-total-hidden');
+    const riskText = document.getElementById('braden-risk-text');
+
+    if (display) display.textContent = total;
+    if (hiddenInp) hiddenInp.value = total;
+
+    // แปลผลความเสี่ยง (Risk Level) 
+    if (riskText && total > 0) {
+        let level = "";
+        if (total <= 9) level = "Very high risk (≤ 9)";
+        else if (total <= 12) level = "High risk (10-12)";
+        else if (total <= 14) level = "Moderate risk (13-14)";
+        else level = "Low risk (≥ 15)";
+        
+        riskText.textContent = level;
+        
+        // ปรับสีตามระดับความเสี่ยง
+        if (total <= 12) riskText.className = "font-bold text-red-600 italic";
+        else if (total <= 14) riskText.className = "font-bold text-orange-600 italic";
+        else riskText.className = "font-bold text-green-600 italic";
+    }
+}
 function calcBraden() {
     // Helper: แปลงค่าเป็นตัวเลข (Base 10) ป้องกันการต่อ String
     const getVal = (name) => {
