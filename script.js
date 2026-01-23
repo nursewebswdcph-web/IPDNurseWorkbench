@@ -5164,3 +5164,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+// ฟังก์ชันสำหรับดึงตำแหน่งพยาบาลอัตโนมัติเมื่อเลือกชื่อ
+document.getElementById('assessor-name').addEventListener('input', function(e) {
+    const name = e.target.value;
+    const positionInput = document.getElementById('assessor-position-display');
+    
+    // ค้นหาข้อมูลจาก datalist หรือจากตัวแปรพยาบาลทั้งหมดที่ระบบมี (สมมติชื่อ staffListData)
+    // หมายเหตุ: วิธีการดึงข้อมูลจะขึ้นอยู่กับการเก็บข้อมูล staff ของคุณในระบบ
+    // นี่คือตัวอย่างการดึงจาก Datalist (ถ้ามีข้อมูลตำแหน่งพ่วงมาด้วย)
+    const options = document.getElementById('staff-list-datalist').childNodes;
+    for (let i = 0; i < options.length; i++) {
+        if (options[i].value === name) {
+            // สมมติว่า data-position เก็บตำแหน่งไว้
+            const pos = options[i].getAttribute('data-position') || "พยาบาลวิชาชีพ";
+            positionInput.value = pos;
+            break;
+        }
+    }
+});
