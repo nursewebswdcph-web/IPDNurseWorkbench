@@ -299,30 +299,54 @@
 
   <!-- Modal: Admit Patient -->
   <div id="admit-modal" class="fixed inset-0 bg-slate-900/60 hidden z-50 overflow-y-auto flex items-start justify-center pt-10 px-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden animate-fade-in">
-        <div class="p-5 border-b bg-slate-50 flex justify-between items-center">
-            <h3 class="text-2xl font-black text-slate-800">บันทึกรับใหม่ (Admit Patient)</h3>
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden animate-fade-in mb-20">
+        <div class="p-5 border-b bg-indigo-50 flex justify-between items-center">
+            <h3 class="text-2xl font-black text-indigo-900">บันทึกรับใหม่ (Admit Patient)</h3>
             <button id="close-admit-modal-btn" class="text-slate-400 hover:text-red-500 text-2xl transition-colors"><i class="fas fa-times"></i></button>
         </div>
+        
         <form id="admit-form" class="p-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">วันที่ Admit</label><input type="date" name="AdmitDate" id="admit-date" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">เวลาที่ Admit</label><input type="time" name="AdmitTime" id="admit-time" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">เตียง</label><select name="Bed" id="admit-bed" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></select></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">HN</label><input type="text" name="HN" id="admit-hn" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">AN</label><input type="text" name="AN" id="admit-an" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">ชื่อ-นามสกุล</label><input type="text" name="Name" id="admit-name" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">วันเกิด</label><input type="date" name="DOB_BE" id="admit-dob" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">อายุ</label><input type="text" id="admit-age" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 font-bold text-slate-600" readonly></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">แผนก/สิทธิ</label><select name="Dept" id="admit-dept" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></select></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">วันที่รับ</label><input type="date" name="AdmitDate" id="admit-date" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">เวลารับ</label><input type="time" name="AdmitTime" id="admit-time" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">รับจาก / REFER</label><input type="text" name="AdmittedFrom" id="admit-from" placeholder="รพ. หรือ แผนกที่ส่งมา" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">เลือกเตียง (ในหอผู้ป่วย)</label>
+                    <select name="Bed" id="admit-bed" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <option value="">-- กำลังโหลดเตียงว่าง --</option>
+                    </select>
+                </div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">HN</label><input type="text" name="HN" id="admit-hn" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">AN</label><input type="text" name="AN" id="admit-an" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
+
+                <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase">ชื่อ-นามสกุล ผู้ป่วย</label><input type="text" name="Name" id="admit-name" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" required></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">วันเกิด (พ.ศ.)</label><input type="date" name="DOB_CE" id="admit-dob" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">อายุ (คำนวณอัตโนมัติ)</label><input type="text" id="admit-age" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 font-bold text-indigo-600" readonly placeholder="ระบุวันเกิด..."></div>
+                <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase">แผนก / สิทธิการรักษา</label>
+                    <select name="Dept" id="admit-dept" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></select>
+                </div>
+
+                <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-500 uppercase">ที่อยู่</label><textarea name="Address" id="admit-address" rows="2" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></textarea></div>
+
+                <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-500 uppercase">อาการสำคัญ (Chief Complaint)</label><textarea name="ChiefComplaint" id="admit-cc" rows="2" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></textarea></div>
+                <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-500 uppercase">ประวัติการเจ็บป่วย (Present Illness)</label><textarea name="PresentIllness" id="admit-pi" rows="2" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></textarea></div>
+                
+                <div class="md:col-span-2"><label class="block text-xs font-bold text-slate-500 uppercase">การวินิจฉัย (Admitting Diagnosis)</label><input type="text" name="AdmittingDx" id="admit-dx" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">แพทย์เจ้าของไข้</label>
+                    <input type="text" name="Doctor" id="admit-doctor" list="doctor-list" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="ค้นหาชื่อแพทย์...">
+                </div>
             </div>
+
             <div class="flex justify-end gap-3 mt-10 pt-6 border-t border-slate-100">
                 <button type="button" id="cancel-admit-btn" class="px-8 py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 font-bold transition-all">ยกเลิก</button>
-                <button type="submit" class="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg font-bold transition-all">บันทึก Admit</button>
+                <button type="submit" class="px-10 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg font-bold transition-all flex items-center gap-2">
+                    <i class="fas fa-save"></i> บันทึกข้อมูล Admit
+                </button>
             </div>
         </form>
     </div>
-  </div>
+</div>
 
   <!-- Modal: Details & Edit Patient -->
   <div id="details-modal" class="fixed inset-0 bg-slate-900/60 hidden z-50 overflow-y-auto flex items-start justify-center pt-10 px-4">
