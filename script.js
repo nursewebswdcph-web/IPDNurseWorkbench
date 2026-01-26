@@ -641,14 +641,14 @@ function populateSelect(elementId, options, defaultValue = null) {
   });
 }
 function populateDatalist(datalistId, options) {
-  const datalist = document.getElementById(datalistId);
-  if (!datalist) return;
-  datalist.innerHTML = ""; 
-  options.forEach(val => {
-    const option = document.createElement("option");
-    option.value = val;
-    datalist.appendChild(option);
-  });
+    const datalist = document.getElementById(datalistId);
+    if (!datalist) return;
+    datalist.innerHTML = ""; 
+    options.forEach(val => {
+        const option = document.createElement("option");
+        option.value = val;
+        datalist.appendChild(option);
+    });
 }
 
 function getISODate(date) {
@@ -817,23 +817,27 @@ async function openAdmitModal() {
     showLoading('กำลังเตรียมฟอร์มรับใหม่...');
     
     try {
-        // ดึงข้อมูลพื้นฐาน (แผนก, แพทย์, และเตียงว่างของ Ward ปัจจุบัน)
+        // ดึงข้อมูลพื้นฐาน (แผนก, แพทย์, รับจาก และเตียงว่างของ Ward ปัจจุบัน)
         const response = await fetch(`${GAS_WEB_APP_URL}?action=getFormData&ward=${currentWard}`);
         const result = await response.json();
         
         if (result.success) {
-            const { departments, doctors, availableBeds } = result.data;
+            const { departments, doctors, availableBeds, admittedFrom } = result.data;
 
-            // 1. เติมข้อมูลแผนก
+            // 1. เติมข้อมูล "รับจาก" (Admitted From) - เพื่อให้เหมือนฟอร์มแก้ไข
+            // ตรวจสอบว่าใน HTML มี <select id="admit-from">
+            populateSelect("admit-from", admittedFrom.map(o => o.value));
+
+            // 2. เติมข้อมูล "แผนก" (Dept)
             populateSelect("admit-dept", departments.map(o => o.value));
             
-            // 2. เติมรายชื่อแพทย์ใน Datalist
+            // 3. เติมรายชื่อแพทย์ลงใน Datalist เพื่อให้ช่อง Input ค้นหาได้
             populateDatalist("doctor-list", doctors.map(o => o.value));
 
-            // 3. เติมเตียงว่าง (เฉพาะของ Ward นี้)
+            // 4. เติมเตียงว่าง (เฉพาะของ Ward นี้)
             populateSelect("admit-bed", availableBeds);
             
-            // 4. ตั้งค่าเริ่มต้น
+            // 5. ตั้งค่าเริ่มต้น
             admitForm.reset();
             setFormDefaults(); // ตั้งค่าวันที่/เวลาปัจจุบัน
             
