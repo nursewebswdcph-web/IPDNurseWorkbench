@@ -576,6 +576,17 @@ function convertBEtoCE(beDate) {
   } catch (e) { return null; }
 }
 
+function updateAdmitAge() {
+    const dobValue = document.getElementById("admit-dob").value;
+    if (dobValue) {
+        // แปลงจาก CE (Input) เป็น BE เพื่อใช้ฟังก์ชันที่มีอยู่แล้ว
+        const beDate = convertCEtoBE(dobValue);
+        if (admitAgeInput) {
+            admitAgeInput.value = calculateAge(beDate);
+        }
+    }
+}
+
 function calculateLOS(admitDateStr) {
   if (!admitDateStr) return "N/A";
   const admitDate = new Date(admitDateStr);
@@ -798,44 +809,40 @@ async function loadPatients(wardName) {
 
 // --- ADMIT MODAL ---
 async function openAdmitModal() {
-  if (!currentWard) {
-    showError('กรุณาเลือกหอผู้ป่วยก่อนทำรายการ');
-    return;
-  }
-
-  showLoading('กำลังเตรียมฟอร์ม...');
-  
-  try {
-    // ดึงข้อมูลพื้นฐานจาก Server (หอผู้ป่วย, รายชื่อแพทย์, แผนก, เตียงว่าง)
-    const { departments, doctors, admittedFrom, availableBeds } = await fetchFormData(currentWard);
-    
-    // 1. เติมรายชื่อแพทย์ลงใน Datalist เพื่อให้ช่อง Input ค้นหาได้
-    if (doctors && doctors.length > 0) {
-      populateDatalist("doctor-list", doctors.map(o => o.value));
+    if (!currentWard) {
+        showError('กรุณาเลือกหอผู้ป่วยก่อนทำรายการ');
+        return;
     }
 
-    // 2. เติมข้อมูลลงใน Select Dropdown ปกติ
-    populateSelect("admit-from", admittedFrom.map(o => o.value));
-    populateSelect("admit-bed", availableBeds);
-    populateSelect("admit-dept", departments.map(o => o.value));
+    showLoading('กำลังเตรียมฟอร์มรับใหม่...');
     
-    // 3. รีเซ็ตฟอร์มและตั้งค่าเริ่มต้นใหม่
-    admitForm.reset();
-    setFormDefaults();
-    
-    // ล้างค่าอายุผู้ป่วย (ถ้ามี)
-    if (document.getElementById("admit-age")) {
-      document.getElementById("admit-age").value = "";
-    }
+    try {
+        // ดึงข้อมูลพื้นฐาน (แผนก, แพทย์, และเตียงว่างของ Ward ปัจจุบัน)
+        const response = await fetch(`${GAS_WEB_APP_URL}?action=getFormData&ward=${currentWard}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const { departments, doctors, availableBeds } = result.data;
 
-    // แสดง Modal
-    admitModal.classList.remove("hidden");
-    Swal.close();
-    
-  } catch (error) {
-    console.error('Error in openAdmitModal:', error);
-    showError('เตรียมฟอร์มไม่สำเร็จ', 'ไม่สามารถโหลดข้อมูลพื้นฐานจากระบบได้ กรุณาลองใหม่อีกครั้ง');
-  }
+            // 1. เติมข้อมูลแผนก
+            populateSelect("admit-dept", departments.map(o => o.value));
+            
+            // 2. เติมรายชื่อแพทย์ใน Datalist
+            populateDatalist("doctor-list", doctors.map(o => o.value));
+
+            // 3. เติมเตียงว่าง (เฉพาะของ Ward นี้)
+            populateSelect("admit-bed", availableBeds);
+            
+            // 4. ตั้งค่าเริ่มต้น
+            admitForm.reset();
+            setFormDefaults(); // ตั้งค่าวันที่/เวลาปัจจุบัน
+            
+            admitModal.classList.remove("hidden");
+            Swal.close();
+        }
+    } catch (error) {
+        showError('โหลดข้อมูลล้มเหลว', error.message);
+    }
 }
 
 function closeAdmitModal() {
@@ -5019,11 +5026,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (openAdmitModalBtn) openAdmitModalBtn.addEventListener("click", openAdmitModal);
     if (closeAdmitModalBtn) closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
     if (admitForm) admitForm.addEventListener("submit", handleAdmitSubmit);
-
-    admitDobInput.addEventListener("change", () => {
-        const beDate = convertCEtoBE(admitDobInput.value);
-        if (admitAgeInput) admitAgeInput.value = calculateAge(beDate);
-    });
+	if (admitDobInput) {
+        admitDobInput.addEventListener("change", updateAdmitAge);
+    }
 
     // 6. Details Form Logic
     if (closeDetailsModalBtn) closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
