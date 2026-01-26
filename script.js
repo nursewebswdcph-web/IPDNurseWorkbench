@@ -657,13 +657,14 @@ async function refreshStaffDatalists() {
       const result = await response.json();
       if (result.success) globalStaffList = result.data;
     }
-    // อัปเดต datalist
     const dl = document.getElementById("staff-list-datalist");
     if (dl) {
       dl.innerHTML = "";
       globalStaffList.forEach(s => {
         const opt = document.createElement("option");
         opt.value = s.fullName;
+        // --- เพิ่มบรรทัดนี้เพื่อให้โค้ดดึงตำแหน่งทำงานได้ ---
+        opt.dataset.position = s.position || "พยาบาลวิชาชีพ"; 
         dl.appendChild(opt);
       });
     }
@@ -4959,7 +4960,7 @@ function renderForm004Page2(container, options = {}) {
     `;
 }
 // ----------------------------------------------------------------
-// (10) MAIN EVENT LISTENERS (Updated)
+// (10) MAIN EVENT LISTENERS (Updated - รวมฟังก์ชันดึงตำแหน่งข้อ 15)
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
     updateClock(); 
@@ -5094,7 +5095,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 9. Staff Datalist Auto-fill Position
+    // 9. Staff Datalist Auto-fill (Generic Listener)
     document.body.addEventListener('input', (e) => {
         if (e.target.list && e.target.list.id === 'staff-list-datalist') {
             const staff = globalStaffList.find(s => s.fullName === e.target.value.trim());
@@ -5109,10 +5110,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // 10. Braden Form (แก้ไขใหม่)
+    // 10. Braden Form
     const bForm = document.getElementById("braden-form");
     if (bForm) {
-        // ลบ Listener เก่าออก (กันซ้ำ) แล้วใส่ตัวใหม่
         bForm.removeEventListener("submit", handleSaveBraden); 
         bForm.addEventListener("submit", handleSaveBraden);
     }
@@ -5130,55 +5130,52 @@ document.addEventListener("DOMContentLoaded", () => {
     // 12. Classification Pagination
     const classifyPrevBtn = document.getElementById("classify-prev-page-btn");
     const classifyNextBtn = document.getElementById("classify-next-page-btn");
-    const classifyAddBtn = document.getElementById("classify-add-page-btn");
+    if (classifyPrevBtn) classifyPrevBtn.addEventListener("click", () => { changeClassifyPage(-1); });
+    if (classifyNextBtn) classifyNextBtn.addEventListener("click", () => { changeClassifyPage(1); });
 
-    if (classifyPrevBtn) {
-        classifyPrevBtn.addEventListener("click", () => { changeClassifyPage(-1); });
-    }
-    if (classifyNextBtn) {
-        classifyNextBtn.addEventListener("click", () => { changeClassifyPage(1); });
-    }
-    if (classifyAddBtn) {
-        classifyAddBtn.addEventListener("click", () => { changeClassifyPage(1); });
-    }
+    // 13. Advice Form
+    if (adviceForm) adviceForm.addEventListener("submit", handleSaveAdvice);
 
-    // 13. Advice Form (Added)
-    if (adviceForm) {
-        adviceForm.addEventListener("submit", handleSaveAdvice);
-    }
-	// 14. Sidebar Toggle Logic (เพิ่มใหม่)
+	// 14. Sidebar Toggle Logic
     const sidebarBtn = document.getElementById('sidebar-toggle-btn');
     const sidebarList = document.getElementById('chart-menu-list');
     const sidebarArrow = document.getElementById('sidebar-arrow-icon');
-
     if (sidebarBtn && sidebarList && sidebarArrow) {
         sidebarBtn.addEventListener('click', () => {
-            // สลับสถานะแสดง/ซ่อน
             if (sidebarList.classList.contains('hidden')) {
                 sidebarList.classList.remove('hidden');
-                sidebarArrow.innerHTML = '<i class="fas fa-chevron-up"></i>'; // เปลี่ยนไอคอนชี้ขึ้น
+                sidebarArrow.innerHTML = '<i class="fas fa-chevron-up"></i>';
             } else {
                 sidebarList.classList.add('hidden');
-                sidebarArrow.innerHTML = '<i class="fas fa-chevron-down"></i>'; // เปลี่ยนไอคอนชี้ลง
+                sidebarArrow.innerHTML = '<i class="fas fa-chevron-down"></i>';
             }
         });
     }
-});
-// ฟังก์ชันสำหรับดึงตำแหน่งพยาบาลอัตโนมัติเมื่อเลือกชื่อ
-document.getElementById('assessor-name').addEventListener('input', function(e) {
-    const name = e.target.value;
-    const positionInput = document.getElementById('assessor-position-display');
-    
-    // ค้นหาข้อมูลจาก datalist หรือจากตัวแปรพยาบาลทั้งหมดที่ระบบมี (สมมติชื่อ staffListData)
-    // หมายเหตุ: วิธีการดึงข้อมูลจะขึ้นอยู่กับการเก็บข้อมูล staff ของคุณในระบบ
-    // นี่คือตัวอย่างการดึงจาก Datalist (ถ้ามีข้อมูลตำแหน่งพ่วงมาด้วย)
-    const options = document.getElementById('staff-list-datalist').childNodes;
-    for (let i = 0; i < options.length; i++) {
-        if (options[i].value === name) {
-            // สมมติว่า data-position เก็บตำแหน่งไว้
-            const pos = options[i].getAttribute('data-position') || "พยาบาลวิชาชีพ";
-            positionInput.value = pos;
-            break;
-        }
+
+    // 15. ค้นหาตำแหน่งที่รวม Event Listeners (บรรทัดสุดท้ายภายใน DOMContentLoaded)
+    const assessorNameInput = document.getElementById('assessor-name');
+    if (assessorNameInput) {
+        assessorNameInput.addEventListener('input', function(e) {
+            const name = e.target.value.trim();
+            const positionInput = document.getElementById('assessor-position-display');
+            const dataList = document.getElementById('staff-list-datalist');
+            
+            if (!dataList || !positionInput) return;
+
+            // ใช้ HTML5 Options ในการค้นหา (แม่นยำกว่า childNodes)
+            const options = dataList.options;
+            let found = false;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === name) {
+                    // ดึงค่าจาก dataset.position ที่เราเซ็ตไว้ในฟังก์ชัน refreshStaffDatalists
+                    const pos = options[i].dataset.position || "พยาบาลวิชาชีพ";
+                    positionInput.value = pos;
+                    found = true;
+                    break;
+                }
+            }
+            // ถ้าลบชื่อออก หรือไม่พบชื่อในรายการ ให้ล้างช่องตำแหน่งด้วย
+            if (!found && name === "") positionInput.value = "";
+        });
     }
 });
