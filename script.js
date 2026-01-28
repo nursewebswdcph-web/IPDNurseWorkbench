@@ -5215,28 +5215,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 15. ค้นหาตำแหน่งที่รวม Event Listeners (บรรทัดสุดท้ายภายใน DOMContentLoaded)
     const assessorNameInput = document.getElementById('assessor-name');
-    if (assessorNameInput) {
-        assessorNameInput.addEventListener('input', function(e) {
-            const name = e.target.value.trim();
-            const positionInput = document.getElementById('assessor-position-display');
-            const dataList = document.getElementById('staff-list-datalist');
-            
-            if (!dataList || !positionInput) return;
+    const assessorPositionInput = document.getElementById('assessor-position-display');
 
-            // ใช้ HTML5 Options ในการค้นหา (แม่นยำกว่า childNodes)
+    if (assessorNameInput) {
+        // แนะนำใช้ 'input' แทน 'change' หากต้องการให้ตำแหน่งขึ้นทันทีที่เลือก
+        assessorNameInput.addEventListener('input', function() {
+            const selectedName = this.value.trim();
+            const dataList = document.getElementById('staff-list-datalist');
+            if (!dataList) return;
+
             const options = dataList.options;
-            let found = false;
             for (let i = 0; i < options.length; i++) {
-                if (options[i].value === name) {
-                    // ดึงค่าจาก dataset.position ที่เราเซ็ตไว้ในฟังก์ชัน refreshStaffDatalists
-                    const pos = options[i].dataset.position || "พยาบาลวิชาชีพ";
-                    positionInput.value = pos;
-                    found = true;
-                    break;
+                if (options[i].value === selectedName) {
+                    // ตรวจสอบทั้ง getAttribute และ dataset เพื่อความแม่นยำ
+                    const pos = options[i].getAttribute('data-position') || options[i].dataset.position;
+                    if (assessorPositionInput) {
+                        assessorPositionInput.value = pos || "พยาบาลวิชาชีพ";
+                    }
+                    return;
                 }
             }
-            // ถ้าลบชื่อออก หรือไม่พบชื่อในรายการ ให้ล้างช่องตำแหน่งด้วย
-            if (!found && name === "") positionInput.value = "";
         });
     }
 });
