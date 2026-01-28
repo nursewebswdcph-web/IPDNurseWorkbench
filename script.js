@@ -934,9 +934,18 @@ async function openDetailsModal(an) {
 function populateDetailsForm(data) {
   detailsForm.reset();
   
+  // เติมข้อมูล "รับจาก" และ "แผนก" (ที่เป็น Select)
   populateSelect("details-from", globalConfigData.admittedFrom.map(o => o.value), data.AdmittedFrom);
   populateSelect("details-dept", globalConfigData.departments.map(o => o.value), data.Dept);
-  populateSelect("details-doctor", globalConfigData.doctors.map(o => o.value), data.Doctor);
+  
+  // --- ส่วนที่แก้ไข: ชื่อแพทย์ (เปลี่ยนจาก populateSelect เป็นใส่ค่าใน Input) ---
+  const doctorInput = document.getElementById("details-doctor");
+  if (doctorInput) {
+      // เติมรายชื่อแพทย์ลงใน datalist (ถ้ามี)
+      populateDatalist("doctor-list", globalConfigData.doctors.map(o => o.value));
+      // ใส่ชื่อแพทย์ปัจจุบันลงในช่องกรอก
+      doctorInput.value = data.Doctor || ""; 
+  }
   
   document.getElementById("details-an").value = data.AN;
   document.getElementById("details-an-display").value = data.AN;
@@ -1013,7 +1022,7 @@ async function handleUpdateSubmit(event) {
   
   const formData = new FormData(detailsForm);
   let patientData = Object.fromEntries(formData.entries());
-  const an = document.getElementById("details-an").value;
+  const an = document.getElementById("details-an").value; // ดึง AN มาจาก Hidden Input
 
   if (patientData.DOB_CE) {
     patientData.DOB_BE = convertCEtoBE(patientData.DOB_CE);
@@ -1022,15 +1031,13 @@ async function handleUpdateSubmit(event) {
   
   patientData.Age = document.getElementById("details-age").value;
   
-  if (!patientData.Bed) {
-    patientData.Bed = detailsBedDisplay.value;
-  }
-  
   try {
     const response = await fetch(GAS_WEB_APP_URL, {
       method: "POST",
       body: JSON.stringify({
-        action: "updatePatient", an: an, patientData: patientData
+        action: "updatePatient", 
+        an: an, 
+        patientData: patientData // ส่งชื่อก้อนข้อมูลให้ตรงกับ Code.gs
       })
     });
     const result = await response.json();
