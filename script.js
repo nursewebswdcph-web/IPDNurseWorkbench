@@ -1557,6 +1557,53 @@ async function openAssessmentForm() {
   }
 }
 
+async function handleAssessmentSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    // ส่วนที่แก้ไข: จัดการ Checkbox (เพราะ FormData จะไม่เอาค่าที่ไม่ได้ติ๊กมาส่ง)
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        data[cb.name] = cb.checked; // ส่งเป็น true หรือ false
+    });
+
+    // จัดการ Radio (ถ้ามี)
+    const radios = form.querySelectorAll('input[type="radio"]:checked');
+    radios.forEach(rd => {
+        data[rd.name] = rd.value;
+    });
+
+    const an = document.getElementById('assess-an-display').textContent;
+
+    showLoading('กำลังบันทึกแบบประเมิน...');
+
+    try {
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'saveAssessmentForm', // ตรวจสอบให้ตรงกับ switch case ใน Code.gs
+                an: an,
+                formData: data,
+                user: "Nurse_User" // หรือตัวแปรผู้ใช้งานจริง
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            showSuccess('บันทึกสำเร็จ', 'ข้อมูลแบบประเมินถูกบันทึกลงฐานข้อมูลแล้ว');
+            closeModal('assessment-modal');
+            // รีโหลดหน้าพรีวิวถ้าเปิดอยู่
+            if (currentAN === an) renderForm004PrintMode(an);
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        showError('บันทึกไม่สำเร็จ', error.message);
+    }
+}
+
 function closeAssessmentModal() {
   assessmentModal.classList.add("hidden");
   assessmentForm.reset();
@@ -4346,67 +4393,62 @@ function renderBradenPage2(container, data, options = {}) {
 // 1. Helper สำหรับ Normalize Data
 function normalizeData004(raw) {
     if (!raw) return {};
-    const d = {};
-    Object.assign(d, raw); 
+    const d = { ...raw }; 
     
-    // Helper เช็คค่า True/False/On
+    // Helper: ตรวจสอบค่าว่าเป็น True หรือไม่ (รองรับหลายรูปแบบจากฐานข้อมูล)
     const isTrue = (val) => {
-        if (!val) return false;
+        if (val === true || val === "TRUE") return true;
         const s = String(val).toLowerCase();
-        return s === 'true' || s === 'on';
+        return s === 'true' || s === 'on' || s === '1' || s === 'yes';
     };
 
-    // 1. ประวัติเจ็บป่วย (Hx_List)
+    // 1. ประวัติเจ็บป่วย (Hx_List) - แก้ไขให้ดึง Key ตรงๆ จากชีต
     d.Hx_List = [];
-    const pushHx = (key, val) => { if(isTrue(raw[key])) d.Hx_List.push(val); };
-    pushHx('Hx_HT', 'ความดันโลหิตสูง'); pushHx('Hx_Heart', 'โรคหัวใจ'); pushHx('Hx_Liver', 'โรคตับ');
-    pushHx('Hx_Kidney', 'โรคไต'); pushHx('Hx_DM', 'เบาหวาน'); pushHx('Hx_Asthma', 'หอบหืด');
-    pushHx('Hx_Epilepsy', 'ลมชัก'); pushHx('Hx_TB', 'วัณโรค'); pushHx('Hx_Cancer', 'มะเร็ง');
-    
-    // 2. สาเหตุความเครียด (Stress_Causes) -> หน้า 2 ข้อ 8
+    if (isTrue(raw.Hx_HT)) d.Hx_List.push('ความดันโลหิตสูง');
+    if (isTrue(raw.Hx_Heart)) d.Hx_List.push('โรคหัวใจ');
+    if (isTrue(raw.Hx_Liver)) d.Hx_List.push('โรคตับ');
+    if (isTrue(raw.Hx_Kidney)) d.Hx_List.push('โรคไต');
+    if (isTrue(raw.Hx_DM)) d.Hx_List.push('เบาหวาน');
+    if (isTrue(raw.Hx_Asthma)) d.Hx_List.push('หอบหืด');
+    if (isTrue(raw.Hx_Epilepsy)) d.Hx_List.push('ลมชัก');
+    if (isTrue(raw.Hx_TB)) d.Hx_List.push('วัณโรค');
+    if (isTrue(raw.Hx_Cancer)) d.Hx_List.push('มะเร็ง');
+
+    // 2. สาเหตุความเครียด (Stress_Causes)
     d.Stress_Causes = [];
-    const pushStress = (key, val) => { if(isTrue(raw[key])) d.Stress_Causes.push(val); };
-    pushStress('Cope_Stress_Fear', 'กลัวไม่หาย');
-    pushStress('Cope_Stress_Cost', 'ค่ารักษาพยาบาล');
-    pushStress('Cope_Stress_Work', 'ขาดงาน/รายได้');
-    pushStress('Cope_Stress_Family', 'ครอบครัว');
-    if(raw['Cope_Stress_Other']) d.Stress_Causes.push('อื่นๆ');
+    if (isTrue(raw.Cope_Stress_Fear)) d.Stress_Causes.push('กลัวไม่หาย');
+    if (isTrue(raw.Cope_Stress_Cost)) d.Stress_Causes.push('ค่ารักษาพยาบาล');
+    if (isTrue(raw.Cope_Stress_Work)) d.Stress_Causes.push('ขาดงาน/รายได้');
+    if (isTrue(raw.Cope_Stress_Family)) d.Stress_Causes.push('ครอบครัว');
 
-    // 3. บทบาท (Roles) -> หน้า 2 ข้อ 9
+    // 3. บทบาท (Roles)
     d.Roles = [];
-    const pushRole = (key, val) => { if(isTrue(raw[key])) d.Roles.push(val); };
-    pushRole('Role_Effect_Family', 'ครอบครัว');
-    pushRole('Role_Effect_Career', 'อาชีพ');
-    pushRole('Role_Effect_Education', 'การศึกษา');
-    pushRole('Role_Effect_Relationship', 'สัมพันธภาพในครอบครัวและผู้อื่น');
+    if (isTrue(raw.Role_Effect_Family)) d.Roles.push('ครอบครัว');
+    if (isTrue(raw.Role_Effect_Career)) d.Roles.push('อาชีพ');
+    if (isTrue(raw.Role_Effect_Education)) d.Roles.push('การศึกษา');
+    if (isTrue(raw.Role_Effect_Relationship)) d.Roles.push('สัมพันธภาพในครอบครัวและผู้อื่น');
 
-    // 4. การมีส่วนร่วม (Partic_Needs) -> หน้า 2 ข้อ 12
-    d.Partic_Needs = [];
-    const pushPartic = (key, val) => { if(isTrue(raw[key])) d.Partic_Needs.push(val); };
-    pushPartic('Partic_Info', 'Info');
-    pushPartic('Partic_Skill', 'Skill');
-    pushPartic('Partic_Team', 'Team');
-
-    // 5. ผลกระทบความปวด (Pain_Effects) -> หน้า 2 ข้อ 13
+    // 4. ผลกระทบความปวด (Pain_Effects)
     d.Pain_Effects = [];
-    const pushPainEff = (key, val) => { if(isTrue(raw[key])) d.Pain_Effects.push(val); };
-    pushPainEff('Pain_Effect_Eat', 'Eat');
-    pushPainEff('Pain_Effect_Sleep', 'Sleep');
-    pushPainEff('Pain_Effect_Activity', 'Activity');
-    pushPainEff('Pain_Effect_Mood', 'Mood');
-    pushPainEff('Pain_Effect_Elim', 'Elim');
-    pushPainEff('Pain_Effect_Sex', 'Sex');
+    const painKeys = { 
+        Pain_Effect_Eat: 'Eat', Pain_Effect_Sleep: 'Sleep', 
+        Pain_Effect_Activity: 'Activity', Pain_Effect_Mood: 'Mood', 
+        Pain_Effect_Elim: 'Elim', Pain_Effect_Sex: 'Sex' 
+    };
+    for (let key in painKeys) { if (isTrue(raw[key])) d.Pain_Effects.push(painKeys[key]); }
 
-    // 6. การบรรเทาปวด (Pain_Relief) -> หน้า 2 ข้อ 13
+    // 5. การบรรเทาปวด (Pain_Relief)
     d.Pain_Relief = [];
-    const pushPainRel = (key, val) => { if(isTrue(raw[key])) d.Pain_Relief.push(val); };
-    pushPainRel('Pain_Relief_Cold', 'Cold');
-    pushPainRel('Pain_Relief_Hot', 'Hot');
-    pushPainRel('Pain_Relief_Massage', 'Massage');
-    pushPainRel('Pain_Relief_Relax', 'Relax');
-    pushPainRel('Pain_Relief_Repo', 'Repo');
-    pushPainRel('Pain_Relief_Rest', 'Rest');
-    pushPainRel('Pain_Relief_Meds', 'Meds');
+    const reliefKeys = {
+        Pain_Relief_Cold: 'Cold', Pain_Relief_Hot: 'Hot', 
+        Pain_Relief_Massage: 'Massage', Pain_Relief_Relax: 'Relax', 
+        Pain_Relief_Repo: 'Repo', Pain_Relief_Rest: 'Rest', Pain_Relief_Meds: 'Meds'
+    };
+    for (let key in reliefKeys) { if (isTrue(raw[key])) d.Pain_Relief.push(reliefKeys[key]); }
+
+    // 6. การประเมินพลัดตกหกล้ม (Fall Risk) - แก้ไขให้ดึงค่า Boolean
+    d.Fall_Age_Child = isTrue(raw.Fall_Age_Child) ? 'true' : 'false';
+    d.Fall_Age_Elder = isTrue(raw.Fall_Age_Elder) ? 'true' : 'false';
 
     return d;
 }
@@ -4483,18 +4525,25 @@ function renderForm004Page1(container, options = {}) {
     
     // *** New Checkbox Logic with Icons ***
     const chk = (val, target, label) => {
-        let isChecked = false;
-        if (val) {
-            if (Array.isArray(val)) isChecked = val.includes(target);
-            else {
-                const parts = String(val).split(',').map(s=>s.trim());
-                isChecked = parts.includes(target) || String(val) === target;
-            }
-        }
-        // ใช้ไอคอน FontAwesome แทน [ / ]
-        const icon = isChecked ? `<i class="far fa-check-square text-[14px]"></i>` : `<i class="far fa-square text-[14px]"></i>`;
-        return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap gap-1">${icon} ${label}</span>`;
-    };
+    let isChecked = false;
+    
+    // กรณีเป็น Boolean (เช่น Hx_HT = true)
+    if (typeof val === 'boolean') {
+        isChecked = val === true;
+    } 
+    // กรณีเป็น Array (ที่เราสร้างจาก normalizeData004)
+    else if (Array.isArray(val)) {
+        isChecked = val.includes(target);
+    } 
+    // กรณีเป็น String (เช่น 'เดินมา')
+    else if (val) {
+        const parts = String(val).split(',').map(s => s.trim());
+        isChecked = parts.includes(target) || String(val) === target;
+    }
+
+    const icon = isChecked ? `<i class="far fa-check-square text-[14px]"></i>` : `<i class="far fa-square text-[14px]"></i>`;
+    return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap gap-1">${icon} ${label}</span>`;
+};
 
     const formatDateFull = (dateStr) => {
         if (!dateStr) return ".........................";
@@ -5229,7 +5278,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 15. ค้นหาตำแหน่งที่รวม Event Listeners (บรรทัดสุดท้ายภายใน DOMContentLoaded)
+    const assessmentForm = document.getElementById('assessment-form');
+    if (assessmentForm) {
+        assessmentForm.addEventListener('submit', handleAssessmentSubmit);
+    }
+	
+	// 15. ค้นหาตำแหน่งที่รวม Event Listeners (บรรทัดสุดท้ายภายใน DOMContentLoaded)
     const assessorNameInput = document.getElementById('assessor-name');
     const assessorPositionInput = document.getElementById('assessor-position-display');
 
