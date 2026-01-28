@@ -669,32 +669,32 @@ function getISODate(date) {
 // ----------------------------------------------------------------
 // (6) Core App Functions
 // ----------------------------------------------------------------
-
 function refreshStaffDatalists(staffData) {
     const dataList = document.getElementById('staff-list-datalist');
     if (!dataList) return;
 
-    dataList.innerHTML = ''; // ล้างข้อมูลเก่า
+    // หาก staffData เป็น undefined ให้ลองใช้ globalStaffList ที่โหลดไว้ตอนแรก
+    const finalData = staffData || globalStaffList;
 
-    if (!staffData || !Array.isArray(staffData)) {
-        console.warn("⚠️ refreshStaffDatalists: ไม่พบข้อมูลพยาบาล หรือรูปแบบข้อมูลไม่ถูกต้อง", staffData);
+    if (!finalData || !Array.isArray(finalData)) {
+        console.warn("⚠️ refreshStaffDatalists: ไม่พบข้อมูลพยาบาลในระบบ", {
+            param: staffData,
+            global: globalStaffList
+        });
         return; 
     }
 
-    staffData.forEach(staff => {
-        // --- จุดที่แก้ไข: เปลี่ยนจาก staff[0] เป็น staff.fullName ---
+    dataList.innerHTML = ''; // ล้างข้อมูลเก่า
+
+    finalData.forEach(staff => {
         if (staff && staff.fullName) {
-            const name = staff.fullName.trim();
-            const position = staff.position ? staff.position.trim() : "พยาบาลวิชาชีพ";
-            
             const option = document.createElement('option');
-            option.value = name;
-            // เก็บตำแหน่งไว้ใน dataset เพื่อให้ฟังก์ชันอื่นดึงไปใช้ง่ายๆ
-            option.dataset.position = position;
+            option.value = staff.fullName.trim();
+            option.dataset.position = staff.position || "พยาบาลวิชาชีพ";
             dataList.appendChild(option);
         }
     });
-    console.log("✅ Datalist updated with", staffData.length, "nurses");
+    console.log(`✅ Datalist updated with ${finalData.length} names`);
 }
 
 // สร้าง Config สำหรับจับคู่ชื่อตึกกับไอคอนและสี
@@ -1548,7 +1548,8 @@ async function openAssessmentForm() {
     document.getElementById("assess-refer-from").value = data.Refer || "";
     document.getElementById("assess-cc").value = data.ChiefComplaint || "";
     document.getElementById("assess-pi").value = data.PresentIllness || "";
-
+	
+	refreshStaffDatalists();
     assessmentModal.classList.remove("hidden");
     Swal.close();
   } catch(e) {
