@@ -932,40 +932,85 @@ async function openDetailsModal(an) {
 }
 
 function populateDetailsForm(data) {
+  if (!detailsForm) return;
   detailsForm.reset();
-  
-  // เติมข้อมูล "รับจาก" และ "แผนก" (ที่เป็น Select)
-  populateSelect("details-from", globalConfigData.admittedFrom.map(o => o.value), data.AdmittedFrom);
-  populateSelect("details-dept", globalConfigData.departments.map(o => o.value), data.Dept);
-  
-  // --- ส่วนที่แก้ไข: ชื่อแพทย์ (เปลี่ยนจาก populateSelect เป็นใส่ค่าใน Input) ---
-  const doctorInput = document.getElementById("details-doctor");
-  if (doctorInput) {
-      // เติมรายชื่อแพทย์ลงใน datalist (ถ้ามี)
-      populateDatalist("doctor-list", globalConfigData.doctors.map(o => o.value));
-      // ใส่ชื่อแพทย์ปัจจุบันลงในช่องกรอก
-      doctorInput.value = data.Doctor || ""; 
-  }
-  
-  document.getElementById("details-an").value = data.AN;
-  document.getElementById("details-an-display").value = data.AN;
-  document.getElementById("details-hn").value = data.HN;
-  document.getElementById("details-name").value = data.Name;
-  document.getElementById("details-address").value = data.Address;
-  document.getElementById("details-cc").value = data.ChiefComplaint;
-  document.getElementById("details-pi").value = data.PresentIllness;
-  document.getElementById("details-dx").value = data.AdmittingDx;
-  document.getElementById("details-refer").value = data.Refer;
-  document.getElementById("details-date").value = data.AdmitDate;
-  document.getElementById("details-time").value = data.AdmitTime;
-  
-  detailsBedDisplay.value = data.Bed;
-  detailsBedDisplay.classList.remove("hidden");
-  detailsBedSelect.classList.add("hidden");
 
-  const ceDate = convertBEtoCE(data.DOB_BE);
-  detailsDobInput.value = ceDate;
-  detailsAgeInput.value = data.Age;
+  // 1. เติมข้อมูล "รับจาก" และ "แผนก" (รูปแบบ Select Dropdown)
+  // ตรวจสอบว่ามีข้อมูล GlobalConfig และฟังก์ชัน populateSelect หรือไม่
+  if (typeof globalConfigData !== 'undefined') {
+    populateSelect("details-from", globalConfigData.admittedFrom.map(o => o.value), data.AdmittedFrom);
+    populateSelect("details-dept", globalConfigData.departments.map(o => o.value), data.Dept);
+  }
+
+  // 2. จัดการช่อง "แพทย์เจ้าของไข้" (รูปแบบ Input + Datalist เพื่อให้พิมพ์ค้นหาได้)
+  const doctorInput = document.getElementById("details-doctor");
+  if (doctorInput && typeof globalConfigData !== 'undefined') {
+    // อัปเดตรายการแพทย์ใน Datalist เผื่อมีการเปลี่ยนแปลง
+    if (typeof populateDatalist === 'function') {
+      populateDatalist("doctor-list", globalConfigData.doctors.map(o => o.value));
+    }
+    // ใส่ชื่อแพทย์ปัจจุบัน
+    doctorInput.value = data.Doctor || "";
+  }
+
+  // 3. เติมข้อมูลพื้นฐาน (Input Text / Hidden)
+  const fields = {
+    "details-an": data.AN,
+    "details-an-display": data.AN,
+    "details-hn": data.HN,
+    "details-name": data.Name,
+    "details-address": data.Address,
+    "details-cc": data.ChiefComplaint,
+    "details-pi": data.PresentIllness,
+    "details-dx": data.AdmittingDx,
+    "details-refer": data.Refer,
+    "details-age": data.Age
+  };
+
+  for (let id in fields) {
+    const el = document.getElementById(id);
+    if (el) el.value = fields[id] || "";
+  }
+
+  // 4. จัดการวันที่และเวลา Admit (ต้องเป็นรูปแบบ YYYY-MM-DD และ HH:mm)
+  if (data.AdmitDate) {
+    document.getElementById("details-date").value = formatDateForInput(data.AdmitDate);
+  }
+  if (data.AdmitTime) {
+    document.getElementById("details-time").value = data.AdmitTime;
+  }
+
+  // 5. จัดการการแสดงผล "เตียง"
+  // เริ่มต้นด้วยการแสดงเป็นข้อความ (Display) และซ่อนตัวเลือก (Select) ไว้ก่อน
+  if (detailsBedDisplay && detailsBedSelect) {
+    detailsBedDisplay.value = data.Bed || "ไม่ระบุ";
+    detailsBedDisplay.classList.remove("hidden");
+    detailsBedSelect.classList.add("hidden");
+  }
+
+  // 6. จัดการวันเกิด (แปลงจาก พ.ศ. ใน Data เป็น ค.ศ. สำหรับ input type="date")
+  if (detailsDobInput) {
+    // ใช้ฟังก์ชันแปลงวันที่ถ้าข้อมูลส่งมาเป็นรูปแบบไทย
+    const ceDate = typeof convertBEtoCE === 'function' ? convertBEtoCE(data.DOB_BE) : data.DOB_CE;
+    detailsDobInput.value = ceDate || "";
+  }
+}
+
+/**
+ * ฟังก์ชันเสริม: ช่วยตรวจสอบและฟอร์แมตวันที่ให้เข้ากับ HTML Input (YYYY-MM-DD)
+ */
+function formatDateForInput(dateStr) {
+  if (!dateStr) return "";
+  // กรณีวันที่มาเป็น ISO String หรือรูปแบบอื่น ให้จัดการให้เหลือแค่ YYYY-MM-DD
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0];
+    }
+  } catch (e) {
+    console.error("Date formatting error:", e);
+  }
+  return dateStr;
 }
 
 function resetDetailsModalState() {
