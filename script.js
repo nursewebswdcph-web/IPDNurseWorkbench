@@ -661,25 +661,25 @@ function getISODate(date) {
 // (6) Core App Functions
 // ----------------------------------------------------------------
 
-async function refreshStaffDatalists() {
-  try {
-    if (globalStaffList.length === 0) {
-      const response = await fetch(`${GAS_WEB_APP_URL}?action=getStaffList`);
-      const result = await response.json();
-      if (result.success) globalStaffList = result.data;
-    }
-    const dl = document.getElementById("staff-list-datalist");
-    if (dl) {
-      dl.innerHTML = "";
-      globalStaffList.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s.fullName;
-        // --- เพิ่มบรรทัดนี้เพื่อให้โค้ดดึงตำแหน่งทำงานได้ ---
-        opt.dataset.position = s.position || "พยาบาลวิชาชีพ"; 
-        dl.appendChild(opt);
-      });
-    }
-  } catch (e) { console.error("Error loading staff", e); }
+function refreshStaffDatalists(staffData) {
+    const dataList = document.getElementById('staff-list-datalist');
+    if (!dataList) return;
+
+    dataList.innerHTML = ''; // ล้างข้อมูลเก่า
+    
+    staffData.forEach(staff => {
+        // staff[0] คือ FullName, staff[1] คือ Position (อ้างอิงตามโครงสร้างไฟล์ Staff)
+        const name = staff[0];
+        const position = staff[1];
+        
+        if (name && name !== "FullName") { // ข้ามหัวตาราง
+            const option = document.createElement('option');
+            option.value = name;
+            // เก็บตำแหน่งไว้ใน Attribute เพื่อใช้ดึงภายหลัง
+            option.setAttribute('data-position', position || "พยาบาลวิชาชีพ");
+            dataList.appendChild(option);
+        }
+    });
 }
 
 // สร้าง Config สำหรับจับคู่ชื่อตึกกับไอคอนและสี
