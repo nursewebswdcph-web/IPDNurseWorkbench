@@ -666,17 +666,23 @@ function refreshStaffDatalists(staffData) {
     if (!dataList) return;
 
     dataList.innerHTML = ''; // ล้างข้อมูลเก่า
-    
+
+    // --- จุดที่แก้ไข: เพิ่มการตรวจสอบความถูกต้องของข้อมูล ---
+    if (!staffData || !Array.isArray(staffData)) {
+        console.warn("⚠️ refreshStaffDatalists: ไม่พบข้อมูลพยาบาล หรือรูปแบบข้อมูลไม่ถูกต้อง", staffData);
+        return; 
+    }
+
     staffData.forEach(staff => {
-        // staff[0] คือ FullName, staff[1] คือ Position (อ้างอิงตามโครงสร้างไฟล์ Staff)
-        const name = staff[0];
-        const position = staff[1];
-        
-        if (name && name !== "FullName") { // ข้ามหัวตาราง
+        // ตรวจสอบว่า staff มีข้อมูลและไม่ใช่หัวตาราง
+        if (staff && staff[0] && staff[0] !== "FullName" && staff[0] !== "Username FullName") {
+            const name = staff[0].trim();
+            const position = staff[1] ? staff[1].trim() : "พยาบาลวิชาชีพ";
+            
             const option = document.createElement('option');
             option.value = name;
-            // เก็บตำแหน่งไว้ใน Attribute เพื่อใช้ดึงภายหลัง
-            option.setAttribute('data-position', position || "พยาบาลวิชาชีพ");
+            // ใช้ dataset เพื่อความสะดวกในการดึงค่าภายหลัง
+            option.dataset.position = position;
             dataList.appendChild(option);
         }
     });
