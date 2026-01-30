@@ -357,8 +357,10 @@
                     <input type="text" id="admit-age" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 font-bold text-indigo-600" readonly placeholder="ระบุวันเกิด...">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase">แผนก / สิทธิการรักษา</label>
-                    <select name="Dept" id="admit-dept" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></select>
+                    <label class="block text-xs font-bold text-slate-500 uppercase">แผนก</label>
+                    <select name="Dept" id="admit-dept" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">-- กำลังโหลดแผนก --</option>
+                    </select>
                 </div>
 
                 <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-500 uppercase">ที่อยู่</label><textarea name="Address" id="admit-address" rows="2" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"></textarea></div>
@@ -412,7 +414,12 @@
                     <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-500 uppercase">ที่อยู่</label><textarea id="details-address" name="Address" rows="2" class="mt-1 w-full p-2.5 border rounded-xl"></textarea></div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase">วันเกิด</label><input type="date" id="details-dob" name="DOB_CE" class="mt-1 w-full p-2.5 border rounded-xl"></div>
                     <div><label class="block text-xs font-bold text-slate-500 uppercase">อายุ</label><input type="text" id="details-age" class="mt-1 w-full p-2.5 border rounded-xl bg-slate-200" readonly></div>
-                    <div><label class="block text-xs font-bold text-slate-500 uppercase">แผนก</label><select id="details-dept" name="Dept" class="mt-1 w-full p-2.5 border rounded-xl"></select></div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase">แผนก</label>
+                        <select id="details-dept" name="Dept" class="mt-1.5 w-full p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="">-- กำลังโหลดแผนก --</option>
+                        </select>
+                    </div>
                     <hr class="md:col-span-3 border-slate-100">
                     <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-500 uppercase">อาการสำคัญ</label><textarea id="details-cc" name="ChiefComplaint" rows="2" class="mt-1 w-full p-2.5 border rounded-xl"></textarea></div>
                     <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-500 uppercase">ประวัติการเจ็บป่วย</label><textarea id="details-pi" name="PresentIllness" rows="3" class="mt-1 w-full p-2.5 border rounded-xl"></textarea></div>
@@ -1734,6 +1741,7 @@
   <datalist id="staff-list-datalist"></datalist>
   <datalist id="doctor-list"></datalist>
   <datalist id="ward-list-datalist"></datalist>
+  <datalist id="dept-list-datalist"></datalist>
   <datalist id="focus-template-datalist"></datalist>
   <datalist id="prog-template-list"></datalist>
 </body>
