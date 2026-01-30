@@ -443,14 +443,11 @@ function calculateBradenInForm() {
     }
 }
 function calcBraden() {
-    // Helper: แปลงค่าเป็นตัวเลข (Base 10) ป้องกันการต่อ String
     const getVal = (name) => {
         const el = document.querySelector(`input[name="${name}"]:checked`);
-        // ใช้ parseInt(..., 10) เพื่อบังคับให้เป็นตัวเลข
         return el ? parseInt(el.value, 10) : 0;
     };
 
-    // 1. ดึงค่าคะแนน (จะเป็นตัวเลขแน่นอน)
     const s1 = getVal("Braden_Sensory");
     const s2 = getVal("Braden_Moisture");
     const s3 = getVal("Braden_Activity");
@@ -458,7 +455,6 @@ function calcBraden() {
     const s5 = getVal("Braden_Nutrition");
     const s6 = getVal("Braden_Friction");
 
-    // 2. แสดงคะแนนรายข้อ (ถ้ามี Element รองรับ)
     const setScoreText = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.innerText = val > 0 ? val : '-';
@@ -470,14 +466,11 @@ function calcBraden() {
     setScoreText("score_Braden_Nutrition", s5);
     setScoreText("score_Braden_Friction", s6);
 
-    // 3. คำนวณผลรวม (บวกเลขทางคณิตศาสตร์)
     const total = s1 + s2 + s3 + s4 + s5 + s6;
 
-    // 4. แปลผล
     let resultText = "";
     let colorClass = "text-gray-500";
 
-    // คำนวณเมื่อมีการเลือกอย่างน้อย 1 ข้อ หรือคะแนน > 0
     if (total > 0) {
         if (total <= 9) {
             resultText = "Very high risk (เสี่ยงสูงมาก)";
@@ -494,15 +487,12 @@ function calcBraden() {
         }
     }
 
-    // 5. อัปเดต UI หน้าบันทึก
-    const totalEl = document.getElementById("braden-total-score"); // ตรวจสอบ ID ใน HTML ให้ตรงกัน
+    const totalEl = document.getElementById("braden-total-score");
     const resultEl = document.getElementById("braden-result");
 
-    if (totalEl) totalEl.value = total; // ใส่ค่าตัวเลขลงไป
-    
+    if (totalEl) totalEl.value = total;
     if (resultEl) {
         resultEl.value = resultText;
-        // ล้าง class สีเก่าออกแล้วใส่สีใหม่
         resultEl.className = `w-full text-right text-lg font-black italic border-none bg-transparent focus:outline-none ${colorClass}`;
     }
 }
@@ -1652,52 +1642,44 @@ function populateAssessmentForm(data, targetForm) {
 }
 
 async function handleSaveAssessment(event) {
-  event.preventDefault();
-  
-  // ตรวจสอบว่ามี AN หรือไม่
-  if (!currentPatientAN) {
-    showError('บันทึกไม่สำเร็จ', 'ไม่พบข้อมูล AN ของผู้ป่วย กรุณาเลือกผู้ป่วยใหม่อีกครั้ง');
-    return;
-  }
-
-  showLoading('กำลังบันทึกแบบประเมิน...');
-
-  try {
-    const formData = new FormData(assessmentForm);
-    const data = Object.fromEntries(formData.entries());
-
-    // จัดการ Checkbox (ให้เป็น true/false แทน on/undefined)
-    assessmentForm.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      data[cb.name] = cb.checked;
-    });
-
-    const response = await fetch(GAS_WEB_APP_URL, {
-      method: "POST",
-      // ส่ง Action และ Data ไปในก้อนเดียว
-      body: JSON.stringify({
-        action: "saveAssessmentData",
-        an: currentPatientAN,
-        formData: data,
-        user: data.Assessor_Name || "System"
-      })
-    });
-
-    // ตรวจสอบว่า HTTP Status OK หรือไม่
-    if (!response.ok) throw new Error('Network response was not ok');
-
-    const result = await response.json(); // บรรทัดที่ 1646 เดิม
-    
-    if (result.success) {
-      showSuccess('บันทึกสำเร็จ!', result.message);
-      closeAssessmentModal();
-      showFormPreview('004'); // รีเฟรชหน้า Preview
-    } else {
-      throw new Error(result.message);
+    event.preventDefault();
+    if (!currentPatientAN) {
+        showError('ไม่พบข้อมูล AN', 'กรุณาเลือกผู้ป่วยใหม่อีกครั้ง');
+        return;
     }
-  } catch (error) {
-    console.error("Save Error:", error);
-    showError('เกิดข้อผิดพลาดในการบันทึก', error.message);
-  }
+
+    showLoading('กำลังบันทึกแบบประเมิน...');
+    try {
+        const form = event.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // แก้ไข: จัดการ Checkbox ทุกตัวในฟอร์ม (ถ้าไม่ติ๊กให้ส่งเป็น false)
+        form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            data[cb.name] = cb.checked; 
+        });
+
+        const response = await fetch(GAS_WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "saveAssessmentData",
+                an: currentPatientAN,
+                formData: data,
+                user: data.Assessor_Name || "System"
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            showSuccess('บันทึกสำเร็จ!', 'ข้อมูลแรกรับถูกบันทึกแล้ว');
+            closeAssessmentModal();
+            showFormPreview('004'); // รีเฟรชหน้า Preview ทันที
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        showError('บันทึกไม่สำเร็จ', error.message);
+    }
 }
 // ----------------------------------------------------------------
 // (8) Classification Logic
@@ -3067,7 +3049,6 @@ function calculateMorseColumn(day, shift) {
 
 // 5. ฟังก์ชันบันทึก และ **แสดง Pop-up แนวทางปฏิบัติ**
 async function handleSaveMorse(day, shift) {
-    // 1. ดึงค่าต่างๆ ด้วย Selector ที่แม่นยำ
     const assessorInput = document.querySelector(`.morse-assessor-input[data-day="${day}"][data-shift="${shift}"]`);
     const assessorName = assessorInput ? assessorInput.value.trim() : "";
     
@@ -3085,10 +3066,7 @@ async function handleSaveMorse(day, shift) {
         return;
     }
 
-    // คำนวณคะแนนรวม Morse
     const morseTotal = calculateMorseColumn(day, shift);
-    
-    // ดึงคะแนน MAAS
     const maasSel = document.querySelector(`select[name="MAAS_Score"][data-day="${day}"][data-shift="${shift}"]`);
     const maasScore = maasSel && maasSel.value !== "" ? parseInt(maasSel.value) : null;
 
@@ -3112,7 +3090,6 @@ async function handleSaveMorse(day, shift) {
         entryData[`Morse_${i}`] = checkedRadio ? checkedRadio.value : "";
     }
 
-    // --- ส่งข้อมูลไปบันทึก ---
     showLoading("กำลังบันทึก...");
     try {
         const response = await fetch(GAS_WEB_APP_URL, {
@@ -3120,15 +3097,13 @@ async function handleSaveMorse(day, shift) {
             body: JSON.stringify({ action: "saveMorseMAASShift", entryData: entryData })
         });
         const result = await response.json();
-        
         if (!result.success) throw new Error(result.message);
         
         Swal.close();
 
-        // --- สร้างข้อความ Pop-up แนวทางปฏิบัติ ---
+        // --- ข้อความแนวทางปฏิบัติ (คงเดิม 100%) ---
         let interventionHtml = `<div class="text-left text-sm space-y-4">`;
         
-        // 1. ส่วนของ Morse Fall Scale
         if (morseTotal >= 25) {
              const colorClass = morseTotal >= 51 ? "text-red-600" : "text-orange-600";
              const riskText = morseTotal >= 51 ? "High Risk (≥ 51)" : "Low Risk (25-50)";
@@ -3156,23 +3131,14 @@ async function handleSaveMorse(day, shift) {
              </div>`;
         }
 
-        // 2. ส่วนของ MAAS
         if (maasScore !== null) {
-            let maasHtml = "";
-            
-            // กรณีคะแนน 0-3
-            if (maasScore <= 3) {
-                maasHtml = `<div class="text-green-700 font-bold">ไม่ต้องผูกยึด</div>`;
-            } 
-            // กรณีคะแนน 4-6
-            else {
-                maasHtml = `
-                <div class="text-red-700 font-bold mb-1">ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด</div>
-                <ul class="list-disc pl-5 space-y-1 text-red-600 text-xs">
-                    <li>***ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง***</li>
-                    <li>***กรณีไม่มีญาติให้ผู้ยึดได้เลย****</li>
-                </ul>`;
-            }
+            let maasHtml = (maasScore <= 3) 
+                ? `<div class="text-green-700 font-bold">ไม่ต้องผูกยึด</div>`
+                : `<div class="text-red-700 font-bold mb-1">ต้องผูกยึดผู้ป่วยและเฝ้าระวังการดึงอย่างใกล้ชิด</div>
+                   <ul class="list-disc pl-5 space-y-1 text-red-600 text-xs">
+                       <li>***ก่อนผูกยึดแจ้งญาติให้ทราบก่อนทุกครั้ง***</li>
+                       <li>***กรณีไม่มีญาติให้ผู้ยึดได้เลย****</li>
+                   </ul>`;
 
             interventionHtml += `<div class="p-3 bg-blue-50 rounded border border-blue-200">
                 <h4 class="font-bold text-blue-800 border-b border-blue-200 pb-1 mb-2">
@@ -3611,25 +3577,18 @@ async function renderClassifyPrintMode(an) {
 // ฟังก์ชัน Render หน้ากระดาษ (แก้ไข: ปี พ.ศ. เต็ม + ตัดคำนำหน้าชื่อในตาราง)
 function renderClassifySheetA4(page, targetContainer = null, options = {}) {
   const container = targetContainer || document.getElementById("classify-sheet-content");
-  
   if(!container) return;
 
-  // --- Helper Function: ตัดคำนำหน้าและนามสกุล (เฉพาะในฟังก์ชันนี้) ---
   const getShortName = (fullName) => {
       if (!fullName) return "";
-      // 1. ลบคำนำหน้าชื่อออก (นาย, นาง, นางสาว, น.ส., ยศต่างๆ)
       let cleaned = fullName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ว่าที่ร\.ต\.|ดร\.|พญ\.|นพ\.|Mr\.|Mrs\.|Miss\.|Ms\.)\s*/g, '');
-      // 2. ตัดเอาเฉพาะชื่อต้น (โดยการแบ่งช่องว่างแล้วเอาตัวแรก)
       return cleaned.split(/\s+/)[0]; 
   };
 
-  // 1. คำนวณวันที่
   const admitDate = new Date(currentPatientData.AdmitDate); 
   const startDayOffset = (page - 1) * 5;
-  // [แก้ไข] ใช้ year: 'numeric' เพื่อแสดง พ.ศ. เต็ม (เช่น 2569)
   const admitDateStr = admitDate.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
   
-  // จัดการวันที่จำหน่าย
   let dischargeDateStr = "........................";
   if (options.customDischargeDate) {
       const d = new Date(options.customDischargeDate);
@@ -3638,39 +3597,24 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
       dischargeDateStr = new Date(currentPatientData.DischargeDate).toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
   }
 
-  // จัดการชื่อและตำแหน่งผู้ประเมิน (สำหรับ Footer ใช้ชื่อเต็ม+ตำแหน่ง)
   const assessorNameVal = options.customAssessor || "";
   const assessorPosVal = options.customAssessorPosition || "";
-  
   const assessorDisplay = assessorNameVal 
       ? `(${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''})` 
       : "(..................................................)";
 
-  const currentUser = assessorNameVal 
-      ? `${assessorNameVal}${assessorPosVal ? ', ' + assessorPosVal : ''}` 
-      : "(เจ้าหน้าที่)";
-
   const wardName = currentPatientData.Ward || "........................"; 
   
-  const now = new Date();
-  const printDate = now.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'numeric'});
-  const printTime = now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
-
-  // =========================================================
-  // ส่วนหัวกระดาษ (Header)
-  // =========================================================
   let html = `
     <div class="mb-4 text-black font-sarabun">
         <div class="text-center flex flex-col gap-1">
             <h2 class="font-bold text-xl">แบบบันทึกการจำแนกผู้ป่วย ${wardName}</h2>
             <h3 class="font-bold text-lg">กลุ่มการพยาบาล โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
-            
             <div class="flex justify-center items-center gap-16 mt-1 text-sm font-bold">
                 <div>รับใหม่  ${admitDateStr}</div>
                 <div>จำหน่าย  ${dischargeDateStr}</div>
             </div>
         </div>
-
         <div class="flex justify-between items-end mt-4 px-1 text-[12px] font-bold border-b border-transparent">
            <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
            <div>AN: <span class="text-sm ml-1">${currentPatientData.AN}</span></div>
@@ -3679,9 +3623,6 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
     </div>
   `;
 
-  // =========================================================
-  // ส่วนตาราง (Table Body)
-  // =========================================================
   html += `
     <table class="w-full border-collapse border border-black text-center text-[9px] leading-tight">
       <thead>
@@ -3762,7 +3703,6 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
                } else if ((item.type === 'row' || item.type === 'summary') && val == 0) {
                   val = ""; 
                }
-
                html += `<td class="border border-black p-0.5 text-center align-middle h-5">${val}</td>`;
             });
          }
@@ -3772,13 +3712,10 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
 
   html += `</tbody></table>`;
 
-  // =========================================================
-  // ส่วนท้าย (Criteria Only - No Print Footer)
-  // =========================================================
   html += `
     <div class="mt-4 text-[10px] text-gray-700">
-       <div class="mb-1 font-bold underline">เกณฑ์การแบ่งประเภท: (นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8)</div>
-       <div class="grid grid-cols-2 gap-x-8">
+        <div class="mb-1 font-bold underline">เกณฑ์การแบ่งประเภท: (นับรวมตั้งแต่ข้อ 1 ถึง ข้อ 8)</div>
+        <div class="grid grid-cols-2 gap-x-8">
           <div class="space-y-0.5">
             <div><b>ประเภทที่ 1:</b> ผู้ป่วยพักฟื้นดูแลตัวเองได้ (คะแนน ≤ 8)</div>
             <div><b>ประเภทที่ 2:</b> ผู้ป่วยเจ็บป่วยเล็กน้อย (คะแนน 9-14)</div>
@@ -3789,20 +3726,15 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
           <div class="space-y-0.5">
              <div class="mt-2 text-right"><b>ชื่อผู้ประเมิน</b> ${assessorDisplay}</div>
           </div>
-       </div>
+        </div>
     </div>
   `;
-  // ตัด Footer (ผู้พิมพ์/วันที่) ออกตามที่ขอ
 
   container.innerHTML = html;
   
   if(!targetContainer) {
-      if(document.getElementById("print-classify-page-num")) {
-          document.getElementById("print-classify-page-num").textContent = page;
-      }
-      if(document.getElementById("btn-prev-classify-sheet")) {
-          document.getElementById("btn-prev-classify-sheet").disabled = (page <= 1);
-      }
+      if(document.getElementById("print-classify-page-num")) document.getElementById("print-classify-page-num").textContent = page;
+      if(document.getElementById("btn-prev-classify-sheet")) document.getElementById("btn-prev-classify-sheet").disabled = (page <= 1);
   }
 }
 
@@ -5087,6 +5019,26 @@ function renderForm004Page2(container, options = {}) {
         </div>
     `;
 }
+// ฟังก์ชันดึงตำแหน่งอัตโนมัติ (วางไว้นอก DOMContentLoaded)
+function updateAssessorPosition(inputElement) {
+    const selectedName = inputElement.value.trim();
+    // ตรวจสอบว่ามีข้อมูลใน globalStaffList หรือไม่
+    if (!selectedName || typeof globalStaffList === 'undefined' || globalStaffList.length === 0) return;
+
+    const staff = globalStaffList.find(s => s.fullName.trim() === selectedName);
+    if (staff) {
+        const parentForm = inputElement.closest('form') || document;
+        // ค้นหาช่องตำแหน่งที่อาจใช้ชื่อต่างกันในแต่ละฟอร์ม
+        const posInput = parentForm.querySelector('[name="Assessor_Position"]') || 
+                         parentForm.querySelector('[name="Nurse_Pos"]') ||
+                         parentForm.querySelector('#assessor-position-display') ||
+                         parentForm.querySelector('.morse-position-input'); // สำหรับฟอร์ม Morse
+        
+        if (posInput) {
+            posInput.value = staff.position || "พยาบาลวิชาชีพ";
+        }
+    }
+}
 // ----------------------------------------------------------------
 // (10) MAIN EVENT LISTENERS (Updated - รวมฟังก์ชันดึงตำแหน่งข้อ 15)
 // ----------------------------------------------------------------
@@ -5307,4 +5259,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+	document.body.addEventListener('input', (e) => {
+        if (e.target.list && e.target.list.id === 'staff-list-datalist') {
+            updateAssessorPosition(e.target);
+        }
+    });
 });
