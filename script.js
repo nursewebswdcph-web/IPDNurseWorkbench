@@ -355,40 +355,40 @@ function refreshWardDatalist() {
     });
 }
 
-// เพิ่มฟังก์ชันนี้ลงใน script.js ของคุณ
 function refreshDeptDropdowns() {
-    google.script.run.withSuccessHandler(function(deptList) {
-        // รายชื่อ ID ของ <select> ที่ต้องการให้อัปเดต
-        const selects = ['admit-dept', 'details-dept']; 
-        // ID ของ <datalist> (ถ้ามี)
-        const deptDatalist = document.getElementById('dept-list-datalist');
-        
-        let optionsHtml = '<option value="">-- เลือกแผนก --</option>';
-        let datalistHtml = '';
+    // ตรวจสอบว่ารันอยู่ในระบบ Google Apps Script หรือไม่
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(function(deptList) {
+            updateDeptElements(deptList);
+        }).getDeptOptions(); 
+    } else {
+        // หากรันแบบ Local ให้พยายามดึงผ่าน fetch (ถ้า Code.gs รองรับ action=getDeptOptions)
+        // หรือดึงข้อมูลจาก WARD_LIST มาเป็นค่าเริ่มต้นก่อน
+        console.warn("⚠️ google.script.run is not available (Local Testing Mode)");
+        const defaultDepts = WARD_LIST.map(w => ({ value: w, context: "" }));
+        updateDeptElements(defaultDepts);
+    }
+}
 
-        deptList.forEach(item => {
-            // สร้าง Label: ถ้ามี context ให้แสดงในวงเล็บ เช่น "ประกันสังคม (ศัลยกรรม)"
-            const label = item.context ? `${item.value} (${item.context})` : item.value;
-            
-            // สำหรับ <select>
-            optionsHtml += `<option value="${item.value}">${label}</option>`;
-            
-            // สำหรับ <datalist>
-            datalistHtml += `<option value="${item.value}">`;
-        });
+// แยกฟังก์ชัน Update UI ออกมาเพื่อให้เรียกใช้ได้จากหลายแหล่ง
+function updateDeptElements(deptList) {
+    const selects = ['admit-dept', 'details-dept']; 
+    const deptDatalist = document.getElementById('dept-list-datalist');
+    
+    let optionsHtml = '<option value="">-- เลือกแผนก --</option>';
+    let datalistHtml = '';
 
-        // 1. อัปเดต Dropdown (Select Elements)
-        selects.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = optionsHtml;
-        });
+    deptList.forEach(item => {
+        const label = item.context ? `${item.value} (${item.context})` : item.value;
+        optionsHtml += `<option value="${item.value}">${label}</option>`;
+        datalistHtml += `<option value="${item.value}">`;
+    });
 
-        // 2. อัปเดต Datalist (ถ้ามี)
-        if (deptDatalist) {
-            deptDatalist.innerHTML = datalistHtml;
-        }
-        
-    }).getDeptOptions(); // เรียกฟังก์ชันใน code.gs ที่ส่งค่า getConfigData("Dept") ออกมา
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = optionsHtml;
+    });
+    if (deptDatalist) deptDatalist.innerHTML = datalistHtml;
 }
 
 // เรียกใช้ฟังก์ชันนี้ตอนโหลดหน้าเว็บ
@@ -461,7 +461,14 @@ function updateStaffDatalist() {
     });
 }
 // สั่งให้โหลดทันทีเมื่อไฟล์ JS นี้ถูกอ่าน
-window.addEventListener('load', loadStaffData);
+window.addEventListener('load', () => {
+    try {
+        loadStaffData();          // โหลดข้อมูลพยาบาล (ฟังก์ชันเดิมที่มีอยู่)
+        refreshDeptDropdowns();   // โหลดข้อมูลแผนก (ฟังก์ชันที่แก้ไขใหม่)
+    } catch (e) {
+        console.error("Initialization Error:", e);
+    }
+});
 
 
 // =================================================================
