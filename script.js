@@ -356,18 +356,24 @@ function refreshWardDatalist() {
 }
 
 function refreshDeptDropdowns() {
-    // ตรวจสอบว่ารันอยู่ในระบบ Google Apps Script หรือไม่
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run.withSuccessHandler(function(deptList) {
-            updateDeptElements(deptList);
-        }).getDeptOptions(); 
-    } else {
-        // หากรันแบบ Local ให้พยายามดึงผ่าน fetch (ถ้า Code.gs รองรับ action=getDeptOptions)
-        // หรือดึงข้อมูลจาก WARD_LIST มาเป็นค่าเริ่มต้นก่อน
-        console.warn("⚠️ google.script.run is not available (Local Testing Mode)");
-        const defaultDepts = WARD_LIST.map(w => ({ value: w, context: "" }));
-        updateDeptElements(defaultDepts);
-    }
+    google.script.run.withSuccessHandler(function(deptList) {
+        // อ้างอิง ID ให้ตรงกับใน index.html (สมมติว่าเป็น id="dept")
+        const deptDropdown = document.getElementById('dept'); 
+        if (!deptDropdown) return;
+
+        // ล้างข้อมูลเก่าและเพิ่มตัวเลือกแรก
+        deptDropdown.innerHTML = '<option value="">-- กรุณาเลือกแผนก --</option>';
+
+        // วนลูปสร้างตัวเลือกจากรายชื่อแผนกที่กรองแล้ว
+        deptList.forEach(deptName => {
+            if (deptName) {
+                let option = document.createElement('option');
+                option.value = deptName;
+                option.text = deptName;
+                deptDropdown.add(option);
+            }
+        });
+    }).getDepartmentData();
 }
 
 // แยกฟังก์ชัน Update UI ออกมาเพื่อให้เรียกใช้ได้จากหลายแหล่ง
