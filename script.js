@@ -356,49 +356,39 @@ function refreshWardDatalist() {
 }
 
 // เพิ่มฟังก์ชันนี้ลงใน script.js ของคุณ
-function refreshConfigDropdowns() {
-    google.script.run.withSuccessHandler(function(configData) {
-        // configData ควรเป็น Object ที่มี property เช่น departments: []
-        const depts = configData.departments || [];
-        
-        const deptSelects = ['admit-dept', 'details-dept'];
+function refreshDeptDropdowns() {
+    google.script.run.withSuccessHandler(function(deptList) {
+        // รายชื่อ ID ของ <select> ที่ต้องการให้อัปเดต
+        const selects = ['admit-dept', 'details-dept']; 
+        // ID ของ <datalist> (ถ้ามี)
         const deptDatalist = document.getElementById('dept-list-datalist');
         
         let optionsHtml = '<option value="">-- เลือกแผนก --</option>';
         let datalistHtml = '';
 
-        depts.forEach(dept => {
-            optionsHtml += `<option value="${dept}">${dept}</option>`;
-            datalistHtml += `<option value="${dept}">`;
+        deptList.forEach(item => {
+            // สร้าง Label: ถ้ามี context ให้แสดงในวงเล็บ เช่น "ประกันสังคม (ศัลยกรรม)"
+            const label = item.context ? `${item.value} (${item.context})` : item.value;
+            
+            // สำหรับ <select>
+            optionsHtml += `<option value="${item.value}">${label}</option>`;
+            
+            // สำหรับ <datalist>
+            datalistHtml += `<option value="${item.value}">`;
         });
 
-        // อัปเดต Dropdown ใน Modal ต่างๆ
-        deptSelects.forEach(id => {
+        // 1. อัปเดต Dropdown (Select Elements)
+        selects.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = optionsHtml;
         });
 
-        // อัปเดต Datalist (ถ้ามี)
-        if (deptDatalist) deptDatalist.innerHTML = datalistHtml;
-
-    }).getConfigData(); // ชื่อฟังก์ชันใน code.gs ต้องตรงกัน
-}
-() {
-    google.script.run.withSuccessHandler(function(deptList) {
-        const selects = ['admit-dept', 'details-dept']; // ID ของ Select ใน HTML
+        // 2. อัปเดต Datalist (ถ้ามี)
+        if (deptDatalist) {
+            deptDatalist.innerHTML = datalistHtml;
+        }
         
-        let html = '<option value="">-- เลือกแผนก --</option>';
-        deptList.forEach(item => {
-            // ถ้ามี context ให้แสดงในวงเล็บ เช่น "ประกันสังคม (ศัลยกรรม)"
-            const label = item.context ? `${item.value} (${item.context})` : item.value;
-            html += `<option value="${item.value}">${label}</option>`;
-        });
-
-        selects.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = html;
-        });
-    }).getDeptOptions();
+    }).getDeptOptions(); // เรียกฟังก์ชันใน code.gs ที่ส่งค่า getConfigData("Dept") ออกมา
 }
 
 // เรียกใช้ฟังก์ชันนี้ตอนโหลดหน้าเว็บ
