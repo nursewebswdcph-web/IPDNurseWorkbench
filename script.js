@@ -5186,34 +5186,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 8. Assessment Form Logic (004)
     if (assessmentForm) {
-        assessmentForm.addEventListener("submit", handleSaveAssessment);
-        assessmentForm.addEventListener('change', (e) => {
-            // Auto Calculate Braden
-            if (e.target.classList.contains('braden-score')) {
-                let total = 0;
-                assessmentForm.querySelectorAll('.braden-score:checked').forEach(r => total += parseInt(r.value));
-                const totalInp = document.getElementById("braden-total-score");
-                if (totalInp) {
-                    totalInp.value = total;
-                    updateBradenResult(total); 
-                }
-            }
-            // Auto Toggle Fields
-            if (e.target.classList.contains('assessment-radio-toggle')) {
-                const groupName = e.target.name;
-                const form = e.target.closest('form');
-                form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
-                    const tid = sibling.dataset.controls;
-                    if (tid) form.querySelector(`#${tid}`)?.classList.add('hidden');
-                });
-                const targetId = e.target.dataset.controls;
-                if (e.target.checked && targetId) {
-                    form.querySelector(`#${targetId}`)?.classList.remove('hidden');
-                }
-            }
-        });
-    }
+    // ลบ Listener เก่าออกก่อนเพื่อความปลอดภัย แล้วผูกใหม่ด้วยชื่อฟังก์ชันที่ถูกต้อง
+    assessmentForm.removeEventListener('submit', handleAssessmentSubmit);
+    assessmentForm.addEventListener('submit', handleAssessmentSubmit);
 
+    // ส่วนจัดการการคำนวณ Braden ในฟอร์ม (คงไว้ตามเดิม)
+    assessmentForm.addEventListener('change', (e) => {
+        if (e.target.classList.contains('braden-score')) {
+            let total = 0;
+            assessmentForm.querySelectorAll('.braden-score:checked').forEach(r => total += parseInt(r.value));
+            const totalInp = document.getElementById("braden-total-score");
+            if (totalInp) {
+                totalInp.value = total;
+                if (typeof updateBradenResult === 'function') updateBradenResult(total); 
+            }
+        }
+        // Auto Toggle Fields
+        if (e.target.classList.contains('assessment-radio-toggle')) {
+            const groupName = e.target.name;
+            const form = e.target.closest('form');
+            form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
+                const tid = sibling.dataset.controls;
+                if (tid) form.querySelector(`#${tid}`)?.classList.add('hidden');
+            });
+            const targetId = e.target.dataset.controls;
+            if (e.target.checked && targetId) {
+                form.querySelector(`#${targetId}`)?.classList.remove('hidden');
+            }
+        }
+    });
+}
     // 9. Staff Datalist Auto-fill (Generic Listener)
     document.body.addEventListener('input', (e) => {
         if (e.target.list && e.target.list.id === 'staff-list-datalist') {
@@ -5269,11 +5271,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 sidebarArrow.innerHTML = '<i class="fas fa-chevron-down"></i>';
             }
         });
-    }
-
-    if (assessmentForm) {
-        assessmentForm.removeEventListener('submit', handleAssessmentSubmit);
-        assessmentForm.addEventListener('submit', handleAssessmentSubmit);
     }
 	
 	// 15. ค้นหาตำแหน่งที่รวม Event Listeners (บรรทัดสุดท้ายภายใน DOMContentLoaded)
