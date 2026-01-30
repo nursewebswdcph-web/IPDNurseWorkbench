@@ -12,6 +12,15 @@ const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymniWtx3CC7M_W
 // ----------------------------------------------------------------
 const ADL_TASKS = ["การรับประทานอาหาร", "การทำความสะอาดปาก/ฟัน", "การแต่งตัว", "การเดิน", "การขับถ่าย", "การอาบน้ำ"];
 const ADL_OPTIONS = ["ทำได้เอง", "บางส่วน", "ไม่ได้เลย", "ใช้อุปกรณ์"];
+const WARD_LIST = [
+    "กุมารเวชกรรม",
+    "จิตเวช",
+    "นรีเวช",
+    "ศัลยกรรมทั่วไป",
+    "ศัลยกรรมออร์โธปิดิกส์",
+    "สูติกรรม",
+    "อายุรกรรม"
+];
 const CLASSIFY_CRITERIA = {
   "1": {
     title: "1. สัญญาณชีพ",
@@ -332,6 +341,19 @@ const BRADEN_CRITERIA = [
 // ----------------------------------------------------------------
 // (5) Utility Functions
 // ----------------------------------------------------------------
+function refreshWardDatalist() {
+    const dataList = document.getElementById('ward-list-datalist');
+    if (!dataList) return;
+
+    dataList.innerHTML = ""; // ล้างข้อมูลเก่า
+    
+    // วนลูปสร้างรายการจาก WARD_LIST
+    WARD_LIST.forEach(ward => {
+        const option = document.createElement('option');
+        option.value = ward;
+        dataList.appendChild(option);
+    });
+}
 function showLoading(title = 'กำลังประมวลผล...') {
     Swal.fire({
         html: `
@@ -401,6 +423,7 @@ function updateStaffDatalist() {
 }
 // สั่งให้โหลดทันทีเมื่อไฟล์ JS นี้ถูกอ่าน
 window.addEventListener('load', loadStaffData);
+
 
 // =================================================================
 // ฟังก์ชันคำนวณหน้าบันทึก (แก้ปัญหาผลรวม 56 -> 23)
@@ -5043,6 +5066,7 @@ function updateAssessorPosition(inputElement) {
 // (10) MAIN EVENT LISTENERS (Updated - รวมฟังก์ชันดึงตำแหน่งข้อ 15)
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
+	refreshWardDatalist();
     updateClock(); 
     setInterval(updateClock, 1000);
     loadWards();
