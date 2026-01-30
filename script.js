@@ -1633,18 +1633,12 @@ async function handleAssessmentSubmit(event) {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
-    // ส่วนที่แก้ไข: จัดการ Checkbox (เพราะ FormData จะไม่เอาค่าที่ไม่ได้ติ๊กมาส่ง)
-    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
-    checkboxes.forEach(cb => {
-        data[cb.name] = cb.checked; // ส่งเป็น true หรือ false
+    // จัดการ Checkbox (สำคัญ: ถ้าไม่ติ๊กใน HTML มันจะไม่ส่งค่ามา เราต้องบังคับให้เป็น false)
+    form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        data[cb.name] = cb.checked; 
     });
 
-    // จัดการ Radio (ถ้ามี)
-    const radios = form.querySelectorAll('input[type="radio"]:checked');
-    radios.forEach(rd => {
-        data[rd.name] = rd.value;
-    });
-
+    // ดึง AN จาก Element ที่แสดงบนหน้าจอ
     const an = document.getElementById('assess-an-display').textContent;
 
     showLoading('กำลังบันทึกแบบประเมิน...');
@@ -1653,19 +1647,18 @@ async function handleAssessmentSubmit(event) {
         const response = await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action: 'saveAssessmentForm', // ตรวจสอบให้ตรงกับ switch case ใน Code.gs
+                action: 'saveAssessmentForm', // ให้ชื่อตรงกับ Code.gs
                 an: an,
                 formData: data,
-                user: "Nurse_User" // หรือตัวแปรผู้ใช้งานจริง
+                user: data.Assessor_Name || "System"
             })
         });
 
         const result = await response.json();
         if (result.success) {
-            showSuccess('บันทึกสำเร็จ', 'ข้อมูลแบบประเมินถูกบันทึกลงฐานข้อมูลแล้ว');
+            showSuccess('บันทึกสำเร็จ', 'ข้อมูลถูกบันทึกลงชีต 004 เรียบร้อยแล้ว');
             closeModal('assessment-modal');
-            // รีโหลดหน้าพรีวิวถ้าเปิดอยู่
-            if (currentAN === an) renderForm004PrintMode(an);
+            showFormPreview('004'); // รีเฟรชหน้า Preview ทันที
         } else {
             throw new Error(result.message);
         }
@@ -1690,6 +1683,12 @@ function populateAssessmentForm(data, targetForm) {
   document.getElementById('assess-hn-display').textContent = currentPatientData.HN || '-';
   document.getElementById('assess-an-display').textContent = currentPatientData.AN || '-';
   document.getElementById('assess-doctor-display').textContent = currentPatientData.Doctor || '-';
+
+// ตรวจสอบว่าใน HTML ของฟอร์ม 004 มี <input type="hidden" name="Dept"> หรือไม่
+  const deptInput = targetForm.querySelector('[name="Dept"]');
+  if (deptInput) {
+      deptInput.value = currentPatientData.Dept || "";
+  }
 
   // ตั้งค่าข้อมูลแรกรับอัตโนมัติ (Registry Info)
   const setVal = (id, val) => { const el = targetForm.querySelector(`#${id}`); if(el) el.value = val; };
@@ -1721,46 +1720,6 @@ function populateAssessmentForm(data, targetForm) {
   // หมายเหตุ: ไม่ต้องเรียก calculateBradenScore แล้ว เนื่องจากต้องการยกเลิกการรวมคะแนน
 }
 
-async function handleSaveAssessment(event) {
-    event.preventDefault();
-    if (!currentPatientAN) {
-        showError('ไม่พบข้อมูล AN', 'กรุณาเลือกผู้ป่วยใหม่อีกครั้ง');
-        return;
-    }
-
-    showLoading('กำลังบันทึกแบบประเมิน...');
-    try {
-        const form = event.target;
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        // แก้ไข: จัดการ Checkbox ทุกตัวในฟอร์ม (ถ้าไม่ติ๊กให้ส่งเป็น false)
-        form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            data[cb.name] = cb.checked; 
-        });
-
-        const response = await fetch(GAS_WEB_APP_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "saveAssessmentData",
-                an: currentPatientAN,
-                formData: data,
-                user: data.Assessor_Name || "System"
-            })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            showSuccess('บันทึกสำเร็จ!', 'ข้อมูลแรกรับถูกบันทึกแล้ว');
-            closeAssessmentModal();
-            showFormPreview('004'); // รีเฟรชหน้า Preview ทันที
-        } else {
-            throw new Error(result.message);
-        }
-    } catch (error) {
-        showError('บันทึกไม่สำเร็จ', error.message);
-    }
-}
 // ----------------------------------------------------------------
 // (8) Classification Logic
 // ----------------------------------------------------------------
