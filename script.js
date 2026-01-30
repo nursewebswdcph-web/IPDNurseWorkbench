@@ -5301,8 +5301,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const assessmentForm = document.getElementById('assessment-form');
     if (assessmentForm) {
+        assessmentForm.removeEventListener('submit', handleAssessmentSubmit);
         assessmentForm.addEventListener('submit', handleAssessmentSubmit);
     }
 	
