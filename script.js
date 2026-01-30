@@ -354,6 +354,53 @@ function refreshWardDatalist() {
         dataList.appendChild(option);
     });
 }
+
+// เพิ่มฟังก์ชันนี้ลงใน script.js ของคุณ
+function refreshConfigDropdowns() {
+    google.script.run.withSuccessHandler(function(configData) {
+        // configData ควรเป็น Object ที่มี property เช่น departments: []
+        const depts = configData.departments || [];
+        
+        const deptSelects = ['admit-dept', 'details-dept'];
+        const deptDatalist = document.getElementById('dept-list-datalist');
+        
+        let optionsHtml = '<option value="">-- เลือกแผนก --</option>';
+        let datalistHtml = '';
+
+        depts.forEach(dept => {
+            optionsHtml += `<option value="${dept}">${dept}</option>`;
+            datalistHtml += `<option value="${dept}">`;
+        });
+
+        // อัปเดต Dropdown ใน Modal ต่างๆ
+        deptSelects.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = optionsHtml;
+        });
+
+        // อัปเดต Datalist (ถ้ามี)
+        if (deptDatalist) deptDatalist.innerHTML = datalistHtml;
+
+    }).getConfigData(); // ชื่อฟังก์ชันใน code.gs ต้องตรงกัน
+}
+function refreshDeptDropdowns() {
+  google.script.run.withSuccessHandler(function(deptList) {
+    const deptSelects = ['admit-dept', 'details-dept']; // ID ของ select ในหน้า HTML
+    
+    let html = '<option value="">-- เลือกแผนก --</option>';
+    deptList.forEach(item => {
+      html += `<option value="${item.value}">${item.value} ${item.context ? '(' + item.context + ')' : ''}</option>`;
+    });
+
+    deptSelects.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    });
+  }).getDepartmentOptions();
+}
+
+// เรียกใช้ฟังก์ชันนี้ตอนโหลดหน้าเว็บ
+window.addEventListener('load', refreshDeptDropdowns);
 function showLoading(title = 'กำลังประมวลผล...') {
     Swal.fire({
         html: `
