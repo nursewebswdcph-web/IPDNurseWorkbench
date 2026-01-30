@@ -383,20 +383,22 @@ function refreshConfigDropdowns() {
 
     }).getConfigData(); // ชื่อฟังก์ชันใน code.gs ต้องตรงกัน
 }
-function refreshDeptDropdowns() {
-  google.script.run.withSuccessHandler(function(deptList) {
-    const deptSelects = ['admit-dept', 'details-dept']; // ID ของ select ในหน้า HTML
-    
-    let html = '<option value="">-- เลือกแผนก --</option>';
-    deptList.forEach(item => {
-      html += `<option value="${item.value}">${item.value} ${item.context ? '(' + item.context + ')' : ''}</option>`;
-    });
+() {
+    google.script.run.withSuccessHandler(function(deptList) {
+        const selects = ['admit-dept', 'details-dept']; // ID ของ Select ใน HTML
+        
+        let html = '<option value="">-- เลือกแผนก --</option>';
+        deptList.forEach(item => {
+            // ถ้ามี context ให้แสดงในวงเล็บ เช่น "ประกันสังคม (ศัลยกรรม)"
+            const label = item.context ? `${item.value} (${item.context})` : item.value;
+            html += `<option value="${item.value}">${label}</option>`;
+        });
 
-    deptSelects.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = html;
-    });
-  }).getDepartmentOptions();
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = html;
+        });
+    }).getDeptOptions();
 }
 
 // เรียกใช้ฟังก์ชันนี้ตอนโหลดหน้าเว็บ
@@ -5114,6 +5116,7 @@ function updateAssessorPosition(inputElement) {
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
 	refreshWardDatalist();
+	refreshDeptDropdowns();
     updateClock(); 
     setInterval(updateClock, 1000);
     loadWards();
