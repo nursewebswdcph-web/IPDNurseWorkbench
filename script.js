@@ -356,24 +356,28 @@ function refreshWardDatalist() {
 }
 
 function refreshDeptDropdowns() {
-    google.script.run.withSuccessHandler(function(deptList) {
-        // อ้างอิง ID ให้ตรงกับใน index.html (สมมติว่าเป็น id="dept")
-        const deptDropdown = document.getElementById('dept'); 
-        if (!deptDropdown) return;
+    // เพิ่มการตรวจสอบว่าตัวแปร google ถูกโหลดมาหรือยัง
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run.withSuccessHandler(function(deptList) {
+            const deptDropdown = document.getElementById('dept'); 
+            if (!deptDropdown) return;
 
-        // ล้างข้อมูลเก่าและเพิ่มตัวเลือกแรก
-        deptDropdown.innerHTML = '<option value="">-- กรุณาเลือกแผนก --</option>';
-
-        // วนลูปสร้างตัวเลือกจากรายชื่อแผนกที่กรองแล้ว
-        deptList.forEach(deptName => {
-            if (deptName) {
-                let option = document.createElement('option');
-                option.value = deptName;
-                option.text = deptName;
-                deptDropdown.add(option);
-            }
-        });
-    }).getDepartmentData();
+            deptDropdown.innerHTML = '<option value="">-- กรุณาเลือกแผนก --</option>';
+            deptList.forEach(deptName => {
+                if (deptName) {
+                    let option = document.createElement('option');
+                    option.value = deptName;
+                    option.text = deptName;
+                    deptDropdown.add(option);
+                }
+            });
+        }).getDepartmentData();
+    } else {
+        console.warn("Google Apps Script context not found. If testing locally, this is expected.");
+        // (Optional) ใส่ข้อมูลจำลองสำหรับทดสอบหน้าจอเบื้องต้น
+        // const deptDropdown = document.getElementById('dept');
+        // if (deptDropdown) deptDropdown.innerHTML = '<option value="">-- Local Test Mode --</option>';
+    }
 }
 
 // แยกฟังก์ชัน Update UI ออกมาเพื่อให้เรียกใช้ได้จากหลายแหล่ง
@@ -469,8 +473,9 @@ function updateStaffDatalist() {
 // สั่งให้โหลดทันทีเมื่อไฟล์ JS นี้ถูกอ่าน
 window.addEventListener('load', () => {
     try {
-        loadStaffData();          // โหลดข้อมูลพยาบาล (ฟังก์ชันเดิมที่มีอยู่)
-        refreshDeptDropdowns();   // โหลดข้อมูลแผนก (ฟังก์ชันที่แก้ไขใหม่)
+        // ตรวจสอบก่อนเรียก
+        if (typeof loadStaffData === 'function') loadStaffData();
+        if (typeof refreshDeptDropdowns === 'function') refreshDeptDropdowns();
     } catch (e) {
         console.error("Initialization Error:", e);
     }
