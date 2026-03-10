@@ -4481,40 +4481,34 @@ async function renderForm004PrintMode(an) {
 }
 
 // 3. ฟังก์ชัน Render หน้า 1 (แก้ไขให้ใช้ไอคอนสี่เหลี่ยม)
+// =================================================================
+// 3. ฟังก์ชัน Render หน้า 1 (IPD-004) - ปรับปรุงขนาดตัวอักษรให้คงที่
+// =================================================================
 function renderForm004Page1(container, options = {}) {
     const d = options.data || {};
     const p = currentPatientData || {};
     const wardName = p.Ward || "........................";
 
-    // --- Helpers ---
+    // --- Helpers (บังคับหน่วยเป็น pt เพื่อความคงที่) ---
     const formatDate = (date) => (typeof formatDateThai === 'function') ? formatDateThai(date) : (date || '');
     const formatT = (time) => (typeof formatTime === 'function') ? formatTime(time) : (time || '');
     const dateText = formatDate(d.AdmitDate);
     const timeText = formatT(d.AdmitTime);
     
-    const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.4em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
+    // ปรับจุดไข่ปลาให้รองรับการตัดคำกรณีข้อความยาว และใช้หน่วย pt
+    const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold align-bottom" style="width:${w}; min-width: 20px; font-size: 14pt; line-height: 1.2; word-break: break-word;">${val || "&nbsp;"}</span>`;
     
-    // *** New Checkbox Logic with Icons ***
     const chk = (val, target, label) => {
-    let isChecked = false;
-    
-    // กรณีเป็น Boolean (เช่น Hx_HT = true)
-    if (typeof val === 'boolean') {
-        isChecked = val === true;
-    } 
-    // กรณีเป็น Array (ที่เราสร้างจาก normalizeData004)
-    else if (Array.isArray(val)) {
-        isChecked = val.includes(target);
-    } 
-    // กรณีเป็น String (เช่น 'เดินมา')
-    else if (val) {
-        const parts = String(val).split(',').map(s => s.trim());
-        isChecked = parts.includes(target) || String(val) === target;
-    }
-
-    const icon = isChecked ? `<i class="far fa-check-square text-[14px]"></i>` : `<i class="far fa-square text-[14px]"></i>`;
-    return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap gap-1">${icon} ${label}</span>`;
-};
+        let isChecked = false;
+        if (typeof val === 'boolean') isChecked = val === true;
+        else if (Array.isArray(val)) isChecked = val.includes(target);
+        else if (val) {
+            const parts = String(val).split(',').map(s => s.trim());
+            isChecked = parts.includes(target) || String(val) === target;
+        }
+        const icon = isChecked ? `<i class="far fa-check-square" style="font-size: 14pt;"></i>` : `<i class="far fa-square" style="font-size: 14pt;"></i>`;
+        return `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap gap-1" style="font-size: 14pt;">${icon} ${label}</span>`;
+    };
 
     const formatDateFull = (dateStr) => {
         if (!dateStr) return ".........................";
@@ -4528,275 +4522,234 @@ function renderForm004Page1(container, options = {}) {
     const checkADL = (val, target) => {
         if (!val) return '';
         const v = String(val).trim();
-        // เงื่อนไขการติ๊ก ADL
         let isMatch = false;
         if (target === 'Independent' && (v === 'ทำได้เอง' || v === 'Independent' || v === '4')) isMatch = true;
         if (target === 'Partial' && (v === 'บางส่วน' || v === 'Partial' || v === 'ใช้อุปกรณ์' || v === '3' || v === '2')) isMatch = true;
         if (target === 'Dependent' && (v === 'ไม่ได้เลย' || v === 'Dependent' || v === '1')) isMatch = true;
-        return isMatch ? `<i class="fas fa-check text-[12px]"></i>` : '';
+        return isMatch ? `<i class="fas fa-check" style="font-size: 12pt;"></i>` : '';
     };
 
     let contentHtml = `
-    <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
-       <div class="w-[15%]"></div>
-       <div class="text-center w-[70%]">
-          <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
-          <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
-       </div>
-       <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
-          <div class="font-bold text-[12px]">FR-IPD-004</div>
-          <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
-       </div>
-    </div>
-    
-    <div class="flex justify-between items-end mb-2 px-1 text-[11px] font-bold border-b border-transparent">
-        <div>ชื่อ-สกุล: <span class="font-normal text-sm">${currentPatientData.Name}</span></div>
-        <div class="flex gap-4">
-             <span>HN: <span class="font-normal text-sm">${currentPatientData.HN}</span></span>
-             <span>AN: <span class="font-normal text-sm">${currentPatientData.AN}</span></span>
-             <span>หอผู้ป่วย: <span class="font-normal text-sm">${wardName}</span></span>
-        </div>
-    </div>
-
-    <div class="font-sarabun text-black text-[12px] leading-tight mt-2">
-        
-        <div class="flex items-end w-full mb-1 whitespace-nowrap">
-            <span class="mr-1">วันที่</span> ${dot(dateText, "90px")}
-            <span class="mx-2">เวลา</span> ${dot(timeText, "50px")} <span class="mr-2">น.</span>
-            <span class="mr-1">รับจาก</span> ${dot(d.AdmittedFrom, "160px")}
-            <span class="mx-2">รับ REFER จาก</span> ${dot(d.Refer, "160px")}
-        </div>
-
-        <div class="flex flex-wrap items-end gap-3 mb-1">
-            <span class="font-bold">มาโดย :</span> 
-            ${chk(d.ArriveBy, 'เดินมา', 'เดินมา')}
-            ${chk(d.ArriveBy, 'รถนั่ง', 'รถนั่ง')}
-            ${chk(d.ArriveBy, 'เปลนอน', 'เปลนอน')}
-            <span class="mx-2">|</span>
-            <span class="font-bold">ผู้ให้ข้อมูล :</span>
-            ${chk(d.InfoSource, 'ผู้ป่วย', 'ผู้ป่วย')}
-            ${chk(d.InfoSource, 'ผู้นำส่ง/ญาติ', 'ผู้นำส่ง/ญาติ')}
+    <div style="font-family: 'Sarabun', sans-serif; font-size: 14pt; color: black; line-height: 1.15; width: 100%;">
+        <div class="flex justify-between items-end mb-1 border-b border-black pb-1">
+           <div style="width: 15%;"></div>
+           <div class="text-center" style="width: 70%;">
+              <h2 style="font-size: 18pt; font-weight: bold; margin: 0;">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
+              <h3 style="font-size: 16pt; font-weight: bold; margin: 0;">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+           </div>
+           <div style="width: 15%; text-align: right; font-size: 10pt;" class="flex flex-col justify-end">
+              <div style="font-weight: bold; font-size: 12pt;">FR-IPD-004</div>
+              <div>แก้ไขครั้งที่ 02</div>
+              <div>1 ม.ค. 2564</div>
+           </div>
         </div>
         
-        <div class="flex flex-wrap items-end gap-3 mb-1">
-            <span class="font-bold ml-6 mr-1">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver_Name, "200px")}
-            <span class="font-bold ml-2 mr-1">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.MainCaregiver_Rel, "120px")}
+        <div class="flex justify-between items-end mb-2 px-1" style="font-weight: bold; font-size: 13pt;">
+            <div>ชื่อ-สกุล: <span style="font-weight: normal;">${p.Name || ''}</span></div>
+            <div class="flex gap-4">
+                 <span>HN: <span style="font-weight: normal;">${p.HN || ''}</span></span>
+                 <span>AN: <span style="font-weight: normal;">${p.AN || ''}</span></span>
+                 <span>หอผู้ป่วย: <span style="font-weight: normal;">${wardName}</span></span>
+            </div>
         </div>
 
-        <div class="border border-black p-1.5 mb-1 space-y-1">
-            <div class="flex items-end"><span class="font-bold w-24">อาการสำคัญ</span><div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.ChiefComplaint || ''}</div></div>
-            <div class="flex items-end"><span class="font-bold w-32">ประวัติการเจ็บป่วย</span><div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.PresentIllness || ''}</div></div>
-            <div class="flex items-end"><span class="font-bold w-48">อาการและอาการแสดงแรกรับ</span><div class="border-b border-black border-dotted flex-grow text-blue-900 px-2 font-bold">${d.AdmitSymptoms || ''}</div></div>
-            
-            <div class="flex items-end mt-1">
-                <span class="font-bold mr-2">สัญญาณชีพแรกรับ</span>
-                BT ${dot(d.Admit_BT, "40px")} (°C) <span class="ml-4">PR</span> ${dot(d.Admit_PR, "40px")} (/min)
-                <span class="ml-4">RR</span> ${dot(d.Admit_RR, "40px")} (/min) <span class="ml-4">BP</span> ${dot(d.Admit_BP, "80px")} (mmHg)
+        <div style="font-size: 14pt; margin-top: 8px;">
+            <div class="flex items-end w-full mb-1">
+                <span class="mr-1">วันที่</span> ${dot(dateText, "90px")}
+                <span class="mx-2">เวลา</span> ${dot(timeText, "50px")} <span class="mr-2">น.</span>
+                <span class="mr-1">รับจาก</span> ${dot(d.AdmittedFrom, "140px")}
+                <span class="mx-2">รับ REFER จาก</span> ${dot(d.Refer, "140px")}
             </div>
 
-            <div class="flex flex-wrap items-start mt-1 border-t border-black pt-1">
-                <span class="font-bold mr-4 w-20">โรคประจำตัว</span>
-                <div class="flex-grow">
-                    <div class="flex gap-4 mb-1">
-                        ${chk(d.Hx_Status, 'ไม่มี', 'ไม่มี')}
-                        ${chk(d.Hx_Status, 'ไม่ทราบ', 'ไม่ทราบ')}
-                        ${chk(d.Hx_Status, 'ไม่เคยตรวจ', 'ไม่เคยตรวจ')}
-                    </div>
-                    <div class="flex flex-wrap gap-y-1 items-end">
-                        ${chk(d.Hx_Status, 'มี', 'มี ได้แก่')}
-                        <div class="ml-2 grid grid-cols-4 gap-x-2 gap-y-1 w-full">
-                            ${chk(d.Hx_List, 'ความดันโลหิตสูง', 'ความดันโลหิตสูง')} ${chk(d.Hx_List, 'โรคหัวใจ', 'โรคหัวใจ')}
-                            ${chk(d.Hx_List, 'โรคตับ', 'โรคตับ')} ${chk(d.Hx_List, 'โรคไต', 'โรคไต')}
-                            ${chk(d.Hx_List, 'เบาหวาน', 'เบาหวาน')} ${chk(d.Hx_List, 'หอบหืด', 'หอบหืด')}
-                            ${chk(d.Hx_List, 'ลมชัก', 'ลมชัก')} ${chk(d.Hx_List, 'วัณโรค', 'วัณโรค')}
-                            <div class="col-span-2 flex items-center">${chk(d.Hx_List, 'มะเร็ง', 'มะเร็ง')} ${dot(d.UD_Cancer_Detail, "100px")}</div>
-                            <div class="col-span-2">อื่นๆ: ${dot(d.Hx_Other, "80%")}</div>
+            <div class="flex flex-wrap items-end gap-3 mb-1">
+                <span style="font-weight: bold;">มาโดย :</span> 
+                ${chk(d.ArriveBy, 'เดินมา', 'เดินมา')}
+                ${chk(d.ArriveBy, 'รถนั่ง', 'รถนั่ง')}
+                ${chk(d.ArriveBy, 'เปลนอน', 'เปลนอน')}
+                <span class="mx-2">|</span>
+                <span style="font-weight: bold;">ผู้ให้ข้อมูล :</span>
+                ${chk(d.InfoSource, 'ผู้ป่วย', 'ผู้ป่วย')}
+                ${chk(d.InfoSource, 'ผู้นำส่ง/ญาติ', 'ผู้นำส่ง/ญาติ')}
+            </div>
+            
+            <div class="flex flex-wrap items-end gap-3 mb-1">
+                <span style="font-weight: bold; margin-left: 24px; margin-right: 4px;">ผู้ดูแลหลักชื่อ</span> ${dot(d.MainCaregiver_Name, "200px")}
+                <span style="font-weight: bold; margin-left: 8px; margin-right: 4px;">ความสัมพันธ์กับผู้ป่วย</span> ${dot(d.MainCaregiver_Rel, "120px")}
+            </div>
+
+            <div style="border: 1px solid black; padding: 6px; margin-bottom: 4px;">
+                <div class="flex items-start mb-1"><span style="font-weight: bold; width: 100px; flex-shrink: 0;">อาการสำคัญ</span><div style="border-bottom: 1px dotted black; flex-grow: 1; color: #1e3a8a; font-weight: bold; padding: 0 8px;">${d.ChiefComplaint || ''}</div></div>
+                <div class="flex items-start mb-1"><span style="font-weight: bold; width: 130px; flex-shrink: 0;">ประวัติการเจ็บป่วย</span><div style="border-bottom: 1px dotted black; flex-grow: 1; color: #1e3a8a; font-weight: bold; padding: 0 8px;">${d.PresentIllness || ''}</div></div>
+                <div class="flex items-start mb-1"><span style="font-weight: bold; width: 200px; flex-shrink: 0;">อาการและอาการแสดงแรกรับ</span><div style="border-bottom: 1px dotted black; flex-grow: 1; color: #1e3a8a; font-weight: bold; padding: 0 8px;">${d.AdmitSymptoms || ''}</div></div>
+                
+                <div class="flex items-end mt-1">
+                    <span style="font-weight: bold; margin-right: 8px;">สัญญาณชีพแรกรับ</span>
+                    BT ${dot(d.Admit_BT, "40px")} (°C) <span class="ml-4">PR</span> ${dot(d.Admit_PR, "40px")} (/min)
+                    <span class="ml-4">RR</span> ${dot(d.Admit_RR, "40px")} (/min) <span class="ml-4">BP</span> ${dot(d.Admit_BP, "80px")} (mmHg)
+                </div>
+
+                <div class="flex items-start mt-1 border-t border-black pt-1">
+                    <span style="font-weight: bold; width: 100px; flex-shrink: 0;">โรคประจำตัว</span>
+                    <div class="flex-grow">
+                        <div class="flex gap-4 mb-1">
+                            ${chk(d.Hx_Status, 'ไม่มี', 'ไม่มี')}
+                            ${chk(d.Hx_Status, 'ไม่ทราบ', 'ไม่ทราบ')}
+                            ${chk(d.Hx_Status, 'ไม่เคยตรวจ', 'ไม่เคยตรวจ')}
+                        </div>
+                        <div class="flex flex-wrap gap-y-1 items-end">
+                            ${chk(d.Hx_Status, 'มี', 'มี ได้แก่')}
+                            <div class="ml-2 grid grid-cols-4 gap-x-2 gap-y-1 w-full">
+                                ${chk(d.Hx_List, 'ความดันโลหิตสูง', 'ความดันโลหิตสูง')} ${chk(d.Hx_List, 'โรคหัวใจ', 'โรคหัวใจ')}
+                                ${chk(d.Hx_List, 'โรคตับ', 'โรคตับ')} ${chk(d.Hx_List, 'โรคไต', 'โรคไต')}
+                                ${chk(d.Hx_List, 'เบาหวาน', 'เบาหวาน')} ${chk(d.Hx_List, 'หอบหืด', 'หอบหืด')}
+                                ${chk(d.Hx_List, 'ลมชัก', 'ลมชัก')} ${chk(d.Hx_List, 'วัณโรค', 'วัณโรค')}
+                                <div class="col-span-2 flex items-center">${chk(d.Hx_List, 'มะเร็ง', 'มะเร็ง')} ${dot(d.UD_Cancer_Detail, "100px")}</div>
+                                <div class="col-span-2">อื่นๆ: ${dot(d.Hx_Other, "80%")}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 gap-1 mt-1 border-t border-black pt-1">
-                <div class="flex items-end"><span class="font-bold w-32">การแพ้ยา/สารต่าง ๆ :</span> ${chk(d.Allergy_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Allergy_Status, 'เคย', 'เคย(ระบุ)')} ${dot(d.Allergy_Details, "70%")}</div>
-                
-                <div class="flex items-end"><span class="font-bold w-40">การรักษาตัวในโรงพยาบาล:</span> ${chk(d.AdmitHx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.AdmitHx_Status, 'เคย', 'เคย ด้วยโรค')} ${dot(d.AdmitHx_Disease, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.AdmitHx_Date), "80px")}</div>
-                
-                <div class="flex items-end"><span class="font-bold w-32">การผ่าตัด :</span> ${chk(d.Sx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Sx_Status, 'เคย', 'เคย ผ่าตัด')} ${dot(d.Sx_Details, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.Sx_Date), "80px")}</div>
-                
-                <div class="flex items-end"><span class="font-bold w-48">ประวัติการเจ็บป่วยในครอบครัว:</span> ${chk(d.FamilyHx_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.FamilyHx_Status, 'มี', 'มี(ระบุ)')} ${dot(d.FamilyHx_Details, "50%")}</div>
-            </div>
+                <div class="grid grid-cols-1 gap-1 mt-1 border-t border-black pt-1">
+                    <div class="flex items-end"><span style="font-weight: bold; width: 140px;">การแพ้ยา/สารต่าง ๆ :</span> ${chk(d.Allergy_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Allergy_Status, 'เคย', 'เคย(ระบุ)')} ${dot(d.Allergy_Details, "60%")}</div>
+                    <div class="flex items-end"><span style="font-weight: bold; width: 180px;">การรักษาตัวในโรงพยาบาล:</span> ${chk(d.AdmitHx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.AdmitHx_Status, 'เคย', 'เคย ด้วยโรค')} ${dot(d.AdmitHx_Disease, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.AdmitHx_Date), "80px")}</div>
+                    <div class="flex items-end"><span style="font-weight: bold; width: 140px;">การผ่าตัด :</span> ${chk(d.Sx_Status, 'ไม่เคย', 'ไม่เคย')} ${chk(d.Sx_Status, 'เคย', 'เคย ผ่าตัด')} ${dot(d.Sx_Details, "140px")} <span class="ml-2">เมื่อ</span> ${dot(formatDateFull(d.Sx_Date), "80px")}</div>
+                    <div class="flex items-end"><span style="font-weight: bold; width: 200px;">ประวัติการเจ็บป่วยในครอบครัว:</span> ${chk(d.FamilyHx_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.FamilyHx_Status, 'มี', 'มี(ระบุ)')} ${dot(d.FamilyHx_Details, "50%")}</div>
+                </div>
 
-            <div class="flex items-start mt-1 border-t border-black pt-1">
-                <span class="font-bold w-20">สิ่งเสพติด :</span>
-                <div class="flex-grow">
-                    <div class="flex flex-wrap gap-4 mb-1">
-                        <span class="font-bold w-10">สุรา</span>
-                        ${chk(d.Substance_Alcohol, 'ไม่ดื่ม', 'ไม่ดื่ม')}
-                        ${chk(d.Substance_Alcohol, 'ดื่มนานๆครั้ง', 'ดื่มนานๆครั้ง')}
-                        <div class="flex items-center">${chk(d.Substance_Alcohol, 'ดื่มเป็นประจำ', 'ดื่มเป็นประจำ ปริมาณ')} ${dot(d.Substance_Alcohol_Vol, "40px")} <span>ต่อวัน</span></div>
-                    </div>
-                    <div class="flex flex-wrap gap-4 mb-1">
-                        <span class="font-bold w-10">บุหรี่</span>
-                        ${chk(d.Substance_Smoke, 'ไม่สูบ', 'ไม่สูบ')}
-                        ${chk(d.Substance_Smoke, 'สูบนานๆครั้ง', 'สูบนานๆครั้ง')}
-                        <div class="flex items-center">${chk(d.Substance_Smoke, 'สูบเป็นประจำ', 'สูบเป็นประจำ ปริมาณ')} ${dot(d.Substance_Smoke_Vol, "40px")} <span>มวน/วัน</span></div>
+                <div class="flex items-start mt-1 border-t border-black pt-1">
+                    <span style="font-weight: bold; width: 100px;">สิ่งเสพติด :</span>
+                    <div class="flex-grow">
+                        <div class="flex flex-wrap gap-4 mb-1">
+                            <span style="font-weight: bold; width: 40px;">สุรา</span>
+                            ${chk(d.Substance_Alcohol, 'ไม่ดื่ม', 'ไม่ดื่ม')}
+                            ${chk(d.Substance_Alcohol, 'ดื่มนานๆครั้ง', 'ดื่มนานๆครั้ง')}
+                            <div class="flex items-center">${chk(d.Substance_Alcohol, 'ดื่มเป็นประจำ', 'ดื่มเป็นประจำ ปริมาณ')} ${dot(d.Substance_Alcohol_Vol, "40px")} <span>ต่อวัน</span></div>
+                        </div>
+                        <div class="flex flex-wrap gap-4 mb-1">
+                            <span style="font-weight: bold; width: 40px;">บุหรี่</span>
+                            ${chk(d.Substance_Smoke, 'ไม่สูบ', 'ไม่สูบ')}
+                            ${chk(d.Substance_Smoke, 'สูบนานๆครั้ง', 'สูบนานๆครั้ง')}
+                            <div class="flex items-center">${chk(d.Substance_Smoke, 'สูบเป็นประจำ', 'สูบเป็นประจำ ปริมาณ')} ${dot(d.Substance_Smoke_Vol, "40px")} <span>มวน/วัน</span></div>
+                        </div>
                     </div>
                 </div>
+                <div class="flex items-end pt-1 border-t border-black"><span style="font-weight: bold; width: 130px;">ยาที่ใช้ประจำ :</span> ${chk(d.Meds_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Meds_Status, 'มี', 'มี(ระบุ)')} ${dot(d.Meds_Details, "80%")}</div>
             </div>
-            <div class="flex items-end pt-1 border-t border-black"><span class="font-bold w-32">ยาที่ใช้ประจำ :</span> ${chk(d.Meds_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Meds_Status, 'มี', 'มี(ระบุ)')} ${dot(d.Meds_Details, "100%")}</div>
-        </div>
 
-        <div class="grid grid-cols-3 border border-black mt-1 divide-x divide-black text-[12px] h-auto">
-            <div class="p-1 flex flex-col justify-between">
-                <div>
-                    <div class="font-bold underline mb-1">1) การรับรู้เกี่ยวกับสุขภาพและการดูแล</div>
-                    <div class="space-y-0.5">
-                        <div class="flex flex-wrap items-end whitespace-nowrap">ก่อนการเจ็บป่วย: ${chk(d.HP_Before, 'ดี', 'ดี')} ${chk(d.HP_Before, 'ไม่ดี', 'ไม่ดี:')} ${dot(d.HP_Before_Detail, "30px")}</div>
-                        <div class="flex flex-wrap items-end whitespace-nowrap">เจ็บป่วยครั้งนี้: ${chk(d.HP_Current, 'รุนแรง', 'รุนแรง')} ${chk(d.HP_Current, 'ไม่รุนแรง', 'ไม่รุนแรง')}</div>
-                        <div class="flex flex-wrap whitespace-nowrap">การดูแล: ${chk(d.HP_Care, 'ไปรพ./คลินิก', 'ไปรพ./คลินิก')}</div>
-                        <div class="flex flex-wrap whitespace-nowrap pl-4">${chk(d.HP_Care, 'ซื้อยารับประทาน', 'ซื้อยา')}</div>
-                        <div class="whitespace-nowrap pl-4 flex items-center">${chk(d.HP_Care, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.HP_Care_Other, "60px")}</div>
+            <div class="grid grid-cols-3 border border-black mt-1 divide-x divide-black h-auto" style="font-size: 13pt;">
+                <div class="p-1 flex flex-col justify-between">
+                    <div>
+                        <div style="font-weight: bold; text-decoration: underline; margin-bottom: 4px;">1) การรับรู้เกี่ยวกับสุขภาพและการดูแล</div>
+                        <div class="space-y-1">
+                            <div class="flex flex-wrap items-end">ก่อนการเจ็บป่วย: ${chk(d.HP_Before, 'ดี', 'ดี')} ${chk(d.HP_Before, 'ไม่ดี', 'ไม่ดี:')} ${dot(d.HP_Before_Detail, "30px")}</div>
+                            <div class="flex flex-wrap items-end">เจ็บป่วยครั้งนี้: ${chk(d.HP_Current, 'รุนแรง', 'รุนแรง')} ${chk(d.HP_Current, 'ไม่รุนแรง', 'ไม่รุนแรง')}</div>
+                            <div class="flex flex-wrap">การดูแล: ${chk(d.HP_Care, 'ไปรพ./คลินิก', 'ไปรพ./คลินิก')}</div>
+                            <div class="pl-4">${chk(d.HP_Care, 'ซื้อยารับประทาน', 'ซื้อยา')}</div>
+                            <div class="pl-4 flex items-center">${chk(d.HP_Care, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.HP_Care_Other, "40px")}</div>
+                        </div>
                     </div>
+                    <div class="flex flex-wrap items-end mt-1">ความคาดหวัง: ${chk(d.HP_Expect, 'หาย', 'หาย')} ${chk(d.HP_Expect, 'ไม่หาย', 'ไม่หาย')}</div>
                 </div>
-                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ความคาดหวังในการรักษาครั้งนี้: ${chk(d.HP_Expect, 'หาย', 'หาย')} ${chk(d.HP_Expect, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.HP_Expect, 'ไม่หาย', 'ไม่หาย')}</div>
-            </div>
 
-            <div class="p-1 flex flex-col justify-between">
-                <div>
-                    <div class="font-bold underline mb-1">2) โภชนาการและการเผาผลาญ</div>
-                    <div class="space-y-0.5">
-                        <div class="flex items-end whitespace-nowrap">รับประทานอาหาร ${dot(d.Nutri_Meals, "20px")} มื้อ/วัน</div>
-                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารธรรมดา', 'อาหารธรรมดา')} ${chk(d.Nutri_Type, 'อาหารอ่อน', 'อาหารอ่อน')}</div>
-                        <div class="flex flex-wrap whitespace-nowrap">${chk(d.Nutri_Type, 'อาหารทางสายยาง', 'อาหารสายยาง')}</div>
-                        <div class="flex flex-wrap whitespace-nowrap items-center">${chk(d.Nutri_Type, 'อาหารเฉพาะโรค', 'อาหารเฉพาะโรค:')} ${dot(d.Nutri_Type_Detail, "30px")}</div>
-                        <div class="flex flex-wrap items-end whitespace-nowrap">ปัญหาการกิน: ${chk(d.Nutri_Problem, 'ไม่มี', 'ไม่มี')} ${chk(d.Nutri_Problem, 'มี', 'มี:')} ${dot(d.Nutri_Problem_Detail, "30px")}</div>
+                <div class="p-1 flex flex-col justify-between">
+                    <div>
+                        <div style="font-weight: bold; text-decoration: underline; margin-bottom: 4px;">2) โภชนาการและการเผาผลาญ</div>
+                        <div class="space-y-1">
+                            <div class="flex items-end">รับประทานอาหาร ${dot(d.Nutri_Meals, "20px")} มื้อ/วัน</div>
+                            <div class="flex flex-wrap">${chk(d.Nutri_Type, 'อาหารธรรมดา', 'อาหารธรรมดา')} ${chk(d.Nutri_Type, 'อาหารอ่อน', 'อาหารอ่อน')}</div>
+                            <div class="flex flex-wrap items-center">${chk(d.Nutri_Type, 'อาหารเฉพาะโรค', 'อาหารเฉพาะโรค:')} ${dot(d.Nutri_Type_Detail, "30px")}</div>
+                            <div class="flex flex-wrap items-end">ปัญหาการกิน: ${chk(d.Nutri_Problem, 'ไม่มี', 'ไม่มี')} ${chk(d.Nutri_Problem, 'มี', 'มี:')} ${dot(d.Nutri_Problem_Detail, "30px")}</div>
+                        </div>
                     </div>
+                    <div class="flex flex-wrap items-end mt-1">ผิวหนัง: ${chk(d.Nutri_Skin, 'ปกติ', 'ปกติ')} ${chk(d.Nutri_Skin, 'ไม่ปกติ', 'ไม่ปกติ')}</div>
                 </div>
-                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ผิวหนัง: ${chk(d.Nutri_Skin, 'ปกติ', 'ปกติ')} ${chk(d.Nutri_Skin, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Nutri_Skin_Detail, "30px")}</div>
-            </div>
 
-            <div class="p-1 flex flex-col justify-between">
-                <div>
-                    <div class="font-bold underline mb-1">3) การขับถ่าย</div>
-                    <div class="space-y-0.5">
-                        <div class="flex items-end whitespace-nowrap">ปัสสาวะ ${dot(d.Elim_Urine_Freq, "20px")} ครั้ง/วัน</div>
-                        <div class="flex flex-wrap whitespace-nowrap items-center">${chk(d.Elim_Urine_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Urine_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Urine_Detail, "30px")}</div>
-                        <div class="flex items-end mt-2 whitespace-nowrap">อุจจาระ ${dot(d.Elim_Bowel_Freq, "20px")} ครั้ง/วัน</div>
-                        <div class="flex flex-wrap whitespace-nowrap items-center">${chk(d.Elim_Bowel_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Bowel_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Bowel_Detail, "30px")}</div>
+                <div class="p-1 flex flex-col justify-between">
+                    <div>
+                        <div style="font-weight: bold; text-decoration: underline; margin-bottom: 4px;">3) การขับถ่าย</div>
+                        <div class="space-y-1">
+                            <div class="flex items-end">ปัสสาวะ ${dot(d.Elim_Urine_Freq, "20px")} ครั้ง/วัน</div>
+                            <div class="flex flex-wrap items-center">${chk(d.Elim_Urine_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Urine_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Urine_Detail, "30px")}</div>
+                            <div class="flex items-end mt-1">อุจจาระ ${dot(d.Elim_Bowel_Freq, "20px")} ครั้ง/วัน</div>
+                            <div class="flex flex-wrap items-center">${chk(d.Elim_Bowel_Status, 'ปกติ', 'ปกติ')} ${chk(d.Elim_Bowel_Status, 'ไม่ปกติ', 'ไม่ปกติ:')} ${dot(d.Elim_Bowel_Detail, "30px")}</div>
+                        </div>
                     </div>
+                    <div class="flex flex-wrap items-end mt-1">ขับถ่ายหน้าท้อง: ${chk(d.Elim_Stoma, 'ไม่มี', 'ไม่มี')} ${chk(d.Elim_Stoma, 'มี', 'มี')}</div>
                 </div>
-                <div class="flex flex-wrap items-end mt-1 whitespace-nowrap">ขับถ่ายทางหน้าท้อง: ${chk(d.Elim_Stoma, 'ไม่มี', 'ไม่มี')} ${chk(d.Elim_Stoma, 'มี', 'มี')}</div>
             </div>
-        </div>
 
-        <div class="border border-black border-t-0 p-1">
-            <div class="font-bold mb-0.5">4) กิจวัตรประจำวัน</div>
-            <table class="w-full border-collapse border border-black text-center text-[11px]">
-                <tr class="bg-gray-100">
-                    <th rowspan="2" class="border border-black w-[22%] text-left pl-2 align-middle">กิจกรรม</th>
-                    <th colspan="3" class="border border-black">ก่อนการเจ็บป่วย</th>
-                    <th colspan="3" class="border border-black">ขณะเจ็บป่วย</th>
-                </tr>
-                <tr class="bg-gray-50">
-                    <th class="border border-black w-[13%]">ทำได้เอง</th>
-                    <th class="border border-black w-[13%]">บางส่วน</th>
-                    <th class="border border-black w-[13%]">ไม่ได้เลย</th>
-                    <th class="border border-black w-[13%]">ทำได้เอง</th>
-                    <th class="border border-black w-[13%]">บางส่วน</th>
-                    <th class="border border-black w-[13%]">ไม่ได้เลย</th>
-                </tr>
-                ${['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'].map((act, i) => {
-                    const label = ['รับประทานอาหาร', 'ทำความสะอาดปาก/ฟัน', 'การแต่งตัว', 'การเดิน', 'การขับถ่าย', 'การอาบน้ำ'][i];
-                    
-                    const b = d['ADL_' + act + '_Before'];
-                    const c = d['ADL_' + act + '_Current'];
-
-                    return `
-                    <tr>
-                        <td class="border border-black text-left pl-2">${label}</td>
-                        <td class="border border-black font-bold">${checkADL(b, 'Independent')}</td>
-                        <td class="border border-black font-bold">${checkADL(b, 'Partial')}</td>
-                        <td class="border border-black font-bold">${checkADL(b, 'Dependent')}</td>
-                        <td class="border border-black font-bold">${checkADL(c, 'Independent')}</td>
-                        <td class="border border-black font-bold">${checkADL(c, 'Partial')}</td>
-                        <td class="border border-black font-bold">${checkADL(c, 'Dependent')}</td>
-                    </tr>`;
-                }).join('')}
-            </table>
-        </div>
-
-        <div class="border border-black border-t-0 p-1">
-            <div class="font-bold mb-0.5 underline">5) การพักผ่อนนอนหลับ</div>
-            <div class="flex flex-wrap items-end pl-2">
-                <span>นอน:</span> ${dot(d.Sleep_Hours, "40px")} <span>ชั่วโมงต่อวัน</span>
-                <span class="ml-6"></span>
-                ${chk(d.Sleep_Adequacy, 'เพียงพอ', 'เพียงพอ')}
-                ${chk(d.Sleep_Adequacy, 'ไม่เพียงพอ', 'ไม่เพียงพอ')}
-                <span class="ml-6">ปัญหาการนอน:</span>
-                ${chk(d.Sleep_Problem, 'ไม่มี', 'ไม่มี')}
-                ${chk(d.Sleep_Problem, 'มี', 'มี ระบุ:')} ${dot(d.Sleep_Problem_Detail, "150px")}
+            <div style="border: 1px solid black; border-top: 0; padding: 4px;">
+                <div style="font-weight: bold; margin-bottom: 2px;">4) กิจวัตรประจำวัน</div>
+                <table style="width: 100%; table-layout: fixed; border-collapse: collapse; border: 1px solid black; text-align: center; font-size: 12pt;">
+                    <tr class="bg-gray-100">
+                        <th rowspan="2" style="border: 1px solid black; width: 25%;" class="text-left pl-2">กิจกรรม</th>
+                        <th colspan="3" style="border: 1px solid black;">ก่อนการเจ็บป่วย</th>
+                        <th colspan="3" style="border: 1px solid black;">ขณะเจ็บป่วย</th>
+                    </tr>
+                    <tr class="bg-gray-50">
+                        <th style="border: 1px solid black; width: 12.5%;">ทำได้เอง</th>
+                        <th style="border: 1px solid black; width: 12.5%;">บางส่วน</th>
+                        <th style="border: 1px solid black; width: 12.5%;">ไม่ได้เลย</th>
+                        <th style="border: 1px solid black; width: 12.5%;">ทำได้เอง</th>
+                        <th style="border: 1px solid black; width: 12.5%;">บางส่วน</th>
+                        <th style="border: 1px solid black; width: 12.5%;">ไม่ได้เลย</th>
+                    </tr>
+                    ${['Eat', 'Brush', 'Dress', 'Walk', 'Toilet', 'Bath'].map((act, i) => {
+                        const label = ['รับประทานอาหาร', 'ทำความสะอาดปาก/ฟัน', 'การแต่งตัว', 'การเดิน', 'การขับถ่าย', 'การอาบน้ำ'][i];
+                        const b = d['ADL_' + act + '_Before'];
+                        const c = d['ADL_' + act + '_Current'];
+                        return `
+                        <tr>
+                            <td style="border: 1px solid black;" class="text-left pl-2">${label}</td>
+                            <td style="border: 1px solid black; font-weight: bold;">${checkADL(b, 'Independent')}</td>
+                            <td style="border: 1px solid black; font-weight: bold;">${checkADL(b, 'Partial')}</td>
+                            <td style="border: 1px solid black; font-weight: bold;">${checkADL(b, 'Dependent')}</td>
+                            <td style="border: 1px solid black; font-weight: bold;">${checkADL(c, 'Independent')}</td>
+                            <td style="border: 1px solid black; font-weight: bold;">${checkADL(c, 'Partial')}</td>
+                            <td style="border: 1px solid black; font-weight: bold;">${checkADL(c, 'Dependent')}</td>
+                        </tr>`;
+                    }).join('')}
+                </table>
             </div>
-        </div>
 
-        <div class="border border-black border-t-0 p-1 flex-grow">
-            <div class="font-bold mb-0.5 underline">6) การรับรู้และประสาทสัมผัส</div>
-            <div class="pl-2 space-y-0.5">
-                <div class="flex flex-wrap items-end">
-                    <span class="w-28 font-bold">ระดับความรู้สึก:</span>
-                    ${chk(d.Cogn_LOC, 'รู้สึกตัวดี', 'รู้สึกตัวดี')}
-                    ${chk(d.Cogn_LOC, 'สับสน', 'สับสน')}
-                    ${chk(d.Cogn_LOC, 'ซึม', 'ซึม')}
-                    ${chk(d.Cogn_LOC, 'ไม่รู้สึกตัว', 'ไม่รู้สึกตัว')}
+            <div style="border: 1px solid black; border-top: 0; padding: 4px;">
+                <div style="font-weight: bold; text-decoration: underline;">5) การพักผ่อนนอนหลับ</div>
+                <div class="flex flex-wrap items-end pl-2">
+                    <span>นอน:</span> ${dot(d.Sleep_Hours, "40px")} <span>ชั่วโมง/วัน</span>
+                    <span class="ml-6"></span>
+                    ${chk(d.Sleep_Adequacy, 'เพียงพอ', 'เพียงพอ')}
+                    ${chk(d.Sleep_Adequacy, 'ไม่เพียงพอ', 'ไม่เพียงพอ')}
+                    <span class="ml-6">ปัญหาการนอน:</span>
+                    ${chk(d.Sleep_Problem, 'ไม่มี', 'ไม่มี')}
+                    ${chk(d.Sleep_Problem, 'มี', 'มี:')} ${dot(d.Sleep_Problem_Detail, "120px")}
                 </div>
-                <div class="flex flex-wrap items-end">
-                    <span class="w-28 font-bold">การมองเห็น:</span>
-                    ${chk(d.Cogn_Vision, 'ปกติ', 'ปกติ')}
-                    ${chk(d.Cogn_Vision, 'สายตาสั้น', 'สายตาสั้น')}
-                    ${chk(d.Cogn_Vision, 'สายตายาว', 'สายตายาว')}
-                    ${chk(d.Cogn_Vision, 'ใช้แว่นตา', 'ใช้แว่นตา')}
-                    ${chk(d.Cogn_Vision, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Cogn_Vision_Other, "80px")}
-                </div>
-                <div class="flex flex-wrap items-end">
-                    <span class="w-28 font-bold">การได้ยิน:</span>
-                    ${chk(d.Cogn_Hearing, 'Normal', 'ปกติ')}
-                    ${chk(d.Cogn_Hearing, 'Partial', 'ได้ยินบางส่วน')}
-                    ${chk(d.Cogn_Hearing, 'Deaf', 'ไม่ได้ยิน')}
-                    ${chk(d.Cogn_Hearing, 'Other', 'อื่นๆ:')} ${dot(d.Cogn_Hearing_Other, "80px")}
-                </div>
-                <div class="flex flex-wrap items-end">
-                    <span class="w-28 font-bold">การพูด:</span>
-                    ${chk(d.Cogn_Speech, 'ปกติ', 'ปกติ')}
-                    ${chk(d.Cogn_Speech, 'มีปัญหา', 'มีปัญหา:')} ${dot(d.Cogn_Speech_Detail, "120px")}
-                    ${chk(d.Cogn_Speech, 'ใช้ภาษาต่างประเทศ', 'ใช้ภาษาต่างประเทศ:')} ${dot(d.Cogn_Speech_Other, "80px")}
-                </div>
-                <div class="flex flex-wrap items-end">
-                    <span class="w-28 font-bold">การเคลื่อนไหว:</span>
-                    ${chk(d.Cogn_Movement, 'ปกติ', 'ปกติ')}
-                    ${chk(d.Cogn_Movement, 'ข้อติดแข็ง', 'ข้อติดแข็ง')}
-                    ${chk(d.Cogn_Movement, 'อัมพาต', 'อัมพาต')}
-                    ${chk(d.Cogn_Movement, 'ข้ออักเสบ', 'ข้ออักเสบ')}
-                    ${chk(d.Cogn_Movement, 'กระดูกหัก', 'กระดูกหัก')}
-                    ${chk(d.Cogn_Movement, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Cogn_Movement_Other, "80px")}
+            </div>
+
+            <div style="border: 1px solid black; border-top: 0; padding: 4px;">
+                <div style="font-weight: bold; text-decoration: underline;">6) การรับรู้และประสาทสัมผัส</div>
+                <div class="pl-2 space-y-1">
+                    <div class="flex items-end"><span style="font-weight: bold; width: 120px;">ระดับความรู้สึก:</span> ${chk(d.Cogn_LOC, 'รู้สึกตัวดี', 'รู้สึกตัวดี')} ${chk(d.Cogn_LOC, 'สับสน', 'สับสน')} ${chk(d.Cogn_LOC, 'ซึม', 'ซึม')} ${chk(d.Cogn_LOC, 'ไม่รู้สึกตัว', 'ไม่รู้สึกตัว')}</div>
+                    <div class="flex items-end"><span style="font-weight: bold; width: 120px;">การมองเห็น:</span> ${chk(d.Cogn_Vision, 'ปกติ', 'ปกติ')} ${chk(d.Cogn_Vision, 'ใช้แว่นตา', 'ใช้แว่นตา')} ${chk(d.Cogn_Vision, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Cogn_Vision_Other, "100px")}</div>
+                    <div class="flex items-end"><span style="font-weight: bold; width: 120px;">การได้ยิน:</span> ${chk(d.Cogn_Hearing, 'Normal', 'ปกติ')} ${chk(d.Cogn_Hearing, 'Partial', 'บางส่วน')} ${chk(d.Cogn_Hearing, 'Deaf', 'ไม่ได้ยิน')}</div>
+                    <div class="flex items-end"><span style="font-weight: bold; width: 120px;">การพูด:</span> ${chk(d.Cogn_Speech, 'ปกติ', 'ปกติ')} ${chk(d.Cogn_Speech, 'มีปัญหา', 'มีปัญหา:')} ${dot(d.Cogn_Speech_Detail, "100px")}</div>
+                    <div class="flex items-end"><span style="font-weight: bold; width: 120px;">การเคลื่อนไหว:</span> ${chk(d.Cogn_Movement, 'ปกติ', 'ปกติ')} ${chk(d.Cogn_Movement, 'อัมพาต', 'อัมพาต')} ${chk(d.Cogn_Movement, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Cogn_Movement_Other, "100px")}</div>
                 </div>
             </div>
         </div>
-
+        <div style="text-align: right; font-size: 10pt; font-weight: bold; margin-top: 10px;">FR-IPD-004 Page 1/2</div>
     </div>
-    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">FR-IPD-004 Page 1/2</div>
     `;
-    
-    container.innerHTML = `
-        <div class="flex flex-col justify-between h-full">
-            <div>${contentHtml}</div>
-        </div>
-    `;
+    container.innerHTML = `<div class="flex flex-col justify-between h-full"><div>${contentHtml}</div></div>`;
 }
 
-// 4. ฟังก์ชัน Render หน้า 2 (จัดระเบียบใหม่ 100% ตามต้นฉบับ)
+// =================================================================
+// 4. ฟังก์ชัน Render หน้า 2 (IPD-004) - ปรับปรุงความสมดุลหน้ากระดาษ
+// =================================================================
 function renderForm004Page2(container, options = {}) {
     const d = options.data || {};
     
-    // *** Helper Functions ***
+    // --- Helpers (ใช้ pt ทั้งหมด) ---
     const boxCheck = (val, target) => {
         let isChecked = false;
         if (val) {
@@ -4806,257 +4759,160 @@ function renderForm004Page2(container, options = {}) {
                 isChecked = parts.includes(target) || String(val) === target;
             }
         }
-        return isChecked ? `<i class="far fa-check-square text-[14px]"></i>` : `<i class="far fa-square text-[14px]"></i>`;
+        return isChecked ? `<i class="far fa-check-square" style="font-size: 14pt;"></i>` : `<i class="far fa-square" style="font-size: 14pt;"></i>`;
     };
     
-    const chk = (val, target, label) => `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap gap-1">${boxCheck(val, target)} ${label}</span>`;
-    const dot = (val, w) => `<span class="border-b border-black border-dotted inline-block text-center whitespace-nowrap overflow-hidden text-blue-900 font-bold px-1" style="min-width: ${w};">${val || '&nbsp;'}</span>`;
-    const getBScore = (val) => parseInt(val, 10) || 0;
-
-    const totalBraden = getBScore(d.Braden_Sensory) + getBScore(d.Braden_Moisture) + 
-                        getBScore(d.Braden_Activity) + getBScore(d.Braden_Mobility) + 
-                        getBScore(d.Braden_Nutrition) + getBScore(d.Braden_Friction);
+    const chk = (val, target, label) => `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap gap-1" style="font-size: 14pt;">${boxCheck(val, target)} ${label}</span>`;
+    const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; font-size: 14pt; line-height: 1;">${val || "&nbsp;"}</span>`;
     
+    const getBScore = (val) => parseInt(val, 10) || 0;
+    const totalBraden = getBScore(d.Braden_Sensory) + getBScore(d.Braden_Moisture) + getBScore(d.Braden_Activity) + getBScore(d.Braden_Mobility) + getBScore(d.Braden_Nutrition) + getBScore(d.Braden_Friction);
+    
+    const chkRisk = (condition) => `<span style="font-size: 14pt; font-weight: bold;" class="inline-block mx-1">${condition ? '<i class="far fa-check-square"></i>' : '<i class="far fa-square"></i>'}</span>`;
     const isRisk = (score, min, max) => {
         if (score === 0) return false;
         if (max === null) return score >= min;
         return score >= min && score <= max;
     };
-    const chkRisk = (condition) => `<span class="font-bold inline-block mx-1" style="font-size:14px;">${condition ? '<i class="far fa-check-square"></i>' : '<i class="far fa-square"></i>'}</span>`;
 
     let contentHtml = `
-    <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
-       <div class="w-[15%]"></div>
-       <div class="text-center w-[70%]">
-          <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน (ต่อ)</h2>
-          <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
-       </div>
-       <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
-          <div class="font-bold text-[12px]">FR-IPD-004</div>
-          <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
-       </div>
+    <div style="font-family: 'Sarabun', sans-serif; font-size: 14pt; color: black; line-height: 1.15; width: 100%;">
+        <div class="flex justify-between items-end mb-1 border-b border-black pb-1">
+           <div style="width: 15%;"></div>
+           <div class="text-center" style="width: 70%;">
+              <h2 style="font-size: 18pt; font-weight: bold; margin: 0;">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน (ต่อ)</h2>
+              <h3 style="font-size: 16pt; font-weight: bold; margin: 0;">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
+           </div>
+           <div style="width: 15%; text-align: right; font-size: 10pt;" class="flex flex-col justify-end">
+              <div style="font-weight: bold; font-size: 12pt;">FR-IPD-004</div>
+              <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
+           </div>
+        </div>
+
+        <div style="border: 1px solid black; font-size: 14pt;">
+            <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
+                <div class="p-1">
+                    <div style="font-weight: bold; text-decoration: underline;">7) การรับรู้ตนเอง: <span style="font-weight: normal;">ผลกระทบต่อ</span></div>
+                    <div class="space-y-1 mt-1">
+                        <div class="flex flex-wrap items-end">ภาพลักษณ์: ${chk(d.Self_Image, 'มี', 'มี:')}${dot(d.Self_Image_Detail, "50px")}</div>
+                        <div class="flex flex-wrap items-end">อารมณ์: ${chk(d.Self_Mood, 'มี', 'มี:')}${dot(d.Self_Mood_Detail, "50px")}</div>
+                    </div>
+                </div>
+                <div class="p-1">
+                    <div style="font-weight: bold; text-decoration: underline;">8) การเผชิญความเครียด</div>
+                    <div class="space-y-1 mt-1">
+                        <div>ไม่สบายใจ: ${chk(d.Stress_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Stress_Status, 'มี', 'มี')}</div>
+                        <div class="flex flex-wrap gap-x-1">แก้ไข: ${chk(d.Cope_Method, 'ปรึกษา', 'ปรึกษา')} ${chk(d.Cope_Method, 'อื่นๆ', 'อื่นๆ')}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
+                <div class="p-1">
+                    <div style="font-weight: bold; text-decoration: underline;">9) บทบาทและสัมพันธภาพ</div>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        ${chk(d.Roles, 'ครอบครัว', 'ครอบครัว')} ${chk(d.Roles, 'อาชีพ', 'อาชีพ')}
+                    </div>
+                </div>
+                <div class="p-1">
+                    <div style="font-weight: bold; text-decoration: underline;">10) เพศและการเจริญพันธุ์</div>
+                    <div class="space-y-1 mt-1">
+                        <div>ประจำเดือน: ${chk(d.Sex_Menses, 'ปกติ', 'ปกติ')} ${chk(d.Sex_Menses, 'ไม่ปกติ', 'ไม่ปกติ')}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-black p-1">
+                 <div style="font-weight: bold; text-decoration: underline;">11) คุณค่าและความเชื่อ</div>
+                 <div>เชื่อว่าเกิดจาก: ${chk(d.Belief_Cause, 'เคราะห์กรรม', 'เคราะห์กรรม')} ${chk(d.Belief_Cause, 'ตามวัย', 'ตามวัย')}</div>
+            </div>
+
+            <div class="border-b border-black p-1">
+                 <div style="font-weight: bold; text-decoration: underline;">12) การมีส่วนร่วมในการรักษา</div>
+                 <div>${chk(d.Partic_Status, 'ต้องการ', 'ต้องการ:')} ${chk(d.Partic_Needs, 'Info', 'ข้อมูล')} ${chk(d.Partic_Needs, 'Skill', 'ทักษะ')}</div>
+            </div>
+
+            <div class="p-1 border-b border-black">
+                <div style="font-weight: bold; font-size: 15pt;">13. PAIN MANAGEMENT</div>
+                <div class="flex flex-wrap items-end gap-4 mt-1">
+                    <div>Pain: ${chk(d.Pain_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Pain_Status, 'มี', 'มี')}</div>
+                    <div>บริเวณที่ปวด ${dot(d.Pain_Location, "150px")}</div>
+                </div>
+                <div class="my-2 flex justify-center">
+                    <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" style="height: 60px; max-width: 100%;" alt="Pain Scale">
+                </div>
+                <div class="flex items-center gap-x-1" style="font-size: 12pt;">
+                    <span>Scale:</span> ${[0,1,2,3,4,5,6,7,8,9,10].map(n => chk(String(d.Pain_Scale_Score), String(n), n)).join(' ')}
+                </div>
+            </div>
+
+            <div class="p-1 border-b border-black">
+                <div style="font-weight: bold; font-size: 15pt; margin-bottom: 4px;">14. Braden Scale (Pressure Sore Risk)</div>
+                <table style="width: 100%; table-layout: fixed; border-collapse: collapse; border: 1px solid black; text-align: center; font-size: 11pt;">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th style="border: 1px solid black; width: 20%;" class="text-left pl-2">Parameter</th>
+                            <th style="border: 1px solid black; width: 15%;">1</th>
+                            <th style="border: 1px solid black; width: 15%;">2</th>
+                            <th style="border: 1px solid black; width: 15%;">3</th>
+                            <th style="border: 1px solid black; width: 15%;">4</th>
+                            <th style="border: 1px solid black; width: 10%; background-color: #f0f7ff;">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    ${[
+                        ['ความรู้สึก', 'จำกัดทั้งหมด', 'จำกัดมาก', 'จำกัดเล็กน้อย', 'ไม่บกพร่อง', d.Braden_Sensory],
+                        ['ความชื้น', 'ตลอดเวลา', 'มาก', 'บางครั้ง', 'น้อยมาก', d.Braden_Moisture],
+                        ['กิจกรรม', 'บนเตียงตลอด', 'รถเข็น', 'เดินได้บ้าง', 'ปกติ', d.Braden_Activity],
+                        ['เคลื่อนไหว', 'ไม่ได้เลย', 'น้อยมาก', 'เองได้บ้าง', 'ปกติ', d.Braden_Mobility],
+                        ['โภชนาการ', 'ไม่พอ', 'อาจไม่พอ', 'เพียงพอ', 'ดีเยี่ยม', d.Braden_Nutrition],
+                        ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยง', 'ไม่มีปัญหา', '', d.Braden_Friction]
+                    ].map((row, idx) => {
+                        const score = getBScore(row[5]);
+                        const td4 = idx === 5 ? '<td style="border: 1px solid black; background-color: #f3f4f6;"></td>' 
+                                              : `<td style="border: 1px solid black; background-color: ${score==4?'#e5e7eb':''};">${row[4]}</td>`;
+                        return `
+                        <tr>
+                            <td style="border: 1px solid black;" class="text-left pl-2">${row[0]}</td>
+                            <td style="border: 1px solid black; background-color: ${score==1?'#e5e7eb':''}; font-weight: ${score==1?'bold':''}">${row[1]}</td>
+                            <td style="border: 1px solid black; background-color: ${score==2?'#e5e7eb':''}; font-weight: ${score==2?'bold':''}">${row[2]}</td>
+                            <td style="border: 1px solid black; background-color: ${score==3?'#e5e7eb':''}; font-weight: ${score==3?'bold':''}">${row[3]}</td>
+                            ${td4}
+                            <td style="border: 1px solid black; font-weight: bold; font-size: 14pt; color: #1e3a8a;">${score || '-'}</td>
+                        </tr>`;
+                    }).join('')}
+                    </tbody>
+                </table>
+                <div class="flex justify-end mt-2 items-center gap-4">
+                    <span style="font-weight: bold;">Total: <span style="font-size: 16pt; border: 1px solid black; padding: 2px 8px; margin-left: 4px;">${totalBraden || 0}</span></span>
+                    <div style="font-size: 12pt;">
+                        ${chkRisk(isRisk(totalBraden, 0, 9))} ≤9 Very high ${chkRisk(isRisk(totalBraden, 10, 12))} 10-12 High ${chkRisk(isRisk(totalBraden, 13, 14))} 13-14 Mod ${chkRisk(isRisk(totalBraden, 15, 23))} ≥15 Low
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-1">
+                <div style="font-weight: bold; font-size: 15pt;">15. Fall risk assessment</div>
+                <div class="grid grid-cols-2 gap-x-4 mt-1" style="font-size: 13pt;">
+                    <div class="flex justify-between"><span>สภาวะทางจิตผิดปกติ</span> <div>${chk(d.Fall_Mental, 'มี', 'มี')}</div></div>
+                    <div class="flex justify-between"><span>ประวัติพลัดตกหกล้ม</span> <div>${chk(d.Fall_History, 'มี', 'มี')}</div></div>
+                    <div class="flex justify-between" style="font-weight: bold;"><span>จำเป็นต้องป้องกัน</span> <div>${chk(d.Fall_Prevention, 'จำเป็น', 'จำเป็น')}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-end px-10">
+            <div class="flex items-end">
+                <span style="font-weight: bold;">ลงชื่อผู้ประเมิน</span>
+                ${dot(d.Assessor_Name, "150px")}
+                <span style="font-weight: bold; margin-left: 10px;">ตำแหน่ง</span>
+                ${dot(d.Assessor_Position, "150px")}
+            </div>
+        </div>
+        <div style="text-align: right; font-size: 10pt; font-weight: bold; margin-top: 10px;">FR-IPD-004 Page 2/2</div>
     </div>
-
-    <div class="font-sarabun text-black text-[12px] leading-tight border border-black">
-        
-        <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
-            <div class="p-1">
-                <div class="font-bold underline mb-1">7) การรับรู้ตนเองและอัตมโนทัศน์: <span class="font-normal">การเจ็บป่วยมีผลกระทบต่อ</span></div>
-                <div class="space-y-1">
-                    <div class="flex flex-wrap items-end">ภาพลักษณ์: ${chk(d.Self_Image, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Image, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Image, 'มี', 'มี:')} ${dot(d.Self_Image_Detail, "50px")}</div>
-                    <div class="flex flex-wrap items-end">อารมณ์และจิตใจ: ${chk(d.Self_Mood, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Mood, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Mood, 'มี', 'มี:')} ${dot(d.Self_Mood_Detail, "50px")}</div>
-                    <div class="flex flex-wrap items-end">ความสามารถดูแลตนเอง: ${chk(d.Self_Ability, 'ไม่มี', 'ไม่มี')} ${chk(d.Self_Ability, 'ไม่แน่ใจ', 'ไม่แน่ใจ')} ${chk(d.Self_Ability, 'มี', 'มี:')} ${dot(d.Self_Ability_Detail, "50px")}</div>
-                </div>
-            </div>
-            <div class="p-1">
-                <div class="font-bold underline mb-1">8) การเผชิญความเครียด / การปรับตัว</div>
-                <div class="space-y-1">
-                    <div class="flex flex-wrap">สิ่งที่ทำให้ไม่สบายใจ: ${chk(d.Stress_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Stress_Status, 'มี', 'มี')}</div>
-                    <div class="pl-4 flex flex-wrap gap-y-0.5">
-                        ${chk(d.Stress_Causes, 'กลัวไม่หาย', 'กลัวไม่หาย')} ${chk(d.Stress_Causes, 'ค่ารักษาพยาบาล', 'ค่ารักษา')}
-                        ${chk(d.Stress_Causes, 'ขาดงาน/รายได้', 'ขาดรายได้')} ${chk(d.Stress_Causes, 'ครอบครัว', 'ครอบครัว')}
-                        ${chk(d.Stress_Causes, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Stress_Cause_Other, "50px")}
-                    </div>
-                    
-                    <div class="flex flex-wrap items-end gap-x-1">
-                        การแสดงออก: 
-                        ${chk(d.Stress_Express, 'สีหน้าเรียบเฉย', 'สีหน้าเรียบเฉย')} 
-                        ${chk(d.Stress_Express, 'วิตกกังวล', 'วิตกกังวล')} 
-                        ${chk(d.Stress_Express, 'กลัว', 'กลัว')}
-                    </div>
-                    <div class="pl-4 flex flex-wrap items-end gap-x-1">
-                        ${chk(d.Stress_Express, 'ซึมเศร้า', 'ซึมเศร้า')} 
-                        ${chk(d.Stress_Express, 'เอะอะโวยวาย', 'เอะอะโวยวาย')}
-                        ${chk(d.Stress_Express, 'หงุดหงิด', 'หงุดหงิด')} 
-                        ${chk(d.Stress_Express, 'อื่นๆ', 'อื่น:')} ${dot(d.Stress_Express_Other, "50px")}
-                    </div>
-
-                    <div class="flex flex-wrap items-end gap-x-1">
-                        แก้ไขความไม่สบายใจ: 
-                        ${chk(d.Cope_Method, 'ปรึกษาผู้อื่น', 'ปรึกษาผู้อื่น')} 
-                        ${chk(d.Cope_Method, 'แยกตัวเอง', 'แยกตัวเอง')} 
-                        ${chk(d.Cope_Method, 'ใช้ยา', 'ใช้ยา')} 
-                        ${chk(d.Cope_Method, 'อื่นๆ', 'อื่นๆ')} ${dot(d.Cope_Method_Other, "30px")}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
-            <div class="p-1">
-                <div class="font-bold underline mb-1">9) บทบาทและสัมพันธภาพ: <span class="font-normal">การเจ็บป่วยมีผลกระทบต่อบทบาท</span></div>
-                <div class="flex flex-wrap gap-2">
-                    ${chk(d.Roles, 'ครอบครัว', 'ครอบครัว')} ${chk(d.Roles, 'อาชีพ', 'อาชีพ')} ${chk(d.Roles, 'การศึกษา', 'การศึกษา')}
-                </div>
-                <div class="flex flex-wrap mt-1">
-                    ${chk(d.Roles, 'สัมพันธภาพในครอบครัวและผู้อื่น', 'สัมพันธภาพในครอบครัวและผู้อื่น')}
-                </div>
-            </div>
-            <div class="p-1">
-                <div class="font-bold underline mb-1">10) เพศและการเจริญพันธุ์</div>
-                <div class="flex flex-wrap items-end">ประจำเดือน: ${chk(d.Sex_Menses, 'ปกติ', 'ปกติ')} ${chk(d.Sex_Menses, 'ไม่ปกติ', 'ไม่ปกติ')} ${dot(d.Sex_Menses_Status, "80px")}</div>
-                <div class="flex flex-wrap items-end">เต้านม: ${chk(d.Sex_Breast, 'ปกติ', 'ปกติ')} ${chk(d.Sex_Breast, 'ไม่ปกติ', 'ไม่ปกติ')}</div>
-                <div class="flex flex-wrap items-end">อวัยวะสืบพันธุ์: ${chk(d.Sex_Genitals, 'ปกติ', 'ปกติ')} ${chk(d.Sex_Genitals, 'ไม่ปกติ', 'ไม่ปกติ')} ${dot(d.Sex_Genitals_Detail, "80px")}</div>
-            </div>
-        </div>
-
-        <div class="border-b border-black p-1">
-             <div class="font-bold underline mb-1">11) คุณค่าและความเชื่อ</div>
-             <div class="space-y-1">
-                <div class="flex flex-wrap items-end">เจ็บป่วยครั้งนี้เชื่อว่า: ${chk(d.Belief_Cause, 'การปฏิบัติตัวไม่ถูกต้อง', 'ปฏิบัติตัวไม่ถูกต้อง')} ${chk(d.Belief_Cause, 'เคราะห์กรรม', 'เคราะห์กรรม')} ${chk(d.Belief_Cause, 'ตามวัย', 'ตามวัย')} ${chk(d.Belief_Cause, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Belief_Cause_Detail, "50px")}</div>
-                <div class="flex flex-wrap items-end">ต้องการปฏิบัติศาสนกิจ: ${chk(d.Religion_Practice, 'ไม่มี', 'ไม่มี')} ${chk(d.Religion_Practice, 'ต้องการ', 'ต้องการ:')} ${dot(d.Religion_Practice_Detail, "80px")}</div>
-                <div class="flex flex-wrap items-end">สิ่งยึดเหนี่ยวทางจิตใจ: ${chk(d.Belief_Anchor_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Belief_Anchor_Status, 'มี', 'มี:')} ${dot(d.Belief_Anchor_Detail, "80px")}</div>
-             </div>
-        </div>
-
-        <div class="border-b border-black p-1">
-             <div class="font-bold underline mb-1">12) การมีส่วนร่วมของผู้ป่วยและญาติในการรักษาพยาบาล</div>
-             <div class="flex flex-wrap gap-x-4">
-                 ${chk(d.Partic_Status, 'ไม่ต้องการ', 'ไม่ต้องการ')}
-                 ${chk(d.Partic_Status, 'ต้องการ', 'ต้องการ:')} 
-             </div>
-             <div class="flex flex-wrap gap-x-4 ml-6 mt-1">
-                 ${chk(d.Partic_Needs, 'Info', 'ทราบข้อมูลเรื่องโรคและแนวทางการรักษา')}
-                 ${chk(d.Partic_Needs, 'Skill', 'เรียนรู้ทักษะดูแลตนเอง/ผู้ป่วย')}
-                 ${chk(d.Partic_Needs, 'Team', 'ร่วมกับทีมสุขภาพในการดูแลผู้ป่วย')}
-                 ${chk(d.Partic_Other, 'อื่นๆ', 'อื่นๆ:')} ${dot(d.Partic_Other, "80px")}
-             </div>
-        </div>
-
-        <div class="p-1 border-b border-black">
-            <div class="font-bold text-[14px]">13. PAIN MANAGEMENT</div>
-            <div class="flex flex-wrap items-end gap-4">
-                <div>Pain: ${chk(d.Pain_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Pain_Status, 'มี', 'มี')}</div>
-                <div>บริเวณที่ปวด ${dot(d.Pain_Location, "150px")}</div>
-                <div>สาเหตุ ${dot(d.Pain_Cause, "150px")}</div>
-            </div>
-            <div class="flex flex-wrap items-end gap-4 mt-1">
-                <div>ลักษณะ: ${chk(d.Pain_Pattern, 'ครั้งคราว', 'ครั้งคราว')} ${chk(d.Pain_Pattern, 'ตลอดเวลา', 'ตลอดเวลา')}</div>
-                <div class="flex items-center flex-wrap">
-                    <span class="mr-2">Pain Scale:</span>
-                    ${[0,1,2,3,4,5,6,7,8,9,10].map(n => chk(String(d.Pain_Scale_Score), String(n), n)).join(' ')}
-                </div>
-            </div>
-            
-            <div class="my-1 flex justify-center">
-                <img src="https://www.mosio.com/wp-content/uploads/2018/10/color-pain-scale-with-faces-1030x417.png" style="height: 60px; max-width: 100%;" alt="Pain Scale">
-            </div>
-
-            <div class="flex flex-wrap mt-1 gap-2">
-                <span class="font-bold">กระทบต่อ:</span>
-                ${chk(d.Pain_Effects, 'Eat', 'การกิน')} 
-                ${chk(d.Pain_Effects, 'Sleep', 'การนอน')}
-                ${chk(d.Pain_Effects, 'Activity', 'การทำกิจกรรม')} 
-                ${chk(d.Pain_Effects, 'Mood', 'อารมณ์ /สังคม')}
-                ${chk(d.Pain_Effects, 'Elim', 'การขับถ่าย')} 
-                ${chk(d.Pain_Effects, 'Sex', 'เพศสัมพันธุ์')}
-            </div>
-            <div class="flex flex-wrap mt-1 gap-2">
-                <span class="font-bold">บรรเทาปวด:</span>
-                ${chk(d.Pain_Relief, 'Cold', 'Cold compression')} 
-                ${chk(d.Pain_Relief, 'Hot', 'Hot compression')}
-                ${chk(d.Pain_Relief, 'Massage', 'Massage')} 
-                ${chk(d.Pain_Relief, 'Relax', 'Relaxation')}
-                ${chk(d.Pain_Relief, 'Repo', 'Reposition')} 
-                ${chk(d.Pain_Relief, 'Rest', 'Rest/Sleep')}
-                ${chk(d.Pain_Relief, 'Meds', 'Medication')}
-            </div>
-        </div>
-
-        <div class="p-1 border-b border-black">
-            <div class="font-bold text-[14px] mb-1">14. Braden Scale (Predicting Pressure Sore Risk)</div>
-            
-            <table class="w-full border-collapse border border-black text-center text-[10px]">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="border border-black p-1 text-left w-[15%]">Parameter</th>
-                        <th class="border border-black p-1 w-[13%]">1</th>
-                        <th class="border border-black p-1 w-[13%]">2</th>
-                        <th class="border border-black p-1 w-[13%]">3</th>
-                        <th class="border border-black p-1 w-[13%]">4</th>
-                        <th class="border border-black p-1 w-[10%] bg-blue-50">Score</th>
-                    </tr>
-                </thead>
-                <tbody>
-                ${[
-                    ['การรับรู้/ความรู้สึก', 'จำกัดทั้งหมด', 'จำกัดมาก', 'จำกัดเล็กน้อย', 'ไม่บกพร่อง', d.Braden_Sensory],
-                    ['ความเปียกชื้น', 'เปียกชื้นตลอดเวลา', 'เปียกชื้นมาก', 'เปียกชื้นเป็นบางครั้ง', 'เปียกชื้นน้อยมาก', d.Braden_Moisture],
-                    ['กิจกรรม', 'อยู่บนเตียงตลอด', 'เดินไม่ได้/นั่งรถเข็น', 'เดินได้บ้าง', 'เดินได้ปกติ', d.Braden_Activity],
-                    ['การเคลื่อนไหว', 'เคลื่อนไหวไม่ได้เลย', 'เคลื่อนไหวได้น้อย ต้องมีผู้ช่วยเหลือ', 'เคลื่อนไหวเองได้บ้าง', 'เคลื่อนไหวได้ปกติ', d.Braden_Mobility],
-                    ['โภชนาการ', 'ไม่เพียงพอ', 'อาจไม่เพียงพอ', 'เพียงพอ', 'ดีเยี่ยม', d.Braden_Nutrition],
-                    ['แรงเสียดทาน', 'มีปัญหา', 'เสี่ยงต่อการเกิดปัญหา', 'ไม่มีปัญหา', '', d.Braden_Friction]
-                ].map((row, idx) => {
-                    const score = getBScore(row[5]);
-                    const b1 = score == 1 ? 'font-bold bg-gray-200' : '';
-                    const b2 = score == 2 ? 'font-bold bg-gray-200' : '';
-                    const b3 = score == 3 ? 'font-bold bg-gray-200' : '';
-                    const b4 = score == 4 ? 'font-bold bg-gray-200' : '';
-                    
-                    const td4 = idx === 5 ? '<td class="border border-black p-1 bg-gray-100"></td>' 
-                                          : `<td class="border border-black p-1 align-middle ${b4}">${row[4]}</td>`;
-
-                    return `
-                    <tr>
-                        <td class="border border-black text-left pl-2 align-middle">${row[0]}</td>
-                        <td class="border border-black p-1 align-middle ${b1}">${row[1]}</td>
-                        <td class="border border-black p-1 align-middle ${b2}">${row[2]}</td>
-                        <td class="border border-black p-1 align-middle ${b3}">${row[3]}</td>
-                        ${td4}
-                        <td class="border border-black font-bold align-middle text-[12px] text-blue-800">${score || '-'}</td>
-                    </tr>`;
-                }).join('')}
-                </tbody>
-            </table>
-            
-            <div class="flex justify-end mt-2 items-center gap-4 text-[12px]">
-                <div class="flex items-center">
-                    <span class="font-bold text-[14px] mr-2">Total Score:</span> 
-                    <span class="border border-black px-2 py-1 w-12 text-center font-bold bg-white text-[16px]">${totalBraden || 0}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    ${chkRisk(isRisk(totalBraden, 0, 9))} ≤ 9 Very high
-                    ${chkRisk(isRisk(totalBraden, 10, 12))} 10-12 High
-                    ${chkRisk(isRisk(totalBraden, 13, 14))} 13-14 Moderate
-                    ${chkRisk(isRisk(totalBraden, 15, null))} ≥ 15 Low
-                </div>
-            </div>
-        </div>
-
-        <div class="p-1">
-            <div class="font-bold text-[14px]">15. Fall risk assessment</div>
-            <div class="flex flex-wrap gap-4">
-                ${chk(String(d.Fall_Age_Child).toLowerCase(), 'true', 'วัยเด็ก')} 
-                ${chk(String(d.Fall_Age_Elder).toLowerCase(), 'true', 'ผู้สูงอายุ > 65 ปี')}
-            </div>
-            <div class="grid grid-cols-2 gap-x-4 mt-1">
-                <div class="flex justify-between"><span>สภาวะทางสมอง/จิตผิดปกติ</span> <div>${chk(d.Fall_Mental, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Mental, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>มีปัญหาการมองเห็น</span> <div>${chk(d.Fall_Vision, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Vision, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>มีประวัติพลัดตกหกล้ม/ชัก</span> <div>${chk(d.Fall_History, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_History, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>มีปัญหาในการเดิน/ทรงตัว</span> <div>${chk(d.Fall_Gait, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Gait, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between"><span>ใช้ยานอนหลับ/Psychotropics/Sedative</span> <div>${chk(d.Fall_Meds, 'ไม่มี', 'ไม่มี')} ${chk(d.Fall_Meds, 'มี', 'มี')}</div></div>
-                <div class="flex justify-between font-bold"><span>จำเป็นต้องได้รับการป้องกัน</span> <div>${chk(d.Fall_Prevention, 'จำเป็น', 'จำเป็น')} ${chk(d.Fall_Prevention, 'ไม่จำเป็น', 'ไม่จำเป็น')}</div></div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="mt-6 flex justify-end px-10 text-[12px] font-sarabun text-black">
-        <div class="flex items-end">
-            <span class="font-bold">ลงชื่อผู้ประเมิน/ผู้บันทึก</span>
-            <span class="mx-2 border-b border-black border-dotted min-w-[150px] text-center">${d.Assessor_Name || '&nbsp;'}</span>
-            <span class="font-bold ml-2">ตำแหน่ง</span>
-            <span class="mx-2 border-b border-black border-dotted min-w-[150px] text-center">${d.Assessor_Position || '&nbsp;'}</span>
-        </div>
-    </div>
-    
-    <div class="text-right text-[10px] mt-2 font-bold font-sarabun text-black">FR-IPD-004 Page 2/2</div>
     `;
-
-    container.innerHTML = `
-        <div class="flex flex-col justify-between h-full">
-            <div>${contentHtml}</div>
-        </div>
-    `;
+    container.innerHTML = `<div class="flex flex-col justify-between h-full"><div>${contentHtml}</div></div>`;
 }
 // ฟังก์ชันดึงตำแหน่งอัตโนมัติ (วางไว้นอก DOMContentLoaded)
 function updateAssessorPosition(inputElement) {
