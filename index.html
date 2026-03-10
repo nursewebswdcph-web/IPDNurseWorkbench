@@ -50,6 +50,7 @@
     }
     /* เพิ่มเติม CSS สำหรับการพิมพ์ */
 @media print {
+    /* ซ่อนทุกอย่างยกเว้นส่วนที่จะพิมพ์ */
     body * {
         visibility: hidden;
     }
@@ -60,11 +61,9 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 100%;
-        margin: 0;
-        padding: 0;
+        width: 210mm; /* ขนาดความกว้าง A4 */
     }
-    /* ซ่อนปุ่มและส่วนที่ไม่เกี่ยวข้องในการพิมพ์ */
+    /* ซ่อนปุ่มที่ไม่ต้องการให้ติดไปในกระดาษ */
     .no-print {
         display: none !important;
     }
@@ -78,7 +77,23 @@
     /* บังคับขึ้นหน้าใหม่สำหรับหน้าที่ 2 */
     .page-break {
         page-break-before: always;
+        margin-top: 0;
     }
+    /* ลบ Margin ส่วนเกินของ Browser */
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+}
+
+/* ปรับแต่งส่วน Preview บนหน้าจอให้ดูเหมือนกระดาษจริง */
+.a4-container {
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 10mm;
+    margin: 10px auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
     /* Scrollbar สวยงาม */
