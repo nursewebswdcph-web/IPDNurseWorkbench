@@ -5032,16 +5032,17 @@ function updateAssessorPosition(inputElement) {
     }
 }
 // ----------------------------------------------------------------
-// (10) MAIN EVENT LISTENERS (Updated - รวมฟังก์ชันดึงตำแหน่งข้อ 15)
+// (10) MAIN EVENT LISTENERS
 // ----------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
-	refreshWardDatalist();
-	refreshDeptDropdowns();
+    // --- (A) INITIAL DATA & UI ---
+    refreshWardDatalist();
+    refreshDeptDropdowns();
     updateClock(); 
     setInterval(updateClock, 1000);
     loadWards();
 
-    // 1. Close Buttons for Modals
+    // --- (B) MODAL SYSTEM (Generic Close Logic) ---
     const closeButtons = [
         { btn: "close-admit-modal-btn", modal: "admit-modal" },
         { btn: "cancel-admit-btn", modal: "admit-modal" },
@@ -5059,24 +5060,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     closeButtons.forEach(item => {
         const btn = document.getElementById(item.btn);
-        if (btn) {
-            btn.addEventListener("click", () => closeModal(item.modal));
-        }
+        if (btn) btn.addEventListener("click", () => closeModal(item.modal));
     });
 
-    // 2. Handle Click Outside Modal to Close
     window.addEventListener("click", (e) => {
         if (e.target.classList.contains('fixed') && e.target.classList.contains('bg-black')) {
             e.target.classList.add("hidden");
         }
     });
 
-    // 3. Ward Selection
+    // --- (C) PATIENT LIST & WARD NAVIGATION ---
     if (wardSwitcher) {
         wardSwitcher.addEventListener("change", (e) => { selectWard(e.target.value); });
     }
 
-    // 4. Patient Table Interaction (Details & Chart)
     patientTableBody.addEventListener('click', (e) => {
         const target = e.target;
         if (target.tagName === 'A' && target.dataset.an) {
@@ -5089,25 +5086,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // 5. Admit Form Logic
+    // --- (D) ADMIT & DETAILS FORM LOGIC ---
     if (openAdmitModalBtn) openAdmitModalBtn.addEventListener("click", openAdmitModal);
-    if (closeAdmitModalBtn) closeAdmitModalBtn.addEventListener("click", closeAdmitModal);
     if (admitForm) admitForm.addEventListener("submit", handleAdmitSubmit);
-	if (admitDobInput) {
-        admitDobInput.addEventListener("change", updateAdmitAge);
-    }
+    if (admitDobInput) admitDobInput.addEventListener("change", updateAdmitAge);
 
-    // 6. Details Form Logic
-    if (closeDetailsModalBtn) closeDetailsModalBtn.addEventListener("click", closeDetailsModal);
     if (editPatientBtn) editPatientBtn.addEventListener("click", enableEditMode);
     if (detailsForm) detailsForm.addEventListener("submit", handleUpdateSubmit);
+    if (detailsDobInput) {
+        detailsDobInput.addEventListener("change", () => {
+            const beDate = convertCEtoBE(detailsDobInput.value);
+            if (detailsAgeInput) detailsAgeInput.value = calculateAge(beDate);
+        });
+    }
 
-    detailsDobInput.addEventListener("change", () => {
-        const beDate = convertCEtoBE(detailsDobInput.value);
-        if (detailsAgeInput) detailsAgeInput.value = calculateAge(beDate);
-    });
-
-    // 7. Chart Navigation
+    // --- (E) CHART INTERACTION & NAVIGATION ---
     if (closeChartBtn) closeChartBtn.addEventListener("click", closeChart);
 
     chartPage.addEventListener('click', (e) => {
@@ -5137,128 +5130,110 @@ document.addEventListener("DOMContentLoaded", () => {
         else showComingSoon(); 
     });
 
-    // 8. Assessment Form Logic (004)
-    if (assessmentForm) {
-    // ลบ Listener เก่าออกก่อนเพื่อความปลอดภัย แล้วผูกใหม่ด้วยชื่อฟังก์ชันที่ถูกต้อง
-    assessmentForm.removeEventListener('submit', handleAssessmentSubmit);
-    assessmentForm.addEventListener('submit', handleAssessmentSubmit);
-
-    // ส่วนจัดการการคำนวณ Braden ในฟอร์ม (คงไว้ตามเดิม)
-    assessmentForm.addEventListener('change', (e) => {
-        if (e.target.classList.contains('braden-score')) {
-            let total = 0;
-            assessmentForm.querySelectorAll('.braden-score:checked').forEach(r => total += parseInt(r.value));
-            const totalInp = document.getElementById("braden-total-score");
-            if (totalInp) {
-                totalInp.value = total;
-                if (typeof updateBradenResult === 'function') updateBradenResult(total); 
-            }
-        }
-        // Auto Toggle Fields
-        if (e.target.classList.contains('assessment-radio-toggle')) {
-            const groupName = e.target.name;
-            const form = e.target.closest('form');
-            form.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
-                const tid = sibling.dataset.controls;
-                if (tid) form.querySelector(`#${tid}`)?.classList.add('hidden');
-            });
-            const targetId = e.target.dataset.controls;
-            if (e.target.checked && targetId) {
-                form.querySelector(`#${targetId}`)?.classList.remove('hidden');
-            }
-        }
-    });
-}
-    // 9. Staff Datalist Auto-fill (Generic Listener)
-    document.body.addEventListener('input', (e) => {
-        if (e.target.list && e.target.list.id === 'staff-list-datalist') {
-            const staff = globalStaffList.find(s => s.fullName === e.target.value.trim());
-            if (staff) {
-                const parentForm = e.target.closest('form') || document;
-                const posInput = parentForm.querySelector('[name*="Position"]') || 
-                                 parentForm.querySelector('[name*="Pos"]') ||
-                                 document.getElementById('assessor-position') ||
-                                 document.getElementById('discharge-nurse-pos');
-                if (posInput) posInput.value = staff.position;
-            }
-        }
-    });
-
-    // 10. Braden Form
-    const bForm = document.getElementById("braden-form");
-    if (bForm) {
-        bForm.removeEventListener("submit", handleSaveBraden); 
-        bForm.addEventListener("submit", handleSaveBraden);
-    }
-
-    // 11. Morse Pagination
-    const mPrev = document.getElementById("morse-prev-page-btn");
-    const mNext = document.getElementById("morse-next-page-btn");
-    if(mPrev) mPrev.addEventListener("click", () => {
-        if(currentMorsePage > 1) { currentMorsePage--; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage); }
-    });
-    if(mNext) mNext.addEventListener("click", () => {
-        currentMorsePage++; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage);
-    });
-
-    // 12. Classification Pagination
-    const classifyPrevBtn = document.getElementById("classify-prev-page-btn");
-    const classifyNextBtn = document.getElementById("classify-next-page-btn");
-    if (classifyPrevBtn) classifyPrevBtn.addEventListener("click", () => { changeClassifyPage(-1); });
-    if (classifyNextBtn) classifyNextBtn.addEventListener("click", () => { changeClassifyPage(1); });
-
-    // 13. Advice Form
-    if (adviceForm) adviceForm.addEventListener("submit", handleSaveAdvice);
-
-	// 14. Sidebar Toggle Logic
+    // Sidebar Toggle
     const sidebarBtn = document.getElementById('sidebar-toggle-btn');
     const sidebarList = document.getElementById('chart-menu-list');
     const sidebarArrow = document.getElementById('sidebar-arrow-icon');
     if (sidebarBtn && sidebarList && sidebarArrow) {
         sidebarBtn.addEventListener('click', () => {
-            if (sidebarList.classList.contains('hidden')) {
-                sidebarList.classList.remove('hidden');
-                sidebarArrow.innerHTML = '<i class="fas fa-chevron-up"></i>';
-            } else {
-                sidebarList.classList.add('hidden');
-                sidebarArrow.innerHTML = '<i class="fas fa-chevron-down"></i>';
-            }
+            const isHidden = sidebarList.classList.toggle('hidden');
+            sidebarArrow.innerHTML = isHidden ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
         });
     }
-	
-	// 15. ค้นหาตำแหน่งที่รวม Event Listeners (บรรทัดสุดท้ายภายใน DOMContentLoaded)
-    const assessorNameInput = document.getElementById('assessor-name');
-    const assessorPositionInput = document.getElementById('assessor-position-display');
 
-    if (assessorNameInput) {
-        // แนะนำใช้ 'input' แทน 'change' หากต้องการให้ตำแหน่งขึ้นทันทีที่เลือก
-        assessorNameInput.addEventListener('input', function() {
-            const selectedName = this.value.trim();
-            const dataList = document.getElementById('staff-list-datalist');
-            if (!dataList) return;
-
-            const options = dataList.options;
-            for (let i = 0; i < options.length; i++) {
-                if (options[i].value === selectedName) {
-                    // ตรวจสอบทั้ง getAttribute และ dataset เพื่อความแม่นยำ
-                    const pos = options[i].getAttribute('data-position') || options[i].dataset.position;
-                    if (assessorPositionInput) {
-                        assessorPositionInput.value = pos || "พยาบาลวิชาชีพ";
-                    }
-                    return;
+    // --- (F) ASSESSMENT FORM 004 & BRADEN LOGIC ---
+    if (assessmentForm) {
+        assessmentForm.addEventListener('submit', handleAssessmentSubmit);
+        assessmentForm.addEventListener('change', (e) => {
+            if (e.target.classList.contains('braden-score')) {
+                let total = 0;
+                assessmentForm.querySelectorAll('.braden-score:checked').forEach(r => total += parseInt(r.value));
+                const totalInp = document.getElementById("braden-total-score");
+                if (totalInp) {
+                    totalInp.value = total;
+                    if (typeof updateBradenResult === 'function') updateBradenResult(total); 
+                }
+            }
+            // Auto Toggle Fields
+            if (e.target.classList.contains('assessment-radio-toggle')) {
+                const groupName = e.target.name;
+                assessmentForm.querySelectorAll(`[name="${groupName}"]`).forEach(sibling => {
+                    const tid = sibling.dataset.controls;
+                    if (tid) document.getElementById(tid)?.classList.add('hidden');
+                });
+                const targetId = e.target.dataset.controls;
+                if (e.target.checked && targetId) {
+                    document.getElementById(targetId)?.classList.remove('hidden');
                 }
             }
         });
     }
-	const printBtn = document.getElementById('print-doc-btn');
-    if (printBtn) {
-        printBtn.addEventListener('click', function() {
-            window.print();
-        });
-    }
-	document.body.addEventListener('input', (e) => {
+
+    // --- (G) PAGINATION & OTHER FORMS ---
+    const bForm = document.getElementById("braden-form");
+    if (bForm) bForm.addEventListener("submit", handleSaveBraden);
+
+    const mPrev = document.getElementById("morse-prev-page-btn");
+    const mNext = document.getElementById("morse-next-page-btn");
+    if (mPrev) mPrev.addEventListener("click", () => { if(currentMorsePage > 1) { currentMorsePage--; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage); } });
+    if (mNext) mNext.addEventListener("click", () => { currentMorsePage++; fetchAndRenderMorsePage(currentPatientAN, currentMorsePage); });
+
+    const classifyPrevBtn = document.getElementById("classify-prev-page-btn");
+    const classifyNextBtn = document.getElementById("classify-next-page-btn");
+    if (classifyPrevBtn) classifyPrevBtn.addEventListener("click", () => changeClassifyPage(-1));
+    if (classifyNextBtn) classifyNextBtn.addEventListener("click", () => changeClassifyPage(1));
+
+    if (adviceForm) adviceForm.addEventListener("submit", handleSaveAdvice);
+
+    // --- (H) STAFF AUTO-FILL & POSITION LOGIC ---
+    // ใช้ Delegation ที่ body ครั้งเดียวเพื่อครอบคลุมทุก Input ที่ใช้ staff-list
+    document.body.addEventListener('input', (e) => {
         if (e.target.list && e.target.list.id === 'staff-list-datalist') {
-            updateAssessorPosition(e.target);
+            const selectedName = e.target.value.trim();
+            const dataList = e.target.list;
+            
+            // หา Option ที่ตรงกับชื่อที่พิมพ์
+            const options = dataList.options;
+            let position = "";
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === selectedName) {
+                    position = options[i].getAttribute('data-position') || options[i].dataset.position;
+                    break;
+                }
+            }
+
+            // ถ้าเป็นช่องผู้ประเมินในฟอร์ม 004 ให้ส่งไปที่ assessor-position-display
+            if (e.target.id === 'assessor-name' || e.target.name === 'Assessor_Name') {
+                const posDisplay = document.getElementById('assessor-position-display');
+                if (posDisplay) posDisplay.value = position || "พยาบาลวิชาชีพ";
+            } else {
+                // สำหรับฟอร์มอื่นๆ (Discharge, Morse ฯลฯ)
+                const parentForm = e.target.closest('form');
+                if (parentForm) {
+                    const posInput = parentForm.querySelector('[name*="Position"]') || 
+                                     parentForm.querySelector('[name*="Pos"]') ||
+                                     parentForm.querySelector('.staff-position-target');
+                    if (posInput) posInput.value = position;
+                }
+            }
         }
     });
+
+    // --- (I) PRINT DOCUMENT LOGIC ---
+    const printBtn = document.getElementById('print-doc-btn');
+    if (printBtn) {
+        printBtn.addEventListener('click', function() {
+            // ตรวจสอบว่ามีเนื้อหาพรีวิวอยู่หรือไม่ก่อนสั่งพิมพ์
+            const previewContent = document.getElementById('chart-preview-content');
+            if (previewContent && previewContent.innerHTML.trim() !== "") {
+                window.print();
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่พบเนื้อหา',
+                    text: 'กรุณาเลือกเอกสารที่ต้องการพรีวิวก่อนสั่งพิมพ์'
+                });
+            }
+        });
+    }
 });
