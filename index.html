@@ -24,17 +24,47 @@
     
     /* Layout สำหรับพรีวิวเอกสารเสมือนจริง (Virtual A4) */
     .a4-preview {
-        width: 210mm;
-        min-height: 297mm;
-        background: white;
-        padding: 20mm;
-        margin: 0 auto;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        box-sizing: border-box;
-        color: black;
-        line-height: 1.5;
-        position: relative;
-    }
+    width: 210mm;
+    height: 297mm; /* บังคับความสูงคงที่เพื่อคุมหน้ากระดาษ */
+    padding: 15mm 15mm; /* ลด Margin เล็กน้อยเพื่อให้มีพื้นที่บันทึก */
+    margin: 10px auto;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+    color: black;
+    line-height: 1.2; /* ปรับระยะห่างบรรทัดให้กระชับ */
+}
+
+/* บังคับขนาดตัวอักษรใน Preview ให้คงที่ */
+.a4-preview, .a4-preview table, .a4-preview span, .a4-preview div {
+    font-size: 14pt !important; /* ขนาดมาตรฐานสำหรับเนื้อหา */
+    font-family: 'Sarabun', sans-serif !important;
+}
+
+/* สำหรับหัวข้อที่ต้องการเน้น */
+.a4-preview .title-lg { font-size: 16pt !important; font-weight: bold; }
+.a4-preview .title-sm { font-size: 12pt !important; }
+
+/* จัดการ Table ให้คงที่ */
+.a4-preview table {
+    width: 100%;
+    table-layout: fixed; /* บังคับความกว้างคอลัมน์ตามที่กำหนด */
+    border-collapse: collapse;
+}
+
+.a4-preview td, .a4-preview th {
+    padding: 2px 4px;
+    word-wrap: break-word; /* ให้ข้อความยาวตัดลงบรรทัดใหม่ ไม่ดันตารางเบี้ยว */
+    vertical-align: top;
+}
+    /* ซ่อน Scrollbar เวลาแสดงผล Preview */
+#preview-container {
+    background-color: #525659;
+    padding: 20px 0;
+    overflow-y: auto;
+}
 
     /* ตารางในเอกสารพรีวิว */
     .preview-table {
