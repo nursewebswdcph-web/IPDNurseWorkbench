@@ -15,58 +15,69 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
+    /* --- พื้นฐานเดิม (ห้ามลบ) --- */
     body {
       font-family: 'Sarabun', sans-serif;
     }
     .hidden {
       display: none;
     }
-    
-    /* Layout สำหรับพรีวิวเอกสารเสมือนจริง (Virtual A4) */
+
+    /* --- Layout สำหรับพรีวิวเอกสารเสมือนจริง (Virtual A4) --- */
     .a4-preview {
-    width: 210mm;
-    height: 297mm; /* บังคับความสูงคงที่เพื่อคุมหน้ากระดาษ */
-    padding: 15mm 15mm; /* ลด Margin เล็กน้อยเพื่อให้มีพื้นที่บันทึก */
-    margin: 10px auto;
-    background: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    box-sizing: border-box;
-    overflow: hidden;
-    position: relative;
-    color: black;
-    line-height: 1.2; /* ปรับระยะห่างบรรทัดให้กระชับ */
-}
+        width: 210mm;
+        height: 297mm; /* บังคับความสูงคงที่ตามมาตรฐาน A4 */
+        padding: 15mm 15mm; /* ขอบกระดาษ */
+        margin: 10px auto;
+        background: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        box-sizing: border-box;
+        overflow: hidden;
+        position: relative;
+        color: black;
+        line-height: 1.15; /* ระยะบรรทัดมาตรฐานสำหรับ Sarabun 14pt */
+    }
 
-/* บังคับขนาดตัวอักษรใน Preview ให้คงที่ */
-.a4-preview, .a4-preview table, .a4-preview span, .a4-preview div {
-    font-size: 14pt !important; /* ขนาดมาตรฐานสำหรับเนื้อหา */
-    font-family: 'Sarabun', sans-serif !important;
-}
+    /* บังคับขนาดตัวอักษรใน Preview ให้คงที่ (ใช้หน่วย pt สำหรับงานพิมพ์) */
+    .a4-preview, 
+    .a4-preview table, 
+    .a4-preview span, 
+    .a4-preview div, 
+    .a4-preview td, 
+    .a4-preview th {
+        font-size: 14pt !important; /* บังคับเนื้อหาหลักเป็น 14pt */
+        font-family: 'Sarabun', sans-serif !important;
+    }
 
-/* สำหรับหัวข้อที่ต้องการเน้น */
-.a4-preview .title-lg { font-size: 16pt !important; font-weight: bold; }
-.a4-preview .title-sm { font-size: 12pt !important; }
+    /* สำหรับหัวข้อที่ต้องการเน้นขนาดพิเศษ */
+    .a4-preview .title-lg { font-size: 18pt !important; font-weight: bold; }
+    .a4-preview .title-md { font-size: 16pt !important; font-weight: bold; }
+    .a4-preview .title-sm { font-size: 12pt !important; }
 
-/* จัดการ Table ให้คงที่ */
-.a4-preview table {
-    width: 100%;
-    table-layout: fixed; /* บังคับความกว้างคอลัมน์ตามที่กำหนด */
-    border-collapse: collapse;
-}
+    /* จัดการ Table ให้คงที่ (Fixed Layout ป้องกันตารางเบี้ยว) */
+    .a4-preview table {
+        width: 100%;
+        table-layout: fixed; /* บังคับความกว้างคอลัมน์ตามที่กำหนดใน HTML */
+        border-collapse: collapse;
+        margin-bottom: 4px;
+    }
 
-.a4-preview td, .a4-preview th {
-    padding: 2px 4px;
-    word-wrap: break-word; /* ให้ข้อความยาวตัดลงบรรทัดใหม่ ไม่ดันตารางเบี้ยว */
-    vertical-align: top;
-}
-    /* ซ่อน Scrollbar เวลาแสดงผล Preview */
-#preview-container {
-    background-color: #525659;
-    padding: 20px 0;
-    overflow-y: auto;
-}
+    .a4-preview td, .a4-preview th {
+        padding: 2px 4px;
+        word-wrap: break-word; /* ตัดคำอัตโนมัติเมื่อข้อความยาวเกิน */
+        vertical-align: top;
+        border-color: black;
+    }
 
-    /* ตารางในเอกสารพรีวิว */
+    /* --- ระบบจัดการการแสดงผลบนหน้าจอ --- */
+    #preview-container {
+        background-color: #525659;
+        padding: 20px 0;
+        overflow-y: auto;
+        min-height: 100vh;
+    }
+
+    /* ตารางสำหรับหน้าอื่นๆ (รักษาไว้ตามเดิม) */
     .preview-table {
         width: 100%;
         border-collapse: collapse;
@@ -79,7 +90,7 @@
         vertical-align: top;
     }
 
-    /* Scrollbar สวยงาม */
+    /* Scrollbar (รักษาไว้ตามเดิม) */
     ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -95,6 +106,7 @@
         background: #94a3b8;
     }
 
+    /* Animation (รักษาไว้ตามเดิม) */
     .animate-fade-in {
       animation: fadeIn 0.3s ease-in-out;
     }
@@ -103,7 +115,7 @@
       to { opacity: 1; }
     }
 
-    /* ซ่อน Footer ในหน้าพรีวิว (ตามคำขอ) */
+    /* ซ่อน Footer (รักษาไว้ตามเดิม) */
     .no-footer .form-footer, 
     .no-footer .print-footer {
         display: none !important;
@@ -111,10 +123,49 @@
     
     /* การแสดงผลข้อความยาว */
     .text-wrap-full {
-        white-space: pre-wrap; /* รักษารูปแบบการขึ้นบรรทัดใหม่และตัดคำอัตโนมัติ */
+        white-space: pre-wrap;
         word-break: break-word;
     }
-  </style>
+
+    /* --- [ส่วนที่เพิ่มใหม่] สำหรับการสั่งพิมพ์โดยเฉพาะ --- */
+    @media print {
+        /* ซ่อน UI ส่วนอื่นๆ บนหน้าเว็บ */
+        body * {
+            visibility: hidden;
+        }
+        /* แสดงเฉพาะส่วนพรีวิวเอกสาร */
+        #preview-container, 
+        #preview-container *,
+        .a4-preview, 
+        .a4-preview * {
+            visibility: visible;
+        }
+        #preview-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white;
+        }
+        .a4-preview {
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            page-break-after: always; /* บังคับขึ้นหน้าใหม่ Page 1 แล้วไป Page 2 */
+        }
+        /* บังคับให้เบราว์เซอร์พิมพ์พื้นหลัง (เช่น สีเทาในหัวตาราง) */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        /* ซ่อนปุ่มต่างๆ */
+        .no-print, button {
+            display: none !important;
+        }
+    }
+</style>
 </head>
 
 <body class="bg-slate-100 min-h-screen">
