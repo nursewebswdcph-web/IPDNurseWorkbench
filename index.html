@@ -48,6 +48,38 @@
         font-size: 14px;
         vertical-align: top;
     }
+    /* เพิ่มเติม CSS สำหรับการพิมพ์ */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #chart-preview-content, #chart-preview-content * {
+        visibility: visible;
+    }
+    #chart-preview-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    /* ซ่อนปุ่มและส่วนที่ไม่เกี่ยวข้องในการพิมพ์ */
+    .no-print {
+        display: none !important;
+    }
+    .a4-preview {
+        box-shadow: none !important;
+        margin: 0 !important;
+        border: none !important;
+        width: 210mm;
+        height: auto;
+    }
+    /* บังคับขึ้นหน้าใหม่สำหรับหน้าที่ 2 */
+    .page-break {
+        page-break-before: always;
+    }
+}
 
     /* Scrollbar สวยงาม */
     ::-webkit-scrollbar {
@@ -265,15 +297,13 @@
         <div class="lg:col-span-3">
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 min-h-[700px] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
-              <h3 id="chart-preview-title" class="text-lg font-bold text-indigo-900">ตัวอย่างเอกสาร</h3>
-              <div class="flex gap-2">
-                <button id="chart-add-new-btn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-4 rounded-xl text-sm shadow-sm transition-all">
-                  <i class="fas fa-plus-circle"></i> เพิ่มรายการใหม่
-                </button>
-                <button id="chart-edit-btn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-4 rounded-xl text-sm shadow-sm transition-all">
-                  <i class="fas fa-edit"></i> แก้ไขข้อมูล
-                </button>
-              </div>
+              <h3 id="chart-preview-title" class="text-xl font-bold text-slate-800"></h3>
+                <div class="flex gap-2">
+                    <button id="print-doc-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all">
+                        <i class="fas fa-print"></i> พิมพ์เอกสาร
+                    </button>
+                    <button id="chart-edit-btn" class="hidden bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">แก้ไข</button>
+                </div>
             </div>
             
             <div id="chart-preview-wrapper" class="flex-grow overflow-y-auto p-8 bg-slate-200 shadow-inner no-footer">
