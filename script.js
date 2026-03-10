@@ -3654,7 +3654,7 @@ function renderClassifySheetA4(page, targetContainer = null, options = {}) {
                 <div>จำหน่าย  ${dischargeDateStr}</div>
             </div>
         </div>
-        <div class="flex justify-between items-end mt-4 px-1 text-[12px] font-bold border-b border-transparent">
+        <div class="flex justify-between items-end mt-4 px-1 text-[10px] font-bold border-b border-transparent">
            <div>ชื่อ-สกุล: <span class="text-sm ml-1">${currentPatientData.Name}</span></div>
            <div>AN: <span class="text-sm ml-1">${currentPatientData.AN}</span></div>
            <div>HN: <span class="text-sm ml-1">${currentPatientData.HN}</span></div>
@@ -4492,7 +4492,11 @@ function renderForm004Page1(container, options = {}) {
     const dateText = formatDate(d.AdmitDate);
     const timeText = formatT(d.AdmitTime);
     
-    const dot = (val, w="auto") => `<span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-bold whitespace-nowrap overflow-hidden align-bottom" style="width:${w}; min-width: 20px; height: 1.4em; line-height: 1.4;">${val || "&nbsp;"}</span>`;
+    const dot = (val, w="auto") => `
+    <span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-semibold whitespace-nowrap overflow-hidden align-bottom text-[10px]" 
+          style="width:${w}; min-width: 20px; height: 1.3em; line-height: 1; margin-bottom: 1px;">
+        ${val || "&nbsp;"}
+    </span>`;
     
     // *** New Checkbox Logic with Icons ***
     const chk = (val, target, label) => {
@@ -4533,23 +4537,23 @@ function renderForm004Page1(container, options = {}) {
         if (target === 'Independent' && (v === 'ทำได้เอง' || v === 'Independent' || v === '4')) isMatch = true;
         if (target === 'Partial' && (v === 'บางส่วน' || v === 'Partial' || v === 'ใช้อุปกรณ์' || v === '3' || v === '2')) isMatch = true;
         if (target === 'Dependent' && (v === 'ไม่ได้เลย' || v === 'Dependent' || v === '1')) isMatch = true;
-        return isMatch ? `<i class="fas fa-check text-[12px]"></i>` : '';
+        return isMatch ? `<i class="fas fa-check text-[10px]"></i>` : '';
     };
 
     let contentHtml = `
     <div class="flex justify-between items-end mb-1 border-b border-black pb-1 font-sarabun text-black">
        <div class="w-[15%]"></div>
        <div class="text-center w-[70%]">
-          <h2 class="font-bold text-[18px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
+          <h2 class="font-bold text-[16px]">แบบประเมินประวัติและประเมินสมรรถนะผู้ป่วย งานผู้ป่วยใน</h2>
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
-       <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
-          <div class="font-bold text-[12px]">FR-IPD-004</div>
+       <div class="w-[15%] text-right flex flex-col justify-end text-[8px]">
+          <div class="font-bold text-[8px]">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
        </div>
     </div>
     
-    <div class="flex justify-between items-end mb-2 px-1 text-[11px] font-bold border-b border-transparent">
+    <div class="flex justify-between items-end mb-2 px-1 text-[10px] font-bold border-b border-transparent">
         <div>ชื่อ-สกุล: <span class="font-normal text-sm">${currentPatientData.Name}</span></div>
         <div class="flex gap-4">
              <span>HN: <span class="font-normal text-sm">${currentPatientData.HN}</span></span>
@@ -4558,7 +4562,7 @@ function renderForm004Page1(container, options = {}) {
         </div>
     </div>
 
-    <div class="font-sarabun text-black text-[12px] leading-tight mt-2">
+    <div class="font-sarabun text-black text-[10px] leading-tight mt-2">
         
         <div class="flex items-end w-full mb-1 whitespace-nowrap">
             <span class="mr-1">วันที่</span> ${dot(dateText, "90px")}
@@ -4646,7 +4650,7 @@ function renderForm004Page1(container, options = {}) {
             <div class="flex items-end pt-1 border-t border-black"><span class="font-bold w-32">ยาที่ใช้ประจำ :</span> ${chk(d.Meds_Status, 'ไม่มี', 'ไม่มี')} ${chk(d.Meds_Status, 'มี', 'มี(ระบุ)')} ${dot(d.Meds_Details, "100%")}</div>
         </div>
 
-        <div class="grid grid-cols-3 border border-black mt-1 divide-x divide-black text-[12px] h-auto">
+        <div class="grid grid-cols-3 border border-black mt-1 divide-x divide-black text-[10px] h-auto">
             <div class="p-1 flex flex-col justify-between">
                 <div>
                     <div class="font-bold underline mb-1">1) การรับรู้เกี่ยวกับสุขภาพและการดูแล</div>
@@ -4810,7 +4814,11 @@ function renderForm004Page2(container, options = {}) {
     };
     
     const chk = (val, target, label) => `<span class="inline-flex items-center mr-2 select-none whitespace-nowrap gap-1">${boxCheck(val, target)} ${label}</span>`;
-    const dot = (val, w) => `<span class="border-b border-black border-dotted inline-block text-center whitespace-nowrap overflow-hidden text-blue-900 font-bold px-1" style="min-width: ${w};">${val || '&nbsp;'}</span>`;
+    const dot = (val, w="auto") => `
+    <span class="border-b border-black border-dotted px-1 inline-block text-center text-blue-900 font-semibold whitespace-nowrap overflow-hidden align-bottom text-[10px]" 
+          style="width:${w}; min-width: 20px; height: 1.3em; line-height: 1; margin-bottom: 1px;">
+        ${val || "&nbsp;"}
+    </span>`;
     const getBScore = (val) => parseInt(val, 10) || 0;
 
     const totalBraden = getBScore(d.Braden_Sensory) + getBScore(d.Braden_Moisture) + 
@@ -4832,12 +4840,12 @@ function renderForm004Page2(container, options = {}) {
           <h3 class="font-bold text-[16px]">โรงพยาบาลสมเด็จพระยุพราชสว่างแดนดิน</h3>
        </div>
        <div class="w-[15%] text-right flex flex-col justify-end text-[10px]">
-          <div class="font-bold text-[12px]">FR-IPD-004</div>
+          <div class="font-bold text-[10px]">FR-IPD-004</div>
           <div>แก้ไขครั้งที่ 02 1 ม.ค. 2564</div>
        </div>
     </div>
 
-    <div class="font-sarabun text-black text-[12px] leading-tight border border-black">
+    <div class="font-sarabun text-black text-[10px] leading-tight border border-black">
         
         <div class="grid grid-cols-2 divide-x divide-black border-b border-black">
             <div class="p-1">
@@ -5002,13 +5010,13 @@ function renderForm004Page2(container, options = {}) {
                         <td class="border border-black p-1 align-middle ${b2}">${row[2]}</td>
                         <td class="border border-black p-1 align-middle ${b3}">${row[3]}</td>
                         ${td4}
-                        <td class="border border-black font-bold align-middle text-[12px] text-blue-800">${score || '-'}</td>
+                        <td class="border border-black font-bold align-middle text-[10px] text-blue-800">${score || '-'}</td>
                     </tr>`;
                 }).join('')}
                 </tbody>
             </table>
             
-            <div class="flex justify-end mt-2 items-center gap-4 text-[12px]">
+            <div class="flex justify-end mt-2 items-center gap-4 text-[10px]">
                 <div class="flex items-center">
                     <span class="font-bold text-[14px] mr-2">Total Score:</span> 
                     <span class="border border-black px-2 py-1 w-12 text-center font-bold bg-white text-[16px]">${totalBraden || 0}</span>
@@ -5040,7 +5048,7 @@ function renderForm004Page2(container, options = {}) {
 
     </div>
 
-    <div class="mt-6 flex justify-end px-10 text-[12px] font-sarabun text-black">
+    <div class="mt-6 flex justify-end px-10 text-[10px] font-sarabun text-black">
         <div class="flex items-end">
             <span class="font-bold">ลงชื่อผู้ประเมิน/ผู้บันทึก</span>
             <span class="mx-2 border-b border-black border-dotted min-w-[150px] text-center">${d.Assessor_Name || '&nbsp;'}</span>
