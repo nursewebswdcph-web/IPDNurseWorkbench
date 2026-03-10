@@ -84,27 +84,6 @@
         white-space: pre-wrap; /* รักษารูปแบบการขึ้นบรรทัดใหม่และตัดคำอัตโนมัติ */
         word-break: break-word;
     }
-    @media print {
-        /* บังคับให้ขนาดฟอนต์ไม่ถูก Browser ขยายเอง */
-        .font-sarabun {
-            -webkit-print-color-adjust: exact;
-        }
-        /* ปรับระยะขอบหน้ากระดาษ */
-        @page {
-            size: A4;
-            margin: 0;
-        }
-        /* ซ่อนส่วนที่ไม่เกี่ยวข้อง */
-        .print\:hidden {
-            display: none !important;
-        }
-    }
-    
-    /* ปรับจูนตัวหนังสือสีน้ำเงินให้ลอยเหนือเส้นประเล็กน้อย */
-    .text-blue-900 {
-        position: relative;
-        top: -1px; 
-    }
   </style>
 </head>
 
